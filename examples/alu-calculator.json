@@ -1,0 +1,134 @@
+{
+  "nodes": [
+    {
+      "type": "IMM",
+      "x": -200,
+      "y": -50,
+      "value": 10,
+      "bitWidth": 8,
+      "label": "A=10",
+      "id": "imm_a"
+    },
+    {
+      "type": "IMM",
+      "x": -200,
+      "y": 50,
+      "value": 20,
+      "bitWidth": 8,
+      "label": "B=20",
+      "id": "imm_b"
+    },
+    {
+      "type": "IMM",
+      "x": -200,
+      "y": 150,
+      "value": 0,
+      "bitWidth": 8,
+      "label": "OP=ADD",
+      "id": "imm_op"
+    },
+    {
+      "type": "ALU",
+      "x": 0,
+      "y": 50,
+      "bitWidth": 8,
+      "label": "ALU",
+      "id": "alu_1"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 200,
+      "y": 0,
+      "targetValue": 0,
+      "label": "R",
+      "sandbox": true,
+      "id": "out_r"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 200,
+      "y": 60,
+      "targetValue": 0,
+      "label": "ZERO",
+      "sandbox": true,
+      "id": "out_z"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 200,
+      "y": 120,
+      "targetValue": 0,
+      "label": "CARRY",
+      "sandbox": true,
+      "id": "out_c"
+    }
+  ],
+  "wires": [
+    {
+      "sourceId": "imm_a",
+      "targetId": "alu_1",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_1"
+    },
+    {
+      "sourceId": "imm_b",
+      "targetId": "alu_1",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_2"
+    },
+    {
+      "sourceId": "imm_op",
+      "targetId": "alu_1",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_3"
+    },
+    {
+      "sourceId": "alu_1",
+      "targetId": "out_r",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_4"
+    },
+    {
+      "sourceId": "alu_1",
+      "targetId": "out_z",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_5"
+    },
+    {
+      "sourceId": "alu_1",
+      "targetId": "out_c",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 2,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_6"
+    }
+  ]
+}

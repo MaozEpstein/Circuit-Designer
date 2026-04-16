@@ -1,0 +1,71 @@
+{
+  "nodes": [
+    {
+      "type": "CLOCK",
+      "x": -150,
+      "y": 0,
+      "value": 0,
+      "id": "clk_1"
+    },
+    {
+      "type": "INPUT",
+      "x": -150,
+      "y": -80,
+      "fixedValue": 1,
+      "label": "EN",
+      "id": "in_1"
+    },
+    {
+      "type": "COUNTER",
+      "x": 0,
+      "y": 0,
+      "bitWidth": 4,
+      "label": "CNT",
+      "id": "cnt_1"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 200,
+      "y": 0,
+      "targetValue": 0,
+      "label": "Q",
+      "sandbox": true,
+      "id": "out_1"
+    }
+  ],
+  "wires": [
+    {
+      "sourceId": "in_1",
+      "targetId": "cnt_1",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_1"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "cnt_1",
+      "targetInputIndex": 4,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_2"
+    },
+    {
+      "sourceId": "cnt_1",
+      "targetId": "out_1",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_3"
+    }
+  ]
+}

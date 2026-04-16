@@ -1,0 +1,236 @@
+{
+  "nodes": [
+    {
+      "type": "CLOCK",
+      "x": -400,
+      "y": 300,
+      "value": 1,
+      "id": "clk"
+    },
+    {
+      "type": "PC",
+      "x": -350,
+      "y": 0,
+      "bitWidth": 4,
+      "label": "PC",
+      "id": "pc"
+    },
+    {
+      "type": "ROM",
+      "x": -150,
+      "y": 0,
+      "addrBits": 4,
+      "dataBits": 16,
+      "memory": {
+        "0": 949,
+        "1": 61440
+      },
+      "label": "ROM",
+      "id": "rom"
+    },
+    {
+      "type": "IR",
+      "x": 50,
+      "y": 0,
+      "instrWidth": 16,
+      "opBits": 4,
+      "rdBits": 4,
+      "rs1Bits": 4,
+      "rs2Bits": 4,
+      "label": "IR",
+      "id": "ir"
+    },
+    {
+      "type": "CU",
+      "x": 250,
+      "y": 0,
+      "label": "CU",
+      "id": "cu"
+    },
+    {
+      "type": "OUTPUT",
+      "x": -350,
+      "y": -120,
+      "targetValue": 0,
+      "label": "PC_VAL",
+      "sandbox": true,
+      "id": "out_pc"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 250,
+      "y": -120,
+      "targetValue": 0,
+      "label": "OPCODE",
+      "sandbox": true,
+      "id": "out_op"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 400,
+      "y": 100,
+      "targetValue": 0,
+      "label": "HALT",
+      "sandbox": true,
+      "id": "out_halt"
+    },
+    {
+      "type": "INPUT",
+      "x": -500,
+      "y": -80,
+      "fixedValue": 1,
+      "label": "EN",
+      "id": "en_pc"
+    },
+    {
+      "type": "INPUT",
+      "x": -300,
+      "y": 60,
+      "fixedValue": 1,
+      "label": "RE",
+      "id": "re_rom"
+    },
+    {
+      "type": "INPUT",
+      "x": -100,
+      "y": 60,
+      "fixedValue": 1,
+      "label": "LD",
+      "id": "ld_ir"
+    }
+  ],
+  "wires": [
+    {
+      "sourceId": "en_pc",
+      "targetId": "pc",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_pc_en"
+    },
+    {
+      "sourceId": "clk",
+      "targetId": "pc",
+      "targetInputIndex": 4,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_pc_clk"
+    },
+    {
+      "sourceId": "pc",
+      "targetId": "out_pc",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_pc_out"
+    },
+    {
+      "sourceId": "pc",
+      "targetId": "rom",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_pc_rom"
+    },
+    {
+      "sourceId": "re_rom",
+      "targetId": "rom",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_rom_re"
+    },
+    {
+      "sourceId": "clk",
+      "targetId": "rom",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_rom_clk"
+    },
+    {
+      "sourceId": "rom",
+      "targetId": "ir",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_rom_ir"
+    },
+    {
+      "sourceId": "ld_ir",
+      "targetId": "ir",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_ir_ld"
+    },
+    {
+      "sourceId": "clk",
+      "targetId": "ir",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_ir_clk"
+    },
+    {
+      "sourceId": "ir",
+      "targetId": "cu",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_ir_cu"
+    },
+    {
+      "sourceId": "cu",
+      "targetId": "out_op",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_cu_op"
+    },
+    {
+      "sourceId": "cu",
+      "targetId": "out_halt",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 5,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_cu_halt"
+    }
+  ]
+}

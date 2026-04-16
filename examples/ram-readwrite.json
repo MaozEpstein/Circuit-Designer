@@ -1,0 +1,132 @@
+{
+  "nodes": [
+    {
+      "type": "IMM",
+      "x": -250,
+      "y": -80,
+      "value": 3,
+      "bitWidth": 8,
+      "label": "ADDR=3",
+      "id": "imm_addr"
+    },
+    {
+      "type": "IMM",
+      "x": -250,
+      "y": -20,
+      "value": 99,
+      "bitWidth": 8,
+      "label": "DATA=99",
+      "id": "imm_data"
+    },
+    {
+      "type": "INPUT",
+      "x": -250,
+      "y": 40,
+      "fixedValue": 1,
+      "label": "WE",
+      "id": "in_we"
+    },
+    {
+      "type": "INPUT",
+      "x": -250,
+      "y": 100,
+      "fixedValue": 1,
+      "label": "RE",
+      "id": "in_re"
+    },
+    {
+      "type": "CLOCK",
+      "x": -250,
+      "y": 180,
+      "value": 1,
+      "id": "clk_1"
+    },
+    {
+      "type": "RAM",
+      "x": 0,
+      "y": 40,
+      "addrBits": 3,
+      "dataBits": 8,
+      "memory": {},
+      "label": "RAM",
+      "id": "ram_1"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 250,
+      "y": 40,
+      "targetValue": 0,
+      "label": "Q",
+      "sandbox": true,
+      "id": "out_1"
+    }
+  ],
+  "wires": [
+    {
+      "sourceId": "imm_addr",
+      "targetId": "ram_1",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_1"
+    },
+    {
+      "sourceId": "imm_data",
+      "targetId": "ram_1",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_2"
+    },
+    {
+      "sourceId": "in_we",
+      "targetId": "ram_1",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_3"
+    },
+    {
+      "sourceId": "in_re",
+      "targetId": "ram_1",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_4"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "ram_1",
+      "targetInputIndex": 4,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_5"
+    },
+    {
+      "sourceId": "ram_1",
+      "targetId": "out_1",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_6"
+    }
+  ]
+}

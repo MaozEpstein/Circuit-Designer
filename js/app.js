@@ -1322,6 +1322,107 @@ document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
   Renderer.zoomToFit(scene.nodes);
 });
 
+// ── Examples System ─────────────────────────────────────────
+const EXAMPLES = [
+  {
+    id: '4bit-counter',
+    title: '4-Bit Counter',
+    desc: 'A simple 4-bit counter driven by a clock. Press Play to see it count up from 0 to 15.',
+    tags: ['beginner', 'Counter', 'CLK'],
+    file: 'examples/4bit-counter.json',
+  },
+  {
+    id: 'alu-calculator',
+    title: 'ALU Calculator',
+    desc: 'An 8-bit ALU performing ADD on two immediate values. Double-click the IMM nodes to change values and operation.',
+    tags: ['beginner', 'ALU', 'IMM'],
+    file: 'examples/alu-calculator.json',
+  },
+  {
+    id: 'register-load',
+    title: 'Register Load/Read',
+    desc: 'Load a value into an 8-bit register on a clock edge, then read it back. Toggle EN to enable/disable loading.',
+    tags: ['beginner', 'Register', 'CLK'],
+    file: 'examples/register-load.json',
+  },
+  {
+    id: 'ram-readwrite',
+    title: 'RAM Read/Write',
+    desc: 'Write a value to a specific RAM address, then read it back. Change ADDR and DATA to experiment.',
+    tags: ['intermediate', 'RAM'],
+    file: 'examples/ram-readwrite.json',
+  },
+  {
+    id: 'fifo-pipeline',
+    title: 'FIFO Queue',
+    desc: 'A 4-deep FIFO buffer. Toggle WR to push data, toggle RD to pop. Watch FULL and EMPTY flags.',
+    tags: ['intermediate', 'FIFO'],
+    file: 'examples/fifo-pipeline.json',
+  },
+  {
+    id: 'instruction-decoder',
+    title: 'Instruction Decoder',
+    desc: 'An IR decodes a 16-bit instruction into opcode, RD, RS1, RS2 fields. The CU generates control signals from the opcode.',
+    tags: ['advanced', 'IR', 'CU'],
+    file: 'examples/instruction-decoder.json',
+  },
+  {
+    id: 'simple-cpu',
+    title: 'Simple CPU',
+    desc: 'A minimal CPU pipeline: PC fetches from ROM, IR decodes the instruction, CU generates control signals. Runs until HALT.',
+    tags: ['advanced', 'PC', 'ROM', 'IR', 'CU'],
+    file: 'examples/simple-cpu.json',
+  },
+];
+
+const examplesOverlay = document.getElementById('examples-overlay');
+const examplesList = document.getElementById('examples-list');
+
+function _showExamples() {
+  examplesList.innerHTML = EXAMPLES.map(ex => {
+    const tagHtml = ex.tags.map(t => {
+      const level = t === 'beginner' ? 'beginner' : t === 'intermediate' ? 'intermediate' : t === 'advanced' ? 'advanced' : 'component';
+      return `<span class="example-tag example-tag-${level}">${t.toUpperCase()}</span>`;
+    }).join('');
+    return `<div class="example-card" data-file="${ex.file}">
+      <div class="example-card-title">${ex.title}</div>
+      <div class="example-card-desc">${ex.desc}</div>
+      <div class="example-card-tags">${tagHtml}</div>
+    </div>`;
+  }).join('');
+
+  examplesList.querySelectorAll('.example-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      const file = card.dataset.file;
+      try {
+        const resp = await fetch(file);
+        if (!resp.ok) throw new Error('Failed to load');
+        const data = await resp.json();
+        if (data.nodes && data.wires) {
+          scene.deserialize(data);
+          state.selectedNodeId = null;
+          commands.clear();
+          state.resetSequentialState(scene.nodes);
+          Renderer.zoomToFit(scene.nodes);
+        }
+      } catch (e) {
+        alert('Failed to load example: ' + e.message);
+      }
+      examplesOverlay.classList.add('hidden');
+    });
+  });
+
+  examplesOverlay.classList.remove('hidden');
+}
+
+document.getElementById('btn-examples')?.addEventListener('click', _showExamples);
+document.getElementById('btn-examples-close')?.addEventListener('click', () => {
+  examplesOverlay.classList.add('hidden');
+});
+examplesOverlay?.addEventListener('click', (e) => {
+  if (e.target === examplesOverlay) examplesOverlay.classList.add('hidden');
+});
+
 // ── Initialize ──────────────────────────────────────────────
 function start() {
   // Init renderer

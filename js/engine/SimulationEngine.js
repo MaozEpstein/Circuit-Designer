@@ -461,6 +461,8 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const outIdx = slot.wire.sourceOutputIndex || 0;
         if (outIdx === 1 && FF_TYPE_SET.has(nodeMap.get(slot.sourceId)?.type)) {
           value = nodeValues.get(slot.sourceId + '__qnot') ?? null;
+        } else if (outIdx >= 1) {
+          value = nodeValues.get(slot.sourceId + '__out' + outIdx) ?? null;
         } else {
           value = nodeValues.get(slot.sourceId) ?? null;
         }
@@ -743,7 +745,9 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         if (node.type === 'IR') {
           const instr = ms.q ?? 0;
           const opBits = node.opBits || 4, rdBits = node.rdBits || 4, rs1Bits = node.rs1Bits || 4, rs2Bits = node.rs2Bits || 4;
-          nodeValues.set(node.id + '__out0', (instr >> (rs2Bits + rs1Bits + rdBits)) & ((1 << opBits) - 1));
+          const opVal = (instr >> (rs2Bits + rs1Bits + rdBits)) & ((1 << opBits) - 1);
+          nodeValues.set(node.id, opVal); // primary value = OP field
+          nodeValues.set(node.id + '__out0', opVal);
           nodeValues.set(node.id + '__out1', (instr >> (rs2Bits + rs1Bits))          & ((1 << rdBits) - 1));
           nodeValues.set(node.id + '__out2', (instr >> rs2Bits)                       & ((1 << rs1Bits) - 1));
           nodeValues.set(node.id + '__out3', instr                                    & ((1 << rs2Bits) - 1));
@@ -780,37 +784,83 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       });
     });
 
-    // Re-evaluate combinational nodes downstream
+    // Re-run full Phase 1 evaluation for all non-source nodes
     order.forEach(id => {
       const node = nodeMap.get(id);
+      // Skip sources — they already have correct values
       if (FF_TYPE_SET.has(node.type) || MEMORY_TYPE_SET.has(node.type) || node.type === 'INPUT' ||
-          node.type === 'CLOCK' || node.type === 'MUX_SELECT' ||
+          node.type === 'CLOCK' || node.type === 'MUX_SELECT' || node.type === 'IMM' ||
           node.type === 'DISPLAY_7SEG') return;
 
+      // Re-evaluate by simulating the same logic as Phase 1
+      // Read fresh values from nodeValues (updated by Phase 2b/3)
+      const inputSlots = inputs.get(id);
       let value = null;
+
       if (node.type === 'GATE_SLOT') {
         if (node.gate != null) {
-          const inputSlots = inputs.get(id);
           const args = inputSlots.map(slot => nodeValues.get(slot.sourceId));
           if (!args.some(a => a === null || a === undefined)) {
             value = GATE_FN[node.gate](...args);
           }
         }
       } else if (node.type === 'OUTPUT') {
-        const inputSlots = inputs.get(id);
         if (inputSlots.length > 0) {
           const slot = inputSlots[0];
           const outIdx = slot.wire.sourceOutputIndex || 0;
           if (outIdx === 1 && FF_TYPE_SET.has(nodeMap.get(slot.sourceId)?.type)) {
             value = nodeValues.get(slot.sourceId + '__qnot') ?? null;
+          } else if (outIdx >= 1) {
+            value = nodeValues.get(slot.sourceId + '__out' + outIdx) ?? null;
           } else {
             value = nodeValues.get(slot.sourceId) ?? null;
           }
         }
+      } else if (node.type === 'BUS') {
+        const srcCount = node.sourceCount || 3;
+        let activeCount = 0; let busVal = null;
+        for (let s = 0; s < srcCount; s++) {
+          const dSlot = inputSlots.find(sl => sl.inputIndex === s*2);
+          const enSlot = inputSlots.find(sl => sl.inputIndex === s*2+1);
+          const d = dSlot ? (nodeValues.get(dSlot.sourceId) ?? 0) : 0;
+          const en = enSlot ? (nodeValues.get(enSlot.sourceId) ?? 0) : 0;
+          if (en) { activeCount++; busVal = d; }
+        }
+        value = activeCount === 0 ? null : busVal;
+        nodeValues.set(id + '__out1', activeCount > 1 ? 1 : 0);
+      } else if (node.type === 'CU') {
+        const op = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+        const z = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
+        const c = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
+        let aluOp=0, regWe=0, memWe=0, memRe=0, jmp=0, halt=0;
+        switch(op&0xF){case 0:aluOp=0;regWe=1;break;case 1:aluOp=1;regWe=1;break;case 2:aluOp=2;regWe=1;break;case 3:aluOp=3;regWe=1;break;case 4:aluOp=4;regWe=1;break;case 5:aluOp=5;regWe=1;break;case 6:aluOp=6;regWe=1;break;case 7:aluOp=7;break;case 8:regWe=1;memRe=1;break;case 9:memWe=1;break;case 10:jmp=1;break;case 11:jmp=z;break;case 12:jmp=c;break;case 13:regWe=1;break;case 14:break;case 15:halt=1;break;}
+        value = aluOp;
+        nodeValues.set(id+'__out0',aluOp);nodeValues.set(id+'__out1',regWe);nodeValues.set(id+'__out2',memWe);nodeValues.set(id+'__out3',memRe);nodeValues.set(id+'__out4',jmp);nodeValues.set(id+'__out5',halt);
+      } else if (node.type === 'ALU') {
+        const a = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+        const b = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
+        const op = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
+        const bits = node.bitWidth || 8; const mask = (1<<bits)-1;
+        let r=0, carry=0;
+        switch(op&7){case 0:{const s=a+b;r=s&mask;carry=(s>>bits)&1;break;}case 1:{const s=a-b;r=s&mask;carry=s<0?1:0;break;}case 2:r=(a&b)&mask;break;case 3:r=(a|b)&mask;break;case 4:r=(a^b)&mask;break;case 5:{const s=a<<(b&0xF);r=s&mask;carry=(s>>bits)&1;break;}case 6:r=(a>>>(b&0xF))&mask;break;case 7:r=a===b?0:(a-b)&mask;carry=a>b?1:0;break;}
+        value = r;
+        nodeValues.set(id+'__out1',r===0?1:0);nodeValues.set(id+'__out2',carry);
+      } else {
+        // Generic combinational: read first input
+        if (inputSlots.length > 0) {
+          value = nodeValues.get(inputSlots[0].sourceId) ?? null;
+        }
       }
 
       nodeValues.set(id, value);
-      successors.get(id)?.forEach(({ wire }) => wireValues.set(wire.id, value));
+      successors.get(id)?.forEach(({ wire }) => {
+        const outIdx = wire.sourceOutputIndex || 0;
+        if (node.type === 'ALU' || node.type === 'CU' || node.type === 'BUS') {
+          wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? value);
+        } else {
+          wireValues.set(wire.id, value);
+        }
+      });
     });
   }
 
