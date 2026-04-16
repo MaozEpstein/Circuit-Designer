@@ -35,6 +35,7 @@ export const COMPONENT_TYPES = {
   CU:           'CU',
   BUS:          'BUS',
   IMM:          'IMM',
+  SUB_CIRCUIT:  'SUB_CIRCUIT',
 };
 
 export const GATE_TYPES = ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'NOT'];
@@ -106,7 +107,7 @@ export function createComponent(type, x, y) {
     case COMPONENT_TYPES.ROM:
       return { ...base, addrBits: 3, dataBits: 4, memory: {}, label: 'ROM' };
     case COMPONENT_TYPES.REG_FILE:
-      return { ...base, regCount: 8, dataBits: 8, label: 'RF' };
+      return { ...base, regCount: 8, dataBits: 8, initialRegs: null, label: 'RF' };
     case COMPONENT_TYPES.FIFO:
       return { ...base, depth: 8, dataBits: 8, label: 'FIFO' };
     case COMPONENT_TYPES.STACK:
@@ -123,6 +124,8 @@ export function createComponent(type, x, y) {
       return { ...base, sourceCount: 3, label: 'BUS' };
     case COMPONENT_TYPES.IMM:
       return { ...base, value: 0, bitWidth: 8, label: 'IMM' };
+    case COMPONENT_TYPES.SUB_CIRCUIT:
+      return { ...base, label: 'BLOCK', subName: '', subInputs: [], subOutputs: [], subCircuit: null };
     default:
       return base;
   }

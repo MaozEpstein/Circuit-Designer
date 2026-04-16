@@ -9,7 +9,9 @@ import { SceneGraph } from './core/SceneGraph.js';
 import * as Renderer from './rendering/CanvasRenderer.js';
 import * as Waveform from './rendering/WaveformRenderer.js';
 import * as Input from './interaction/InputHandler.js';
-import { MEMORY_TYPE_SET } from './components/Component.js';
+import { MEMORY_TYPE_SET, COMPONENT_TYPES } from './components/Component.js';
+import { assemble, disassemble, getOpcodeNames, getOpcodeFormat } from './cpu/Assembler.js';
+import { SubCircuitRegistry } from './core/SubCircuitRegistry.js';
 import { SimulationController, formatValue, VALUE_FORMAT } from './engine/SimulationController.js';
 import { ProbeManager } from './debug/SignalProbe.js';
 import { WatchList } from './debug/WatchList.js';
@@ -24,6 +26,7 @@ import { ProjectStorage } from './ui/ProjectStorage.js';
 
 // ── Singletons ──────────────────────────────────────────────
 const scene    = new SceneGraph();
+const subRegistry = new SubCircuitRegistry();
 const state    = new StateManager();
 const commands = new CommandManager(100);
 const simCtrl  = new SimulationController();
@@ -1177,6 +1180,84 @@ document.querySelectorAll('.align-btn').forEach(btn => {
   });
 });
 
+// ── Sub-circuit creation ────────────────────────────────────
+document.getElementById('btn-create-block')?.addEventListener('click', () => {
+  const ids = [...selection.selected];
+  if (ids.length < 2) { alert('Select at least 2 nodes.'); return; }
+
+  const name = prompt('Sub-circuit name:');
+  if (!name || !name.trim()) return;
+  const trimName = name.trim();
+
+  if (subRegistry.get(trimName)) {
+    if (!confirm('A sub-circuit named "' + trimName + '" already exists. Overwrite?')) return;
+  }
+
+  // Collect selected nodes and internal wires
+  const selectedSet = new Set(ids);
+  const selectedNodes = ids.map(id => scene.getNode(id)).filter(Boolean);
+  const internalWires = scene.wires.filter(w => selectedSet.has(w.sourceId) && selectedSet.has(w.targetId));
+
+  // Must have at least one INPUT and one OUTPUT
+  const hasInput = selectedNodes.some(n => n.type === 'INPUT');
+  const hasOutput = selectedNodes.some(n => n.type === 'OUTPUT');
+  if (!hasInput || !hasOutput) {
+    alert('Selection must contain at least one INPUT and one OUTPUT node.\nINPUT nodes become the block inputs, OUTPUT nodes become the block outputs.');
+    return;
+  }
+
+  // Define the sub-circuit
+  subRegistry.define(trimName, selectedNodes, internalWires);
+
+  // Add to BLOCKS palette dynamically
+  _addSubCircuitToPalette(trimName);
+
+  // Remove selected nodes from canvas and replace with a SUB_CIRCUIT block
+  const cx = selectedNodes.reduce((s, n) => s + n.x, 0) / selectedNodes.length;
+  const cy = selectedNodes.reduce((s, n) => s + n.y, 0) / selectedNodes.length;
+
+  // Remove external wires first, then nodes
+  const externalWires = scene.wires.filter(w =>
+    (selectedSet.has(w.sourceId) || selectedSet.has(w.targetId)) &&
+    !(selectedSet.has(w.sourceId) && selectedSet.has(w.targetId))
+  );
+  for (const w of externalWires) scene.removeWire(w.id);
+  for (const w of internalWires) scene.removeWire(w.id);
+  for (const id of ids) scene.removeNode(id);
+
+  // Place instance
+  const instance = subRegistry.createInstance(trimName, cx, cy, undefined);
+  scene.addNode(instance);
+  state.selectedNodeId = instance.id;
+  selection.clearSelection();
+
+  alert('Sub-circuit "' + trimName + '" created! It is now available in the BLOCKS tab.');
+});
+
+function _addSubCircuitToPalette(name) {
+  const blocksPanel = document.querySelector('.palette-panel[data-panel="blocks"]');
+  if (!blocksPanel) return;
+  // Check if already exists
+  if (blocksPanel.querySelector('[data-tool="place-sub-' + name + '"]')) return;
+  const chip = document.createElement('span');
+  chip.className = 'palette-chip palette-block';
+  chip.dataset.tool = 'place-sub-' + name;
+  chip.draggable = true;
+  chip.textContent = name;
+  chip.style.borderColor = '#00d4ff';
+  chip.style.color = '#00d4ff';
+  blocksPanel.appendChild(chip);
+}
+
+// Handle placement of sub-circuit instances
+bus.on('palette:tool', (tool) => {
+  if (tool.startsWith('place-sub-')) {
+    const subName = tool.replace('place-sub-', '');
+    // Store in state so InputHandler can use it
+    state._pendingSubCircuit = subName;
+  }
+});
+
 // Copy/paste keyboard shortcuts
 window.addEventListener('keydown', (e) => {
   const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
@@ -1322,6 +1403,151 @@ document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
   Renderer.zoomToFit(scene.nodes);
 });
 
+// ── ROM Editor ──────────────────────────────────────────────
+const romOverlay = document.getElementById('rom-editor-overlay');
+const romBody    = document.getElementById('rom-editor-body');
+let _romEditorNode = null;
+let _romEditorData = {}; // addr → value
+
+function _openRomEditor(node) {
+  _romEditorNode = node;
+  _romEditorData = node.memory ? { ...node.memory } : {};
+  _initRomBuilderDropdowns();
+  _renderRomTable();
+  romOverlay?.classList.remove('hidden');
+}
+
+function _initRomBuilderDropdowns() {
+  const opSel  = document.getElementById('rom-builder-op');
+  const rdSel  = document.getElementById('rom-builder-rd');
+  const rs1Sel = document.getElementById('rom-builder-rs1');
+  const rs2Sel = document.getElementById('rom-builder-rs2');
+  if (!opSel) return;
+
+  opSel.innerHTML = getOpcodeNames().map(n => `<option value="${n}">${n}</option>`).join('');
+  for (const sel of [rdSel, rs1Sel, rs2Sel]) {
+    sel.innerHTML = '';
+    for (let r = 0; r < 16; r++) sel.innerHTML += `<option value="R${r}">R${r}</option>`;
+  }
+
+  // Update visibility based on opcode format
+  opSel.onchange = () => {
+    const fmt = getOpcodeFormat(opSel.value);
+    rdSel.style.display  = fmt >= 2 ? '' : 'none';
+    rs1Sel.style.display = fmt >= 2 ? '' : 'none';
+    rs2Sel.style.display = fmt >= 3 ? '' : 'none';
+    if (fmt === 1) { rdSel.style.display = ''; rdSel.innerHTML = ''; for (let i = 0; i < 16; i++) rdSel.innerHTML += `<option value="${i}">${i}</option>`; }
+  };
+  opSel.onchange();
+}
+
+function _renderRomTable() {
+  if (!romBody || !_romEditorNode) return;
+  const addrCount = 1 << (_romEditorNode.addrBits || 3);
+  let html = '';
+  for (let a = 0; a < addrCount; a++) {
+    const val = _romEditorData[a] ?? 0;
+    const hex = '0x' + val.toString(16).toUpperCase().padStart(4, '0');
+    const asm = disassemble(val);
+    html += `<tr>
+      <td class="rom-addr">${a}</td>
+      <td><input class="rom-hex-input" data-addr="${a}" value="${hex}" /></td>
+      <td><input class="rom-asm-input" data-addr="${a}" value="${asm}" /></td>
+      <td><button class="rom-del-btn" data-addr="${a}">CLR</button></td>
+    </tr>`;
+  }
+  romBody.innerHTML = html;
+
+  // Hex input → update asm
+  romBody.querySelectorAll('.rom-hex-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const addr = parseInt(inp.dataset.addr);
+      let val = parseInt(inp.value, 16);
+      if (isNaN(val)) val = 0;
+      val = val & 0xFFFF;
+      _romEditorData[addr] = val;
+      inp.value = '0x' + val.toString(16).toUpperCase().padStart(4, '0');
+      const asmInp = romBody.querySelector(`.rom-asm-input[data-addr="${addr}"]`);
+      if (asmInp) asmInp.value = disassemble(val);
+    });
+  });
+
+  // Asm input → update hex
+  romBody.querySelectorAll('.rom-asm-input').forEach(inp => {
+    // Auto-uppercase while typing
+    inp.addEventListener('input', () => {
+      const pos = inp.selectionStart;
+      inp.value = inp.value.toUpperCase();
+      inp.setSelectionRange(pos, pos);
+    });
+    inp.addEventListener('change', () => {
+      const addr = parseInt(inp.dataset.addr);
+      const val = assemble(inp.value);
+      _romEditorData[addr] = val;
+      const hexInp = romBody.querySelector(`.rom-hex-input[data-addr="${addr}"]`);
+      if (hexInp) hexInp.value = '0x' + val.toString(16).toUpperCase().padStart(4, '0');
+      inp.value = disassemble(val);
+    });
+  });
+
+  // Clear button
+  romBody.querySelectorAll('.rom-del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const addr = parseInt(btn.dataset.addr);
+      _romEditorData[addr] = 0;
+      _renderRomTable();
+    });
+  });
+}
+
+// INSERT button — build instruction from dropdowns
+document.getElementById('btn-rom-insert')?.addEventListener('click', () => {
+  const op  = document.getElementById('rom-builder-op').value;
+  const fmt = getOpcodeFormat(op);
+  let line = op;
+  if (fmt === 1) {
+    line += ' ' + document.getElementById('rom-builder-rd').value;
+  } else if (fmt === 2) {
+    line += ' ' + document.getElementById('rom-builder-rd').value + ', ' + document.getElementById('rom-builder-rs1').value;
+  } else if (fmt === 3) {
+    line += ' ' + document.getElementById('rom-builder-rd').value + ', ' + document.getElementById('rom-builder-rs1').value + ', ' + document.getElementById('rom-builder-rs2').value;
+  }
+
+  const val = assemble(line);
+  // Find first empty slot
+  const addrCount = 1 << (_romEditorNode?.addrBits || 3);
+  let addr = -1;
+  for (let a = 0; a < addrCount; a++) {
+    if (!_romEditorData[a]) { addr = a; break; }
+  }
+  if (addr === -1) addr = addrCount - 1; // overwrite last
+  _romEditorData[addr] = val;
+  _renderRomTable();
+});
+
+// SAVE button
+document.getElementById('btn-rom-save')?.addEventListener('click', () => {
+  if (!_romEditorNode) return;
+  _romEditorNode.memory = { ..._romEditorData };
+  // Reset ROM state
+  state.ffStates.delete(_romEditorNode.id);
+  romOverlay?.classList.add('hidden');
+  _romEditorNode = null;
+});
+
+// CLOSE button
+document.getElementById('btn-rom-close')?.addEventListener('click', () => {
+  romOverlay?.classList.add('hidden');
+  _romEditorNode = null;
+});
+
+romOverlay?.addEventListener('click', (e) => {
+  if (e.target === romOverlay) { romOverlay.classList.add('hidden'); _romEditorNode = null; }
+});
+
+// Expose for InputHandler double-click
+bus.on('rom:edit', (node) => { _openRomEditor(node); });
+
 // ── Examples System ─────────────────────────────────────────
 const EXAMPLES = [
   {
@@ -1368,9 +1594,9 @@ const EXAMPLES = [
   },
   {
     id: 'simple-cpu',
-    title: 'Simple CPU',
-    desc: 'A minimal CPU pipeline: PC fetches from ROM, IR decodes the instruction, CU generates control signals. Runs until HALT.',
-    tags: ['advanced', 'PC', 'ROM', 'IR', 'CU'],
+    title: 'Simple CPU — Countdown',
+    desc: 'A complete CPU with Register File. Counts down R1 from 10 to 0 using SUB R1,R1,R2 each cycle. Watch R1 decrease in real-time until HALT.',
+    tags: ['advanced', 'PC', 'ROM', 'IR', 'CU', 'ALU', 'RF'],
     file: 'examples/simple-cpu.json',
   },
 ];
@@ -1436,6 +1662,9 @@ function start() {
   Waveform.init(document.getElementById('waveform-canvas'));
 
   // Init input handler
+  // Expose sub-circuit registry to InputHandler via state
+  state._subRegistry = subRegistry;
+
   Input.init(canvas, scene, state, commands);
 
   // Load saved design

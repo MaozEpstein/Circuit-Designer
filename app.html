@@ -326,6 +326,8 @@
     <span style="border-left:1px solid #2a4060;margin:0 4px"></span>
     <button class="align-btn" data-align="dist-h" title="Distribute H">&#9776;H</button>
     <button class="align-btn" data-align="dist-v" title="Distribute V">&#9776;V</button>
+    <span style="border-left:1px solid #5a3d8a;margin:0 4px"></span>
+    <button id="btn-create-block" style="font-size:9px;padding:2px 8px;background:#1a1430;border:1px solid #5a3d8a;color:#c0a0f0;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:bold" title="Create sub-circuit from selected nodes">CREATE BLOCK</button>
   </div>
 
   <!-- Project save/load bar -->
@@ -350,6 +352,32 @@
         <button id="btn-project-list-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
       </div>
       <div id="project-list-content"></div>
+    </div>
+  </div>
+
+  <!-- ROM Editor Modal -->
+  <div id="rom-editor-overlay" class="hidden">
+    <div id="rom-editor-modal">
+      <div id="rom-editor-header">
+        <span>ROM EDITOR</span>
+        <div>
+          <button id="btn-rom-save" style="font-size:9px;padding:2px 8px;background:#1a4a2a;border:1px solid #39ff14;color:#39ff14;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:bold">SAVE</button>
+          <button id="btn-rom-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
+        </div>
+      </div>
+      <div id="rom-editor-table-wrap">
+        <table id="rom-editor-table">
+          <thead><tr><th>ADDR</th><th>HEX</th><th>ASSEMBLY</th><th></th></tr></thead>
+          <tbody id="rom-editor-body"></tbody>
+        </table>
+      </div>
+      <div id="rom-editor-builder">
+        <select id="rom-builder-op"></select>
+        <select id="rom-builder-rd"></select>
+        <select id="rom-builder-rs1"></select>
+        <select id="rom-builder-rs2"></select>
+        <button id="btn-rom-insert" style="font-size:9px;padding:2px 8px;background:#1a1430;border:1px solid #5a3d8a;color:#c0a0f0;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:bold">INSERT</button>
+      </div>
     </div>
   </div>
 

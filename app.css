@@ -832,6 +832,118 @@
 #mem-inspector::-webkit-scrollbar-track { background: #0a0e14; }
 #mem-inspector::-webkit-scrollbar-thumb { background: #3a2060; border-radius: 3px; }
 
+/* ── ROM Editor Modal ───────────────────────────────────── */
+#rom-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#rom-editor-modal {
+  background: #0a0e14;
+  border: 1px solid #5a3d8a;
+  border-radius: 10px;
+  width: 540px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+#rom-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid #3a2060;
+  color: #c0a0f0;
+  font-weight: bold;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+#rom-editor-header > div { display: flex; gap: 6px; }
+
+#rom-editor-table-wrap {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 50vh;
+}
+
+#rom-editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+#rom-editor-table th {
+  color: #4a6080;
+  font-size: 8px;
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid #1a1228;
+  position: sticky;
+  top: 0;
+  background: #0a0e14;
+}
+
+#rom-editor-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid #0e0a18;
+}
+
+.rom-addr { color: #5a4080; font-weight: bold; width: 40px; }
+.rom-hex { color: #39ff14; font-weight: bold; }
+.rom-asm { color: #c8d8f0; }
+
+.rom-hex-input, .rom-asm-input {
+  width: 70px;
+  padding: 1px 4px;
+  background: #161e2e;
+  border: 1px solid #2a3a50;
+  border-radius: 2px;
+  color: #39ff14;
+  font: 10px 'JetBrains Mono', monospace;
+}
+
+.rom-asm-input {
+  width: 140px;
+  color: #c8d8f0;
+}
+
+.rom-del-btn {
+  background: none;
+  border: 1px solid #3a2020;
+  color: #ff4444;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.rom-del-btn:hover { background: #2a1010; }
+
+#rom-editor-builder {
+  display: flex;
+  gap: 4px;
+  padding: 8px 14px;
+  border-top: 1px solid #3a2060;
+  align-items: center;
+}
+
+#rom-editor-builder select {
+  font: 10px 'JetBrains Mono', monospace;
+  background: #161e2e;
+  border: 1px solid #2a3a50;
+  color: #c8d8f0;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
 /* ── Examples Modal ──────────────────────────────────────── */
 #examples-overlay {
   position: fixed;

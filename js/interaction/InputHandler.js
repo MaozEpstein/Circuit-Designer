@@ -263,6 +263,18 @@ function _onCanvasClick(e) {
   const tool = _state.tool;
   const world = Renderer.canvasToWorld(canvasPoint.x, canvasPoint.y);
 
+  // Place sub-circuit instance
+  if (_state._pendingSubCircuit && _state._subRegistry) {
+    const instance = _state._subRegistry.createInstance(_state._pendingSubCircuit, world.x, world.y, undefined);
+    if (instance) {
+      const cmd = new AddNodeCommand(_scene, instance);
+      _commands.execute(cmd);
+      _state.selectedNodeId = cmd.nodeId;
+    }
+    _state._pendingSubCircuit = null;
+    return;
+  }
+
   // Place node tools (simple I/O components)
   const componentType = TOOL_TYPE_MAP[tool];
   if (componentType) {
@@ -575,6 +587,12 @@ function _onCanvasDblClick(e) {
   const rect = _canvas.getBoundingClientRect();
   const screenX = rect.left + canvasPoint.x;
   const screenY = rect.top + canvasPoint.y;
+
+  // ROM: open ROM Editor instead of properties popup
+  if (node.type === 'ROM') {
+    bus.emit('rom:edit', node);
+    return;
+  }
 
   const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM']);
   if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE_BLOCKS.has(node.type)) {
