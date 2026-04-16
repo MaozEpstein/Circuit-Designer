@@ -1,0 +1,858 @@
+/* ============================================================
+   app.css — Circuit Designer Pro — Styles for all new UI
+   Supplements the existing style.css with styles for:
+   - Debug panel, Watch list, Error list
+   - Command palette (Ctrl+K)
+   - Mini-map
+   - Breakpoint panel
+   - Wire properties panel
+   - Align/distribute toolbar
+   - Project bar
+   - Simulation status
+   - Truth table generator
+   ============================================================ */
+
+/* ── Debug Panel ─────────────────────────────────────────── */
+#debug-panel {
+  position: fixed;
+  right: 0;
+  top: 56px;
+  bottom: 0;
+  width: 280px;
+  background: #0a0e14;
+  border-left: 1px solid #1e3a50;
+  z-index: 150;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+}
+
+#debug-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #1e3a50;
+  color: #00d4ff;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.debug-section-title {
+  color: #4a6080;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 8px 12px 4px;
+  border-bottom: 1px solid rgba(30,58,80,0.5);
+  text-transform: uppercase;
+}
+
+#debug-section-watch,
+#debug-section-errors,
+#debug-section-trace,
+#debug-section-truthtable {
+  border-bottom: 1px solid #1a2a3a;
+  padding-bottom: 8px;
+}
+
+#watch-actions, #trace-actions {
+  display: flex;
+  gap: 4px;
+  padding: 4px 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Watch List Table ────────────────────────────────────── */
+.watch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+
+.watch-table th {
+  color: #4a6080;
+  font-weight: bold;
+  padding: 3px 6px;
+  text-align: left;
+  border-bottom: 1px solid #1a2a3a;
+}
+
+.watch-table td {
+  padding: 3px 6px;
+  border-bottom: 1px solid rgba(26,42,58,0.3);
+}
+
+.watch-row.watch-changed {
+  background: rgba(255,204,0,0.08);
+}
+
+.watch-label { color: #c8d8f0; }
+.watch-val { font-weight: bold; }
+.watch-prev { color: #4a6080; }
+
+.watch-remove {
+  background: none;
+  border: none;
+  color: #ff4444;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 4px;
+}
+
+/* ── Error List ──────────────────────────────────────────── */
+.error-item {
+  padding: 3px 12px;
+  line-height: 1.4;
+}
+
+/* ── Truth Table Generator ───────────────────────────────── */
+#truthtable-container {
+  padding: 4px 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.truth-table-gen {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+
+.truth-table-gen th {
+  padding: 3px 8px;
+  font-weight: bold;
+  border-bottom: 1px solid #2a4060;
+}
+
+.truth-table-gen th.tt-input { color: #39ff14; }
+.truth-table-gen th.tt-output { color: #00d4ff; }
+
+.truth-table-gen td {
+  padding: 2px 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(26,42,58,0.3);
+}
+
+.truth-table-gen td.tt-high { color: #39ff14; font-weight: bold; }
+.truth-table-gen td.tt-low { color: #ff4444; }
+.truth-table-gen td.tt-null { color: #4a6080; }
+
+/* ── Command Palette ─────────────────────────────────────── */
+#command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+}
+
+#command-palette-box {
+  background: #0d1320;
+  border: 1px solid #2a4060;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+#command-palette-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #0a0e14;
+  border: none;
+  border-bottom: 1px solid #1e3a50;
+  color: #c8d8f0;
+  font: 14px 'JetBrains Mono', monospace;
+  outline: none;
+  box-sizing: border-box;
+}
+
+#command-palette-input::placeholder {
+  color: #4a6080;
+}
+
+#command-palette-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.cp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cp-item:hover, .cp-item.cp-selected {
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.cp-category {
+  color: #4a6080;
+  font-size: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  min-width: 70px;
+  letter-spacing: 0.5px;
+}
+
+.cp-label {
+  color: #c8d8f0;
+  font-size: 12px;
+  flex: 1;
+}
+
+.cp-shortcut {
+  color: #4a6080;
+  font-size: 9px;
+  background: rgba(42,64,96,0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #2a4060;
+}
+
+.cp-empty {
+  padding: 16px;
+  text-align: center;
+  color: #4a6080;
+  font-size: 11px;
+}
+
+/* ── Mini-map ────────────────────────────────────────────── */
+#minimap-container {
+  position: fixed;
+  bottom: 50px;
+  right: 8px;
+  z-index: 100;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #1e3a50;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+
+#minimap-canvas {
+  display: block;
+}
+
+/* ── Breakpoint Panel ────────────────────────────────────── */
+#breakpoint-panel {
+  border-top: 1px solid #1a2a3a;
+  padding: 8px 0;
+}
+
+#breakpoint-title {
+  color: #ff4444;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 0 12px 4px;
+}
+
+#breakpoint-list {
+  padding: 0 12px;
+}
+
+#breakpoint-add-row {
+  display: flex;
+  gap: 4px;
+  padding: 4px 12px;
+}
+
+.bp-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 9px;
+}
+
+.bp-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.bp-label {
+  color: #c8d8f0;
+  flex: 1;
+}
+
+.bp-cond {
+  color: #4a6080;
+  font-size: 8px;
+}
+
+.bp-toggle, .bp-remove {
+  background: none;
+  border: 1px solid #2a4060;
+  color: #4a6080;
+  font-size: 8px;
+  padding: 1px 4px;
+  cursor: pointer;
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.bp-toggle:hover { color: #c8d8f0; }
+.bp-remove:hover { color: #ff4444; border-color: #ff4444; }
+
+/* ── Wire Properties Panel ───────────────────────────────── */
+#wire-props {
+  border-top: 1px solid #1a2a3a;
+  padding: 8px 0;
+}
+
+#wire-props-title {
+  color: #ffcc00;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 0 12px 4px;
+}
+
+#wire-props select {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Align/Distribute Toolbar ────────────────────────────── */
+.align-btn {
+  background: #0a1520;
+  border: 1px solid #2a4060;
+  color: #c8d8f0;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 28px;
+  text-align: center;
+}
+
+.align-btn:hover {
+  background: #1a2a3a;
+  border-color: #00d4ff;
+  color: #00d4ff;
+}
+
+/* ── Simulation Status Bar ───────────────────────────────── */
+#sim-status {
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: rgba(13, 19, 32, 0.95);
+  border: 1px solid #2a4060;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font: bold 10px 'JetBrains Mono', monospace;
+}
+
+#sim-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ── Project Bar ─────────────────────────────────────────── */
+#project-bar .design-action {
+  padding: 3px 8px;
+}
+
+/* ── Undo/Redo above palette ──────────────────────────────── */
+#hud-right-top {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.hud-action-btn {
+  background: rgba(10, 20, 35, 0.7);
+  border: 1px solid #2a4060;
+  color: #4a6080;
+  font-size: 16px;
+  padding: 2px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+
+.hud-action-btn:hover {
+  color: #c8d8f0;
+  border-color: #00d4ff;
+}
+
+/* ── Palette Tabs (top-right) ─────────────────────────────── */
+#palette-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 4px;
+}
+
+.palette-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #4a6080;
+  font: bold 9px 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.palette-tab:hover {
+  color: #c8d8f0;
+}
+
+.palette-tab.active {
+  color: #00d4ff;
+  border-bottom-color: #00d4ff;
+}
+
+#palette-tab-content {
+  min-height: 32px;
+}
+
+.palette-panel {
+  display: none;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.palette-panel.active {
+  display: flex;
+}
+
+/* ── Component Palette chips ─────────────────────────────── */
+
+.palette-chip {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font: bold 11px 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+  letter-spacing: 0.5px;
+}
+
+.palette-chip:hover {
+  box-shadow: 0 0 10px rgba(0,212,255,0.3);
+}
+
+.palette-chip.active {
+  box-shadow: 0 0 14px rgba(0,212,255,0.5);
+}
+
+.palette-io {
+  background: rgba(10, 42, 74, 0.6);
+  border: 1.5px solid #1e6fa0;
+  color: #39ff14;
+}
+.palette-io:hover, .palette-io.active {
+  border-color: #39ff14;
+  background: rgba(57, 255, 20, 0.08);
+}
+
+.palette-gate {
+  background: rgba(14, 31, 51, 0.6);
+  border: 1.5px solid #2a5a90;
+  color: #a0c8ff;
+}
+.palette-gate:hover, .palette-gate.active {
+  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.palette-ff {
+  background: rgba(18, 13, 34, 0.6);
+  border: 1.5px solid #5a2a9a;
+  color: #c080ff;
+}
+.palette-ff:hover, .palette-ff.active {
+  border-color: #a060ff;
+  background: rgba(160, 96, 255, 0.08);
+}
+
+.palette-block {
+  background: rgba(10, 26, 26, 0.6);
+  border: 1.5px solid #1a8a6a;
+  color: #20d4a0;
+}
+.palette-block:hover, .palette-block.active {
+  border-color: #20d4a0;
+  background: rgba(32, 212, 160, 0.08);
+}
+
+.palette-tool {
+  background: rgba(0, 40, 60, 0.6);
+  border: 1.5px solid #0080c0;
+  color: #00d4ff;
+}
+.palette-tool:hover, .palette-tool.active {
+  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.12);
+}
+
+.palette-sep {
+  width: 1px;
+  height: 20px;
+  background: #1e3a50;
+  margin: 0 2px;
+}
+
+.palette-chip[draggable="true"] {
+  cursor: grab;
+}
+.palette-chip[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* ── Quick Toolbar (below header, left of center) ────────── */
+#quick-toolbar {
+  position: fixed;
+  top: 56px;
+  left: 190px;
+  z-index: 120;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(10, 14, 20, 0.85);
+  border-bottom: 1px solid #1a2a3a;
+  border-right: 1px solid #1a2a3a;
+  border-radius: 0 0 8px 0;
+}
+
+/* ── Design Tool Groups ──────────────────────────────────── */
+.design-tool-separator {
+  height: 1px;
+  background: #1e3a50;
+  margin: 6px 0 2px;
+}
+
+.design-tool-group-label {
+  color: #4a6080;
+  font-size: 8px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+}
+
+.design-tool-gate {
+  color: #a0c8ff !important;
+  border-color: #2a5a90 !important;
+}
+
+.design-tool-gate.active,
+.design-tool-gate:hover {
+  background: rgba(0, 100, 200, 0.15) !important;
+  border-color: #00d4ff !important;
+}
+
+.design-tool-ff {
+  color: #c080ff !important;
+  border-color: #5a2a9a !important;
+}
+
+.design-tool-ff.active,
+.design-tool-ff:hover {
+  background: rgba(160, 96, 255, 0.15) !important;
+  border-color: #a060ff !important;
+}
+
+/* ── Memory Inspector Panel ──────────────────────────────── */
+#mem-inspector {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 340px;
+  max-height: 45vh;
+  background: #0a0e14;
+  border-top: 1px solid #5a3d8a;
+  border-right: 1px solid #5a3d8a;
+  border-top-right-radius: 8px;
+  z-index: 160;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+}
+
+#mem-inspector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #3a2060;
+  color: #c0a0f0;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 1px;
+  position: sticky;
+  top: 0;
+  background: #0a0e14;
+  z-index: 1;
+}
+
+#mem-inspector-header > div {
+  display: flex;
+  gap: 4px;
+}
+
+#mem-inspector-body {
+  padding: 4px 0;
+}
+
+.mem-row {
+  display: flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-bottom: 1px solid #1a1228;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mem-row:hover {
+  background: #1a1430;
+}
+
+.mem-row-label {
+  color: #c0a0f0;
+  font-weight: bold;
+  min-width: 60px;
+}
+
+.mem-row-type {
+  color: #5a4080;
+  font-size: 8px;
+  min-width: 40px;
+}
+
+.mem-row-size {
+  color: #6a5090;
+  font-size: 9px;
+  min-width: 36px;
+}
+
+.mem-row-value {
+  color: #39ff14;
+  font-weight: bold;
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.mem-row-binary {
+  color: #4a6080;
+  font-size: 9px;
+  margin-left: 8px;
+  min-width: 50px;
+  text-align: right;
+}
+
+.mem-row-edit {
+  width: 50px;
+  padding: 1px 4px;
+  background: #161e2e;
+  border: 1px solid #3a4a60;
+  border-radius: 3px;
+  color: #39ff14;
+  font: bold 10px 'JetBrains Mono', monospace;
+  text-align: center;
+  margin-left: 6px;
+}
+
+.mem-row-edit:focus {
+  border-color: #a078e0;
+  outline: none;
+}
+
+.mem-comp-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid #2a1a40;
+  cursor: pointer;
+  background: #0e0a18;
+  transition: background 0.15s;
+}
+
+.mem-comp-header:hover {
+  background: #1a1430;
+}
+
+.mem-bits-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 5px 12px 8px;
+  border-bottom: 1px solid #1a1228;
+}
+
+.mem-bit-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 30px;
+  padding: 3px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+}
+
+.mem-bit-cell:hover {
+  border-color: #a078e0;
+}
+
+.mem-bit-on {
+  background: #1a2a10;
+  border-color: #2a4a18;
+}
+
+.mem-bit-off {
+  background: #10101a;
+  border-color: #1a1a28;
+}
+
+.mem-bit-label {
+  font-size: 7px;
+  color: #5a4080;
+  font-weight: bold;
+}
+
+.mem-bit-val {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.mem-bit-on .mem-bit-val {
+  color: #39ff14;
+}
+
+.mem-bit-off .mem-bit-val {
+  color: #333;
+}
+
+.mem-empty {
+  color: #3a2060;
+  text-align: center;
+  padding: 20px 12px;
+  font-style: italic;
+}
+
+.mem-ram-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 2px;
+  padding: 4px 12px 8px;
+}
+
+.mem-ram-cell {
+  background: #161228;
+  border: 1px solid #2a1a40;
+  border-radius: 2px;
+  padding: 2px 4px;
+  font-size: 8px;
+  text-align: center;
+  color: #6a5090;
+}
+
+.mem-ram-cell-active {
+  color: #39ff14;
+  border-color: #5a3d8a;
+}
+
+.mem-ram-addr {
+  color: #4a3070;
+  font-size: 7px;
+  display: block;
+}
+
+.mem-regfile-table {
+  padding: 4px 12px 8px;
+  border-bottom: 1px solid #1a1228;
+}
+
+.mem-regfile-row {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-bottom: 1px;
+  background: #10101a;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mem-regfile-row:hover {
+  background: #1a1430;
+}
+
+.mem-regfile-active {
+  background: #14200e;
+}
+
+.mem-regfile-name {
+  color: #7a60b0;
+  font-weight: bold;
+  font-size: 9px;
+  min-width: 28px;
+}
+
+.mem-regfile-val {
+  color: #39ff14;
+  font-weight: bold;
+  font-size: 10px;
+  min-width: 50px;
+}
+
+.mem-regfile-bin {
+  color: #4a6080;
+  font-size: 9px;
+  margin-left: auto;
+}
+
+#mem-inspector::-webkit-scrollbar { width: 6px; }
+#mem-inspector::-webkit-scrollbar-track { background: #0a0e14; }
+#mem-inspector::-webkit-scrollbar-thumb { background: #3a2060; border-radius: 3px; }
+
+/* ── General Fixes ───────────────────────────────────────── */
+.hidden {
+  display: none !important;
+}
+
+/* Scrollbar styling for dark theme */
+#debug-panel::-webkit-scrollbar,
+#command-palette-list::-webkit-scrollbar,
+#truthtable-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+#debug-panel::-webkit-scrollbar-track,
+#command-palette-list::-webkit-scrollbar-track,
+#truthtable-container::-webkit-scrollbar-track {
+  background: #0a0e14;
+}
+
+#debug-panel::-webkit-scrollbar-thumb,
+#command-palette-list::-webkit-scrollbar-thumb,
+#truthtable-container::-webkit-scrollbar-thumb {
+  background: #2a4060;
+  border-radius: 3px;
+}

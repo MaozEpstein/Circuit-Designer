@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
+  <title>Circuit Designer Pro — Digital Circuit Design & Debug</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div id="hud-left">
+      <div id="level-label">CIRCUIT DESIGNER PRO</div>
+      <div id="level-status-row">
+        <div id="level-name">Design Mode</div>
+      </div>
+    </div>
+    <div id="hud-center">
+      <div id="hud-title">CIRCUIT DESIGNER PRO</div>
+      <div id="hud-subtitle">DIGITAL CIRCUIT DESIGN & DEBUG</div>
+      <!-- Clock controls -->
+      <div id="clock-controls" class="hidden">
+        <div id="clock-controls-label">SEQUENTIAL MODE</div>
+        <div id="clock-controls-row">
+          <button id="btn-step" title="Deliver one rising clock edge">&#9654; STEP</button>
+          <button id="btn-auto-clk" class="btn-secondary" title="Toggle automatic clock">AUTO CLK</button>
+          <button id="btn-waveform" title="Toggle waveform display (W)">WAVEFORM</button>
+          <div id="step-count">STEP: 0</div>
+        </div>
+        <div id="sim-controls-row">
+          <label title="Simulation speed (ms between clock ticks)">
+            <span style="color:#4a6080;font-size:9px">SPEED</span>
+            <input type="range" id="sim-speed" min="50" max="2000" value="600" step="50" style="width:80px;vertical-align:middle" />
+            <span id="sim-speed-label" style="color:#c8d8f0;font-size:9px">600ms</span>
+          </label>
+          <select id="sim-value-format" title="Signal value display format" style="font-size:9px;background:#0a1520;color:#c8d8f0;border:1px solid #2a4060;padding:2px 4px">
+            <option value="bin">BIN</option>
+            <option value="dec">DEC</option>
+            <option value="hex">HEX</option>
+          </select>
+        </div>
+      </div>
+      <!-- Simulation status bar -->
+      <div id="sim-status" class="hidden">
+        <span id="sim-status-text"></span>
+      </div>
+    </div>
+    <div id="hud-right">
+      <div id="hud-right-top">
+        <button id="btn-design-undo" class="hud-action-btn" title="Undo (Ctrl+Z)">&#8630;</button>
+        <button id="btn-design-redo" class="hud-action-btn" title="Redo (Ctrl+Y)">&#8631;</button>
+      </div>
+      <div id="palette-tabs">
+        <button class="palette-tab" data-tab="other">OTHER</button>
+        <button class="palette-tab" data-tab="memory">MEMORY</button>
+        <button class="palette-tab" data-tab="blocks">BLOCKS</button>
+        <button class="palette-tab active" data-tab="logic">LOGIC</button>
+      </div>
+      <div id="palette-tab-content">
+        <div class="palette-panel" data-panel="blocks">
+          <span class="palette-chip palette-block" data-tool="place-mux-block" draggable="true">MUX</span>
+          <span class="palette-chip palette-block" data-tool="place-demux-block" draggable="true">DEMUX</span>
+          <span class="palette-chip palette-block" data-tool="place-decoder-block" draggable="true">DECODER</span>
+          <span class="palette-chip palette-block" data-tool="place-encoder-block" draggable="true">ENCODER</span>
+          <span class="palette-sep"></span>
+          <span class="palette-chip palette-block" data-tool="place-halfadder" draggable="true">H-ADD</span>
+          <span class="palette-chip palette-block" data-tool="place-fulladder" draggable="true">F-ADD</span>
+          <span class="palette-chip palette-block" data-tool="place-comparator" draggable="true">CMP</span>
+        </div>
+        <div class="palette-panel active" data-panel="logic">
+          <span class="palette-chip palette-gate" data-tool="place-and" draggable="true">AND</span>
+          <span class="palette-chip palette-gate" data-tool="place-or" draggable="true">OR</span>
+          <span class="palette-chip palette-gate" data-tool="place-xor" draggable="true">XOR</span>
+          <span class="palette-chip palette-gate" data-tool="place-nand" draggable="true">NAND</span>
+          <span class="palette-chip palette-gate" data-tool="place-nor" draggable="true">NOR</span>
+          <span class="palette-chip palette-gate" data-tool="place-xnor" draggable="true">XNOR</span>
+          <span class="palette-chip palette-gate" data-tool="place-not" draggable="true">NOT</span>
+          <span class="palette-chip palette-gate" data-tool="place-buf" draggable="true">BUF</span>
+          <span class="palette-chip palette-gate" data-tool="place-tribuf" draggable="true">TRI</span>
+          <span class="palette-sep"></span>
+          <span class="palette-chip palette-ff" data-tool="place-dff" draggable="true">D-FF</span>
+          <span class="palette-chip palette-ff" data-tool="place-tff" draggable="true">T-FF</span>
+          <span class="palette-chip palette-ff" data-tool="place-srff" draggable="true">SR-FF</span>
+          <span class="palette-chip palette-ff" data-tool="place-jkff" draggable="true">JK-FF</span>
+          <span class="palette-sep"></span>
+          <span class="palette-chip palette-ff" data-tool="place-dlatch" draggable="true">D-LATCH</span>
+          <span class="palette-chip palette-ff" data-tool="place-srlatch" draggable="true">SR-LATCH</span>
+        </div>
+        <div class="palette-panel" data-panel="memory">
+          <span class="palette-chip palette-block" data-tool="place-register" draggable="true">REG</span>
+          <span class="palette-chip palette-block" data-tool="place-shiftreg" draggable="true">SHREG</span>
+          <span class="palette-chip palette-block" data-tool="place-counter" draggable="true">CNT</span>
+          <span class="palette-sep"></span>
+          <span class="palette-chip palette-block" data-tool="place-ram" draggable="true">RAM</span>
+          <span class="palette-chip palette-block" data-tool="place-rom" draggable="true">ROM</span>
+          <span class="palette-sep"></span>
+          <span class="palette-chip palette-block" data-tool="place-regfile" draggable="true">RF</span>
+          <span class="palette-chip palette-block" data-tool="place-fifo" draggable="true">FIFO</span>
+          <span class="palette-chip palette-block" data-tool="place-stack" draggable="true">STACK</span>
+        </div>
+        <div class="palette-panel" data-panel="other">
+          <span class="palette-chip palette-io" data-tool="place-mux" draggable="true">SW</span>
+          <span class="palette-chip palette-io" data-tool="place-7seg" draggable="true">7SEG</span>
+        </div>
+      </div>
+      <div id="chip-tooltip" class="hidden"></div>
+      <div id="drag-ghost" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- Quick Toolbar (between header and left sidebar) -->
+  <div id="quick-toolbar">
+    <span class="palette-chip palette-io" data-tool="place-input" draggable="true">IN</span>
+    <span class="palette-chip palette-io" data-tool="place-output" draggable="true">OUT</span>
+    <span class="palette-chip palette-tool" data-tool="wire">WIRE</span>
+    <span class="palette-chip palette-io" data-tool="place-clock" draggable="true">CLK</span>
+  </div>
+
+  <!-- Design Mode Toolbar -->
+  <div id="design-toolbar">
+    <div id="design-toolbar-title">DESIGN TOOLS</div>
+    <div id="design-tools">
+      <button class="design-tool active" data-tool="select" data-shortcut="S">SELECT</button>
+      <button class="design-tool design-tool-danger" data-tool="delete" data-shortcut="D">DELETE</button>
+    </div>
+    <div id="design-props" class="hidden">
+      <div id="design-props-title">PROPERTIES</div>
+      <div id="design-props-type"></div>
+      <label class="design-prop-row" id="prop-label-row">
+        <span>Label</span>
+        <input type="text" id="prop-label" maxlength="10" />
+      </label>
+      <div class="design-prop-row" id="prop-value-row">
+        <span>Value</span>
+        <button id="prop-value-toggle" class="design-prop-toggle">0</button>
+      </div>
+      <div class="design-prop-row" id="prop-steps-row">
+        <span>Steps</span>
+        <input type="text" id="prop-steps" placeholder="e.g. 1,0,1" maxlength="40" />
+      </div>
+      <div class="design-prop-row" id="prop-target-row">
+        <span>Value</span>
+        <button id="prop-target-toggle" class="design-prop-toggle">0</button>
+      </div>
+      <div class="design-prop-row" id="prop-step-targets-row">
+        <span>Steps</span>
+        <input type="text" id="prop-step-targets" placeholder="e.g. 0,1,1" maxlength="40" />
+      </div>
+      <label class="design-prop-row" id="prop-initq-row">
+        <span>Init Q</span>
+        <button id="prop-initq-toggle" class="design-prop-toggle">0</button>
+      </label>
+      <div class="design-prop-row" id="prop-size-row" style="display:none">
+        <span id="prop-size-label">Size</span>
+        <select id="prop-size-select">
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+      <div class="design-prop-row" id="prop-membit-row" style="display:none">
+        <span id="prop-membit-label">Bit Width</span>
+        <select id="prop-membit-select">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="8">8</option>
+          <option value="16">16</option>
+        </select>
+      </div>
+      <div class="design-prop-row" id="prop-memaddr-row" style="display:none">
+        <span>Addr Bits</span>
+        <select id="prop-memaddr-select">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+    </div>
+    <!-- Wire Properties (shown when a wire is selected) -->
+    <div id="wire-props" class="hidden">
+      <div id="wire-props-title">WIRE PROPERTIES</div>
+      <label class="design-prop-row" id="wire-netname-row">
+        <span>Net Name</span>
+        <input type="text" id="wire-netname" maxlength="12" placeholder="e.g. CLK, D0" />
+      </label>
+      <div class="design-prop-row" id="wire-color-row">
+        <span>Color</span>
+        <select id="wire-color-group">
+          <option value="">Auto</option>
+          <option value="red">Red</option>
+          <option value="green">Green</option>
+          <option value="blue">Blue</option>
+          <option value="yellow">Yellow</option>
+          <option value="purple">Purple</option>
+          <option value="orange">Orange</option>
+          <option value="cyan">Cyan</option>
+          <option value="pink">Pink</option>
+        </select>
+      </div>
+      <div class="design-prop-row" id="wire-clock-row">
+        <span>Clock Wire</span>
+        <button id="wire-clock-toggle" class="design-prop-toggle">OFF</button>
+      </div>
+      <button id="wire-clear-waypoints" class="design-action" style="margin-top:6px;font-size:10px">RESET ROUTE</button>
+    </div>
+    <div id="design-actions">
+      <button id="btn-design-export" class="design-action" data-shortcut="E">EXPORT</button>
+      <button id="btn-design-import" class="design-action" data-shortcut="P">IMPORT</button>
+      <button id="btn-design-share" class="design-action design-action-share" data-shortcut="R">SCREENSHOT</button>
+      <button id="btn-design-clear" class="design-action design-action-danger" data-shortcut="X">CLEAR ALL</button>
+    </div>
+    <!-- Breakpoints Panel -->
+    <div id="breakpoint-panel" class="hidden">
+      <div id="breakpoint-title">BREAKPOINTS</div>
+      <div id="breakpoint-list"></div>
+      <div id="breakpoint-add-row">
+        <button id="btn-add-breakpoint" class="design-action" style="font-size:9px">+ ADD ON SELECTED</button>
+        <button id="btn-clear-breakpoints" class="design-action" style="font-size:9px">CLEAR ALL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Waveform Panel -->
+  <div id="waveform-panel" class="hidden">
+    <div id="waveform-header">
+      <span id="waveform-title">WAVEFORM</span>
+      <button id="btn-waveform-export" class="btn-waveform-ctrl" title="Export as PNG">EXPORT</button>
+      <button id="btn-waveform-close" class="btn-waveform-ctrl">CLOSE</button>
+    </div>
+    <canvas id="waveform-canvas"></canvas>
+  </div>
+
+  <!-- Debug Panel (right side) -->
+  <div id="debug-panel" class="hidden">
+    <div id="debug-panel-header">
+      <span>DEBUG</span>
+      <button id="btn-debug-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
+    </div>
+
+    <!-- Watch List -->
+    <div id="debug-section-watch">
+      <div class="debug-section-title">WATCH LIST</div>
+      <div id="watch-list-container"></div>
+      <div id="watch-actions">
+        <button id="btn-watch-add" class="design-action" style="font-size:9px">+ WATCH SELECTED</button>
+        <button id="btn-watch-clear" class="design-action" style="font-size:9px">CLEAR</button>
+      </div>
+    </div>
+
+    <!-- Error Diagnostics -->
+    <div id="debug-section-errors">
+      <div class="debug-section-title">
+        DIAGNOSTICS
+        <label style="float:right;font-size:8px;color:#4a6080">
+          <input type="checkbox" id="errors-enabled" checked style="vertical-align:middle" /> enabled
+        </label>
+      </div>
+      <div id="error-list-container"></div>
+    </div>
+
+    <!-- Signal Trace -->
+    <div id="debug-section-trace">
+      <div class="debug-section-title">SIGNAL TRACE</div>
+      <div id="trace-actions">
+        <button id="btn-trace-forward" class="design-action" style="font-size:9px">TRACE FORWARD &rarr;</button>
+        <button id="btn-trace-backward" class="design-action" style="font-size:9px">&larr; TRACE BACKWARD</button>
+        <button id="btn-trace-stop" class="design-action" style="font-size:9px">STOP TRACE</button>
+      </div>
+    </div>
+
+    <!-- Truth Table -->
+    <div id="debug-section-truthtable">
+      <div class="debug-section-title">TRUTH TABLE</div>
+      <button id="btn-gen-truthtable" class="design-action" style="font-size:9px">GENERATE</button>
+      <div id="truthtable-container"></div>
+    </div>
+  </div>
+
+  <!-- Memory Inspector Panel (bottom-left) -->
+  <div id="mem-inspector" class="hidden">
+    <div id="mem-inspector-header">
+      <span>MEMORY INSPECTOR</span>
+      <div>
+        <button id="btn-mem-format" class="btn-secondary" style="font-size:8px" title="Toggle HEX/BIN/DEC">HEX</button>
+        <button id="btn-mem-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
+      </div>
+    </div>
+    <div id="mem-inspector-body"></div>
+  </div>
+  <button id="btn-mem-toggle" title="Toggle Memory Inspector" style="position:fixed;left:8px;bottom:8px;z-index:200;background:#0d1320;border:1px solid #5a3d8a;color:#c0a0f0;font:bold 10px 'JetBrains Mono',monospace;padding:6px 10px;cursor:pointer;border-radius:4px;letter-spacing:1px">MEM</button>
+
+  <!-- Debug toggle button (fixed) -->
+  <button id="btn-debug-toggle" title="Toggle debug panel (Ctrl+D)" style="position:fixed;right:8px;top:50%;transform:translateY(-50%);z-index:200;background:#0d1320;border:1px solid #2a4060;color:#00d4ff;font:bold 10px 'JetBrains Mono',monospace;padding:8px 4px;cursor:pointer;border-radius:4px;writing-mode:vertical-lr;letter-spacing:2px">DEBUG</button>
+
+  <!-- Align/Distribute toolbar (shown when multi-selected) -->
+  <div id="align-toolbar" class="hidden" style="position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:200;background:#0d1320;border:1px solid #2a4060;padding:4px 8px;border-radius:6px;display:flex;gap:4px">
+    <button class="align-btn" data-align="left" title="Align Left">&#8676;</button>
+    <button class="align-btn" data-align="center-h" title="Align Center H">&#8596;</button>
+    <button class="align-btn" data-align="right" title="Align Right">&#8677;</button>
+    <span style="border-left:1px solid #2a4060;margin:0 4px"></span>
+    <button class="align-btn" data-align="top" title="Align Top">&#8673;</button>
+    <button class="align-btn" data-align="center-v" title="Align Center V">&#8597;</button>
+    <button class="align-btn" data-align="bottom" title="Align Bottom">&#8675;</button>
+    <span style="border-left:1px solid #2a4060;margin:0 4px"></span>
+    <button class="align-btn" data-align="dist-h" title="Distribute H">&#9776;H</button>
+    <button class="align-btn" data-align="dist-v" title="Distribute V">&#9776;V</button>
+  </div>
+
+  <!-- Project save/load bar -->
+  <div id="project-bar" style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:200;background:#0d1320;border:1px solid #2a4060;padding:4px 12px;border-radius:6px;display:flex;gap:8px;align-items:center">
+    <button id="btn-project-save" class="design-action" style="font-size:9px">SAVE PROJECT</button>
+    <button id="btn-project-load" class="design-action" style="font-size:9px">LOAD PROJECT</button>
+    <button id="btn-project-list" class="design-action" style="font-size:9px">MY PROJECTS</button>
+    <span style="border-left:1px solid #2a4060;margin:0 4px"></span>
+    <button id="btn-export-png" class="design-action" style="font-size:9px">PNG</button>
+    <button id="btn-export-svg" class="design-action" style="font-size:9px">SVG</button>
+    <button id="btn-export-json" class="design-action" style="font-size:9px">JSON</button>
+    <span style="border-left:1px solid #2a4060;margin:0 4px"></span>
+    <button id="btn-zoom-fit" class="design-action" style="font-size:9px">FIT</button>
+    <span id="project-name-display" style="color:#4a6080;font-size:9px;font-family:'JetBrains Mono',monospace"></span>
+  </div>
+
+  <!-- Project list overlay -->
+  <div id="project-list-overlay" class="hidden" style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center">
+    <div id="project-list-box" style="background:#0d1320;border:1px solid #2a4060;border-radius:8px;padding:16px;min-width:400px;max-height:70vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="color:#00d4ff;font:bold 14px 'JetBrains Mono',monospace">MY PROJECTS</span>
+        <button id="btn-project-list-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
+      </div>
+      <div id="project-list-content"></div>
+    </div>
+  </div>
+
+  <!-- App Entry Point -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

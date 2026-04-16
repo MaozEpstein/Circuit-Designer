@@ -1,0 +1,672 @@
+/**
+ * SimulationEngine — DAG-based evaluation engine.
+ * Supports combinational gates and sequential flip-flops.
+ * Migrated from engine.js — same logic, ES Module format.
+ */
+import { FF_TYPE_SET, MEMORY_TYPE_SET } from '../components/Component.js';
+
+// ── Combinational Gate Functions ──────────────────────────────
+export const GATE_FN = {
+  AND:    (a, b) => (a & b),
+  OR:     (a, b) => (a | b),
+  XOR:    (a, b) => (a ^ b),
+  NAND:   (a, b) => ((a & b) ^ 1),
+  NOR:    (a, b) => ((a | b) ^ 1),
+  XNOR:   (a, b) => ((a ^ b) ^ 1),
+  NOT:    (a)    => (a ^ 1),
+  BUF:    (a)    => a,
+  TRIBUF: (a, en) => (en === 1 ? a : null),  // null = high-Z
+};
+
+// ── Flip-Flop Next-State Functions ────────────────────────────
+const FF_FN = {
+  D: (args, q) => {
+    const d = args[0];
+    if (d === null || d === undefined) return { q, qNot: q ^ 1 };
+    return { q: d, qNot: d ^ 1 };
+  },
+  SR: (args, q) => {
+    const s = args[0], r = args[1];
+    if (s === null || r === null) return { q, qNot: q ^ 1 };
+    if (s && r)  return { q: 1, qNot: 0 };
+    if (r)       return { q: 0, qNot: 1 };
+    if (s)       return { q: 1, qNot: 0 };
+    return { q, qNot: q ^ 1 };
+  },
+  JK: (args, q) => {
+    const j = args[0], k = args[1];
+    if (j === null || k === null) return { q, qNot: q ^ 1 };
+    if (j && k)  return { q: q ^ 1, qNot: q };
+    if (k)       return { q: 0, qNot: 1 };
+    if (j)       return { q: 1, qNot: 0 };
+    return { q, qNot: q ^ 1 };
+  },
+  T: (args, q) => {
+    const t = args[0];
+    if (t === null) return { q, qNot: q ^ 1 };
+    return t ? { q: q ^ 1, qNot: q } : { q, qNot: q ^ 1 };
+  },
+};
+
+// ── Latch Functions (level-sensitive, not edge-triggered) ────
+// Latches update continuously while enable is HIGH (not just on edge)
+export const LATCH_FN = {
+  D_LATCH: (args, q) => {
+    const d = args[0], en = args[1];
+    if (en === null || d === null) return { q, qNot: q ^ 1 };
+    if (en === 1) return { q: d, qNot: d ^ 1 };  // transparent when enabled
+    return { q, qNot: q ^ 1 };                     // hold when disabled
+  },
+  SR_LATCH: (args, q) => {
+    const s = args[0], r = args[1], en = args[2];
+    if (en !== undefined && en !== null && en === 0) return { q, qNot: q ^ 1 }; // gated: hold
+    if (s === null || r === null) return { q, qNot: q ^ 1 };
+    if (s && r)  return { q: 1, qNot: 0 };
+    if (r)       return { q: 0, qNot: 1 };
+    if (s)       return { q: 1, qNot: 0 };
+    return { q, qNot: q ^ 1 };
+  },
+};
+
+const FF_TYPE_MAP = {
+  FLIPFLOP_D: 'D', FLIPFLOP_SR: 'SR', FLIPFLOP_JK: 'JK', FLIPFLOP_T: 'T',
+};
+
+/**
+ * Evaluate the circuit.
+ * @param {object[]} nodes - Array of node objects
+ * @param {object[]} wires - Array of wire objects
+ * @param {Map} ffStates - Map<nodeId, {q, qNot, prevClkValue}>
+ * @param {number} stepCount - Current step count
+ * @returns {{ nodeValues: Map, wireValues: Map, ffUpdated: boolean }}
+ */
+export function evaluate(nodes, wires, ffStates, stepCount) {
+  ffStates = ffStates || new Map();
+
+  const nodeMap    = new Map(nodes.map(n => [n.id, n]));
+  const nodeValues = new Map();
+  const wireValues = new Map();
+
+  // ── Build adjacency ───────────────────────────────────────
+  const successors = new Map(nodes.map(n => [n.id, []]));
+  const inputs     = new Map(nodes.map(n => [n.id, []]));
+
+  wires.forEach(wire => {
+    successors.get(wire.sourceId)?.push({ wire, targetId: wire.targetId });
+    inputs.get(wire.targetId)?.push({
+      wire,
+      sourceId:   wire.sourceId,
+      inputIndex: wire.targetInputIndex,
+    });
+  });
+  inputs.forEach(arr => arr.sort((a, b) => a.inputIndex - b.inputIndex));
+
+  // ── Topological Sort (Kahn's) ─────────────────────────────
+  const inDegree = new Map(nodes.map(n => [n.id, 0]));
+  wires.forEach(w => {
+    inDegree.set(w.targetId, (inDegree.get(w.targetId) || 0) + 1);
+  });
+
+  // FF and memory nodes as pseudo-sources
+  nodes.forEach(n => {
+    if (FF_TYPE_SET.has(n.type) || MEMORY_TYPE_SET.has(n.type)) inDegree.set(n.id, 0);
+  });
+
+  const queue = [];
+  inDegree.forEach((deg, id) => { if (deg === 0) queue.push(id); });
+
+  const order = [];
+  while (queue.length > 0) {
+    const id = queue.shift();
+    order.push(id);
+    successors.get(id)?.forEach(({ targetId }) => {
+      const targetType = nodeMap.get(targetId)?.type;
+      if (FF_TYPE_SET.has(targetType) || MEMORY_TYPE_SET.has(targetType)) return;
+      const newDeg = (inDegree.get(targetId) || 0) - 1;
+      inDegree.set(targetId, newDeg);
+      if (newDeg === 0) queue.push(targetId);
+    });
+  }
+
+  // ── PHASE 1: Propagate combinational + FF-as-source ───────
+  order.forEach(id => {
+    const node  = nodeMap.get(id);
+    let   value = null;
+
+    if (node.type === 'INPUT') {
+      value = node.fixedValue;
+
+    } else if (node.type === 'MUX_SELECT') {
+      value = node.value ?? 0;
+
+    } else if (node.type === 'DISPLAY_7SEG') {
+      const inputSlots = inputs.get(id);
+      const segments = inputSlots.map(s => nodeValues.get(s.sourceId) ?? 0);
+      node._segments = segments;
+      value = segments.reduce((acc, v, i) => acc | ((v ? 1 : 0) << i), 0);
+
+    } else if (node.type === 'CLOCK') {
+      value = node.value ?? 0;
+
+    } else if (FF_TYPE_SET.has(node.type)) {
+      if (node.type === 'FF_SLOT' && !node.ffType) {
+        value = null;
+        nodeValues.set(id, value);
+        successors.get(id)?.forEach(({ wire }) => wireValues.set(wire.id, null));
+        return;
+      }
+      if (node.type === 'LATCH_SLOT' && !node.latchType) {
+        value = null;
+        nodeValues.set(id, value);
+        successors.get(id)?.forEach(({ wire }) => wireValues.set(wire.id, null));
+        return;
+      }
+      const ffState = ffStates.get(id) || { q: 0, qNot: 1, prevClkValue: null };
+      value = ffState.q;
+      nodeValues.set(id + '__qnot', ffState.qNot);
+
+    } else if (node.type === 'GATE_SLOT') {
+      if (node.gate == null) {
+        value = null;
+      } else {
+        const inputSlots = inputs.get(id);
+        const args = inputSlots.map(slot => nodeValues.get(slot.sourceId));
+        if (args.some(a => a === null || a === undefined)) {
+          value = null;
+        } else {
+          value = GATE_FN[node.gate](...args);
+        }
+      }
+
+    } else if (node.type === 'MUX') {
+      // MUX: first N inputs are data, remaining are select lines
+      const n = node.inputCount || 2;
+      const selCount = Math.ceil(Math.log2(n));
+      const inputSlots = inputs.get(id);
+      const dataInputs = inputSlots.slice(0, n);
+      const selInputs = inputSlots.slice(n, n + selCount);
+
+      let selIdx = 0;
+      let selValid = true;
+      for (let s = 0; s < selInputs.length; s++) {
+        const sv = nodeValues.get(selInputs[s]?.sourceId);
+        if (sv === null || sv === undefined) { selValid = false; break; }
+        selIdx |= (sv << s);
+      }
+
+      if (!selValid || selIdx >= dataInputs.length) {
+        value = null;
+      } else {
+        value = nodeValues.get(dataInputs[selIdx]?.sourceId) ?? null;
+      }
+
+    } else if (node.type === 'DEMUX') {
+      // DEMUX: input 0 is data, remaining are select lines
+      const outCount = node.outputCount || 2;
+      const selCount = Math.ceil(Math.log2(outCount));
+      const inputSlots = inputs.get(id);
+      const dataSlot = inputSlots[0];
+      const selInputs = inputSlots.slice(1, 1 + selCount);
+
+      const dataVal = dataSlot ? (nodeValues.get(dataSlot.sourceId) ?? null) : null;
+
+      let selIdx = 0;
+      let selValid = true;
+      for (let s = 0; s < selInputs.length; s++) {
+        const sv = nodeValues.get(selInputs[s]?.sourceId);
+        if (sv === null || sv === undefined) { selValid = false; break; }
+        selIdx |= (sv << s);
+      }
+
+      // Store each output value
+      for (let o = 0; o < outCount; o++) {
+        nodeValues.set(id + '__out' + o, (selValid && o === selIdx) ? dataVal : 0);
+      }
+      value = nodeValues.get(id + '__out0') ?? null;
+
+    } else if (node.type === 'DECODER') {
+      // DECODER: N input bits → 2^N outputs (one-hot)
+      const n = node.inputBits || 2;
+      const outCount = 1 << n;
+      const inputSlots = inputs.get(id);
+
+      let selIdx = 0;
+      let valid = true;
+      for (let s = 0; s < n && s < inputSlots.length; s++) {
+        const sv = nodeValues.get(inputSlots[s]?.sourceId);
+        if (sv === null || sv === undefined) { valid = false; break; }
+        selIdx |= (sv << s);
+      }
+
+      for (let o = 0; o < outCount; o++) {
+        nodeValues.set(id + '__out' + o, (valid && o === selIdx) ? 1 : 0);
+      }
+      value = nodeValues.get(id + '__out0') ?? 0;
+
+    } else if (node.type === 'ENCODER') {
+      // ENCODER (priority): 2^N input lines → N output bits
+      const inLines = node.inputLines || 4;
+      const outBits = Math.ceil(Math.log2(inLines));
+      const inputSlots = inputs.get(id);
+
+      // Priority encoder: highest active input wins
+      let activeIdx = -1;
+      for (let i = inLines - 1; i >= 0; i--) {
+        const sv = i < inputSlots.length ? (nodeValues.get(inputSlots[i]?.sourceId) ?? null) : null;
+        if (sv === 1) { activeIdx = i; break; }
+      }
+
+      for (let b = 0; b < outBits; b++) {
+        nodeValues.set(id + '__out' + b, activeIdx >= 0 ? ((activeIdx >> b) & 1) : 0);
+      }
+      // Valid flag output
+      nodeValues.set(id + '__valid', activeIdx >= 0 ? 1 : 0);
+      value = nodeValues.get(id + '__out0') ?? 0;
+
+    } else if (node.type === 'HALF_ADDER') {
+      // HA: inputs A, B → outputs Sum (out0), Carry (out1)
+      const inputSlots = inputs.get(id);
+      const a = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? null) : null;
+      const b = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? null) : null;
+      if (a === null || b === null) {
+        value = null;
+        nodeValues.set(id + '__out0', null);
+        nodeValues.set(id + '__out1', null);
+      } else {
+        const sum = a ^ b;
+        const carry = a & b;
+        nodeValues.set(id + '__out0', sum);
+        nodeValues.set(id + '__out1', carry);
+        value = sum;
+      }
+
+    } else if (node.type === 'FULL_ADDER') {
+      // FA: inputs A, B, Cin → outputs Sum (out0), Cout (out1)
+      const inputSlots = inputs.get(id);
+      const a   = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? null) : null;
+      const b   = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? null) : null;
+      const cin = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? null) : null;
+      if (a === null || b === null || cin === null) {
+        value = null;
+        nodeValues.set(id + '__out0', null);
+        nodeValues.set(id + '__out1', null);
+      } else {
+        const sum  = a ^ b ^ cin;
+        const cout = (a & b) | (b & cin) | (a & cin);
+        nodeValues.set(id + '__out0', sum);
+        nodeValues.set(id + '__out1', cout);
+        value = sum;
+      }
+
+    } else if (node.type === 'COMPARATOR') {
+      // CMP: inputs A, B → outputs EQ (out0), GT (out1), LT (out2)
+      const inputSlots = inputs.get(id);
+      const a = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? null) : null;
+      const b = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? null) : null;
+      if (a === null || b === null) {
+        nodeValues.set(id + '__out0', null);
+        nodeValues.set(id + '__out1', null);
+        nodeValues.set(id + '__out2', null);
+        value = null;
+      } else {
+        nodeValues.set(id + '__out0', a === b ? 1 : 0);   // EQ
+        nodeValues.set(id + '__out1', a > b  ? 1 : 0);    // GT
+        nodeValues.set(id + '__out2', a < b  ? 1 : 0);    // LT
+        value = a === b ? 1 : 0;
+      }
+
+    } else if (MEMORY_TYPE_SET.has(node.type)) {
+      // Memory components act as sources: emit stored Q value (packed integer)
+      let ms = ffStates.get(id);
+      if (!ms) {
+        ms = { q: 0, prevClkValue: null };
+        if (node.type === 'RAM' || node.type === 'ROM') ms.memory = node.memory ? { ...node.memory } : {};
+        if (node.type === 'COUNTER') ms.count = 0;
+        if (node.type === 'REG_FILE') ms.regs = new Array(node.regCount || 8).fill(0);
+        if (node.type === 'FIFO' || node.type === 'STACK') {
+          ms.buffer = [];
+          ms.full = 0;
+          ms.empty = 1;
+        }
+        ffStates.set(id, ms);
+      }
+      value = ms.q ?? 0;
+      // TC output for counter (terminal count)
+      if (node.type === 'COUNTER') {
+        const maxVal = (1 << (node.bitWidth || 4)) - 1;
+        nodeValues.set(id + '__out1', ms.count === maxVal ? 1 : 0);
+      }
+      // FIFO/STACK: output top/front + flags
+      if (node.type === 'FIFO' || node.type === 'STACK') {
+        nodeValues.set(id + '__out1', ms.full ?? 0);
+        nodeValues.set(id + '__out2', ms.empty ?? 1);
+      }
+      // REG_FILE: async read — read address comes from input 0
+      if (node.type === 'REG_FILE') {
+        const inputSlots = inputs.get(id);
+        const rdAddr = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+        const regIdx = rdAddr % (node.regCount || 8);
+        value = (ms.regs[regIdx] ?? 0);
+        ms.q = value;
+      }
+
+    } else if (node.type === 'OUTPUT') {
+      const inputSlots = inputs.get(id);
+      if (inputSlots.length > 0) {
+        const slot = inputSlots[0];
+        const outIdx = slot.wire.sourceOutputIndex || 0;
+        if (outIdx === 1 && FF_TYPE_SET.has(nodeMap.get(slot.sourceId)?.type)) {
+          value = nodeValues.get(slot.sourceId + '__qnot') ?? null;
+        } else {
+          value = nodeValues.get(slot.sourceId) ?? null;
+        }
+      }
+    }
+
+    nodeValues.set(id, value);
+
+    successors.get(id)?.forEach(({ wire }) => {
+      const outIdx = wire.sourceOutputIndex || 0;
+      if (outIdx === 1 && FF_TYPE_SET.has(node.type)) {
+        wireValues.set(wire.id, nodeValues.get(id + '__qnot') ?? null);
+      } else if (node.type === 'DEMUX' || node.type === 'DECODER' || node.type === 'ENCODER' ||
+                 node.type === 'HALF_ADDER' || node.type === 'FULL_ADDER' || node.type === 'COMPARATOR') {
+        wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? null);
+      } else if (MEMORY_TYPE_SET.has(node.type)) {
+        // outIdx 0 = Q (packed value), outIdx 1 = TC (counter only)
+        if (outIdx >= 1) wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? 0);
+        else wireValues.set(wire.id, value);
+      } else {
+        wireValues.set(wire.id, value);
+      }
+    });
+  });
+
+  // ── PHASE 2: Detect rising clock edges, update FF state ───
+  let ffUpdated = false;
+
+  nodes.forEach(node => {
+    if (!FF_TYPE_SET.has(node.type)) return;
+
+    const inputSlots = inputs.get(node.id);
+
+    // ── LATCH: level-sensitive (updates while enable is HIGH) ──
+    if (node.type === 'LATCH_SLOT' && node.latchType) {
+      const dataSlots = inputSlots;
+      const dataArgs = dataSlots.map(s => wireValues.get(s.wire.id) ?? null);
+
+      let ffState = ffStates.get(node.id);
+      if (!ffState) {
+        ffState = { q: 0, qNot: 1, prevClkValue: null };
+        ffStates.set(node.id, ffState);
+      }
+
+      const { q: newQ, qNot: newQNot } = LATCH_FN[node.latchType](dataArgs, ffState.q);
+      if (newQ !== ffState.q || newQNot !== ffState.qNot) {
+        ffState.q    = newQ;
+        ffState.qNot = newQNot;
+        ffUpdated = true;
+      }
+      return;
+    }
+
+    // ── FF: edge-triggered (updates on rising clock edge) ──
+    const clkSlot = inputSlots.find(s => s.wire.isClockWire) ||
+                    inputSlots.reduce((best, s) =>
+                      (!best || s.inputIndex > best.inputIndex) ? s : best, null);
+
+    if (!clkSlot) return;
+
+    const clkNow = wireValues.get(clkSlot.wire.id) ?? null;
+
+    let ffState = ffStates.get(node.id);
+    if (!ffState) {
+      ffState = { q: 0, qNot: 1, prevClkValue: null };
+      ffStates.set(node.id, ffState);
+    }
+
+    const prevClk = ffState.prevClkValue;
+
+    if (clkNow === 1 && prevClk === 0) {
+      const dataSlots = inputSlots.filter(s => s !== clkSlot);
+      const dataArgs  = dataSlots.map(s => wireValues.get(s.wire.id) ?? null);
+
+      const ffType = node.type === 'FF_SLOT' ? node.ffType : FF_TYPE_MAP[node.type];
+      const { q: newQ, qNot: newQNot } = FF_FN[ffType](dataArgs, ffState.q);
+
+      if (newQ !== ffState.q || newQNot !== ffState.qNot) {
+        ffState.q    = newQ;
+        ffState.qNot = newQNot;
+        ffUpdated = true;
+      }
+    }
+
+    if (clkNow !== null) ffState.prevClkValue = clkNow;
+  });
+
+  // ── PHASE 2b: Memory components (clocked, bus-style) ──────────
+  nodes.forEach(node => {
+    if (!MEMORY_TYPE_SET.has(node.type)) return;
+
+    const inputSlots = inputs.get(node.id);
+    const clkSlot = inputSlots.find(s => s.wire.isClockWire) ||
+                    inputSlots.reduce((best, s) =>
+                      (!best || s.inputIndex > best.inputIndex) ? s : best, null);
+    if (!clkSlot) return;
+
+    const clkNow = wireValues.get(clkSlot.wire.id) ?? null;
+    let ms = ffStates.get(node.id);
+    if (!ms) {
+      ms = { q: 0, prevClkValue: null };
+      if (node.type === 'RAM' || node.type === 'ROM') ms.memory = node.memory ? { ...node.memory } : {};
+      if (node.type === 'COUNTER') ms.count = 0;
+      ffStates.set(node.id, ms);
+    }
+
+    const prevClk = ms.prevClkValue;
+    const _w = (slot) => slot ? (wireValues.get(slot.wire.id) ?? 0) : 0;
+    const dataSlots = inputSlots.filter(s => s !== clkSlot);
+
+    // Rising edge: 0 → 1
+    if (clkNow === 1 && prevClk === 0) {
+      const bits = node.bitWidth || node.dataBits || 4;
+      const oldQ = ms.q;
+
+      if (node.type === 'REGISTER') {
+        // Inputs: DATA(0), EN(1), CLR(2), CLK
+        const data = _w(dataSlots[0]);
+        const en   = _w(dataSlots[1]) ?? 1;
+        const clr  = _w(dataSlots[2]);
+        if (clr)     ms.q = 0;
+        else if (en) ms.q = data & ((1 << bits) - 1);
+
+      } else if (node.type === 'SHIFT_REG') {
+        // Inputs: DIN(0), DIR(1), EN(2), CLR(3), CLK
+        const din = _w(dataSlots[0]) & 1;
+        const dir = _w(dataSlots[1]);   // 0=left, 1=right
+        const en  = _w(dataSlots[2]) ?? 1;
+        const clr = _w(dataSlots[3]);
+        const mask = (1 << bits) - 1;
+        if (clr) {
+          ms.q = 0;
+        } else if (en) {
+          if (dir === 0) {
+            ms.q = ((ms.q << 1) | din) & mask;    // shift left, new bit at LSB
+          } else {
+            ms.q = ((ms.q >>> 1) | (din << (bits - 1))) & mask; // shift right, new bit at MSB
+          }
+        }
+
+      } else if (node.type === 'COUNTER') {
+        // Inputs: EN(0), LOAD(1), DATA(2), CLR(3), CLK
+        const en   = _w(dataSlots[0]) ?? 1;
+        const load = _w(dataSlots[1]);
+        const data = _w(dataSlots[2]);
+        const clr  = _w(dataSlots[3]);
+        const mask = (1 << bits) - 1;
+        if (clr) {
+          ms.count = 0;
+        } else if (load) {
+          ms.count = data & mask;
+        } else if (en) {
+          ms.count = (ms.count + 1) & mask;
+        }
+        ms.q = ms.count;
+
+      } else if (node.type === 'RAM') {
+        // Inputs: ADDR(0), DATA(1), WE(2), RE(3), CLK
+        const addr = _w(dataSlots[0]);
+        const data = _w(dataSlots[1]);
+        const we   = _w(dataSlots[2]);
+        const re   = _w(dataSlots[3]) ?? 1;
+        const dMask = (1 << (node.dataBits || 4)) - 1;
+        if (we) ms.memory[addr] = data & dMask;
+        if (re) ms.q = (ms.memory[addr] ?? 0) & dMask;
+
+      } else if (node.type === 'ROM') {
+        // Inputs: ADDR(0), RE(1), CLK
+        const addr = _w(dataSlots[0]);
+        const re   = _w(dataSlots[1]) ?? 1;
+        const dMask = (1 << (node.dataBits || 4)) - 1;
+        if (re) ms.q = ((node.memory && node.memory[addr]) ?? 0) & dMask;
+
+      } else if (node.type === 'REG_FILE') {
+        // Inputs: RD_ADDR(0), WR_ADDR(1), WR_DATA(2), WE(3), CLK
+        const wrAddr = _w(dataSlots[1]);
+        const wrData = _w(dataSlots[2]);
+        const we     = _w(dataSlots[3]);
+        const dMask  = (1 << (node.dataBits || 8)) - 1;
+        const regCnt = node.regCount || 8;
+        if (!ms.regs) ms.regs = new Array(regCnt).fill(0);
+        if (we) {
+          ms.regs[wrAddr % regCnt] = wrData & dMask;
+        }
+        // Update read output
+        const rdAddr = _w(dataSlots[0]);
+        ms.q = (ms.regs[rdAddr % regCnt] ?? 0) & dMask;
+
+      } else if (node.type === 'FIFO') {
+        // Inputs: DATA(0), WR(1), RD(2), CLR(3), CLK
+        const data = _w(dataSlots[0]);
+        const wr   = _w(dataSlots[1]);
+        const rd   = _w(dataSlots[2]);
+        const clr  = _w(dataSlots[3]);
+        const depth = node.depth || 8;
+        const dMask = (1 << (node.dataBits || 8)) - 1;
+        if (!ms.buffer) ms.buffer = [];
+        if (clr) {
+          ms.buffer = [];
+        } else {
+          if (wr && ms.buffer.length < depth) {
+            ms.buffer.push(data & dMask);
+          }
+          if (rd && ms.buffer.length > 0) {
+            ms.q = ms.buffer.shift();  // dequeue front
+          }
+        }
+        if (ms.buffer.length > 0 && !rd) ms.q = ms.buffer[0] ?? 0;
+        ms.full  = ms.buffer.length >= depth ? 1 : 0;
+        ms.empty = ms.buffer.length === 0 ? 1 : 0;
+
+      } else if (node.type === 'STACK') {
+        // Inputs: DATA(0), PUSH(1), POP(2), CLR(3), CLK
+        const data = _w(dataSlots[0]);
+        const push = _w(dataSlots[1]);
+        const pop  = _w(dataSlots[2]);
+        const clr  = _w(dataSlots[3]);
+        const depth = node.depth || 8;
+        const dMask = (1 << (node.dataBits || 8)) - 1;
+        if (!ms.buffer) ms.buffer = [];
+        if (clr) {
+          ms.buffer = [];
+        } else {
+          if (push && ms.buffer.length < depth) {
+            ms.buffer.push(data & dMask);
+          }
+          if (pop && ms.buffer.length > 0) {
+            ms.q = ms.buffer.pop();  // pop top
+          }
+        }
+        if (ms.buffer.length > 0 && !pop) ms.q = ms.buffer[ms.buffer.length - 1] ?? 0;
+        ms.full  = ms.buffer.length >= depth ? 1 : 0;
+        ms.empty = ms.buffer.length === 0 ? 1 : 0;
+      }
+
+      if (ms.q !== oldQ) ffUpdated = true;
+    }
+
+    if (clkNow !== null) ms.prevClkValue = clkNow;
+  });
+
+  // ── PHASE 3: Re-propagate FF outputs if state changed ─────
+  if (ffUpdated) {
+    nodes.forEach(node => {
+      if (!FF_TYPE_SET.has(node.type) && !MEMORY_TYPE_SET.has(node.type)) return;
+
+      if (MEMORY_TYPE_SET.has(node.type)) {
+        const ms = ffStates.get(node.id);
+        if (!ms) return;
+        nodeValues.set(node.id, ms.q ?? 0);
+        if (node.type === 'COUNTER') {
+          const maxVal = (1 << (node.bitWidth || 4)) - 1;
+          nodeValues.set(node.id + '__out1', ms.count === maxVal ? 1 : 0);
+        }
+        if (node.type === 'FIFO' || node.type === 'STACK') {
+          nodeValues.set(node.id + '__out1', ms.full ?? 0);
+          nodeValues.set(node.id + '__out2', ms.empty ?? 1);
+        }
+        successors.get(node.id)?.forEach(({ wire }) => {
+          const outIdx = wire.sourceOutputIndex || 0;
+          if (outIdx >= 1) wireValues.set(wire.id, nodeValues.get(node.id + '__out' + outIdx) ?? 0);
+          else wireValues.set(wire.id, ms.q ?? 0);
+        });
+        return;
+      }
+
+      const ffState = ffStates.get(node.id) || { q: 0, qNot: 1 };
+      nodeValues.set(node.id, ffState.q);
+      nodeValues.set(node.id + '__qnot', ffState.qNot);
+
+      successors.get(node.id)?.forEach(({ wire }) => {
+        const outIdx = wire.sourceOutputIndex || 0;
+        const val    = outIdx === 1 ? ffState.qNot : ffState.q;
+        wireValues.set(wire.id, val);
+      });
+    });
+
+    // Re-evaluate combinational nodes downstream
+    order.forEach(id => {
+      const node = nodeMap.get(id);
+      if (FF_TYPE_SET.has(node.type) || MEMORY_TYPE_SET.has(node.type) || node.type === 'INPUT' ||
+          node.type === 'CLOCK' || node.type === 'MUX_SELECT' ||
+          node.type === 'DISPLAY_7SEG') return;
+
+      let value = null;
+      if (node.type === 'GATE_SLOT') {
+        if (node.gate != null) {
+          const inputSlots = inputs.get(id);
+          const args = inputSlots.map(slot => nodeValues.get(slot.sourceId));
+          if (!args.some(a => a === null || a === undefined)) {
+            value = GATE_FN[node.gate](...args);
+          }
+        }
+      } else if (node.type === 'OUTPUT') {
+        const inputSlots = inputs.get(id);
+        if (inputSlots.length > 0) {
+          const slot = inputSlots[0];
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          if (outIdx === 1 && FF_TYPE_SET.has(nodeMap.get(slot.sourceId)?.type)) {
+            value = nodeValues.get(slot.sourceId + '__qnot') ?? null;
+          } else {
+            value = nodeValues.get(slot.sourceId) ?? null;
+          }
+        }
+      }
+
+      nodeValues.set(id, value);
+      successors.get(id)?.forEach(({ wire }) => wireValues.set(wire.id, value));
+    });
+  }
+
+  return { nodeValues, wireValues, ffUpdated };
+}
