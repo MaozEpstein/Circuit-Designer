@@ -114,6 +114,7 @@ export class CommandPalette {
       { id: 'place-regfile', label: 'Place Register File', category: 'Memory', action: () => bus.emit('palette:tool', 'place-regfile') },
       { id: 'place-fifo', label: 'Place FIFO', category: 'Memory', action: () => bus.emit('palette:tool', 'place-fifo') },
       { id: 'place-stack', label: 'Place Stack', category: 'Memory', action: () => bus.emit('palette:tool', 'place-stack') },
+      { id: 'place-pc', label: 'Place Program Counter', category: 'Memory', action: () => bus.emit('palette:tool', 'place-pc') },
       // Flip-Flops — direct placement
       { id: 'place-dff', label: 'Place D Flip-Flop', category: 'Flip-Flop', action: () => bus.emit('palette:tool', 'place-dff') },
       { id: 'place-tff', label: 'Place T Flip-Flop', category: 'Flip-Flop', action: () => bus.emit('palette:tool', 'place-tff') },

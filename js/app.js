@@ -977,7 +977,7 @@ function _refreshMemInspector() {
   const memNodes = scene.nodes.filter(n =>
     n.type === 'REGISTER' || n.type === 'SHIFT_REG' || n.type === 'COUNTER' ||
     n.type === 'RAM' || n.type === 'ROM' || n.type === 'REG_FILE' ||
-    n.type === 'FIFO' || n.type === 'STACK'
+    n.type === 'FIFO' || n.type === 'STACK' || n.type === 'PC'
   );
 
   if (memNodes.length === 0) {
@@ -985,7 +985,7 @@ function _refreshMemInspector() {
     return;
   }
 
-  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'RF', FIFO: 'FIFO', STACK: 'STACK' };
+  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'RF', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC' };
   let html = '';
 
   for (const node of memNodes) {

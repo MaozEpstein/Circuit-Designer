@@ -28,6 +28,7 @@ export const COMPONENT_TYPES = {
   REG_FILE:     'REG_FILE',
   FIFO:         'FIFO',
   STACK:        'STACK',
+  PC:           'PC',
 };
 
 export const GATE_TYPES = ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'NOT'];
@@ -41,7 +42,7 @@ export const FF_TYPE_SET = new Set([
 
 /** Set of all memory component types (sequential, clocked) */
 export const MEMORY_TYPE_SET = new Set([
-  'REGISTER', 'SHIFT_REG', 'COUNTER', 'RAM', 'ROM', 'REG_FILE', 'FIFO', 'STACK'
+  'REGISTER', 'SHIFT_REG', 'COUNTER', 'RAM', 'ROM', 'REG_FILE', 'FIFO', 'STACK', 'PC'
 ]);
 
 export const LATCH_TYPES_LIST = ['D_LATCH', 'SR_LATCH'];
@@ -104,6 +105,8 @@ export function createComponent(type, x, y) {
       return { ...base, depth: 8, dataBits: 8, label: 'FIFO' };
     case COMPONENT_TYPES.STACK:
       return { ...base, depth: 8, dataBits: 8, label: 'STACK' };
+    case COMPONENT_TYPES.PC:
+      return { ...base, bitWidth: 8, label: 'PC' };
     default:
       return base;
   }

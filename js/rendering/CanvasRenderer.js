@@ -1327,6 +1327,7 @@ function _memoryInputLabel(node, i) {
   if (node.type === 'REG_FILE') return ['RD_A', 'WR_A', 'WR_D', 'WE', 'CLK'][i] || '';
   if (node.type === 'FIFO')     return ['DATA', 'WR', 'RD', 'CLR', 'CLK'][i] || '';
   if (node.type === 'STACK')    return ['DATA', 'PUSH', 'POP', 'CLR', 'CLK'][i] || '';
+  if (node.type === 'PC')       return ['JMP_A', 'JMP', 'EN', 'CLR', 'CLK'][i] || '';
   return i.toString();
 }
 
@@ -1360,7 +1361,7 @@ function _drawMemoryNode(node, val, hovered, ffStates) {
   ctx.shadowBlur = 0;
 
   // Type label
-  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'REG FILE', FIFO: 'FIFO', STACK: 'STACK' };
+  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'REG FILE', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC' };
   ctx.fillStyle = '#c0a0f0';
   ctx.font = 'bold 11px JetBrains Mono, monospace';
   ctx.textAlign = 'center';
@@ -2023,6 +2024,7 @@ function _getNodeInputCount(node) {
   if (node.type === 'REG_FILE') return 5;  // RD_ADDR, WR_ADDR, WR_DATA, WE, CLK
   if (node.type === 'FIFO') return 5;     // DATA, WR, RD, CLR, CLK
   if (node.type === 'STACK') return 5;    // DATA, PUSH, POP, CLR, CLK
+  if (node.type === 'PC') return 5;       // JUMP_ADDR, JUMP, EN, CLR, CLK
   if (node.type === 'OUTPUT') return 1;
   if (node.type === 'DISPLAY_7SEG') return 7;
   return 1;

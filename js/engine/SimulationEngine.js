@@ -336,6 +336,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const maxVal = (1 << (node.bitWidth || 4)) - 1;
         nodeValues.set(id + '__out1', ms.count === maxVal ? 1 : 0);
       }
+      // PC: no extra outputs beyond Q
       // FIFO/STACK: output top/front + flags
       if (node.type === 'FIFO' || node.type === 'STACK') {
         nodeValues.set(id + '__out1', ms.full ?? 0);
@@ -590,6 +591,23 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         if (ms.buffer.length > 0 && !pop) ms.q = ms.buffer[ms.buffer.length - 1] ?? 0;
         ms.full  = ms.buffer.length >= depth ? 1 : 0;
         ms.empty = ms.buffer.length === 0 ? 1 : 0;
+
+      } else if (node.type === 'PC') {
+        // Inputs: JUMP_ADDR(0), JUMP(1), EN(2), CLR(3), CLK
+        // Use wireValues directly by inputIndex for correct mapping
+        const allSlots = inputSlots.filter(s => s !== clkSlot);
+        const getByIdx = (idx) => {
+          const s = allSlots.find(sl => sl.inputIndex === idx);
+          return s ? (wireValues.get(s.wire.id) ?? 0) : 0;
+        };
+        const jumpAddr = getByIdx(0);
+        const jump     = getByIdx(1);
+        const en       = getByIdx(2) || (!allSlots.find(sl => sl.inputIndex === 2) ? 1 : 0); // default EN=1
+        const clr      = getByIdx(3);
+        const mask     = (1 << (node.bitWidth || 8)) - 1;
+        if (clr)       ms.q = 0;
+        else if (jump) ms.q = jumpAddr & mask;
+        else if (en)   ms.q = (ms.q + 1) & mask;
       }
 
       if (ms.q !== oldQ) ffUpdated = true;

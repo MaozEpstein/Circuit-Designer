@@ -57,6 +57,7 @@ const TOOL_TYPE_MAP = {
   'place-regfile':       COMPONENT_TYPES.REG_FILE,
   'place-fifo':          COMPONENT_TYPES.FIFO,
   'place-stack':         COMPONENT_TYPES.STACK,
+  'place-pc':            COMPONENT_TYPES.PC,
 };
 
 // Direct gate placements (type + gate preset)
@@ -645,6 +646,7 @@ function _getComponentFields(node) {
     case 'REGISTER':
     case 'SHIFT_REG':
     case 'COUNTER':
+    case 'PC':
       return [{ key: 'bitWidth', label: 'Bit Width', min: 1, max: 16, val: node.bitWidth || 4 }];
     case 'REG_FILE':
       return [
