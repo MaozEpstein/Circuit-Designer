@@ -58,6 +58,11 @@ const TOOL_TYPE_MAP = {
   'place-fifo':          COMPONENT_TYPES.FIFO,
   'place-stack':         COMPONENT_TYPES.STACK,
   'place-pc':            COMPONENT_TYPES.PC,
+  'place-alu':           COMPONENT_TYPES.ALU,
+  'place-ir':            COMPONENT_TYPES.IR,
+  'place-cu':            COMPONENT_TYPES.CU,
+  'place-bus':           COMPONENT_TYPES.BUS,
+  'place-imm':           COMPONENT_TYPES.IMM,
 };
 
 // Direct gate placements (type + gate preset)
@@ -571,7 +576,7 @@ function _onCanvasDblClick(e) {
   const screenX = rect.left + canvasPoint.x;
   const screenY = rect.top + canvasPoint.y;
 
-  const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE']);
+  const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM']);
   if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE_BLOCKS.has(node.type)) {
     _showComponentPropsPopup(node, screenX, screenY);
     return;
@@ -652,6 +657,23 @@ function _getComponentFields(node) {
       return [
         { key: 'regCount', label: 'Registers', min: 2, max: 32, val: node.regCount || 8 },
         { key: 'dataBits', label: 'Data Bits',  min: 1, max: 16, val: node.dataBits || 8 },
+      ];
+    case 'ALU':
+      return [{ key: 'bitWidth', label: 'Bit Width', min: 1, max: 16, val: node.bitWidth || 8 }];
+    case 'IMM':
+      return [
+        { key: 'value',    label: 'Value',     min: 0, max: 65535, val: node.value || 0 },
+        { key: 'bitWidth', label: 'Bit Width',  min: 1, max: 16,   val: node.bitWidth || 8 },
+      ];
+    case 'BUS':
+      return [{ key: 'sourceCount', label: 'Sources', min: 2, max: 8, val: node.sourceCount || 3 }];
+    case 'IR':
+      return [
+        { key: 'instrWidth', label: 'Instr Width', min: 8, max: 32, val: node.instrWidth || 16 },
+        { key: 'opBits',     label: 'Opcode Bits',  min: 2, max: 8,  val: node.opBits || 4 },
+        { key: 'rdBits',     label: 'RD Bits',      min: 2, max: 8,  val: node.rdBits || 4 },
+        { key: 'rs1Bits',    label: 'RS1 Bits',     min: 2, max: 8,  val: node.rs1Bits || 4 },
+        { key: 'rs2Bits',    label: 'RS2 Bits',     min: 2, max: 8,  val: node.rs2Bits || 4 },
       ];
     case 'FIFO':
     case 'STACK':

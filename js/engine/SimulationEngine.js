@@ -133,7 +133,10 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
     const node  = nodeMap.get(id);
     let   value = null;
 
-    if (node.type === 'INPUT') {
+    if (node.type === 'IMM') {
+      value = (node.value ?? 0) & ((1 << (node.bitWidth || 8)) - 1);
+
+    } else if (node.type === 'INPUT') {
       value = node.fixedValue;
 
     } else if (node.type === 'MUX_SELECT') {
@@ -336,6 +339,24 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const maxVal = (1 << (node.bitWidth || 4)) - 1;
         nodeValues.set(id + '__out1', ms.count === maxVal ? 1 : 0);
       }
+      // IR: decode stored instruction into fields
+      if (node.type === 'IR') {
+        const instr = ms.q ?? 0;
+        const opBits  = node.opBits  || 4;
+        const rdBits  = node.rdBits  || 4;
+        const rs1Bits = node.rs1Bits || 4;
+        const rs2Bits = node.rs2Bits || 4;
+        // Fields extracted MSB-first: [OP | RD | RS1 | RS2]
+        const rs2Shift = 0;
+        const rs1Shift = rs2Bits;
+        const rdShift  = rs2Bits + rs1Bits;
+        const opShift  = rs2Bits + rs1Bits + rdBits;
+        nodeValues.set(id + '__out0', (instr >> opShift)  & ((1 << opBits)  - 1)); // OP
+        nodeValues.set(id + '__out1', (instr >> rdShift)  & ((1 << rdBits)  - 1)); // RD
+        nodeValues.set(id + '__out2', (instr >> rs1Shift) & ((1 << rs1Bits) - 1)); // RS1
+        nodeValues.set(id + '__out3', (instr >> rs2Shift) & ((1 << rs2Bits) - 1)); // RS2/IMM
+        value = nodeValues.get(id + '__out0');
+      }
       // PC: no extra outputs beyond Q
       // FIFO/STACK: output top/front + flags
       if (node.type === 'FIFO' || node.type === 'STACK') {
@@ -350,6 +371,88 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         value = (ms.regs[regIdx] ?? 0);
         ms.q = value;
       }
+
+    } else if (node.type === 'BUS') {
+      // Combinational Bus: pairs of (Dn, ENn) inputs → OUT, ERR
+      const inputSlots = inputs.get(id);
+      const srcCount = node.sourceCount || 3;
+      let activeCount = 0;
+      let busVal = null;
+      for (let s = 0; s < srcCount; s++) {
+        const dSlot  = inputSlots.find(sl => sl.inputIndex === s * 2);
+        const enSlot = inputSlots.find(sl => sl.inputIndex === s * 2 + 1);
+        const d  = dSlot  ? (nodeValues.get(dSlot.sourceId) ?? 0)  : 0;
+        const en = enSlot ? (nodeValues.get(enSlot.sourceId) ?? 0) : 0;
+        if (en) {
+          activeCount++;
+          busVal = d;
+        }
+      }
+      if (activeCount === 0) {
+        value = null; // high-Z
+      } else if (activeCount === 1) {
+        value = busVal;
+      } else {
+        value = busVal; // conflict — take last, but flag error
+      }
+      nodeValues.set(id + '__out1', activeCount > 1 ? 1 : 0); // ERR
+
+    } else if (node.type === 'CU') {
+      // Combinational Control Unit: inputs OP(0), Z(1), C(2)
+      // Outputs: ALU_OP(out0), REG_WE(out1), MEM_WE(out2), MEM_RE(out3), JMP(out4), HALT(out5)
+      const inputSlots = inputs.get(id);
+      const op = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+      const z  = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
+      const c  = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
+      let aluOp = 0, regWe = 0, memWe = 0, memRe = 0, jmp = 0, halt = 0;
+      switch (op & 0xF) {
+        case 0:  aluOp = 0; regWe = 1; break;                // ADD
+        case 1:  aluOp = 1; regWe = 1; break;                // SUB
+        case 2:  aluOp = 2; regWe = 1; break;                // AND
+        case 3:  aluOp = 3; regWe = 1; break;                // OR
+        case 4:  aluOp = 4; regWe = 1; break;                // XOR
+        case 5:  aluOp = 5; regWe = 1; break;                // SHL
+        case 6:  aluOp = 6; regWe = 1; break;                // SHR
+        case 7:  aluOp = 7; break;                            // CMP
+        case 8:  regWe = 1; memRe = 1; break;                // LOAD
+        case 9:  memWe = 1; break;                            // STORE
+        case 10: jmp = 1; break;                              // JMP
+        case 11: jmp = z; break;                              // JZ
+        case 12: jmp = c; break;                              // JC
+        case 13: regWe = 1; break;                            // MOV
+        case 14: break;                                        // NOP
+        case 15: halt = 1; break;                              // HALT
+      }
+      value = aluOp;
+      nodeValues.set(id + '__out0', aluOp);
+      nodeValues.set(id + '__out1', regWe);
+      nodeValues.set(id + '__out2', memWe);
+      nodeValues.set(id + '__out3', memRe);
+      nodeValues.set(id + '__out4', jmp);
+      nodeValues.set(id + '__out5', halt);
+
+    } else if (node.type === 'ALU') {
+      // Combinational ALU: inputs A(0), B(1), OP(2) → outputs R, Z(flag), C(flag)
+      const inputSlots = inputs.get(id);
+      const a  = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+      const b  = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
+      const op = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
+      const bits = node.bitWidth || 8;
+      const mask = (1 << bits) - 1;
+      let r = 0, carry = 0;
+      switch (op & 7) {
+        case 0: { const s = a + b; r = s & mask; carry = (s >> bits) & 1; break; }          // ADD
+        case 1: { const s = a - b; r = s & mask; carry = s < 0 ? 1 : 0; break; }             // SUB
+        case 2: r = (a & b) & mask; break;                                                     // AND
+        case 3: r = (a | b) & mask; break;                                                     // OR
+        case 4: r = (a ^ b) & mask; break;                                                     // XOR
+        case 5: { const s = a << (b & 0xF); r = s & mask; carry = (s >> bits) & 1; break; }   // SHL
+        case 6: r = (a >>> (b & 0xF)) & mask; break;                                           // SHR
+        case 7: r = a === b ? 0 : (a - b) & mask; carry = a > b ? 1 : 0; break;                  // CMP
+      }
+      value = r;
+      nodeValues.set(id + '__out1', r === 0 ? 1 : 0);  // Z flag
+      nodeValues.set(id + '__out2', carry);              // C flag
 
     } else if (node.type === 'OUTPUT') {
       const inputSlots = inputs.get(id);
@@ -371,8 +474,12 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       if (outIdx === 1 && FF_TYPE_SET.has(node.type)) {
         wireValues.set(wire.id, nodeValues.get(id + '__qnot') ?? null);
       } else if (node.type === 'DEMUX' || node.type === 'DECODER' || node.type === 'ENCODER' ||
-                 node.type === 'HALF_ADDER' || node.type === 'FULL_ADDER' || node.type === 'COMPARATOR') {
+                 node.type === 'HALF_ADDER' || node.type === 'FULL_ADDER' || node.type === 'COMPARATOR' ||
+                 node.type === 'ALU' || node.type === 'CU' || node.type === 'BUS') {
         wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? null);
+      } else if (node.type === 'IR') {
+        // IR always uses __out for all outputs
+        wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? 0);
       } else if (MEMORY_TYPE_SET.has(node.type)) {
         // outIdx 0 = Q (packed value), outIdx 1 = TC (counter only)
         if (outIdx >= 1) wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? 0);
@@ -592,6 +699,14 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         ms.full  = ms.buffer.length >= depth ? 1 : 0;
         ms.empty = ms.buffer.length === 0 ? 1 : 0;
 
+      } else if (node.type === 'IR') {
+        // Inputs: INSTR(0), LD(1), CLK
+        const instr = _w(dataSlots[0]);
+        const ld    = _w(dataSlots[1]) ?? 1;
+        const iWidth = node.instrWidth || 16;
+        const mask   = (1 << iWidth) - 1;
+        if (ld) ms.q = instr & mask;
+
       } else if (node.type === 'PC') {
         // Inputs: JUMP_ADDR(0), JUMP(1), EN(2), CLR(3), CLK
         // Use wireValues directly by inputIndex for correct mapping
@@ -625,6 +740,19 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const ms = ffStates.get(node.id);
         if (!ms) return;
         nodeValues.set(node.id, ms.q ?? 0);
+        if (node.type === 'IR') {
+          const instr = ms.q ?? 0;
+          const opBits = node.opBits || 4, rdBits = node.rdBits || 4, rs1Bits = node.rs1Bits || 4, rs2Bits = node.rs2Bits || 4;
+          nodeValues.set(node.id + '__out0', (instr >> (rs2Bits + rs1Bits + rdBits)) & ((1 << opBits) - 1));
+          nodeValues.set(node.id + '__out1', (instr >> (rs2Bits + rs1Bits))          & ((1 << rdBits) - 1));
+          nodeValues.set(node.id + '__out2', (instr >> rs2Bits)                       & ((1 << rs1Bits) - 1));
+          nodeValues.set(node.id + '__out3', instr                                    & ((1 << rs2Bits) - 1));
+          successors.get(node.id)?.forEach(({ wire }) => {
+            const outIdx = wire.sourceOutputIndex || 0;
+            wireValues.set(wire.id, nodeValues.get(node.id + '__out' + outIdx) ?? 0);
+          });
+          return;
+        }
         if (node.type === 'COUNTER') {
           const maxVal = (1 << (node.bitWidth || 4)) - 1;
           nodeValues.set(node.id + '__out1', ms.count === maxVal ? 1 : 0);

@@ -115,6 +115,12 @@ export class CommandPalette {
       { id: 'place-fifo', label: 'Place FIFO', category: 'Memory', action: () => bus.emit('palette:tool', 'place-fifo') },
       { id: 'place-stack', label: 'Place Stack', category: 'Memory', action: () => bus.emit('palette:tool', 'place-stack') },
       { id: 'place-pc', label: 'Place Program Counter', category: 'Memory', action: () => bus.emit('palette:tool', 'place-pc') },
+      // CPU components
+      { id: 'place-alu', label: 'Place ALU', category: 'CPU', action: () => bus.emit('palette:tool', 'place-alu') },
+      { id: 'place-ir', label: 'Place Instruction Register', category: 'CPU', action: () => bus.emit('palette:tool', 'place-ir') },
+      { id: 'place-cu', label: 'Place Control Unit', category: 'CPU', action: () => bus.emit('palette:tool', 'place-cu') },
+      { id: 'place-bus', label: 'Place Bus', category: 'CPU', action: () => bus.emit('palette:tool', 'place-bus') },
+      { id: 'place-imm', label: 'Place Immediate', category: 'CPU', action: () => bus.emit('palette:tool', 'place-imm') },
       // Flip-Flops — direct placement
       { id: 'place-dff', label: 'Place D Flip-Flop', category: 'Flip-Flop', action: () => bus.emit('palette:tool', 'place-dff') },
       { id: 'place-tff', label: 'Place T Flip-Flop', category: 'Flip-Flop', action: () => bus.emit('palette:tool', 'place-tff') },

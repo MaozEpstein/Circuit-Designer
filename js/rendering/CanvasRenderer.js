@@ -407,7 +407,7 @@ function _muxNodeSize(node) {
 
 function _nodeOutputAnchor(node, outputIndex) {
   outputIndex = outputIndex || 0;
-  if (node.type === 'INPUT' || node.type === 'CLOCK') {
+  if (node.type === 'INPUT' || node.type === 'CLOCK' || node.type === 'IMM') {
     return { x: node.x + NODE.inputR, y: node.y };
   }
   if (node.type === 'GATE_SLOT') {
@@ -442,6 +442,29 @@ function _nodeOutputAnchor(node, outputIndex) {
     const spread = 16;
     const startY = node.y - spread; // EQ, GT, LT
     return { x: node.x + hw, y: startY + outputIndex * spread };
+  }
+  if (node.type === 'BUS') {
+    const hw = 50;
+    return { x: node.x + hw, y: node.y + (outputIndex === 0 ? -10 : 10) };
+  }
+  if (node.type === 'CU') {
+    const hw = 60;
+    const h = 110;
+    const spread = (h - 20) / 5;
+    const startY = node.y - (h - 20) / 2;
+    return { x: node.x + hw, y: startY + outputIndex * spread };
+  }
+  if (node.type === 'ALU') {
+    const hw = 55;
+    const spread = 18;
+    const startY = node.y - spread;
+    return { x: node.x + hw, y: startY + outputIndex * spread };
+  }
+  if (node.type === 'IR') {
+    const w = 110, h = 80;
+    const spread = (h - 20) / 3;
+    const startY = node.y - (h - 20) / 2;
+    return { x: node.x + w / 2, y: startY + outputIndex * spread };
   }
   if (MEMORY_TYPE_SET.has(node.type)) {
     const { w } = _memoryNodeSize(node);
@@ -524,6 +547,34 @@ function _nodeInputAnchor(_src, node, inputIndex, isClockWire) {
     const yOff = inputIndex === 0 ? -12 : 12;
     return { x: node.x - hw, y: node.y + yOff };
   }
+  if (node.type === 'BUS') {
+    const hw = 50;
+    const srcCount = node.sourceCount || 3;
+    const inCount = srcCount * 2;
+    const h = Math.max(60, srcCount * 28 + 10);
+    const spread = (h - 14) / Math.max(1, inCount - 1);
+    const startY = node.y - (h - 14) / 2;
+    return { x: node.x - hw, y: startY + inputIndex * spread };
+  }
+  if (node.type === 'CU') {
+    const hw = 60;
+    const spread = 22;
+    const startY = node.y - spread;
+    return { x: node.x - hw, y: startY + inputIndex * spread };
+  }
+  if (node.type === 'ALU') {
+    const hw = 55;
+    const spread = 18;
+    const startY = node.y - spread;
+    return { x: node.x - hw, y: startY + inputIndex * spread };
+  }
+  if (node.type === 'IR') {
+    const w = 110, h = 80;
+    if (inputIndex === 2) return { x: node.x, y: node.y + h / 2 }; // CLK at bottom
+    const spread = 22;
+    const startY = node.y - spread / 2;
+    return { x: node.x - w / 2, y: startY + inputIndex * spread };
+  }
   if (MEMORY_TYPE_SET.has(node.type)) {
     const { w, h } = _memoryNodeSize(node);
     const inCount = _getNodeInputCount(node);
@@ -584,6 +635,11 @@ function _drawNodes(nodes, nodeValues, ffStates, hoveredNodeId, selectedNodeId) 
     else if (node.type === 'HALF_ADDER')  _drawAdderNode(node, val, hovered, false);
     else if (node.type === 'FULL_ADDER')  _drawAdderNode(node, val, hovered, true);
     else if (node.type === 'COMPARATOR')  _drawComparatorNode(node, val, hovered);
+    else if (node.type === 'ALU')        _drawAluNode(node, val, hovered);
+    else if (node.type === 'IR')         _drawIrNode(node, val, hovered, ffStates);
+    else if (node.type === 'CU')         _drawCuNode(node, val, hovered);
+    else if (node.type === 'BUS')        _drawBusNode(node, val, hovered);
+    else if (node.type === 'IMM')        _drawImmNode(node, val, hovered);
     else if (MEMORY_TYPE_SET.has(node.type)) _drawMemoryNode(node, val, hovered, ffStates);
     else if (node.type === 'LATCH_SLOT') {
       const ffState = ffStates.get(node.id) || { q: 0, qNot: 1 };
@@ -1318,6 +1374,316 @@ function _drawComparatorNode(node, val, hovered) {
   ctx.restore();
 }
 
+// ── IMM (Immediate/Constant) node ───────────────────────────
+function _drawImmNode(node, val, hovered) {
+  const r = NODE.inputR;
+  ctx.save();
+
+  if (hovered) { ctx.shadowColor = 'rgba(255,160,40,0.5)'; ctx.shadowBlur = 18; }
+
+  // Diamond shape
+  ctx.fillStyle = 'rgba(20,14,8,0.96)';
+  ctx.beginPath();
+  ctx.moveTo(node.x, node.y - r);
+  ctx.lineTo(node.x + r, node.y);
+  ctx.lineTo(node.x, node.y + r);
+  ctx.lineTo(node.x - r, node.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = hovered ? '#ffa028' : '#8a6020';
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  ctx.beginPath();
+  ctx.moveTo(node.x, node.y - r);
+  ctx.lineTo(node.x + r, node.y);
+  ctx.lineTo(node.x, node.y + r);
+  ctx.lineTo(node.x - r, node.y);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Value
+  const bits = node.bitWidth || 8;
+  const v = (node.value ?? 0) & ((1 << bits) - 1);
+  ctx.fillStyle = '#ffa028';
+  ctx.font = 'bold 10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('0x' + v.toString(16).toUpperCase().padStart(Math.ceil(bits / 4), '0'), node.x, node.y);
+
+  // Node label above
+  ctx.fillStyle = C.textDim;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(node.label || '', node.x, node.y - r - 6);
+
+  ctx.restore();
+}
+
+// ── BUS node ────────────────────────────────────────────────
+function _drawBusNode(node, val, hovered) {
+  const srcCount = node.sourceCount || 3;
+  const w = 100, h = Math.max(60, srcCount * 28 + 10);
+  const x = node.x - w / 2;
+  const y = node.y - h / 2;
+  ctx.save();
+
+  if (hovered) { ctx.shadowColor = 'rgba(255,160,40,0.5)'; ctx.shadowBlur = 18; }
+
+  ctx.fillStyle = 'rgba(20,14,8,0.96)';
+  _roundRect(ctx, x, y, w, h, 6);
+  ctx.fill();
+  ctx.strokeStyle = hovered ? '#ffa028' : '#8a6020';
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  _roundRect(ctx, x, y, w, h, 6);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Title
+  ctx.fillStyle = '#ffa028';
+  ctx.font = 'bold 12px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('BUS', node.x, node.y - 8);
+
+  // Value
+  ctx.fillStyle = val === null ? '#4a3020' : '#39ff14';
+  ctx.font = 'bold 10px JetBrains Mono, monospace';
+  ctx.fillText(val === null ? 'Hi-Z' : '0x' + (val >>> 0).toString(16).toUpperCase(), node.x, node.y + 6);
+
+  // Source count
+  ctx.fillStyle = '#6a5030';
+  ctx.font = '8px JetBrains Mono, monospace';
+  ctx.fillText(srcCount + ' src', node.x, node.y + 18);
+
+  // Node label above
+  ctx.fillStyle = C.textDim;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(node.label || '', node.x, y - 6);
+
+  ctx.restore();
+}
+
+// ── CU (Control Unit) node ──────────────────────────────────
+function _drawCuNode(node, val, hovered) {
+  const w = 120, h = 110;
+  const x = node.x - w / 2;
+  const y = node.y - h / 2;
+  ctx.save();
+
+  if (hovered) { ctx.shadowColor = 'rgba(255,160,40,0.5)'; ctx.shadowBlur = 18; }
+
+  ctx.fillStyle = 'rgba(20,14,8,0.96)';
+  _roundRect(ctx, x, y, w, h, 6);
+  ctx.fill();
+  ctx.strokeStyle = hovered ? '#ffa028' : '#8a6020';
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  _roundRect(ctx, x, y, w, h, 6);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Title
+  ctx.fillStyle = '#ffa028';
+  ctx.font = 'bold 13px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('CONTROL', node.x, node.y - 14);
+  ctx.fillText('UNIT', node.x, node.y);
+
+  // Opcode names for reference
+  const opNames = ['ADD','SUB','AND','OR','XOR','SHL','SHR','CMP','LD','ST','JMP','JZ','JC','MOV','NOP','HLT'];
+  ctx.fillStyle = '#6a5030';
+  ctx.font = '7px JetBrains Mono, monospace';
+  ctx.fillText(opNames[val & 0xF] || '?', node.x, node.y + 16);
+
+  // Input labels
+  ctx.textAlign = 'right';
+  const inSpread = 22;
+  const inStartY = node.y - inSpread;
+  ctx.fillText('OP', x + 14, inStartY + 1);
+  ctx.fillText('Z', x + 12, inStartY + inSpread + 1);
+  ctx.fillText('C', x + 12, inStartY + inSpread * 2 + 1);
+
+  // Output labels
+  const outLabels = ['ALU_OP', 'RG_WE', 'MM_WE', 'MM_RE', 'JMP', 'HALT'];
+  const outSpread = (h - 20) / 5;
+  const outStartY = node.y - (h - 20) / 2;
+  ctx.textAlign = 'left';
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = '#6a5030';
+    ctx.fillText(outLabels[i], x + w - 38, outStartY + i * outSpread + 1);
+  }
+
+  // Node label above
+  ctx.fillStyle = C.textDim;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(node.label || '', node.x, y - 6);
+
+  ctx.restore();
+}
+
+// ── IR (Instruction Register) node ──────────────────────────
+function _drawIrNode(node, val, hovered, ffStates) {
+  const w = 110, h = 80;
+  const x = node.x - w / 2;
+  const y = node.y - h / 2;
+  ctx.save();
+
+  if (hovered) { ctx.shadowColor = 'rgba(255,160,40,0.5)'; ctx.shadowBlur = 18; }
+
+  ctx.fillStyle = 'rgba(20,14,8,0.96)';
+  _roundRect(ctx, x, y, w, h, 6);
+  ctx.fill();
+  ctx.strokeStyle = hovered ? '#ffa028' : '#8a6020';
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  _roundRect(ctx, x, y, w, h, 6);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Title
+  ctx.fillStyle = '#ffa028';
+  ctx.font = 'bold 12px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('IR', node.x, y + 12);
+
+  // Show stored instruction hex
+  const ms = ffStates?.get(node.id);
+  const instr = ms ? (ms.q ?? 0) : 0;
+  const iWidth = node.instrWidth || 16;
+  ctx.fillStyle = '#39ff14';
+  ctx.font = 'bold 9px JetBrains Mono, monospace';
+  ctx.fillText('0x' + instr.toString(16).toUpperCase().padStart(Math.ceil(iWidth / 4), '0'), node.x, y + 24);
+
+  // Decoded fields
+  const opBits = node.opBits || 4, rdBits = node.rdBits || 4, rs1Bits = node.rs1Bits || 4, rs2Bits = node.rs2Bits || 4;
+  const opVal  = (instr >> (rs2Bits + rs1Bits + rdBits)) & ((1 << opBits) - 1);
+  const rdVal  = (instr >> (rs2Bits + rs1Bits))          & ((1 << rdBits) - 1);
+  const rs1Val = (instr >> rs2Bits)                       & ((1 << rs1Bits) - 1);
+  const rs2Val = instr                                    & ((1 << rs2Bits) - 1);
+
+  // Output labels with values
+  const spread = (h - 20) / 3;
+  const startY = node.y - (h - 20) / 2;
+  const fields = [
+    { label: 'OP', val: opVal },
+    { label: 'RD', val: rdVal },
+    { label: 'RS1', val: rs1Val },
+    { label: 'RS2', val: rs2Val },
+  ];
+  ctx.font = '7px JetBrains Mono, monospace';
+  for (let i = 0; i < fields.length; i++) {
+    const fy = startY + i * spread;
+    ctx.fillStyle = '#6a5030';
+    ctx.textAlign = 'left';
+    ctx.fillText(fields[i].label, x + w - 28, fy + 1);
+    ctx.fillStyle = '#aaa';
+    ctx.fillText(fields[i].val.toString(), x + w - 10, fy + 1);
+  }
+
+  // Input labels
+  ctx.fillStyle = '#6a5030';
+  ctx.textAlign = 'right';
+  ctx.fillText('INSTR', x + 20, node.y - 11 + 1);
+  ctx.fillText('LD', x + 14, node.y + 11 + 1);
+
+  // CLK triangle
+  ctx.strokeStyle = '#6a5030';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(node.x - 5, y + h - 2);
+  ctx.lineTo(node.x, y + h - 8);
+  ctx.lineTo(node.x + 5, y + h - 2);
+  ctx.stroke();
+
+  // Node label above
+  ctx.fillStyle = C.textDim;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(node.label || '', node.x, y - 6);
+
+  ctx.restore();
+}
+
+// ── ALU node ────────────────────────────────────────────────
+function _drawAluNode(node, val, hovered) {
+  const w = 110, h = 76;
+  const x = node.x - w / 2;
+  const y = node.y - h / 2;
+  ctx.save();
+
+  if (hovered) { ctx.shadowColor = 'rgba(255,160,40,0.5)'; ctx.shadowBlur = 18; }
+
+  // ALU trapezoid shape
+  ctx.fillStyle = 'rgba(20,14,8,0.96)';
+  ctx.beginPath();
+  ctx.moveTo(x,     y + 8);        // top-left
+  ctx.lineTo(x + w, y + 16);       // top-right (narrower)
+  ctx.lineTo(x + w, y + h - 16);   // bottom-right
+  ctx.lineTo(x,     y + h - 8);    // bottom-left (wider)
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = hovered ? '#ffa028' : '#8a6020';
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x,     y + 8);
+  ctx.lineTo(x + w, y + 16);
+  ctx.lineTo(x + w, y + h - 16);
+  ctx.lineTo(x,     y + h - 8);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // "ALU" label
+  ctx.fillStyle = '#ffa028';
+  ctx.font = 'bold 14px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('ALU', node.x - 8, node.y - 8);
+
+  // Operation names
+  const opNames = ['ADD', 'SUB', 'AND', 'OR', 'XOR', 'SHL', 'SHR', 'CMP'];
+  const bits = node.bitWidth || 8;
+  ctx.fillStyle = '#6a5030';
+  ctx.font = '8px JetBrains Mono, monospace';
+  ctx.fillText(bits + '-bit', node.x - 8, node.y + 6);
+
+  // Show current result
+  if (val !== null && val !== undefined) {
+    ctx.fillStyle = '#39ff14';
+    ctx.font = 'bold 9px JetBrains Mono, monospace';
+    ctx.fillText('0x' + (val >>> 0).toString(16).toUpperCase().padStart(Math.ceil(bits/4), '0'), node.x - 8, node.y + 18);
+  }
+
+  // Input labels
+  ctx.fillStyle = '#6a5030';
+  ctx.font = '7px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('A', x + 12, node.y - 18 + 1);
+  ctx.fillText('B', x + 12, node.y + 1);
+  ctx.fillText('OP', x + 14, node.y + 18 + 1);
+
+  // Output labels
+  ctx.textAlign = 'left';
+  ctx.fillText('R', x + w - 12, node.y - 18 + 1);
+  ctx.fillText('Z', x + w - 10, node.y + 1);
+  ctx.fillText('C', x + w - 10, node.y + 18 + 1);
+
+  // Node label above
+  ctx.fillStyle = C.textDim;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(node.label || '', node.x, y - 2);
+
+  ctx.restore();
+}
+
 function _memoryInputLabel(node, i) {
   if (node.type === 'REGISTER')  return ['DATA', 'EN', 'CLR', 'CLK'][i] || '';
   if (node.type === 'SHIFT_REG') return ['DIN', 'DIR', 'EN', 'CLR', 'CLK'][i] || '';
@@ -1328,6 +1694,7 @@ function _memoryInputLabel(node, i) {
   if (node.type === 'FIFO')     return ['DATA', 'WR', 'RD', 'CLR', 'CLK'][i] || '';
   if (node.type === 'STACK')    return ['DATA', 'PUSH', 'POP', 'CLR', 'CLK'][i] || '';
   if (node.type === 'PC')       return ['JMP_A', 'JMP', 'EN', 'CLR', 'CLK'][i] || '';
+  if (node.type === 'IR')       return ['INSTR', 'LD', 'CLK'][i] || '';
   return i.toString();
 }
 
@@ -1873,6 +2240,19 @@ export function getNodeAtPoint(px, py, nodes) {
     if (n.type === 'DISPLAY_7SEG') {
       const hw = 40 + 6, hh = 60 + 6;
       if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
+    } else if (n.type === 'BUS') {
+      const srcCount = n.sourceCount || 3;
+      const hw = 50 + 6, hh = Math.max(30, srcCount * 14 + 5) + 6;
+      if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
+    } else if (n.type === 'CU') {
+      const hw = 60 + 6, hh = 55 + 6;
+      if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
+    } else if (n.type === 'ALU') {
+      const hw = 55 + 6, hh = 38 + 6;
+      if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
+    } else if (n.type === 'IR') {
+      const hw = 55 + 6, hh = 40 + 6;
+      if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
     } else if (n.type === 'HALF_ADDER' || n.type === 'FULL_ADDER' || n.type === 'COMPARATOR') {
       const hw = 45 + 6, hh = 30 + 6;
       if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
@@ -2015,6 +2395,9 @@ function _getNodeInputCount(node) {
   if (node.type === 'HALF_ADDER') return 2;   // A, B
   if (node.type === 'FULL_ADDER') return 3;   // A, B, Cin
   if (node.type === 'COMPARATOR') return 2;    // A, B
+  if (node.type === 'ALU') return 3;           // A, B, OP
+  if (node.type === 'CU') return 3;            // OP, Z, C
+  if (node.type === 'BUS') return (node.sourceCount || 3) * 2; // D0,EN0,D1,EN1,...
   // Memory components (bus-style: packed integer per wire)
   if (node.type === 'REGISTER') return 4;   // DATA, EN, CLR, CLK
   if (node.type === 'SHIFT_REG') return 5;  // DIN, DIR, EN, CLR, CLK
@@ -2025,6 +2408,7 @@ function _getNodeInputCount(node) {
   if (node.type === 'FIFO') return 5;     // DATA, WR, RD, CLR, CLK
   if (node.type === 'STACK') return 5;    // DATA, PUSH, POP, CLR, CLK
   if (node.type === 'PC') return 5;       // JUMP_ADDR, JUMP, EN, CLR, CLK
+  if (node.type === 'IR') return 3;       // INSTR, LD, CLK
   if (node.type === 'OUTPUT') return 1;
   if (node.type === 'DISPLAY_7SEG') return 7;
   return 1;
@@ -2065,6 +2449,13 @@ export function getInputAnchors(node) {
       label = 'A' + i;
     } else if (node.type === 'ENCODER') {
       label = 'I' + i;
+    } else if (node.type === 'BUS') {
+      const srcIdx = Math.floor(i / 2);
+      label = i % 2 === 0 ? 'D' + srcIdx : 'EN' + srcIdx;
+    } else if (node.type === 'CU') {
+      label = ['OP', 'Z', 'C'][i] || '';
+    } else if (node.type === 'ALU') {
+      label = ['A', 'B', 'OP'][i] || '';
     } else if (node.type === 'HALF_ADDER' || node.type === 'COMPARATOR') {
       label = i === 0 ? 'A' : 'B';
     } else if (node.type === 'FULL_ADDER') {
@@ -2109,6 +2500,23 @@ export function getOutputAnchors(node) {
     anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'EQ' });
     anchors.push({ ..._nodeOutputAnchor(node, 1), index: 1, label: 'GT' });
     anchors.push({ ..._nodeOutputAnchor(node, 2), index: 2, label: 'LT' });
+  } else if (node.type === 'BUS') {
+    anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'OUT' });
+    anchors.push({ ..._nodeOutputAnchor(node, 1), index: 1, label: 'ERR' });
+  } else if (node.type === 'CU') {
+    const labels = ['ALU_OP', 'RG_WE', 'MM_WE', 'MM_RE', 'JMP', 'HALT'];
+    for (let i = 0; i < 6; i++) {
+      anchors.push({ ..._nodeOutputAnchor(node, i), index: i, label: labels[i] });
+    }
+  } else if (node.type === 'ALU') {
+    anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'R' });
+    anchors.push({ ..._nodeOutputAnchor(node, 1), index: 1, label: 'Z' });
+    anchors.push({ ..._nodeOutputAnchor(node, 2), index: 2, label: 'C' });
+  } else if (node.type === 'IR') {
+    anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'OP' });
+    anchors.push({ ..._nodeOutputAnchor(node, 1), index: 1, label: 'RD' });
+    anchors.push({ ..._nodeOutputAnchor(node, 2), index: 2, label: 'RS1' });
+    anchors.push({ ..._nodeOutputAnchor(node, 3), index: 3, label: 'RS2' });
   } else if (MEMORY_TYPE_SET.has(node.type)) {
     anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'Q' });
     if (node.type === 'COUNTER') {

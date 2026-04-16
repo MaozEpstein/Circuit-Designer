@@ -29,6 +29,12 @@ export const COMPONENT_TYPES = {
   FIFO:         'FIFO',
   STACK:        'STACK',
   PC:           'PC',
+  // CPU components
+  ALU:          'ALU',
+  IR:           'IR',
+  CU:           'CU',
+  BUS:          'BUS',
+  IMM:          'IMM',
 };
 
 export const GATE_TYPES = ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'NOT'];
@@ -42,7 +48,7 @@ export const FF_TYPE_SET = new Set([
 
 /** Set of all memory component types (sequential, clocked) */
 export const MEMORY_TYPE_SET = new Set([
-  'REGISTER', 'SHIFT_REG', 'COUNTER', 'RAM', 'ROM', 'REG_FILE', 'FIFO', 'STACK', 'PC'
+  'REGISTER', 'SHIFT_REG', 'COUNTER', 'RAM', 'ROM', 'REG_FILE', 'FIFO', 'STACK', 'PC', 'IR'
 ]);
 
 export const LATCH_TYPES_LIST = ['D_LATCH', 'SR_LATCH'];
@@ -107,6 +113,16 @@ export function createComponent(type, x, y) {
       return { ...base, depth: 8, dataBits: 8, label: 'STACK' };
     case COMPONENT_TYPES.PC:
       return { ...base, bitWidth: 8, label: 'PC' };
+    case COMPONENT_TYPES.ALU:
+      return { ...base, bitWidth: 8, label: 'ALU' };
+    case COMPONENT_TYPES.IR:
+      return { ...base, instrWidth: 16, opBits: 4, rdBits: 4, rs1Bits: 4, rs2Bits: 4, label: 'IR' };
+    case COMPONENT_TYPES.CU:
+      return { ...base, label: 'CU' };
+    case COMPONENT_TYPES.BUS:
+      return { ...base, sourceCount: 3, label: 'BUS' };
+    case COMPONENT_TYPES.IMM:
+      return { ...base, value: 0, bitWidth: 8, label: 'IMM' };
     default:
       return base;
   }
