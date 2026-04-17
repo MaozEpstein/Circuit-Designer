@@ -539,6 +539,20 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// ── ROM Notification ────────────────────────────────────────
+function _showRomNotification(msg) {
+  let el = document.getElementById('rom-notification');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'rom-notification';
+    el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:600;background:#0d1320;border:1px solid #39ff14;border-radius:6px;padding:8px 16px;font:12px "JetBrains Mono",monospace;color:#39ff14;pointer-events:none;opacity:0;transition:opacity 0.3s';
+    document.body.appendChild(el);
+  }
+  el.textContent = '✓ ' + msg;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
 // ── Wire Tooltip ────────────────────────────────────────────
 const wireTooltipEl = document.getElementById('wire-tooltip');
 function _updateWireTooltip() {
@@ -1969,6 +1983,9 @@ function _updateRomView() {
   // Hide builder in C mode
   const builder = document.getElementById('rom-editor-builder');
   if (builder) builder.style.display = _romViewMode === 'c' ? 'none' : '';
+  // Hide error bar when not in C mode
+  const errorBar = document.getElementById('rom-error-bar');
+  if (errorBar && _romViewMode !== 'c') errorBar.classList.add('hidden');
 
   if (_romViewMode === 'c') {
     codeView?.classList.remove('hidden');
@@ -2020,13 +2037,21 @@ function _syncCodeViewToData() {
     // Save C source
     _romCSource = codeView.value;
     // Compile C to ROM
-    const { memory, errors } = compileCToROM(codeView.value);
+    const { memory, errors, constants } = compileCToROM(codeView.value);
     for (let a = 0; a < addrCount; a++) _romEditorData[a] = 0;
     for (const [addr, val] of Object.entries(memory)) {
       _romEditorData[parseInt(addr)] = val;
     }
-    if (errors.length > 0) {
-      alert('Compilation errors:\n' + errors.join('\n'));
+    if (_romEditorNode) _romEditorNode._lastConstants = constants;
+    // Show errors inline
+    const errorBar = document.getElementById('rom-error-bar');
+    if (errorBar) {
+      if (errors.length > 0) {
+        errorBar.textContent = errors.map(e => '⚠ ' + e).join('\n');
+        errorBar.classList.remove('hidden');
+      } else {
+        errorBar.classList.add('hidden');
+      }
     }
   } else if (_romViewMode === 'asm') {
     const lines = codeView.value.split('\n');
@@ -2258,6 +2283,28 @@ document.getElementById('btn-rom-save')?.addEventListener('click', () => {
   _romEditorNode._cSource = _romCSource;
   commands.execute(new SetNodePropsCommand(scene, _romEditorNode.id, { memory: { ..._romEditorData } }));
   state.ffStates.delete(_romEditorNode.id);
+
+  // Auto-load constants into connected Register Files
+  if (_romViewMode === 'c' && _romEditorNode._lastConstants) {
+    const constants = _romEditorNode._lastConstants;
+    if (Object.keys(constants).length > 0) {
+      // Find all RF/RF-DP nodes in the scene
+      const rfNodes = scene.nodes.filter(n => n.type === 'REG_FILE' || n.type === 'REG_FILE_DP');
+      for (const rf of rfNodes) {
+        const regCount = rf.regCount || 8;
+        if (!rf.initialRegs) rf.initialRegs = new Array(regCount).fill(0);
+        for (const [regStr, val] of Object.entries(constants)) {
+          const reg = parseInt(regStr);
+          if (reg < regCount) rf.initialRegs[reg] = val;
+        }
+        state.ffStates.delete(rf.id); // Reset RF to pick up new values
+      }
+      // Show info about pre-loaded constants
+      const constList = Object.entries(constants).map(([r, v]) => `R${r} = ${v}`).join(',  ');
+      _showRomNotification('Registers pre-loaded: ' + constList);
+    }
+  }
+
   romOverlay?.classList.add('hidden');
   _romEditorNode = null;
 });

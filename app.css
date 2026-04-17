@@ -1197,6 +1197,17 @@
   tab-size: 4;
 }
 
+#rom-error-bar {
+  background: #1a0808;
+  border-top: 1px solid #4a1010;
+  color: #ff4444;
+  font: 11px 'JetBrains Mono', monospace;
+  padding: 6px 16px;
+  max-height: 80px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
 #rom-code-view::selection {
   background: rgba(0, 212, 255, 0.2);
 }

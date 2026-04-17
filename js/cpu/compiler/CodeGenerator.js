@@ -24,7 +24,9 @@ export class CodeGenerator {
   _allocReg(name) {
     if (name && this.vars[name] !== undefined) return this.vars[name];
     if (this.nextReg > 15) {
-      this.errors.push('Out of registers (max 16). Too many variables.');
+      const varInfo = name ? ` Variable "${name}" cannot be allocated.` : '';
+      const usedVars = Object.keys(this.vars).join(', ');
+      this.errors.push(`Out of registers (max 15 variables). ${varInfo} Already used: ${usedVars}`);
       return 0;
     }
     const reg = this.nextReg++;
@@ -506,7 +508,12 @@ export class CodeGenerator {
       return resultReg;
     }
 
-    this.errors.push(`Unsupported binary operator: ${node.op}`);
+    const unsupported = { '*': 'Multiplication', '/': 'Division', '%': 'Modulo' };
+    if (unsupported[node.op]) {
+      this.errors.push(`${unsupported[node.op]} (${node.op}) is not supported by the CPU's ALU. Consider using repeated addition/subtraction.`);
+    } else {
+      this.errors.push(`Unsupported operator: ${node.op}`);
+    }
     return 0;
   }
 
