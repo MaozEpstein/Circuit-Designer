@@ -243,7 +243,7 @@ function _onMouseDown(e) {
 // ── Mouse Up ────────────────────────────────────────────────
 function _onMouseUp(e) {
   // Finish rubber-band selection
-  if (_selection?.rubberBanding) {
+  if (_selection && _selection.rubberBanding) {
     _selection.finishRubberBand();
     _canvas.style.cursor = 'default';
   }
@@ -476,11 +476,15 @@ function _onMouseMove(e) {
     return;
   }
 
-  // Rubber-band selection
-  if (_selection?.rubberBanding) {
-    _selection.updateRubberBand(_mouseWorld.x, _mouseWorld.y);
-    _canvas.style.cursor = 'crosshair';
-    return;
+  // Rubber-band selection (only in multiselect tool)
+  if (_selection && _selection.rubberBanding) {
+    if (_state.tool === 'multiselect') {
+      _selection.updateRubberBand(_mouseWorld.x, _mouseWorld.y);
+      _canvas.style.cursor = 'crosshair';
+      return;
+    } else {
+      _selection.finishRubberBand();
+    }
   }
 
   // Waypoint dragging

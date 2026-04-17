@@ -144,8 +144,15 @@ function _showContextMenu(x, y, nodeId) {
   _ctxNodeId = nodeId;
   state.selectedNodeId = nodeId;
 
+  // Show/hide block-only items
+  const node = scene.getNode(nodeId);
+  const isBlock = node?.type === 'SUB_CIRCUIT';
+  ctxMenu.querySelectorAll('.ctx-block-only').forEach(el => {
+    el.classList.toggle('hidden', !isBlock);
+  });
+
   // Position menu (keep on screen)
-  const menuW = 160, menuH = 220;
+  const menuW = 160, menuH = 280;
   const posX = Math.min(x, window.innerWidth - menuW);
   const posY = Math.min(y, window.innerHeight - menuH);
   ctxMenu.style.left = posX + 'px';
@@ -282,10 +289,149 @@ ctxMenu?.addEventListener('click', (e) => {
         }
       }
       break;
+
+    case 'expandblock':
+      if (node?.type === 'SUB_CIRCUIT' && node.subCircuit) {
+        const before = scene.snapshot();
+        const sc = node.subCircuit;
+        const cx = node.x, cy = node.y;
+        // Remove the block
+        scene.removeNode(_ctxNodeId);
+        // Add back internal nodes with offset
+        const idMap = new Map();
+        for (const n of (sc.nodes || [])) {
+          const newId = scene.addNode({ ...n, x: n.x + cx, y: n.y + cy });
+          idMap.set(n.id, newId);
+        }
+        // Add back internal wires
+        for (const w of (sc.wires || [])) {
+          const newSrc = idMap.get(w.sourceId);
+          const newTgt = idMap.get(w.targetId);
+          if (newSrc && newTgt) {
+            scene.addWire({ ...w, id: undefined, sourceId: newSrc, targetId: newTgt });
+          }
+        }
+        // Undo support
+        commands._undoStack.push({ description: 'Expand Block', execute() {}, undo: () => scene.restoreSnapshot(before) });
+        commands._redoStack = [];
+        state.selectedNodeId = null;
+      }
+      break;
+
+    case 'viewblock':
+      if (node?.type === 'SUB_CIRCUIT' && node.subCircuit) {
+        _showBlockViewer(node);
+      }
+      break;
   }
 
   _hideContextMenu();
 });
+
+// ── Block Internals Viewer ──────────────────────────────────
+const blockViewerOverlay = document.getElementById('block-viewer-overlay');
+
+function _showBlockViewer(node) {
+  const sc = node.subCircuit;
+  if (!sc || !sc.nodes) return;
+
+  // Open in a new popup window
+  const popup = window.open('', 'BlockViewer', 'width=900,height=650,menubar=no,toolbar=no,status=no');
+  if (!popup) { alert('Popup blocked. Please allow popups for this site.'); return; }
+
+  const title = node.subName || node.label || 'BLOCK';
+  const nodesJSON = JSON.stringify(sc.nodes);
+  const wiresJSON = JSON.stringify(sc.wires || []);
+
+  popup.document.write(`<!DOCTYPE html>
+<html><head>
+<title>Block: ${title}</title>
+<style>
+  body { margin:0; background:#080c12; overflow:hidden; font-family:'JetBrains Mono',monospace; }
+  #header { padding:10px 16px; background:#0d1320; border-bottom:2px solid #00d4ff; color:#00d4ff;
+    font-size:14px; font-weight:bold; letter-spacing:1px; display:flex; justify-content:space-between; align-items:center; }
+  canvas { display:block; }
+</style>
+</head><body>
+<div id="header">
+  <span>BLOCK: ${title}</span>
+  <span style="color:#4a6080;font-size:10px">Read-only view</span>
+</div>
+<canvas id="cv"></canvas>
+<script>
+const nodes = ${nodesJSON};
+const wires = ${wiresJSON};
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+cv.width = window.innerWidth;
+cv.height = window.innerHeight - 42;
+window.addEventListener('resize', () => { cv.width = window.innerWidth; cv.height = window.innerHeight - 42; draw(); });
+
+function draw() {
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  if (nodes.length === 0) return;
+
+  let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+  nodes.forEach(n => { minX=Math.min(minX,n.x); maxX=Math.max(maxX,n.x); minY=Math.min(minY,n.y); maxY=Math.max(maxY,n.y); });
+  const pad = 100;
+  const bw = (maxX-minX)+pad*2, bh = (maxY-minY)+pad*2;
+  const scale = Math.min(2, cv.width/bw, cv.height/bh);
+  const offX = cv.width/2 - ((minX+maxX)/2)*scale;
+  const offY = cv.height/2 - ((minY+maxY)/2)*scale;
+
+  ctx.save();
+  ctx.translate(offX, offY);
+  ctx.scale(scale, scale);
+
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  // Wires
+  wires.forEach(w => {
+    const src = nodeMap.get(w.sourceId), dst = nodeMap.get(w.targetId);
+    if (!src || !dst) return;
+    ctx.strokeStyle = w.isClockWire ? '#00bcd4' : '#2a5070';
+    ctx.lineWidth = w.isClockWire ? 1.5 : 2;
+    if (w.isClockWire) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(src.x, src.y); ctx.lineTo(dst.x, dst.y); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Nodes
+  nodes.forEach(n => {
+    const isIn = n.type==='INPUT', isOut = n.type==='OUTPUT', isCLK = n.type==='CLOCK';
+    const colors = {
+      INPUT:['rgba(57,255,20,0.15)','#39ff14'], OUTPUT:['rgba(255,60,60,0.15)','#ff4444'],
+      CLOCK:['rgba(0,188,212,0.15)','#00bcd4'], GATE_SLOT:['rgba(0,212,255,0.1)','#00d4ff'],
+      ALU:['rgba(255,160,40,0.12)','#ffa028'], CU:['rgba(255,160,40,0.12)','#ffa028'],
+      IR:['rgba(255,160,40,0.12)','#ffa028'],
+    };
+    const [fill, stroke] = colors[n.type] || ['rgba(128,90,213,0.12)','#a078e0'];
+    const w = 70, h = 40;
+
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(n.x-w/2, n.y-h/2, w, h, 6);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = stroke;
+    ctx.font = 'bold 11px JetBrains Mono, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(n.label || n.type, n.x, n.y - 4);
+
+    ctx.fillStyle = '#4a6080';
+    ctx.font = '8px JetBrains Mono, monospace';
+    ctx.fillText(n.type, n.x, n.y + 10);
+  });
+
+  ctx.restore();
+}
+draw();
+</`+`script>
+</body></html>`);
+  popup.document.close();
+}
 
 // ── Wire Tooltip ────────────────────────────────────────────
 const wireTooltipEl = document.getElementById('wire-tooltip');
@@ -329,6 +475,7 @@ let _lastWireValues = new Map();
 let _frameCount = 0;
 
 function tick() {
+  try {
   const nodes = scene.nodes;
   const wires = scene.wires;
 
@@ -385,6 +532,7 @@ function tick() {
   // Auto-save
   _scheduleDesignSave();
 
+  } catch (err) { console.error('tick error:', err); }
   _rafId = requestAnimationFrame(tick);
 }
 
@@ -777,12 +925,15 @@ bus.on('scene:loaded', () => {
 // ── Toolbar Actions ─────────────────────────────────────────
 document.getElementById('btn-design-clear')?.addEventListener('click', () => {
   if (scene.nodeCount === 0) return;
-  if (!confirm('Clear the entire canvas?')) return;
+  if (!confirm('Clear the entire canvas? This will reset everything.')) return;
   scene.clear();
   state.selectedNodeId = null;
+  state.ffStates.clear();
+  selection.clearSelection();
   commands.clear();
   simCtrl.reset();
   localStorage.removeItem('circuit_designer_pro');
+  Renderer.zoomToFit([]);
 });
 
 document.getElementById('btn-design-undo')?.addEventListener('click', () => {
@@ -1487,7 +1638,29 @@ window.addEventListener('keydown', (e) => {
   const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
   if (isTyping) return;
 
-  if (e.ctrlKey && e.code === 'KeyC') { e.preventDefault(); selection.copy(); }
+  // Ctrl+Shift+X: Emergency reset — clear everything
+  if (e.ctrlKey && e.shiftKey && e.code === 'KeyX') {
+    e.preventDefault();
+    if (confirm('Reset everything? This will clear the canvas and saved state.')) {
+      scene.clear();
+      state.selectedNodeId = null;
+      state.ffStates.clear();
+      selection.clearSelection();
+      localStorage.removeItem('circuit_designer_pro');
+      commands.clear();
+      Renderer.zoomToFit([]);
+    }
+    return;
+  }
+
+  if (e.ctrlKey && e.code === 'KeyC') {
+    e.preventDefault();
+    // If no multi-selection but a single node is selected, add it to selection first
+    if (selection.count === 0 && state.selectedNodeId) {
+      selection.select(state.selectedNodeId);
+    }
+    selection.copy();
+  }
   if (e.ctrlKey && e.code === 'KeyV') { e.preventDefault(); selection.paste(); }
   if (e.ctrlKey && e.code === 'KeyA') { e.preventDefault(); selection.selectAll(); }
   if (e.ctrlKey && e.code === 'KeyF') {
@@ -2086,7 +2259,7 @@ function _showExamples() {
           state.selectedNodeId = null;
           commands.clear();
           state.resetSequentialState(scene.nodes);
-          Renderer.zoomToFit(scene.nodes);
+          setTimeout(() => Renderer.zoomToFit(scene.nodes), 100);
         }
       } catch (e) {
         alert('Failed to load example: ' + e.message);
