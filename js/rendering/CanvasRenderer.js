@@ -74,6 +74,15 @@ export function zoomToFit(nodes) {
   _userPanned = true;
 }
 
+export function zoomToNode(node) {
+  if (!node) return;
+  _scale = 2;
+  _userZoom = 2;
+  _offsetX = W / 2 - node.x * _scale;
+  _offsetY = (56 + H) / 2 - node.y * _scale;
+  _userPanned = true;
+}
+
 // ── Main Render ─────────────────────────────────────────────
 /**
  * @param {object[]} nodes
@@ -86,7 +95,7 @@ export function zoomToFit(nodes) {
  * @param {number} stepCount
  * @param {object|null} wirePreview - { source, mouseWorld, hoveredNode, isInvalid }
  */
-export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNodeId, selectedNodeId, stepCount, wirePreview, activeTool) {
+export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNodeId, selectedNodeId, stepCount, wirePreview, activeTool, rubberBandRect, multiSelected) {
   _stepCount = stepCount || 0;
   if (!ctx) return;
 
@@ -113,6 +122,32 @@ export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNo
   // Wire preview while connecting (source picked, drawing to target)
   if (wirePreview) {
     _drawWirePreview(wirePreview, nodes, wires);
+  }
+
+  // Multi-select highlight
+  if (multiSelected && multiSelected.size > 0) {
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    for (const node of nodes) {
+      if (multiSelected.has(node.id)) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 40, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+  }
+
+  // Rubber-band selection rectangle
+  if (rubberBandRect) {
+    ctx.fillStyle = 'rgba(0, 212, 255, 0.08)';
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.fillRect(rubberBandRect.x, rubberBandRect.y, rubberBandRect.w, rubberBandRect.h);
+    ctx.strokeRect(rubberBandRect.x, rubberBandRect.y, rubberBandRect.w, rubberBandRect.h);
+    ctx.setLineDash([]);
   }
 
   ctx.restore();
@@ -188,12 +223,25 @@ function _drawWires(nodes, wires, wireValues) {
 
     const val   = wireValues.get(wire.id);
     const isCLK = wire.isClockWire;
-    const { color, glow, width, isBus } = _wireStyle(val, isCLK, wire.colorGroup);
+    let { color, glow, width, isBus } = _wireStyle(val, isCLK, wire.colorGroup);
+
+    // Check if wire connects to unused CU pin — dim it
+    let _cuPinWarning = null;
+    const srcNode = nodeMap.get(wire.sourceId);
+    const dstNode = nodeMap.get(wire.targetId);
+    if (srcNode?.type === 'CU' && !_isCuPinUsed(srcNode, 'output', wire.sourceOutputIndex || 0)) {
+      color = '#1a1210'; glow = '#1a1210'; width = 1;
+      _cuPinWarning = 'Output not used by any opcode';
+    }
+    if (dstNode?.type === 'CU' && !_isCuPinUsed(dstNode, 'input', wire.targetInputIndex)) {
+      color = '#1a1210'; glow = '#1a1210'; width = 1;
+      _cuPinWarning = 'Input not needed (no conditional jump uses it)';
+    }
 
     ctx.save();
 
     // Glow layer
-    if (val !== null || isCLK) {
+    if ((val !== null || isCLK) && !_cuPinWarning) {
       ctx.strokeStyle = glow;
       ctx.lineWidth   = width + 6;
       ctx.lineCap     = 'round';
@@ -224,6 +272,32 @@ function _drawWires(nodes, wires, wireValues) {
     _drawSignalDot(path[0].x, path[0].y, val, width, isCLK);
 
     ctx.restore();
+
+    // Warning icon for unused CU pin wires
+    if (_cuPinWarning && path.length >= 2) {
+      const midX = (path[0].x + path[path.length-1].x) / 2;
+      const midY = (path[0].y + path[path.length-1].y) / 2;
+      // Warning indicator — subtle circle with thin exclamation
+      ctx.fillStyle = 'rgba(10,14,20,0.8)';
+      ctx.beginPath();
+      ctx.arc(midX, midY, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,160,40,0.5)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,160,40,0.7)';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', midX, midY);
+      // Store for tooltip
+      if (!wire._warningPos) wire._warningPos = {};
+      wire._warningPos.x = midX;
+      wire._warningPos.y = midY;
+      wire._warningMsg = _cuPinWarning;
+    } else {
+      wire._warningMsg = null;
+    }
 
     // Bus value label
     if (isBus && path.length >= 2) {
@@ -525,8 +599,8 @@ function _nodeOutputAnchor(node, outputIndex) {
   }
   if (node.type === 'CU') {
     const hw = 60;
-    const h = 110;
-    const spread = (h - 20) / 5;
+    const h = 130;
+    const spread = (h - 20) / 6;
     const startY = node.y - (h - 20) / 2;
     return { x: node.x + hw, y: startY + outputIndex * spread };
   }
@@ -1701,6 +1775,26 @@ function _drawBusMuxNode(node, val, hovered) {
   ctx.restore();
 }
 
+// ── CU pin usage check ──────────────────────────────────────
+function _isCuPinUsed(node, pinType, pinIndex) {
+  const ct = node.controlTable;
+  if (!ct || ct.length === 0) return true; // no custom table = all used
+  if (pinType === 'input') {
+    if (pinIndex === 0) return true; // OP always used
+    if (pinIndex === 1) return ct.some(r => r && (r.jmp === -1 || r.jmp === -3)); // Z
+    if (pinIndex === 2) return ct.some(r => r && (r.jmp === -2 || r.jmp === -4)); // C
+  } else {
+    if (pinIndex === 0) return true; // ALU_OP always used
+    if (pinIndex === 1) return ct.some(r => r && r.regWe);
+    if (pinIndex === 2) return ct.some(r => r && r.memWe);
+    if (pinIndex === 3) return ct.some(r => r && r.memRe);
+    if (pinIndex === 4) return ct.some(r => r && r.jmp);
+    if (pinIndex === 5) return ct.some(r => r && r.halt);
+    if (pinIndex === 6) return ct.some(r => r && r.immSel);
+  }
+  return true;
+}
+
 // ── SUB_CIRCUIT node ────────────────────────────────────────
 function _drawSubCircuitNode(node, val, hovered) {
   const ins = node.subInputs || [];
@@ -1863,7 +1957,7 @@ function _drawBusNode(node, val, hovered) {
 
 // ── CU (Control Unit) node ──────────────────────────────────
 function _drawCuNode(node, val, hovered) {
-  const w = 120, h = 110;
+  const w = 120, h = 130;
   const x = node.x - w / 2;
   const y = node.y - h / 2;
   ctx.save();
@@ -1893,21 +1987,38 @@ function _drawCuNode(node, val, hovered) {
   ctx.font = '7px JetBrains Mono, monospace';
   ctx.fillText(opNames[val & 0xF] || '?', node.x, node.y + 16);
 
-  // Input labels
+  // Input labels — dim Z/C if no conditional jumps use them
+  const ct0 = node.controlTable;
+  const usesZ = !ct0 || ct0.some(r => r && (r.jmp === -1 || r.jmp === -3)); // JZ or JNZ
+  const usesC = !ct0 || ct0.some(r => r && (r.jmp === -2 || r.jmp === -4)); // JC or JNC
   ctx.textAlign = 'right';
   const inSpread = 22;
   const inStartY = node.y - inSpread;
+  ctx.fillStyle = '#6a5030';
   ctx.fillText('OP', x + 14, inStartY + 1);
+  ctx.fillStyle = usesZ ? '#6a5030' : '#2a1a10';
   ctx.fillText('Z', x + 12, inStartY + inSpread + 1);
+  ctx.fillStyle = usesC ? '#6a5030' : '#2a1a10';
   ctx.fillText('C', x + 12, inStartY + inSpread * 2 + 1);
 
-  // Output labels
-  const outLabels = ['ALU_OP', 'RG_WE', 'MM_WE', 'MM_RE', 'JMP', 'HALT'];
-  const outSpread = (h - 20) / 5;
+  // Output labels — dim unused outputs based on controlTable
+  const outLabels = ['ALU_OP', 'RG_WE', 'MM_WE', 'MM_RE', 'JMP', 'HALT', 'IMM'];
+  const outSpread = (h - 20) / 6;
   const outStartY = node.y - (h - 20) / 2;
   ctx.textAlign = 'left';
-  for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = '#6a5030';
+  // Scan controlTable to find which outputs are used
+  const ct = node.controlTable;
+  const outUsed = [true, true, true, true, true, true, true]; // default: all used
+  if (ct && ct.length > 0) {
+    outUsed[1] = ct.some(r => r && r.regWe);    // REG_WE
+    outUsed[2] = ct.some(r => r && r.memWe);    // MEM_WE
+    outUsed[3] = ct.some(r => r && r.memRe);    // MEM_RE
+    outUsed[4] = ct.some(r => r && r.jmp);       // JMP
+    outUsed[5] = ct.some(r => r && r.halt);      // HALT
+    outUsed[6] = ct.some(r => r && r.immSel);    // IMM
+  }
+  for (let i = 0; i < 7; i++) {
+    ctx.fillStyle = outUsed[i] ? '#6a5030' : '#2a1a10';
     ctx.fillText(outLabels[i], x + w - 38, outStartY + i * outSpread + 1);
   }
 
@@ -2124,7 +2235,7 @@ function _drawMemoryNode(node, val, hovered, ffStates) {
   ctx.shadowBlur = 0;
 
   // Type label
-  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'REG FILE', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC' };
+  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'REG FILE', REG_FILE_DP: 'RF-DP', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC' };
   ctx.fillStyle = '#c0a0f0';
   ctx.font = 'bold 11px JetBrains Mono, monospace';
   ctx.textAlign = 'center';
@@ -2656,7 +2767,7 @@ export function getNodeAtPoint(px, py, nodes) {
       const hw = 50 + 6, hh = Math.max(30, srcCount * 14 + 5) + 6;
       if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
     } else if (n.type === 'CU') {
-      const hw = 60 + 6, hh = 55 + 6;
+      const hw = 60 + 6, hh = 65 + 6;
       if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
     } else if (n.type === 'ALU') {
       const hw = 55 + 6, hh = 38 + 6;
@@ -2807,6 +2918,7 @@ function _getNodeInputCount(node) {
   if (node.type === 'FULL_ADDER') return 3;   // A, B, Cin
   if (node.type === 'COMPARATOR') return 2;    // A, B
   if (node.type === 'SUB_CIRCUIT') return (node.subInputs || []).length;
+  if (node.type === 'REG_FILE_DP') return 6; // RD1_ADDR, RD2_ADDR, WR_ADDR, WR_DATA, WE, CLK
   if (node.type === 'PIPE_REG') return (node.channels || 4) + 3; // D0..Dn-1, STALL, FLUSH, CLK
   if (node.type === 'SIGN_EXT') return 1;      // IN
   if (node.type === 'BUS_MUX') return (node.inputCount || 2) + 1; // D0..Dn-1, SEL
@@ -2867,6 +2979,8 @@ export function getInputAnchors(node) {
     } else if (node.type === 'BUS') {
       const srcIdx = Math.floor(i / 2);
       label = i % 2 === 0 ? 'D' + srcIdx : 'EN' + srcIdx;
+    } else if (node.type === 'REG_FILE_DP') {
+      label = ['RD1', 'RD2', 'WR_A', 'WR_D', 'WE', 'CLK'][i] || '';
     } else if (node.type === 'PIPE_REG') {
       const ch = node.channels || 4;
       label = i < ch ? 'D' + i : ['STALL', 'FLUSH', 'CLK'][i - ch] || '';
@@ -2928,6 +3042,9 @@ export function getOutputAnchors(node) {
   } else if (node.type === 'BUS') {
     anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'OUT' });
     anchors.push({ ..._nodeOutputAnchor(node, 1), index: 1, label: 'ERR' });
+  } else if (node.type === 'REG_FILE_DP') {
+    anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'RD1' });
+    anchors.push({ ..._nodeOutputAnchor(node, 1), index: 1, label: 'RD2' });
   } else if (node.type === 'PIPE_REG') {
     const ch = node.channels || 4;
     for (let i = 0; i < ch; i++) {
@@ -2943,8 +3060,8 @@ export function getOutputAnchors(node) {
       anchors.push({ ..._nodeOutputAnchor(node, i), index: i, label: outs[i].label || 'O' + i });
     }
   } else if (node.type === 'CU') {
-    const labels = ['ALU_OP', 'RG_WE', 'MM_WE', 'MM_RE', 'JMP', 'HALT'];
-    for (let i = 0; i < 6; i++) {
+    const labels = ['ALU_OP', 'RG_WE', 'MM_WE', 'MM_RE', 'JMP', 'HALT', 'IMM'];
+    for (let i = 0; i < 7; i++) {
       anchors.push({ ..._nodeOutputAnchor(node, i), index: i, label: labels[i] });
     }
   } else if (node.type === 'ALU') {
@@ -2980,6 +3097,8 @@ export function canvasToWorld(px, py) {
     y: Math.round((py - _offsetY) / _scale),
   };
 }
+
+export function getOffset() { return { x: _offsetX, y: _offsetY, scale: _scale }; }
 
 export function panBy(dx, dy) {
   _offsetX += dx;

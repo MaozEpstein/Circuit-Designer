@@ -89,10 +89,17 @@ export class SelectionManager {
 
   finishRubberBand(addToSelection = false) {
     if (!this._rubberBanding) return;
+
+    // Compute rect BEFORE clearing the flag
+    const rect = {
+      x: Math.min(this._rbStart.x, this._rbEnd.x),
+      y: Math.min(this._rbStart.y, this._rbEnd.y),
+      w: Math.abs(this._rbEnd.x - this._rbStart.x),
+      h: Math.abs(this._rbEnd.y - this._rbStart.y),
+    };
     this._rubberBanding = false;
 
-    const rect = this.rubberBandRect;
-    if (!rect || rect.w < 5 || rect.h < 5) return;
+    if (rect.w < 5 || rect.h < 5) return;
 
     if (!addToSelection) this._selected.clear();
 

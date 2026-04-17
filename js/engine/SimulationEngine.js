@@ -72,6 +72,55 @@ const FF_TYPE_MAP = {
   FLIPFLOP_D: 'D', FLIPFLOP_SR: 'SR', FLIPFLOP_JK: 'JK', FLIPFLOP_T: 'T',
 };
 
+// ── Safe bit mask (handles bits >= 32) ─────────────────────
+function _mask(bits) {
+  if (bits >= 53) return Number.MAX_SAFE_INTEGER;
+  if (bits >= 32) return Math.pow(2, bits) - 1;
+  return (1 << bits) - 1;
+}
+
+// Safe mask apply (avoids signed 32-bit issues with & operator)
+function _applyMask(val, bits) {
+  if (bits >= 53) return val;
+  const m = _mask(bits);
+  if (bits >= 32) return ((val % (m + 1)) + (m + 1)) % (m + 1);
+  return (val & m) >>> 0;
+}
+
+// ── CU evaluation helper ───────────────────────────────────
+function _evalCU(node, op, z, c) {
+  let aluOp = 0, regWe = 0, memWe = 0, memRe = 0, jmp = 0, halt = 0, immSel = 0;
+
+  if (node.controlTable) {
+    const maxOp = node.controlTable.length - 1;
+    const row = node.controlTable[op & maxOp];
+    if (row) {
+      aluOp  = row.aluOp || 0;
+      regWe  = row.regWe ? 1 : 0;
+      memWe  = row.memWe ? 1 : 0;
+      memRe  = row.memRe ? 1 : 0;
+      halt   = row.halt  ? 1 : 0;
+      immSel = row.immSel ? 1 : 0;
+      if (row.jmp === 1) jmp = 1;
+      else if (row.jmp === -1) jmp = z;       // JZ
+      else if (row.jmp === -2) jmp = c;       // JC
+      else if (row.jmp === -3) jmp = z ? 0 : 1; // JNZ
+      else if (row.jmp === -4) jmp = c ? 0 : 1; // JNC
+    }
+  } else {
+    switch (op & 0xF) {
+      case 0: aluOp=0;regWe=1;break; case 1: aluOp=1;regWe=1;break;
+      case 2: aluOp=2;regWe=1;break; case 3: aluOp=3;regWe=1;break;
+      case 4: aluOp=4;regWe=1;break; case 5: aluOp=5;regWe=1;break;
+      case 6: aluOp=6;regWe=1;break; case 7: aluOp=7;break;
+      case 8: regWe=1;memRe=1;break; case 9: memWe=1;break;
+      case 10:jmp=1;break; case 11:jmp=z;break; case 12:jmp=c;break;
+      case 13:regWe=1;break; case 14:break; case 15:halt=1;break;
+    }
+  }
+  return { aluOp, regWe, memWe, memRe, jmp, halt, immSel };
+}
+
 /**
  * Evaluate the circuit.
  * @param {object[]} nodes - Array of node objects
@@ -134,7 +183,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
     let   value = null;
 
     if (node.type === 'IMM') {
-      value = (node.value ?? 0) & ((1 << (node.bitWidth || 8)) - 1);
+      value = _applyMask(node.value ?? 0, node.bitWidth || 8);
 
     } else if (node.type === 'INPUT') {
       value = node.fixedValue;
@@ -325,7 +374,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         ms = { q: 0, prevClkValue: null };
         if (node.type === 'RAM' || node.type === 'ROM') ms.memory = node.memory ? { ...node.memory } : {};
         if (node.type === 'COUNTER') ms.count = 0;
-        if (node.type === 'REG_FILE') {
+        if (node.type === 'REG_FILE' || node.type === 'REG_FILE_DP') {
           ms.regs = node.initialRegs ? [...node.initialRegs] : new Array(node.regCount || 8).fill(0);
         }
         if (node.type === 'PIPE_REG') {
@@ -341,7 +390,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       value = ms.q ?? 0;
       // TC output for counter (terminal count)
       if (node.type === 'COUNTER') {
-        const maxVal = (1 << (node.bitWidth || 4)) - 1;
+        const maxVal = _mask(node.bitWidth || 4);
         nodeValues.set(id + '__out1', ms.count === maxVal ? 1 : 0);
       }
       // IR: decode stored instruction into fields
@@ -356,10 +405,10 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const rs1Shift = rs2Bits;
         const rdShift  = rs2Bits + rs1Bits;
         const opShift  = rs2Bits + rs1Bits + rdBits;
-        nodeValues.set(id + '__out0', (instr >> opShift)  & ((1 << opBits)  - 1)); // OP
-        nodeValues.set(id + '__out1', (instr >> rdShift)  & ((1 << rdBits)  - 1)); // RD
-        nodeValues.set(id + '__out2', (instr >> rs1Shift) & ((1 << rs1Bits) - 1)); // RS1
-        nodeValues.set(id + '__out3', (instr >> rs2Shift) & ((1 << rs2Bits) - 1)); // RS2/IMM
+        nodeValues.set(id + '__out0', (instr >> opShift)  & (_mask(opBits))); // OP
+        nodeValues.set(id + '__out1', (instr >> rdShift)  & (_mask(rdBits))); // RD
+        nodeValues.set(id + '__out2', (instr >> rs1Shift) & (_mask(rs1Bits))); // RS1
+        nodeValues.set(id + '__out3', (instr >> rs2Shift) & (_mask(rs2Bits))); // RS2/IMM
         value = nodeValues.get(id + '__out0');
       }
       // PC: no extra outputs beyond Q
@@ -375,6 +424,17 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       if (node.type === 'FIFO' || node.type === 'STACK') {
         nodeValues.set(id + '__out1', ms.full ?? 0);
         nodeValues.set(id + '__out2', ms.empty ?? 1);
+      }
+      // REG_FILE_DP: dual-port async read
+      if (node.type === 'REG_FILE_DP') {
+        const inputSlots = inputs.get(id);
+        const rd1Addr = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+        const rd2Addr = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
+        const regIdx1 = rd1Addr % (node.regCount || 8);
+        const regIdx2 = rd2Addr % (node.regCount || 8);
+        value = (ms.regs[regIdx1] ?? 0);
+        nodeValues.set(id + '__out1', (ms.regs[regIdx2] ?? 0));
+        ms.q = value;
       }
       // REG_FILE: async read — read address comes from input 0
       if (node.type === 'REG_FILE') {
@@ -394,10 +454,10 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       const signBit = (inVal >> (inBits - 1)) & 1;
       if (signBit) {
         // Negative: fill upper bits with 1s
-        const mask = ((1 << outBits) - 1) ^ ((1 << inBits) - 1);
-        value = (inVal | mask) & ((1 << outBits) - 1);
+        const mask = (_mask(outBits)) ^ (_mask(inBits));
+        value = (inVal | mask) & (_mask(outBits));
       } else {
-        value = inVal & ((1 << inBits) - 1);
+        value = inVal & (_mask(inBits));
       }
 
     } else if (node.type === 'BUS_MUX') {
@@ -485,31 +545,11 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       nodeValues.set(id + '__out1', activeCount > 1 ? 1 : 0); // ERR
 
     } else if (node.type === 'CU') {
-      // Combinational Control Unit: inputs OP(0), Z(1), C(2)
-      // Outputs: ALU_OP(out0), REG_WE(out1), MEM_WE(out2), MEM_RE(out3), JMP(out4), HALT(out5)
       const inputSlots = inputs.get(id);
       const op = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
       const z  = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
       const c  = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
-      let aluOp = 0, regWe = 0, memWe = 0, memRe = 0, jmp = 0, halt = 0;
-      switch (op & 0xF) {
-        case 0:  aluOp = 0; regWe = 1; break;                // ADD
-        case 1:  aluOp = 1; regWe = 1; break;                // SUB
-        case 2:  aluOp = 2; regWe = 1; break;                // AND
-        case 3:  aluOp = 3; regWe = 1; break;                // OR
-        case 4:  aluOp = 4; regWe = 1; break;                // XOR
-        case 5:  aluOp = 5; regWe = 1; break;                // SHL
-        case 6:  aluOp = 6; regWe = 1; break;                // SHR
-        case 7:  aluOp = 7; break;                            // CMP
-        case 8:  regWe = 1; memRe = 1; break;                // LOAD
-        case 9:  memWe = 1; break;                            // STORE
-        case 10: jmp = 1; break;                              // JMP
-        case 11: jmp = z; break;                              // JZ
-        case 12: jmp = c; break;                              // JC
-        case 13: regWe = 1; break;                            // MOV
-        case 14: break;                                        // NOP
-        case 15: halt = 1; break;                              // HALT
-      }
+      const { aluOp, regWe, memWe, memRe, jmp, halt } = _evalCU(node, op, z, c);
       value = aluOp;
       nodeValues.set(id + '__out0', aluOp);
       nodeValues.set(id + '__out1', regWe);
@@ -525,7 +565,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       const b  = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
       const op = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
       const bits = node.bitWidth || 8;
-      const mask = (1 << bits) - 1;
+      const mask = _mask(bits);
       let r = 0, carry = 0;
       switch (op & 7) {
         case 0: { const s = a + b; r = s & mask; carry = (s >> bits) & 1; break; }          // ADD
@@ -567,6 +607,10 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
                  node.type === 'ALU' || node.type === 'CU' || node.type === 'BUS' ||
                  node.type === 'SUB_CIRCUIT') {
         wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? null);
+      } else if (node.type === 'REG_FILE_DP') {
+        // Dual port: out0=RD1_DATA, out1=RD2_DATA
+        if (outIdx === 1) wireValues.set(wire.id, nodeValues.get(id + '__out1') ?? 0);
+        else wireValues.set(wire.id, value);
       } else if (node.type === 'IR' || node.type === 'PIPE_REG') {
         // IR/PIPE_REG always uses __out for all outputs
         wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? 0);
@@ -676,7 +720,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const en   = _w(dataSlots[1]) ?? 1;
         const clr  = _w(dataSlots[2]);
         if (clr)     ms.q = 0;
-        else if (en) ms.q = data & ((1 << bits) - 1);
+        else if (en) ms.q = data & (_mask(bits));
 
       } else if (node.type === 'SHIFT_REG') {
         // Inputs: DIN(0), DIR(1), EN(2), CLR(3), CLK
@@ -684,7 +728,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const dir = _w(dataSlots[1]);   // 0=left, 1=right
         const en  = _w(dataSlots[2]) ?? 1;
         const clr = _w(dataSlots[3]);
-        const mask = (1 << bits) - 1;
+        const mask = _mask(bits);
         if (clr) {
           ms.q = 0;
         } else if (en) {
@@ -701,7 +745,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const load = _w(dataSlots[1]);
         const data = _w(dataSlots[2]);
         const clr  = _w(dataSlots[3]);
-        const mask = (1 << bits) - 1;
+        const mask = _mask(bits);
         if (clr) {
           ms.count = 0;
         } else if (load) {
@@ -716,20 +760,30 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         // Only update read output here
         const addr = _w(dataSlots[0]);
         const re   = _w(dataSlots[3]) ?? 1;
-        const dMask = (1 << (node.dataBits || 4)) - 1;
+        const dMask = _mask(node.dataBits || 4);
         if (re) ms.q = (ms.memory[addr] ?? 0) & dMask;
 
       } else if (node.type === 'ROM') {
         // Inputs: ADDR(0), RE(1), CLK
         const addr = _w(dataSlots[0]);
         const re   = _w(dataSlots[1]) ?? 1;
-        const dMask = (1 << (node.dataBits || 4)) - 1;
+        const dMask = _mask(node.dataBits || 4);
         if (re) ms.q = ((node.memory && node.memory[addr]) ?? 0) & dMask;
+
+      } else if (node.type === 'REG_FILE_DP') {
+        // Dual-port RF: read only in Phase 2b, write deferred to Phase 4
+        const dMask = _mask(node.dataBits || 8);
+        const regCnt = node.regCount || 8;
+        if (!ms.regs) ms.regs = node.initialRegs ? [...node.initialRegs] : new Array(regCnt).fill(0);
+        const rd1Addr = _w(dataSlots[0]);
+        const rd2Addr = _w(dataSlots[1]);
+        ms.q = (ms.regs[rd1Addr % regCnt] ?? 0) & dMask;
+        nodeValues.set(node.id + '__out1', (ms.regs[rd2Addr % regCnt] ?? 0) & dMask);
 
       } else if (node.type === 'REG_FILE') {
         // REG_FILE write is deferred to Phase 4 (after combinational re-eval)
         // so it can use fresh ALU results. Only update read output here.
-        const dMask  = (1 << (node.dataBits || 8)) - 1;
+        const dMask  = _mask(node.dataBits || 8);
         const regCnt = node.regCount || 8;
         if (!ms.regs) ms.regs = new Array(regCnt).fill(0);
         const rdAddr = _w(dataSlots[0]);
@@ -742,7 +796,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const rd   = _w(dataSlots[2]);
         const clr  = _w(dataSlots[3]);
         const depth = node.depth || 8;
-        const dMask = (1 << (node.dataBits || 8)) - 1;
+        const dMask = _mask(node.dataBits || 8);
         if (!ms.buffer) ms.buffer = [];
         if (clr) {
           ms.buffer = [];
@@ -765,7 +819,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const pop  = _w(dataSlots[2]);
         const clr  = _w(dataSlots[3]);
         const depth = node.depth || 8;
-        const dMask = (1 << (node.dataBits || 8)) - 1;
+        const dMask = _mask(node.dataBits || 8);
         if (!ms.buffer) ms.buffer = [];
         if (clr) {
           ms.buffer = [];
@@ -804,7 +858,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const instr = _w(dataSlots[0]);
         const ld    = _w(dataSlots[1]) ?? 1;
         const iWidth = node.instrWidth || 16;
-        const mask   = (1 << iWidth) - 1;
+        const mask   = _mask(iWidth);
         if (ld) ms.q = instr & mask;
 
       } else if (node.type === 'PC') {
@@ -844,12 +898,12 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         if (node.type === 'IR') {
           const instr = ms.q ?? 0;
           const opBits = node.opBits || 4, rdBits = node.rdBits || 4, rs1Bits = node.rs1Bits || 4, rs2Bits = node.rs2Bits || 4;
-          const opVal = (instr >> (rs2Bits + rs1Bits + rdBits)) & ((1 << opBits) - 1);
+          const opVal = (instr >> (rs2Bits + rs1Bits + rdBits)) & _mask(opBits);
           nodeValues.set(node.id, opVal); // primary value = OP field
           nodeValues.set(node.id + '__out0', opVal);
-          nodeValues.set(node.id + '__out1', (instr >> (rs2Bits + rs1Bits))          & ((1 << rdBits) - 1));
-          nodeValues.set(node.id + '__out2', (instr >> rs2Bits)                       & ((1 << rs1Bits) - 1));
-          nodeValues.set(node.id + '__out3', instr                                    & ((1 << rs2Bits) - 1));
+          nodeValues.set(node.id + '__out1', (instr >> (rs2Bits + rs1Bits))          & _mask(rdBits));
+          nodeValues.set(node.id + '__out2', (instr >> rs2Bits)                       & (_mask(rs1Bits)));
+          nodeValues.set(node.id + '__out3', instr                                    & (_mask(rs2Bits)));
           successors.get(node.id)?.forEach(({ wire }) => {
             const outIdx = wire.sourceOutputIndex || 0;
             wireValues.set(wire.id, nodeValues.get(node.id + '__out' + outIdx) ?? 0);
@@ -857,7 +911,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
           return;
         }
         if (node.type === 'COUNTER') {
-          const maxVal = (1 << (node.bitWidth || 4)) - 1;
+          const maxVal = _mask(node.bitWidth || 4);
           nodeValues.set(node.id + '__out1', ms.count === maxVal ? 1 : 0);
         }
         if (node.type === 'FIFO' || node.type === 'STACK') {
@@ -931,10 +985,9 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const op = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
         const z = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
         const c = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
-        let aluOp=0, regWe=0, memWe=0, memRe=0, jmp=0, halt=0;
-        switch(op&0xF){case 0:aluOp=0;regWe=1;break;case 1:aluOp=1;regWe=1;break;case 2:aluOp=2;regWe=1;break;case 3:aluOp=3;regWe=1;break;case 4:aluOp=4;regWe=1;break;case 5:aluOp=5;regWe=1;break;case 6:aluOp=6;regWe=1;break;case 7:aluOp=7;break;case 8:regWe=1;memRe=1;break;case 9:memWe=1;break;case 10:jmp=1;break;case 11:jmp=z;break;case 12:jmp=c;break;case 13:regWe=1;break;case 14:break;case 15:halt=1;break;}
-        value = aluOp;
-        nodeValues.set(id+'__out0',aluOp);nodeValues.set(id+'__out1',regWe);nodeValues.set(id+'__out2',memWe);nodeValues.set(id+'__out3',memRe);nodeValues.set(id+'__out4',jmp);nodeValues.set(id+'__out5',halt);
+        const cu = _evalCU(node, op, z, c);
+        value = cu.aluOp;
+        nodeValues.set(id+'__out0',cu.aluOp);nodeValues.set(id+'__out1',cu.regWe);nodeValues.set(id+'__out2',cu.memWe);nodeValues.set(id+'__out3',cu.memRe);nodeValues.set(id+'__out4',cu.jmp);nodeValues.set(id+'__out5',cu.halt);nodeValues.set(id+'__out6',cu.immSel);
       } else if (node.type === 'ALU') {
         const a = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
         const b = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
@@ -985,26 +1038,30 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       const op = inputSlots[0] ? _nv(inputSlots[0].sourceId) : 0;
       const z  = inputSlots[1] ? _nv(inputSlots[1].sourceId) : 0;
       const c  = inputSlots[2] ? _nv(inputSlots[2].sourceId) : 0;
-      let aluOp=0,regWe=0,memWe=0,memRe=0,jmp=0,halt=0;
-      switch(op&0xF){case 0:aluOp=0;regWe=1;break;case 1:aluOp=1;regWe=1;break;case 2:aluOp=2;regWe=1;break;case 3:aluOp=3;regWe=1;break;case 4:aluOp=4;regWe=1;break;case 5:aluOp=5;regWe=1;break;case 6:aluOp=6;regWe=1;break;case 7:aluOp=7;break;case 8:regWe=1;memRe=1;break;case 9:memWe=1;break;case 10:jmp=1;break;case 11:jmp=z;break;case 12:jmp=c;break;case 13:regWe=1;break;case 14:break;case 15:halt=1;break;}
+      const { aluOp, regWe, memWe, memRe, jmp, halt, immSel } = _evalCU(node, op, z, c);
       nodeValues.set(id, aluOp);
-      nodeValues.set(id+'__out0',aluOp);nodeValues.set(id+'__out1',regWe);nodeValues.set(id+'__out2',memWe);nodeValues.set(id+'__out3',memRe);nodeValues.set(id+'__out4',jmp);nodeValues.set(id+'__out5',halt);
+      nodeValues.set(id+'__out0',aluOp);nodeValues.set(id+'__out1',regWe);nodeValues.set(id+'__out2',memWe);nodeValues.set(id+'__out3',memRe);nodeValues.set(id+'__out4',jmp);nodeValues.set(id+'__out5',halt);nodeValues.set(id+'__out6',immSel);
       propagate(id);
     }
 
     // 4b: RF read with fresh addresses from IR
     for (const node of nodes) {
-      if (node.type !== 'REG_FILE') continue;
+      if (node.type !== 'REG_FILE' && node.type !== 'REG_FILE_DP') continue;
       const ms = ffStates.get(node.id);
       if (!ms || !ms.regs) continue;
       const inputSlots = inputs.get(node.id);
       const clkSlot = inputSlots.find(s => s.wire.isClockWire);
       if (!clkSlot) continue;
-      const rdAddrWire = inputSlots.filter(s => s !== clkSlot)[0];
-      const rdAddr = rdAddrWire ? _wv(rdAddrWire.wire.id) : 0;
-      const dMask = (1 << (node.dataBits || 8)) - 1;
-      ms.q = (ms.regs[rdAddr % (node.regCount || 8)] ?? 0) & dMask;
+      const dataSlots = inputSlots.filter(s => s !== clkSlot);
+      const dMask = _mask(node.dataBits || 8);
+      const regCnt = node.regCount || 8;
+      const rd1Addr = dataSlots[0] ? _wv(dataSlots[0].wire.id) : 0;
+      ms.q = (ms.regs[rd1Addr % regCnt] ?? 0) & dMask;
       nodeValues.set(node.id, ms.q);
+      if (node.type === 'REG_FILE_DP') {
+        const rd2Addr = dataSlots[1] ? _wv(dataSlots[1].wire.id) : 0;
+        nodeValues.set(node.id + '__out1', (ms.regs[rd2Addr % regCnt] ?? 0) & dMask);
+      }
       propagate(node.id);
     }
 
@@ -1016,7 +1073,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       const a  = inputSlots[0] ? _nv(inputSlots[0].sourceId) : 0;
       const b  = inputSlots[1] ? _nv(inputSlots[1].sourceId) : 0;
       const op = inputSlots[2] ? _nv(inputSlots[2].sourceId) : 0;
-      const bits = node.bitWidth || 8, mask = (1 << bits) - 1;
+      const bits = node.bitWidth || 8, mask = _mask(bits);
       let r = 0, carry = 0;
       switch (op & 7) {
         case 0: { const s = a + b; r = s & mask; carry = (s >> bits) & 1; break; }
@@ -1048,7 +1105,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const data = dataSlots[1] ? _wv(dataSlots[1].wire.id) : 0;
         const we   = dataSlots[2] ? _wv(dataSlots[2].wire.id) : 0;
         const re   = dataSlots[3] ? _wv(dataSlots[3].wire.id) : 1;
-        const dMask = (1 << (node.dataBits || 4)) - 1;
+        const dMask = _mask(node.dataBits || 4);
         if (we) ms.memory[addr] = data & dMask;
         if (re) ms.q = (ms.memory[addr] ?? 0) & dMask;
         nodeValues.set(node.id, ms.q);
@@ -1078,16 +1135,24 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       const op = inputSlots[0] ? _nv(inputSlots[0].sourceId) : 0;
       const z  = inputSlots[1] ? _nv(inputSlots[1].sourceId) : 0;
       const c  = inputSlots[2] ? _nv(inputSlots[2].sourceId) : 0;
-      let aluOp=0,regWe=0,memWe=0,memRe=0,jmp=0,halt=0;
-      switch(op&0xF){case 0:aluOp=0;regWe=1;break;case 1:aluOp=1;regWe=1;break;case 2:aluOp=2;regWe=1;break;case 3:aluOp=3;regWe=1;break;case 4:aluOp=4;regWe=1;break;case 5:aluOp=5;regWe=1;break;case 6:aluOp=6;regWe=1;break;case 7:aluOp=7;break;case 8:regWe=1;memRe=1;break;case 9:memWe=1;break;case 10:jmp=1;break;case 11:jmp=z;break;case 12:jmp=c;break;case 13:regWe=1;break;case 14:break;case 15:halt=1;break;}
+      const { aluOp, regWe, memWe, memRe, jmp, halt, immSel } = _evalCU(node, op, z, c);
       nodeValues.set(id, aluOp);
-      nodeValues.set(id+'__out0',aluOp);nodeValues.set(id+'__out1',regWe);nodeValues.set(id+'__out2',memWe);nodeValues.set(id+'__out3',memRe);nodeValues.set(id+'__out4',jmp);nodeValues.set(id+'__out5',halt);
+      nodeValues.set(id+'__out0',aluOp);nodeValues.set(id+'__out1',regWe);nodeValues.set(id+'__out2',memWe);nodeValues.set(id+'__out3',memRe);nodeValues.set(id+'__out4',jmp);nodeValues.set(id+'__out5',halt);nodeValues.set(id+'__out6',immSel);
       propagate(id);
     }
 
     // 4e: RF write + PC jump (on rising edge)
+    // Detect if any CU is signaling JMP — if so, suppress RF write (pipeline flush)
+    let _jmpActive = false;
     for (const node of nodes) {
-      if (node.type !== 'REG_FILE' && node.type !== 'PC') continue;
+      if (node.type === 'CU') {
+        const jmpVal = nodeValues.get(node.id + '__out4') ?? 0;
+        if (jmpVal) _jmpActive = true;
+      }
+    }
+
+    for (const node of nodes) {
+      if (node.type !== 'REG_FILE' && node.type !== 'REG_FILE_DP' && node.type !== 'PC') continue;
       const ms = ffStates.get(node.id);
       if (!ms) continue;
       const inputSlots = inputs.get(node.id);
@@ -1104,11 +1169,24 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
           const wrAddr = _w2(dataSlots[1]);
           const wrData = _w2(dataSlots[2]);
           const we     = _w2(dataSlots[3]);
-          const dMask  = (1 << (node.dataBits || 8)) - 1;
+          const dMask  = _mask(node.dataBits || 8);
           const regCnt = node.regCount || 8;
-          if (we) ms.regs[wrAddr % regCnt] = wrData & dMask;
+          if (we && !_jmpActive) ms.regs[wrAddr % regCnt] = wrData & dMask;
           const rdAddr = _w2(dataSlots[0]);
           ms.q = (ms.regs[rdAddr % regCnt] ?? 0) & dMask;
+        } else if (node.type === 'REG_FILE_DP') {
+          // Dual-port: RD1_ADDR(0), RD2_ADDR(1), WR_ADDR(2), WR_DATA(3), WE(4), CLK
+          const wrAddr = _w2(dataSlots[2]);
+          const wrData = _w2(dataSlots[3]);
+          const we     = _w2(dataSlots[4]);
+          const dMask  = _mask(node.dataBits || 8);
+          const regCnt = node.regCount || 8;
+          if (!ms.regs) ms.regs = node.initialRegs ? [...node.initialRegs] : new Array(regCnt).fill(0);
+          if (we && !_jmpActive) ms.regs[wrAddr % regCnt] = wrData & dMask;
+          const rd1Addr = _w2(dataSlots[0]);
+          const rd2Addr = _w2(dataSlots[1]);
+          ms.q = (ms.regs[rd1Addr % regCnt] ?? 0) & dMask;
+          nodeValues.set(node.id + '__out1', (ms.regs[rd2Addr % regCnt] ?? 0) & dMask);
         } else if (node.type === 'PC') {
           const allSlots = inputSlots.filter(s => s !== clkSlot);
           const getByIdx = (idx) => {
@@ -1119,7 +1197,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
           const jump     = getByIdx(1);
           const en       = getByIdx(2) || (!allSlots.find(sl => sl.inputIndex === 2) ? 1 : 0);
           const clr      = getByIdx(3);
-          const mask     = (1 << (node.bitWidth || 8)) - 1;
+          const mask     = _mask(node.bitWidth || 8);
           if (clr)       ms.q = 0;
           else if (jump) ms.q = jumpAddr & mask;
           else if (en)   ms.q = (ms.q + 1) & mask;

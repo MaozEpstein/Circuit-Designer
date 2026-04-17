@@ -112,6 +112,7 @@ export class CommandPalette {
       { id: 'place-ram', label: 'Place RAM', category: 'Memory', action: () => bus.emit('palette:tool', 'place-ram') },
       { id: 'place-rom', label: 'Place ROM', category: 'Memory', action: () => bus.emit('palette:tool', 'place-rom') },
       { id: 'place-regfile', label: 'Place Register File', category: 'Memory', action: () => bus.emit('palette:tool', 'place-regfile') },
+      { id: 'place-regfiledp', label: 'Place Dual-Port Register File', category: 'Memory', action: () => bus.emit('palette:tool', 'place-regfiledp') },
       { id: 'place-fifo', label: 'Place FIFO', category: 'Memory', action: () => bus.emit('palette:tool', 'place-fifo') },
       { id: 'place-stack', label: 'Place Stack', category: 'Memory', action: () => bus.emit('palette:tool', 'place-stack') },
       { id: 'place-pc', label: 'Place Program Counter', category: 'Memory', action: () => bus.emit('palette:tool', 'place-pc') },

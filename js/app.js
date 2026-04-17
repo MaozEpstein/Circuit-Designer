@@ -10,7 +10,7 @@ import * as Renderer from './rendering/CanvasRenderer.js';
 import * as Waveform from './rendering/WaveformRenderer.js';
 import * as Input from './interaction/InputHandler.js';
 import { MEMORY_TYPE_SET, COMPONENT_TYPES } from './components/Component.js';
-import { SetNodePropsCommand } from './components/CircuitCommands.js';
+import { SetNodePropsCommand, RemoveNodeCommand } from './components/CircuitCommands.js';
 import { assemble, disassemble, getOpcodeNames, getOpcodeFormat } from './cpu/Assembler.js';
 import { SubCircuitRegistry } from './core/SubCircuitRegistry.js';
 import { SimulationController, formatValue, VALUE_FORMAT } from './engine/SimulationController.js';
@@ -136,6 +136,192 @@ bus.on('clock:step', () => {
   if (scene.hasSequentialElements()) _stepClock();
 });
 
+// ── Context Menu ────────────────────────────────────────────
+const ctxMenu = document.getElementById('context-menu');
+let _ctxNodeId = null;
+
+function _showContextMenu(x, y, nodeId) {
+  _ctxNodeId = nodeId;
+  state.selectedNodeId = nodeId;
+
+  // Position menu (keep on screen)
+  const menuW = 160, menuH = 220;
+  const posX = Math.min(x, window.innerWidth - menuW);
+  const posY = Math.min(y, window.innerHeight - menuH);
+  ctxMenu.style.left = posX + 'px';
+  ctxMenu.style.top = posY + 'px';
+  ctxMenu.classList.remove('hidden');
+}
+
+function _hideContextMenu() {
+  ctxMenu?.classList.add('hidden');
+  _ctxNodeId = null;
+}
+
+// Right-click on canvas
+canvas?.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const node = Renderer.getNodeAtPoint(px, py, scene.nodes);
+
+  if (node) {
+    _showContextMenu(e.clientX, e.clientY, node.id);
+  } else {
+    _hideContextMenu();
+  }
+});
+
+// Close on click outside or ESC
+document.addEventListener('click', (e) => {
+  if (!ctxMenu?.contains(e.target)) _hideContextMenu();
+});
+bus.on('overlay:close', _hideContextMenu);
+
+// Handle menu actions
+ctxMenu?.addEventListener('click', (e) => {
+  const action = e.target.dataset?.action;
+  if (!action) return;
+  const node = _ctxNodeId ? scene.getNode(_ctxNodeId) : null;
+
+  switch (action) {
+    case 'delete':
+      if (_ctxNodeId) {
+        commands.execute(new RemoveNodeCommand(scene, _ctxNodeId));
+        state.selectedNodeId = null;
+      }
+      break;
+
+    case 'duplicate':
+      if (node) {
+        const copy = { ...node, id: undefined, x: node.x + 40, y: node.y + 40 };
+        if (copy.subCircuit) copy.subCircuit = JSON.parse(JSON.stringify(copy.subCircuit));
+        if (copy.memory) copy.memory = { ...copy.memory };
+        if (copy.initialRegs) copy.initialRegs = [...copy.initialRegs];
+        scene.addNode(copy);
+        state.selectedNodeId = copy.id;
+      }
+      break;
+
+    case 'properties':
+      if (node) {
+        const off = Renderer.getOffset();
+        const sx = node.x * off.scale + off.x + canvas.getBoundingClientRect().left;
+        const sy = node.y * off.scale + off.y + canvas.getBoundingClientRect().top;
+        if (node.type === 'ROM') {
+          bus.emit('rom:edit', node);
+        } else if (node.type === 'CU') {
+          bus.emit('cu:edit', node);
+        } else {
+          bus.emit('node:dblclick', { node, screenX: sx, screenY: sy });
+        }
+      }
+      break;
+
+    case 'watch':
+      if (_ctxNodeId) {
+        watchList.add(_ctxNodeId, node?.label || _ctxNodeId);
+        if (!_debugPanelVisible) _toggleDebugPanel();
+      }
+      break;
+
+    case 'copy':
+      if (_ctxNodeId) {
+        selection.select(_ctxNodeId);
+        selection.copy();
+      }
+      break;
+
+    case 'paste':
+      selection.paste();
+      break;
+
+    case 'center':
+      if (node) Renderer.zoomToNode(node);
+      break;
+
+    case 'disconnect':
+      if (_ctxNodeId) {
+        const wires = scene.getWiresForNode(_ctxNodeId);
+        const allWires = [...wires.incoming, ...wires.outgoing];
+        if (allWires.length > 0) {
+          const before = scene.snapshot();
+          for (const w of allWires) scene.removeWire(w.id);
+          const after = scene.snapshot();
+          commands._undoStack.push({
+            description: 'Disconnect All',
+            execute() {},
+            undo: () => scene.restoreSnapshot(before),
+          });
+          commands._redoStack = [];
+        }
+      }
+      break;
+
+    case 'bringfront':
+      if (_ctxNodeId) {
+        const nodes = scene.nodes;
+        const idx = nodes.findIndex(n => n.id === _ctxNodeId);
+        if (idx >= 0 && idx < nodes.length - 1) {
+          const n = nodes.splice(idx, 1)[0];
+          nodes.push(n);
+          scene.deserialize({ nodes, wires: scene.wires });
+        }
+      }
+      break;
+
+    case 'sendback':
+      if (_ctxNodeId) {
+        const nodes = scene.nodes;
+        const idx = nodes.findIndex(n => n.id === _ctxNodeId);
+        if (idx > 0) {
+          const n = nodes.splice(idx, 1)[0];
+          nodes.unshift(n);
+          scene.deserialize({ nodes, wires: scene.wires });
+        }
+      }
+      break;
+  }
+
+  _hideContextMenu();
+});
+
+// ── Wire Tooltip ────────────────────────────────────────────
+const wireTooltipEl = document.getElementById('wire-tooltip');
+function _updateWireTooltip() {
+  if (!wireTooltipEl) return;
+  const wid = state.hoveredWireId;
+  if (!wid) { wireTooltipEl.classList.add('hidden'); return; }
+
+  // Check for CU pin warning
+  const wire = scene.getWire(wid);
+  if (wire?._warningMsg) {
+    wireTooltipEl.textContent = '\u26A0 ' + wire._warningMsg;
+    wireTooltipEl.style.borderColor = '#ffa028';
+    wireTooltipEl.style.color = '#ffa028';
+    wireTooltipEl.style.left = (state._mouseScreenX + 14) + 'px';
+    wireTooltipEl.style.top = (state._mouseScreenY - 20) + 'px';
+    wireTooltipEl.classList.remove('hidden');
+    return;
+  }
+
+  const val = _lastWireValues.get(wid);
+  if (val === null || val === undefined) { wireTooltipEl.classList.add('hidden'); return; }
+
+  let text;
+  if (val === 0) text = '0';
+  else if (val === 1) text = '1';
+  else text = val + ' (0x' + (val >>> 0).toString(16).toUpperCase() + ')';
+
+  wireTooltipEl.textContent = text;
+  wireTooltipEl.style.borderColor = '#e0a030';
+  wireTooltipEl.style.color = '#e0a030';
+  wireTooltipEl.style.left = (state._mouseScreenX + 14) + 'px';
+  wireTooltipEl.style.top = (state._mouseScreenY - 20) + 'px';
+  wireTooltipEl.classList.remove('hidden');
+}
+
 // ── Core: Evaluate + Render Loop ────────────────────────────
 let _rafId = null;
 let _lastNodeValues = new Map();
@@ -167,8 +353,12 @@ function tick() {
   Renderer.render(
     nodes, wires, result.nodeValues, result.wireValues,
     state.ffStates, state.hoveredNodeId, state.selectedNodeId,
-    state.stepCount, wirePreview, state.tool
+    state.stepCount, wirePreview, state.tool,
+    selection.rubberBandRect, selection.selected
   );
+
+  // Wire tooltip
+  _updateWireTooltip();
 
   // Record waveform data
   if (result.nodeValues) {
@@ -277,7 +467,7 @@ function _updatePropsPanel() {
     propMembitSel.value = node.dataBits || 4;
     propMemaddrRow.style.display = '';
     propMemaddrSel.value = node.addrBits || 3;
-  } else if (node.type === 'REG_FILE' || node.type === 'FIFO' || node.type === 'STACK') {
+  } else if (node.type === 'REG_FILE' || node.type === 'REG_FILE_DP' || node.type === 'FIFO' || node.type === 'STACK') {
     propMembitRow.style.display = '';
     document.getElementById('prop-membit-label').textContent = 'Data Bits';
     propMembitSel.value = node.dataBits || 8;
@@ -336,7 +526,7 @@ document.getElementById('prop-membit-select')?.addEventListener('change', () => 
   if (!node) return;
   const val = parseInt(document.getElementById('prop-membit-select').value);
   const props = {};
-  if (node.type === 'RAM' || node.type === 'ROM' || node.type === 'REG_FILE' || node.type === 'FIFO' || node.type === 'STACK') {
+  if (node.type === 'RAM' || node.type === 'ROM' || node.type === 'REG_FILE' || node.type === 'REG_FILE_DP' || node.type === 'FIFO' || node.type === 'STACK') {
     props.dataBits = val;
   } else if (MEMORY_TYPE_SET.has(node.type)) {
     props.bitWidth = val;
@@ -733,6 +923,29 @@ document.querySelectorAll('.palette-tab').forEach(tab => {
   });
 });
 
+// ── Palette Search ──────────────────────────────────────────
+const paletteSearch = document.getElementById('palette-search');
+paletteSearch?.addEventListener('input', () => {
+  const q = paletteSearch.value.trim().toLowerCase();
+  if (!q) {
+    // Show all, restore active tab
+    document.querySelectorAll('.palette-chip').forEach(c => c.style.display = '');
+    document.querySelectorAll('.palette-sep').forEach(s => s.style.display = '');
+    document.querySelectorAll('.palette-panel').forEach(p => {
+      p.classList.toggle('active', p.dataset.panel === document.querySelector('.palette-tab.active')?.dataset.tab);
+    });
+    return;
+  }
+  // Show all panels, filter chips
+  document.querySelectorAll('.palette-panel').forEach(p => p.classList.add('active'));
+  document.querySelectorAll('.palette-sep').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.palette-chip').forEach(chip => {
+    const text = chip.textContent.toLowerCase();
+    const tool = (chip.dataset.tool || '').toLowerCase();
+    chip.style.display = (text.includes(q) || tool.includes(q)) ? '' : 'none';
+  });
+});
+
 // ── Component Palette (top-right) ────────────────────────────
 // Click: set tool for single placement, then revert to SELECT
 // Drag: drag chip onto canvas to place directly
@@ -990,7 +1203,7 @@ function _refreshMemInspector() {
 
   const memNodes = scene.nodes.filter(n =>
     n.type === 'REGISTER' || n.type === 'SHIFT_REG' || n.type === 'COUNTER' ||
-    n.type === 'RAM' || n.type === 'ROM' || n.type === 'REG_FILE' ||
+    n.type === 'RAM' || n.type === 'ROM' || n.type === 'REG_FILE' || n.type === 'REG_FILE_DP' ||
     n.type === 'FIFO' || n.type === 'STACK' || n.type === 'PC'
   );
 
@@ -999,7 +1212,7 @@ function _refreshMemInspector() {
     return;
   }
 
-  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'RF', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC' };
+  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'RF', REG_FILE_DP: 'RF-DP', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC' };
   let html = '';
 
   for (const node of memNodes) {
@@ -1041,7 +1254,7 @@ function _refreshMemInspector() {
     }
 
     // REG_FILE: show all internal registers
-    if (node.type === 'REG_FILE' && ms?.regs) {
+    if ((node.type === 'REG_FILE' || node.type === 'REG_FILE_DP') && ms?.regs) {
       const regCnt = node.regCount || 8;
       html += `<div class="mem-regfile-table">`;
       for (let r = 0; r < regCnt; r++) {
@@ -1277,6 +1490,27 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.code === 'KeyC') { e.preventDefault(); selection.copy(); }
   if (e.ctrlKey && e.code === 'KeyV') { e.preventDefault(); selection.paste(); }
   if (e.ctrlKey && e.code === 'KeyA') { e.preventDefault(); selection.selectAll(); }
+  if (e.ctrlKey && e.code === 'KeyF') {
+    e.preventDefault();
+    const node = state.selectedNodeId ? scene.getNode(state.selectedNodeId) : null;
+    if (node) Renderer.zoomToNode(node);
+  }
+  if (e.code === 'Delete' || e.code === 'Backspace') {
+    // Multi-select delete
+    if (selection.count > 0) {
+      const before = scene.snapshot();
+      for (const id of [...selection.selected]) scene.removeNode(id);
+      const after = scene.snapshot();
+      commands._undoStack.push({ description: 'Delete selected', execute() {}, undo: () => scene.restoreSnapshot(before) });
+      commands._redoStack = [];
+      selection.clearSelection();
+      state.selectedNodeId = null;
+    } else if (state.selectedNodeId) {
+      const cmd = new RemoveNodeCommand(scene, state.selectedNodeId);
+      commands.execute(cmd);
+      state.selectedNodeId = null;
+    }
+  }
 });
 
 // ── Project Save/Load ───────────────────────────────────────
@@ -1558,6 +1792,219 @@ romOverlay?.addEventListener('click', (e) => {
 // Expose for InputHandler double-click
 bus.on('rom:edit', (node) => { _openRomEditor(node); });
 
+// ── CU Editor ───────────────────────────────────────────────
+const DEFAULT_CONTROL_TABLE = [
+  { name: 'ADD',   aluOp: 0, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'SUB',   aluOp: 1, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'AND',   aluOp: 2, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'OR',    aluOp: 3, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'XOR',   aluOp: 4, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'SHL',   aluOp: 5, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'SHR',   aluOp: 6, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'CMP',   aluOp: 7, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'LOAD',  aluOp: 0, regWe: 1, memWe: 0, memRe: 1, jmp: 0, halt: 0 },
+  { name: 'STORE', aluOp: 0, regWe: 0, memWe: 1, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'JMP',   aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 1, halt: 0 },
+  { name: 'JZ',    aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: -1, halt: 0 }, // -1 = conditional Z
+  { name: 'JC',    aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: -2, halt: 0 }, // -2 = conditional C
+  { name: 'MOV',   aluOp: 0, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'NOP',   aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'HALT',  aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 1 },
+  // Extended opcodes (16-31) — immediate versions + extras
+  { name: 'ADDI',  aluOp: 0, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'SUBI',  aluOp: 1, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'ANDI',  aluOp: 2, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'ORI',   aluOp: 3, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'XORI',  aluOp: 4, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'SHLI',  aluOp: 5, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'SHRI',  aluOp: 6, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'CMPI',  aluOp: 7, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'LI',    aluOp: 0, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
+  { name: 'JNZ',   aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: -3, halt: 0 },
+  { name: 'JNC',   aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: -4, halt: 0 },
+  { name: '',      aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: '',      aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: '',      aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: '',      aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: '',      aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+];
+
+const cuOverlay = document.getElementById('cu-editor-overlay');
+const cuBody    = document.getElementById('cu-editor-body');
+let _cuEditorNode = null;
+let _cuEditorTable = [];
+
+function _getCuTable(node) {
+  if (node.controlTable) return JSON.parse(JSON.stringify(node.controlTable));
+  // Start with default 16, extend if needed
+  const table = JSON.parse(JSON.stringify(DEFAULT_CONTROL_TABLE));
+  // If node has more opcode capacity, pad with empty rows
+  const opCount = node._opCount || 16;
+  while (table.length < opCount) {
+    table.push({ name: '', aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 });
+  }
+  return table;
+}
+
+function _openCuEditor(node) {
+  _cuEditorNode = node;
+  if (!node._opCount) node._opCount = 16;
+  const fullTable = _getCuTable(node);
+  _cuFullTable = JSON.parse(JSON.stringify(fullTable));
+  // Trim to current opCount for display
+  _cuEditorTable = fullTable.slice(0, node._opCount);
+  // Set dropdown
+  const opSel = document.getElementById('cu-opcount-select');
+  if (opSel) opSel.value = node._opCount;
+  _renderCuTable();
+  cuOverlay?.classList.remove('hidden');
+}
+
+let _cuFullTable = []; // stores all rows even when view is trimmed
+
+document.getElementById('cu-opcount-select')?.addEventListener('change', () => {
+  const newCount = parseInt(document.getElementById('cu-opcount-select').value);
+  if (!_cuEditorNode || !newCount) return;
+  _cuEditorNode._opCount = newCount;
+  // Save current edits back to full table
+  for (let i = 0; i < _cuEditorTable.length; i++) {
+    _cuFullTable[i] = _cuEditorTable[i];
+  }
+  // Build new table from full table, filling defaults for missing rows
+  _cuEditorTable = [];
+  for (let i = 0; i < newCount; i++) {
+    if (_cuFullTable[i]) {
+      _cuEditorTable.push(_cuFullTable[i]);
+    } else if (DEFAULT_CONTROL_TABLE[i]) {
+      _cuEditorTable.push(JSON.parse(JSON.stringify(DEFAULT_CONTROL_TABLE[i])));
+    } else {
+      _cuEditorTable.push({ name: '', aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 });
+    }
+  }
+  _renderCuTable();
+});
+
+function _cuRowHex(row) {
+  // Pack: aluOp(3bit) | regWe | memWe | memRe | jmp(2bit) | halt
+  const j = row.jmp < 0 ? (row.jmp === -1 ? 2 : 3) : (row.jmp ? 1 : 0);
+  const v = ((row.aluOp & 7) << 5) | ((row.regWe ? 1 : 0) << 4) | ((row.memWe ? 1 : 0) << 3) |
+            ((row.memRe ? 1 : 0) << 2) | ((j & 3) << 1) | (row.halt ? 1 : 0);
+  return '0x' + v.toString(16).toUpperCase().padStart(2, '0');
+}
+
+function _renderCuTable() {
+  if (!cuBody) return;
+  const rowCount = _cuEditorTable.length || 16;
+  let html = '';
+  for (let i = 0; i < rowCount; i++) {
+    const row = _cuEditorTable[i] || { name: '', aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 };
+    const jmpChecked = row.jmp !== 0;
+    const jmpLabel = row.jmp === -1 ? 'Z' : row.jmp === -2 ? 'C' : row.jmp ? '1' : '';
+    html += `<tr draggable="true" data-row="${i}">
+      <td class="cu-op"><span class="cu-drag-handle" title="Drag to reorder">&#9776;</span> ${i}</td>
+      <td><input class="cu-name-input" data-row="${i}" data-field="name" value="${row.name}" /></td>
+      <td><input class="cu-aluop-input" type="number" min="0" max="7" data-row="${i}" data-field="aluOp" value="${row.aluOp}" /></td>
+      <td><input class="cu-check" type="checkbox" data-row="${i}" data-field="regWe" ${row.regWe ? 'checked' : ''} /></td>
+      <td><input class="cu-check" type="checkbox" data-row="${i}" data-field="memWe" ${row.memWe ? 'checked' : ''} /></td>
+      <td><input class="cu-check" type="checkbox" data-row="${i}" data-field="memRe" ${row.memRe ? 'checked' : ''} /></td>
+      <td><select class="cu-aluop-input" data-row="${i}" data-field="jmp" style="width:42px">
+        <option value="0" ${row.jmp === 0 ? 'selected' : ''}>—</option>
+        <option value="1" ${row.jmp === 1 ? 'selected' : ''}>1</option>
+        <option value="-1" ${row.jmp === -1 ? 'selected' : ''}>Z</option>
+        <option value="-2" ${row.jmp === -2 ? 'selected' : ''}>C</option>
+        <option value="-3" ${row.jmp === -3 ? 'selected' : ''}>!Z</option>
+        <option value="-4" ${row.jmp === -4 ? 'selected' : ''}>!C</option>
+      </select></td>
+      <td><input class="cu-check" type="checkbox" data-row="${i}" data-field="halt" ${row.halt ? 'checked' : ''} /></td>
+      <td><input class="cu-check" type="checkbox" data-row="${i}" data-field="immSel" ${row.immSel ? 'checked' : ''} /></td>
+      <td class="cu-hex">${_cuRowHex(row)}</td>
+    </tr>`;
+  }
+  cuBody.innerHTML = html;
+
+  // Bind change handlers
+  cuBody.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('change', () => {
+      const r = parseInt(el.dataset.row);
+      const f = el.dataset.field;
+      const row = _cuEditorTable[r];
+      if (!row) return;
+      if (el.type === 'checkbox') row[f] = el.checked ? 1 : 0;
+      else if (f === 'aluOp') row[f] = parseInt(el.value) || 0;
+      else if (f === 'jmp') row[f] = parseInt(el.value);
+      else if (f === 'name') { row[f] = el.value.toUpperCase(); el.value = row[f]; }
+      // Update hex
+      const hexCell = el.closest('tr').querySelector('.cu-hex');
+      if (hexCell) hexCell.textContent = _cuRowHex(row);
+    });
+  });
+
+  // Drag & drop row reorder
+  let _cuDragRow = null;
+  cuBody.querySelectorAll('tr[draggable]').forEach(tr => {
+    tr.addEventListener('dragstart', (e) => {
+      _cuDragRow = parseInt(tr.dataset.row);
+      tr.classList.add('cu-row-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    tr.addEventListener('dragend', () => {
+      tr.classList.remove('cu-row-dragging');
+      cuBody.querySelectorAll('.cu-row-dragover').forEach(el => el.classList.remove('cu-row-dragover'));
+      _cuDragRow = null;
+    });
+    tr.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      cuBody.querySelectorAll('.cu-row-dragover').forEach(el => el.classList.remove('cu-row-dragover'));
+      tr.classList.add('cu-row-dragover');
+    });
+    tr.addEventListener('dragleave', () => {
+      tr.classList.remove('cu-row-dragover');
+    });
+    tr.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const dropRow = parseInt(tr.dataset.row);
+      if (_cuDragRow === null || _cuDragRow === dropRow) return;
+      // Move the dragged row to the drop position
+      const [moved] = _cuEditorTable.splice(_cuDragRow, 1);
+      _cuEditorTable.splice(dropRow, 0, moved);
+      _renderCuTable();
+    });
+  });
+}
+
+document.getElementById('btn-cu-save')?.addEventListener('click', () => {
+  if (!_cuEditorNode) return;
+  commands.execute(new SetNodePropsCommand(scene, _cuEditorNode.id, {
+    controlTable: JSON.parse(JSON.stringify(_cuEditorTable))
+  }));
+  cuOverlay?.classList.add('hidden');
+  _cuEditorNode = null;
+});
+
+document.getElementById('btn-cu-reset')?.addEventListener('click', () => {
+  if (!confirm('Reset all opcodes to default? This will overwrite your changes.')) return;
+  const count = _cuEditorNode?._opCount || _cuEditorTable.length || 16;
+  _cuEditorTable = JSON.parse(JSON.stringify(DEFAULT_CONTROL_TABLE));
+  // Keep the current opcode count
+  while (_cuEditorTable.length < count) {
+    _cuEditorTable.push({ name: '', aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 });
+  }
+  _cuEditorTable.length = count;
+  _renderCuTable();
+});
+
+document.getElementById('btn-cu-close')?.addEventListener('click', () => {
+  cuOverlay?.classList.add('hidden');
+  _cuEditorNode = null;
+});
+
+cuOverlay?.addEventListener('click', (e) => {
+  if (e.target === cuOverlay) { cuOverlay.classList.add('hidden'); _cuEditorNode = null; }
+});
+
+bus.on('cu:edit', (node) => { _openCuEditor(node); });
+
 // ── Examples System ─────────────────────────────────────────
 const EXAMPLES = [
   {
@@ -1675,7 +2122,7 @@ function start() {
   // Expose sub-circuit registry to InputHandler via state
   state._subRegistry = subRegistry;
 
-  Input.init(canvas, scene, state, commands);
+  Input.init(canvas, scene, state, commands, selection);
 
   // Load saved design
   const saved = localStorage.getItem('circuit_designer_pro');

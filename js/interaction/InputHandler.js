@@ -12,6 +12,7 @@ let _canvas;
 let _scene;
 let _state;
 let _commands;
+let _selection;
 
 // Drag state
 let _dragNode = null;
@@ -66,6 +67,7 @@ const TOOL_TYPE_MAP = {
   'place-busmux':        COMPONENT_TYPES.BUS_MUX,
   'place-signext':       COMPONENT_TYPES.SIGN_EXT,
   'place-pipereg':       COMPONENT_TYPES.PIPE_REG,
+  'place-regfiledp':     COMPONENT_TYPES.REG_FILE_DP,
 };
 
 // Direct gate placements (type + gate preset)
@@ -95,11 +97,12 @@ const TOOL_LATCH_MAP = {
   'place-srlatch': 'SR_LATCH',
 };
 
-export function init(canvasEl, scene, stateManager, commandManager) {
+export function init(canvasEl, scene, stateManager, commandManager, selectionManager) {
   _canvas   = canvasEl;
   _scene    = scene;
   _state    = stateManager;
   _commands = commandManager;
+  _selection = selectionManager;
   _dragGhost = document.getElementById('drag-ghost');
 
   // Palette chips
@@ -123,6 +126,16 @@ export function init(canvasEl, scene, stateManager, commandManager) {
   _canvas.addEventListener('wheel',      _onWheel, { passive: false });
 
   _initKeyboard();
+
+  // Context menu → properties
+  bus.on('node:dblclick', ({ node, screenX, screenY }) => {
+    const RESIZABLE = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG']);
+    if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE.has(node.type)) {
+      _showComponentPropsPopup(node, screenX, screenY);
+    } else {
+      _showInlineRename(node, screenX, screenY);
+    }
+  });
 }
 
 export function refreshChips() {
@@ -171,6 +184,20 @@ function _onMouseDown(e) {
   const canvasPoint = _getCanvasPoint(e);
   const node = Renderer.getNodeAtPoint(canvasPoint.x, canvasPoint.y, _scene.nodes);
 
+  if (_state.tool === 'multiselect') {
+    if (node) {
+      // Click on node: toggle in selection
+      if (_selection) _selection.toggleSelect(node.id);
+    } else {
+      // Drag on empty: rubber-band
+      if (_selection) {
+        const world = Renderer.canvasToWorld(canvasPoint.x, canvasPoint.y);
+        _selection.startRubberBand(world.x, world.y);
+      }
+    }
+    return;
+  }
+
   if (_state.tool === 'select') {
     if (node) {
       const world = Renderer.canvasToWorld(canvasPoint.x, canvasPoint.y);
@@ -194,8 +221,15 @@ function _onMouseDown(e) {
           wpHandle.wire.waypoints.push({ x: wpHandle.point.x, y: wpHandle.point.y });
         }
       } else {
-        _panning = true;
-        _panStart = { x: e.clientX, y: e.clientY };
+        if (e.shiftKey && _selection) {
+          // Shift+drag on empty space: rubber-band selection
+          const world = Renderer.canvasToWorld(canvasPoint.x, canvasPoint.y);
+          _selection.startRubberBand(world.x, world.y);
+        } else {
+          // Normal drag on empty space: pan
+          _panning = true;
+          _panStart = { x: e.clientX, y: e.clientY };
+        }
       }
     }
   } else if (!_state.tool.startsWith('place-') && _state.tool !== 'wire' && _state.tool !== 'delete') {
@@ -208,6 +242,12 @@ function _onMouseDown(e) {
 
 // ── Mouse Up ────────────────────────────────────────────────
 function _onMouseUp(e) {
+  // Finish rubber-band selection
+  if (_selection?.rubberBanding) {
+    _selection.finishRubberBand();
+    _canvas.style.cursor = 'default';
+  }
+
   // If we dragged a node, create a move command
   if (_dragNode && _dragStartPos) {
     const dx = _dragNode.x - _dragStartPos.x;
@@ -265,6 +305,14 @@ function _onCanvasClick(e) {
   const node = Renderer.getNodeAtPoint(canvasPoint.x, canvasPoint.y, _scene.nodes);
   const tool = _state.tool;
   const world = Renderer.canvasToWorld(canvasPoint.x, canvasPoint.y);
+
+  // Multi-select tool: toggle node selection
+  if (tool === 'multiselect') {
+    if (node && _selection) {
+      _selection.toggleSelect(node.id);
+    }
+    return;
+  }
 
   // Place sub-circuit instance
   if (_state._pendingSubCircuit && _state._subRegistry) {
@@ -330,13 +378,21 @@ function _onCanvasClick(e) {
   // Select tool
   if (tool === 'select') {
     if (node) {
-      _state.selectedNodeId = node.id;
-      // Toggle MUX on click
-      if (node.type === 'MUX_SELECT') {
-        node.value = (node.value ?? 0) ^ 1;
+      if (e.shiftKey && _selection) {
+        // Shift+click: toggle in multi-selection
+        _selection.toggleSelect(node.id);
+      } else {
+        // Normal click: single select
+        if (_selection) _selection.clearSelection();
+        _state.selectedNodeId = node.id;
+        // Toggle MUX on click
+        if (node.type === 'MUX_SELECT') {
+          node.value = (node.value ?? 0) ^ 1;
+        }
       }
     } else {
       _state.selectedNodeId = null;
+      if (_selection) _selection.clearSelection();
       // Check if clicking on a wire
       const wire = Renderer.getWireAtPoint(canvasPoint.x, canvasPoint.y, _scene.nodes, _scene.wires);
       if (wire) {
@@ -420,6 +476,13 @@ function _onMouseMove(e) {
     return;
   }
 
+  // Rubber-band selection
+  if (_selection?.rubberBanding) {
+    _selection.updateRubberBand(_mouseWorld.x, _mouseWorld.y);
+    _canvas.style.cursor = 'crosshair';
+    return;
+  }
+
   // Waypoint dragging
   if (_dragWaypoint) {
     const SNAP = 10;
@@ -444,7 +507,9 @@ function _onMouseMove(e) {
   // Cursor
   const tool = _state.tool;
   const isPlaceTool = tool && (tool.startsWith('place-') || TOOL_GATE_MAP[tool] || TOOL_FF_MAP[tool] || TOOL_LATCH_MAP[tool]);
-  if (isPlaceTool) {
+  if (tool === 'multiselect') {
+    _canvas.style.cursor = node ? 'pointer' : 'crosshair';
+  } else if (isPlaceTool) {
     _canvas.style.cursor = 'crosshair';
   } else if (tool === 'wire') {
     _canvas.style.cursor = node ? 'cell' : 'crosshair';
@@ -455,11 +520,21 @@ function _onMouseMove(e) {
     _canvas.style.cursor = node ? 'move' : 'default';
   }
 
-  // Hover
+  // Hover node
   const hoverId = node ? node.id : null;
   if (hoverId !== _state.hoveredNodeId) {
     _state.hoveredNodeId = hoverId;
   }
+
+  // Hover wire (only when no node hovered)
+  if (!node) {
+    const wire = Renderer.getWireAtPoint(_mouseCanvas.x, _mouseCanvas.y, _scene.nodes, _scene.wires);
+    _state.hoveredWireId = wire ? wire.id : null;
+  } else {
+    _state.hoveredWireId = null;
+  }
+  _state._mouseScreenX = e.clientX;
+  _state._mouseScreenY = e.clientY;
 }
 
 function _onMouseLeave() {
@@ -597,6 +672,12 @@ function _onCanvasDblClick(e) {
     return;
   }
 
+  // CU: open CU Editor
+  if (node.type === 'CU') {
+    bus.emit('cu:edit', node);
+    return;
+  }
+
   const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG']);
   if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE_BLOCKS.has(node.type)) {
     _showComponentPropsPopup(node, screenX, screenY);
@@ -660,57 +741,58 @@ let _compPropsPopup = null;
 
 function _getComponentFields(node) {
   switch (node.type) {
-    case 'MUX':     return [{ key: 'inputCount',  label: 'Inputs',      min: 2, max: 8,  val: node.inputCount || 2 }];
-    case 'DEMUX':   return [{ key: 'outputCount', label: 'Outputs',     min: 2, max: 8,  val: node.outputCount || 2 }];
-    case 'DECODER': return [{ key: 'inputBits',   label: 'Input Bits',  min: 1, max: 4,  val: node.inputBits || 2 }];
-    case 'ENCODER': return [{ key: 'inputLines',  label: 'Input Lines', min: 2, max: 16, val: node.inputLines || 4 }];
+    case 'MUX':     return [{ key: 'inputCount',  label: 'Inputs',      min: 2, max: 16,   val: node.inputCount || 2 }];
+    case 'DEMUX':   return [{ key: 'outputCount', label: 'Outputs',     min: 2, max: 16,   val: node.outputCount || 2 }];
+    case 'DECODER': return [{ key: 'inputBits',   label: 'Input Bits',  min: 1, max: 8,    val: node.inputBits || 2 }];
+    case 'ENCODER': return [{ key: 'inputLines',  label: 'Input Lines', min: 2, max: 64,   val: node.inputLines || 4 }];
     case 'RAM':
     case 'ROM':
       return [
-        { key: 'addrBits', label: 'Address Bits', min: 1, max: 8,  val: node.addrBits || 3 },
-        { key: 'dataBits', label: 'Data Bits',    min: 1, max: 16, val: node.dataBits || 4 },
+        { key: 'addrBits', label: 'Address Bits', min: 1, max: 24,        val: node.addrBits || 3 },
+        { key: 'dataBits', label: 'Data Bits',    min: 1, max: 64,        val: node.dataBits || 4 },
       ];
     case 'REGISTER':
     case 'SHIFT_REG':
     case 'COUNTER':
     case 'PC':
-      return [{ key: 'bitWidth', label: 'Bit Width', min: 1, max: 16, val: node.bitWidth || 4 }];
+      return [{ key: 'bitWidth', label: 'Bit Width', min: 1, max: 64, val: node.bitWidth || 4 }];
     case 'REG_FILE':
+    case 'REG_FILE_DP':
       return [
-        { key: 'regCount', label: 'Registers', min: 2, max: 32, val: node.regCount || 8 },
-        { key: 'dataBits', label: 'Data Bits',  min: 1, max: 16, val: node.dataBits || 8 },
+        { key: 'regCount', label: 'Registers', min: 2, max: 256,          val: node.regCount || 8 },
+        { key: 'dataBits', label: 'Data Bits',  min: 1, max: 64,          val: node.dataBits || 8 },
       ];
     case 'ALU':
-      return [{ key: 'bitWidth', label: 'Bit Width', min: 1, max: 16, val: node.bitWidth || 8 }];
+      return [{ key: 'bitWidth', label: 'Bit Width', min: 1, max: 64, val: node.bitWidth || 8 }];
     case 'PIPE_REG':
-      return [{ key: 'channels', label: 'Channels', min: 1, max: 8, val: node.channels || 4 }];
+      return [{ key: 'channels', label: 'Channels', min: 1, max: 32, val: node.channels || 4 }];
     case 'SIGN_EXT':
       return [
-        { key: 'inBits',  label: 'Input Bits',  min: 1, max: 16, val: node.inBits || 4 },
-        { key: 'outBits', label: 'Output Bits', min: 2, max: 32, val: node.outBits || 8 },
+        { key: 'inBits',  label: 'Input Bits',  min: 1, max: 64,          val: node.inBits || 4 },
+        { key: 'outBits', label: 'Output Bits', min: 2, max: 64,          val: node.outBits || 8 },
       ];
     case 'BUS_MUX':
-      return [{ key: 'inputCount', label: 'Inputs', min: 2, max: 8, val: node.inputCount || 2 }];
+      return [{ key: 'inputCount', label: 'Inputs', min: 2, max: 16, val: node.inputCount || 2 }];
     case 'IMM':
       return [
-        { key: 'value',    label: 'Value',     min: 0, max: 65535, val: node.value || 0 },
-        { key: 'bitWidth', label: 'Bit Width',  min: 1, max: 16,   val: node.bitWidth || 8 },
+        { key: 'value',    label: 'Value',     min: 0, max: 4294967295,   val: node.value || 0 },
+        { key: 'bitWidth', label: 'Bit Width',  min: 1, max: 64,          val: node.bitWidth || 8 },
       ];
     case 'BUS':
-      return [{ key: 'sourceCount', label: 'Sources', min: 2, max: 8, val: node.sourceCount || 3 }];
+      return [{ key: 'sourceCount', label: 'Sources', min: 2, max: 16, val: node.sourceCount || 3 }];
     case 'IR':
       return [
-        { key: 'instrWidth', label: 'Instr Width', min: 8, max: 32, val: node.instrWidth || 16 },
-        { key: 'opBits',     label: 'Opcode Bits',  min: 2, max: 8,  val: node.opBits || 4 },
-        { key: 'rdBits',     label: 'RD Bits',      min: 2, max: 8,  val: node.rdBits || 4 },
-        { key: 'rs1Bits',    label: 'RS1 Bits',     min: 2, max: 8,  val: node.rs1Bits || 4 },
-        { key: 'rs2Bits',    label: 'RS2 Bits',     min: 2, max: 8,  val: node.rs2Bits || 4 },
+        { key: 'instrWidth', label: 'Instr Width', min: 8,  max: 64,      val: node.instrWidth || 16 },
+        { key: 'opBits',     label: 'Opcode Bits',  min: 2,  max: 16,     val: node.opBits || 4 },
+        { key: 'rdBits',     label: 'RD Bits',      min: 2,  max: 16,     val: node.rdBits || 4 },
+        { key: 'rs1Bits',    label: 'RS1 Bits',     min: 2,  max: 16,     val: node.rs1Bits || 4 },
+        { key: 'rs2Bits',    label: 'RS2 Bits',     min: 2,  max: 16,     val: node.rs2Bits || 4 },
       ];
     case 'FIFO':
     case 'STACK':
       return [
-        { key: 'depth',    label: 'Depth',     min: 2, max: 64, val: node.depth || 8 },
-        { key: 'dataBits', label: 'Data Bits',  min: 1, max: 16, val: node.dataBits || 8 },
+        { key: 'depth',    label: 'Depth',     min: 2,  max: 1024,        val: node.depth || 8 },
+        { key: 'dataBits', label: 'Data Bits',  min: 1,  max: 64,         val: node.dataBits || 8 },
       ];
     default: return [];
   }
@@ -872,7 +954,8 @@ function _initKeyboard() {
     // Tool shortcuts
     if (!e.ctrlKey && !e.altKey && !e.metaKey) {
       const shortcut = {
-        'KeyS': 'select', 'KeyI': 'place-input', 'KeyO': 'place-output',
+        'KeyS': 'select', 'KeyQ': 'multiselect',
+        'KeyI': 'place-input', 'KeyO': 'place-output',
         'KeyC': 'place-clock', 'KeyM': 'place-mux', 'Digit7': 'place-7seg',
         'KeyW': 'wire', 'KeyD': 'delete',
       }[e.code];
@@ -901,9 +984,13 @@ function _initKeyboard() {
 
     if (e.key === 'Escape') {
       _wireSource = null;
+      _state._pendingSubCircuit = null;
       // If using any tool other than select, revert to select
       if (_state.tool !== 'select') {
         _state.tool = 'select';
+      } else {
+        // Already on select — deselect everything
+        _state.selectedNodeId = null;
       }
       bus.emit('overlay:close');
     }

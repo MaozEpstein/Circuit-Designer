@@ -54,6 +54,7 @@
         <button id="btn-design-undo" class="hud-action-btn" title="Undo (Ctrl+Z)">&#8630;</button>
         <button id="btn-design-redo" class="hud-action-btn" title="Redo (Ctrl+Y)">&#8631;</button>
       </div>
+      <input type="text" id="palette-search" placeholder="Search..." autocomplete="off" spellcheck="false" />
       <div id="palette-tabs">
         <button class="palette-tab" data-tab="other">OTHER</button>
         <button class="palette-tab" data-tab="cpu">CPU</button>
@@ -112,6 +113,7 @@
           <span class="palette-chip palette-block" data-tool="place-rom" draggable="true">ROM</span>
           <span class="palette-sep"></span>
           <span class="palette-chip palette-block" data-tool="place-regfile" draggable="true">RF</span>
+          <span class="palette-chip palette-block" data-tool="place-regfiledp" draggable="true">RF-DP</span>
           <span class="palette-chip palette-block" data-tool="place-fifo" draggable="true">FIFO</span>
           <span class="palette-chip palette-block" data-tool="place-stack" draggable="true">STACK</span>
           <span class="palette-chip palette-block" data-tool="place-pc" draggable="true">PC</span>
@@ -139,6 +141,7 @@
     <div id="design-toolbar-title">DESIGN TOOLS</div>
     <div id="design-tools">
       <button class="design-tool active" data-tool="select" data-shortcut="S">SELECT</button>
+      <button class="design-tool" data-tool="multiselect" data-shortcut="Q">MULTI-SELECT</button>
       <button class="design-tool design-tool-danger" data-tool="delete" data-shortcut="D">DELETE</button>
     </div>
     <div id="design-props" class="hidden">
@@ -174,6 +177,7 @@
           <option value="2">2</option>
           <option value="4">4</option>
           <option value="8">8</option>
+          <option value="16">16</option>
         </select>
       </div>
       <div class="design-prop-row" id="prop-membit-row" style="display:none">
@@ -184,6 +188,8 @@
           <option value="4">4</option>
           <option value="8">8</option>
           <option value="16">16</option>
+          <option value="32">32</option>
+          <option value="64">64</option>
         </select>
       </div>
       <div class="design-prop-row" id="prop-memaddr-row" style="display:none">
@@ -196,6 +202,9 @@
           <option value="5">5</option>
           <option value="6">6</option>
           <option value="8">8</option>
+          <option value="12">12</option>
+          <option value="16">16</option>
+          <option value="24">24</option>
         </select>
       </div>
     </div>
@@ -356,6 +365,59 @@
         <button id="btn-project-list-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
       </div>
       <div id="project-list-content"></div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div id="context-menu" class="hidden">
+    <div class="ctx-item" data-action="properties">Properties</div>
+    <div class="ctx-item" data-action="duplicate">Duplicate</div>
+    <div class="ctx-item" data-action="center">Center View</div>
+    <div class="ctx-item" data-action="watch">Debug</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="copy">Copy</div>
+    <div class="ctx-item" data-action="paste">Paste</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="bringfront">Bring to Front</div>
+    <div class="ctx-item" data-action="sendback">Send to Back</div>
+    <div class="ctx-item" data-action="disconnect">Disconnect All</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item ctx-danger" data-action="delete">Delete</div>
+  </div>
+
+  <!-- Wire Tooltip -->
+  <div id="wire-tooltip" class="hidden"></div>
+
+  <!-- CU Editor Modal -->
+  <div id="cu-editor-overlay" class="hidden">
+    <div id="cu-editor-modal">
+      <div id="cu-editor-header">
+        <span>CONTROL UNIT — OPCODE TABLE</span>
+        <div>
+          <label style="color:#8a6830;font-size:12px;margin-right:6px;font-weight:bold">Opcodes:
+            <select id="cu-opcount-select">
+              <option value="4">4</option>
+              <option value="8">8</option>
+              <option value="16">16</option>
+              <option value="32">32</option>
+              <option value="64">64</option>
+              <option value="128">128</option>
+              <option value="256">256</option>
+            </select>
+          </label>
+          <button id="btn-cu-reset" style="font-size:11px;padding:4px 10px;background:#1a1a30;border:1px solid #4a3060;color:#a080d0;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace">RESET DEFAULT</button>
+          <button id="btn-cu-save" style="font-size:12px;padding:5px 14px;background:#1a4a2a;border:2px solid #39ff14;color:#39ff14;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:bold">SAVE</button>
+          <button id="btn-cu-close" style="font-size:11px;padding:4px 10px;background:#2a1010;border:1px solid #4a2020;color:#ff6666;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace">CLOSE</button>
+        </div>
+      </div>
+      <div id="cu-editor-table-wrap">
+        <table id="cu-editor-table">
+          <thead><tr>
+            <th>OP</th><th>NAME</th><th>ALU_OP</th><th>REG_WE</th><th>MEM_WE</th><th>MEM_RE</th><th>JMP</th><th>HALT</th><th>IMM</th><th>HEX</th>
+          </tr></thead>
+          <tbody id="cu-editor-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 

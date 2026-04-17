@@ -832,6 +832,233 @@
 #mem-inspector::-webkit-scrollbar-track { background: #0a0e14; }
 #mem-inspector::-webkit-scrollbar-thumb { background: #3a2060; border-radius: 3px; }
 
+/* ── Context Menu ───────────────────────────────────────── */
+#context-menu {
+  position: fixed;
+  z-index: 400;
+  background: #0d1320;
+  border: 1px solid #2a4060;
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 150px;
+  font: 11px 'JetBrains Mono', monospace;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.ctx-item {
+  padding: 6px 14px;
+  color: #c8d8f0;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ctx-item:hover {
+  background: #1a2a40;
+}
+
+.ctx-danger {
+  color: #ff4444;
+}
+
+.ctx-danger:hover {
+  background: #2a1010;
+}
+
+.ctx-sep {
+  height: 1px;
+  background: #1e3a50;
+  margin: 3px 8px;
+}
+
+/* ── Palette Search ─────────────────────────────────────── */
+#palette-search {
+  width: 90px;
+  margin: 2px 8px;
+  padding: 2px 6px;
+  background: #0a1520;
+  border: 1px solid #1e3040;
+  border-radius: 3px;
+  color: #c8d8f0;
+  font: 8px 'JetBrains Mono', monospace;
+  outline: none;
+  transition: all 0.2s;
+}
+
+#palette-search:focus {
+  width: 120px;
+  padding: 6px 8px;
+  font-size: 12px;
+  border-color: #00d4ff;
+  margin: 4px 8px;
+}
+
+#palette-search::placeholder {
+  color: #2a4060;
+}
+
+/* ── Wire Tooltip ───────────────────────────────────────── */
+#wire-tooltip {
+  position: fixed;
+  z-index: 300;
+  background: rgba(10, 14, 20, 0.95);
+  border: 1px solid #e0a030;
+  border-radius: 5px;
+  padding: 6px 12px;
+  font: bold 13px 'JetBrains Mono', monospace;
+  color: #e0a030;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 350px;
+}
+
+/* ── CU Editor Modal ────────────────────────────────────── */
+#cu-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#cu-editor-modal {
+  background: #0a0e14;
+  border: 2px solid #ffa028;
+  border-radius: 12px;
+  width: 850px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+#cu-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 2px solid #4a3020;
+  color: #ffa028;
+  font-weight: bold;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+#cu-editor-header > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#cu-opcount-select {
+  font: bold 12px 'JetBrains Mono', monospace !important;
+  background: #1a1410 !important;
+  border: 2px solid #ffa028 !important;
+  color: #ffa028 !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+}
+
+#cu-editor-table-wrap {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 70vh;
+}
+
+#cu-editor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+#cu-editor-table th {
+  color: #8a6830;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 10px 10px;
+  text-align: center;
+  border-bottom: 2px solid #3a2010;
+  position: sticky;
+  top: 0;
+  background: #0a0e14;
+}
+
+#cu-editor-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #1a1208;
+  text-align: center;
+}
+
+.cu-op {
+  color: #8a6020;
+  font-weight: bold;
+  width: 50px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.cu-drag-handle {
+  cursor: grab;
+  color: #3a2818;
+  font-size: 14px;
+  margin-right: 4px;
+  transition: color 0.15s;
+  user-select: none;
+}
+
+.cu-drag-handle:hover {
+  color: #ffa028;
+}
+
+#cu-editor-table tr[draggable] {
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.cu-row-dragging {
+  opacity: 0.3;
+}
+
+.cu-row-dragover {
+  background: #2a1a08 !important;
+  box-shadow: 0 -2px 0 #ffa028 inset;
+}
+
+.cu-name-input {
+  width: 75px;
+  padding: 4px 6px;
+  background: #161210;
+  border: 1px solid #3a2818;
+  border-radius: 3px;
+  color: #ffa028;
+  font: bold 13px 'JetBrains Mono', monospace;
+  text-align: center;
+}
+
+.cu-aluop-input {
+  width: 42px;
+  padding: 4px 6px;
+  background: #161210;
+  border: 1px solid #3a2818;
+  border-radius: 3px;
+  color: #c8d8f0;
+  font: 13px 'JetBrains Mono', monospace;
+  text-align: center;
+}
+
+.cu-check {
+  width: 20px;
+  height: 20px;
+  accent-color: #ffa028;
+  cursor: pointer;
+}
+
+.cu-hex {
+  color: #5a7090;
+  font-size: 12px;
+}
+
 /* ── ROM Editor Modal ───────────────────────────────────── */
 #rom-editor-overlay {
   position: fixed;

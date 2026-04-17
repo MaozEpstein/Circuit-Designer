@@ -21,9 +21,9 @@ const OP_NAMES = Object.fromEntries(Object.entries(OP_TABLE).map(([k, v]) => [v,
 const OP_FORMAT = {
   0: 3, 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, // ALU: RD, RS1, RS2
   7: 2,   // CMP: RS1, RS2 (no RD write)
-  8: 2,   // LOAD: RD, ADDR(RS1)
+  8: 2,   // LOAD: RD, ADDR(RS2)
   9: 2,   // STORE: RS1(data), RS2(addr)
-  10: 1,  // JMP: IMM (in RS2/RD field)
+  10: 1,  // JMP: IMM (in RD field)
   11: 1,  // JZ: IMM
   12: 1,  // JC: IMM
   13: 2,  // MOV: RD, RS1
