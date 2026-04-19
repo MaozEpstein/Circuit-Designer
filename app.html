@@ -269,8 +269,7 @@
       <span id="waveform-hint" title="Ctrl+Scroll = zoom · Shift+Scroll or drag = pan · F = fit">⌃+scroll zoom · drag to pan · F to fit</span>
       <div style="flex:1"></div>
       <input id="waveform-search" type="text" class="wf-search-input" placeholder="Search: R1 == 4, CLK, PC > 10 …" title="Pattern search across history (Enter to find, Shift+N for prev match)" autocomplete="off" spellcheck="false" />
-      <button id="btn-waveform-prev"  class="btn-waveform-ctrl" title="Prev edge of active signal (←)">◀ EDGE</button>
-      <button id="btn-waveform-next"  class="btn-waveform-ctrl" title="Next edge of active signal (→)">EDGE ▶</button>
+      <button id="btn-waveform-picker" class="btn-waveform-ctrl" title="Toggle the Signal Picker — choose which signals appear in the waveform">◨ SIGNALS</button>
       <button id="btn-waveform-bmk"   class="btn-waveform-ctrl" title="Add bookmark at cursor (B)"><span style="font-size:16px;font-weight:700;vertical-align:-1px;margin-right:4px;color:#00d4ff">+</span>BMK</button>
       <button id="btn-waveform-trigger" class="btn-waveform-ctrl" title="Arm/disarm trigger mode — only records once the condition fires">TRIG</button>
       <button id="btn-waveform-radix" class="btn-waveform-ctrl" title="Cycle bus value radix: DEC / HEX / BIN">DEC</button>
@@ -282,7 +281,20 @@
       <button id="btn-waveform-export" class="btn-waveform-ctrl" title="Export as PNG">.PNG</button>
       <button id="btn-waveform-close" class="btn-waveform-ctrl">CLOSE</button>
     </div>
-    <canvas id="waveform-canvas"></canvas>
+    <div id="waveform-body">
+      <aside id="waveform-picker">
+        <div id="waveform-picker-head">
+          <span>SIGNALS</span>
+          <div id="waveform-picker-actions">
+            <button id="btn-picker-clear" title="Clear every signal except the clock">CLEAR ALL</button>
+            <button id="btn-picker-recommended" title="Restore the recommended default set (CLK / Inputs / Outputs)">RECOMMENDED</button>
+          </div>
+        </div>
+        <input id="waveform-picker-search" type="text" placeholder="Filter…" autocomplete="off" spellcheck="false" />
+        <div id="waveform-picker-list"></div>
+      </aside>
+      <canvas id="waveform-canvas"></canvas>
+    </div>
     <div id="waveform-ctx-menu" class="hidden"></div>
   </div>
 

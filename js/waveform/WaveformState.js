@@ -103,16 +103,30 @@ export function toggleGroup(name) {
   else state.collapsedGroups.add(name);
 }
 
-/** Move the signal at `fromIdx` to `toIdx` in the display order. */
+/**
+ * Move a signal in the display order. `fromIdx` / `toIdx` are indices into
+ * the VISIBLE signal list (what the user sees on screen). We translate those
+ * to absolute positions in `signalOrder` so hidden signals aren't disturbed.
+ */
 export function reorderSignal(fromIdx, toIdx) {
   const base = state.signalOrder
     ? [...state.signalOrder]
     : state.signals.map(s => s.id);
-  if (fromIdx < 0 || fromIdx >= base.length) return;
+  // Map visible indices → absolute indices in `base`.
+  const visibleAbs = [];
+  for (let i = 0; i < base.length; i++) {
+    if (!state.hiddenSignals.has(base[i])) visibleAbs.push(i);
+  }
+  if (fromIdx < 0 || fromIdx >= visibleAbs.length) return;
   if (toIdx < 0) toIdx = 0;
-  if (toIdx >= base.length) toIdx = base.length - 1;
-  const [moved] = base.splice(fromIdx, 1);
-  base.splice(toIdx, 0, moved);
+  if (toIdx >= visibleAbs.length) toIdx = visibleAbs.length - 1;
+  if (fromIdx === toIdx) return;
+  const fromAbs = visibleAbs[fromIdx];
+  const toAbs = visibleAbs[toIdx];
+  const [moved] = base.splice(fromAbs, 1);
+  // Because splice shifted items, recompute the destination.
+  const adjustedTo = toAbs > fromAbs ? toAbs - 1 : toAbs;
+  base.splice(adjustedTo, 0, moved);
   state.signalOrder = base;
 }
 
@@ -123,29 +137,189 @@ export function toggleHidden(sigId) {
 
 export function showAllSignals() { state.hiddenSignals.clear(); }
 
+// Which node types are shown by default ("recommended" view) — everything
+// else is discovered into state.signals but starts hidden.
+const DEFAULT_VISIBLE_TYPES = new Set(['CLOCK', 'INPUT', 'MUX_SELECT', 'OUTPUT']);
+
+// All node types that produce an observable value worth putting in the picker.
+const PICKABLE_TYPES = new Set([
+  'CLOCK', 'INPUT', 'MUX_SELECT', 'OUTPUT',
+  'REGISTER', 'SHIFT_REG', 'COUNTER', 'PC', 'IR',
+  'RAM', 'ROM', 'REG_FILE', 'REG_FILE_DP',
+  'FIFO', 'STACK',
+  'ALU', 'CU',
+  'GATE_SLOT', 'FF_SLOT',
+]);
+
+const TYPE_TO_SIG_TYPE = {
+  CLOCK: 'clock', INPUT: 'input', MUX_SELECT: 'mux', OUTPUT: 'output',
+  REGISTER: 'memory', SHIFT_REG: 'memory', COUNTER: 'memory', PC: 'memory', IR: 'memory',
+  RAM: 'memory', ROM: 'memory', REG_FILE: 'memory', REG_FILE_DP: 'memory',
+  FIFO: 'memory', STACK: 'memory',
+  ALU: 'compute', CU: 'compute',
+  GATE_SLOT: 'gate', FF_SLOT: 'ff',
+};
+
+// ── Output pins (mirror SimulationEngine __out indices) ──
+const PINS_BY_TYPE = {
+  ALU:         [['R', 0], ['Z', 1], ['C', 2]],
+  CU:          [['ALU_OP', 0], ['RG_WE', 1], ['MM_WE', 2], ['MM_RE', 3], ['JMP', 4], ['HALT', 5], ['IMM', 6]],
+  IR:          [['OP', 0], ['RD', 1], ['RS1', 2], ['RS2', 3]],
+  REG_FILE_DP: [['RD1', 0], ['RD2', 1]],
+  HALF_ADDER:  [['S', 0], ['C', 1]],
+  FULL_ADDER:  [['S', 0], ['Cout', 1]],
+  COMPARATOR:  [['EQ', 0], ['GT', 1], ['LT', 2]],
+  BUS:         [['OUT', 0], ['ERR', 1]],
+  FIFO:        [['Q', 0], ['FULL', 1], ['EMPTY', 2]],
+  STACK:       [['Q', 0], ['FULL', 1], ['EMPTY', 2]],
+  COUNTER:     [['Q', 0], ['TC', 1]],
+};
+
+// ── Input pins (matches SimulationEngine inputSlots[i].inputIndex order) ──
+const INPUT_PINS_BY_TYPE = {
+  ALU:         [['A', 0], ['B', 1], ['OP', 2]],
+  CU:          [['OP', 0], ['Z', 1], ['C', 2]],
+  IR:          [['INSTR', 0], ['LD', 1]],
+  PC:          [['JUMP_ADDR', 0], ['JUMP', 1], ['EN', 2], ['CLR', 3]],
+  REGISTER:    [['DATA', 0], ['EN', 1], ['CLR', 2]],
+  REG_FILE:    [['RD_ADDR', 0], ['WR_ADDR', 1], ['WR_DATA', 2], ['WE', 3]],
+  REG_FILE_DP: [['RD1_ADDR', 0], ['RD2_ADDR', 1], ['WR_ADDR', 2], ['WR_DATA', 3], ['WE', 4]],
+  RAM:         [['ADDR', 0], ['DATA', 1], ['WE', 2], ['RE', 3]],
+  ROM:         [['ADDR', 0], ['RE', 1]],
+  COUNTER:     [['EN', 0], ['LOAD', 1], ['DATA', 2], ['CLR', 3]],
+  SHIFT_REG:   [['DIN', 0], ['DIR', 1], ['EN', 2], ['CLR', 3]],
+  FIFO:        [['DATA', 0], ['WR', 1], ['RD', 2], ['CLR', 3]],
+  STACK:       [['DATA', 0], ['PUSH', 1], ['POP', 2], ['CLR', 3]],
+  HALF_ADDER:  [['A', 0], ['B', 1]],
+  FULL_ADDER:  [['A', 0], ['B', 1], ['Cin', 2]],
+  COMPARATOR:  [['A', 0], ['B', 1]],
+};
+
+function _outPinsFor(type) { return PINS_BY_TYPE[type] || [['Q', 0]]; }
+function _inPinsFor(type)  { return INPUT_PINS_BY_TYPE[type] || []; }
+
+/** nodeValues key for a given pin index (matches SimulationEngine's scheme). */
+function _valueKey(nodeId, outIndex) {
+  return outIndex === 0 ? nodeId : (nodeId + '__out' + outIndex);
+}
+
 export function setSignals(nodes) {
   if (!nodes) return;
   state.signals = [];
   state.hiddenSignals = new Set();
   state.signalOrder = null;
-  // Clock keeps its canonical yellow color (always the CLK visual cue).
-  nodes.forEach(n => {
-    if (n.type === 'CLOCK') state.signals.push({ id: n.id, label: 'CLK', color: COLORS.clock, type: 'clock' });
-  });
-  // Other signals get a stable, per-name color from the curated palette.
-  const addWithPaletteColor = (n, label, type) => {
-    state.signals.push({ id: n.id, label, color: colorForName(label), type });
+
+  const pushOutput = (node, pinName, outIndex, { startHidden }) => {
+    const parentLabel = node.label || node.id;
+    const isTopLevelIO = ['CLOCK', 'INPUT', 'OUTPUT', 'MUX_SELECT'].includes(node.type);
+    const displayLabel = isTopLevelIO ? parentLabel : (parentLabel + '.' + pinName);
+    const sig = {
+      id: isTopLevelIO ? node.id : (node.id + '#out' + outIndex),
+      label: displayLabel,
+      pin: pinName,
+      direction: 'out',
+      parentLabel,
+      parentId: node.id,
+      nodeValueKey: _valueKey(node.id, outIndex),
+      color: (node.type === 'CLOCK') ? COLORS.clock : colorForName(displayLabel),
+      type: TYPE_TO_SIG_TYPE[node.type] || 'other',
+    };
+    state.signals.push(sig);
+    if (startHidden) state.hiddenSignals.add(sig.id);
   };
-  nodes.forEach(n => { if (n.type === 'INPUT')       addWithPaletteColor(n, n.label || n.id, 'input'); });
-  nodes.forEach(n => { if (n.type === 'MUX_SELECT')  addWithPaletteColor(n, n.label || n.id, 'mux'); });
-  nodes.forEach(n => { if (n.type === 'OUTPUT')      addWithPaletteColor(n, n.label || n.id, 'output'); });
+
+  const pushInput = (node, pinName, inIndex) => {
+    const parentLabel = node.label || node.id;
+    const displayLabel = parentLabel + '.' + pinName;
+    const sig = {
+      id: node.id + '#in' + inIndex,
+      label: displayLabel,
+      pin: pinName,
+      direction: 'in',
+      inputIndex: inIndex,
+      parentLabel,
+      parentId: node.id,
+      // Input values are resolved at record-time via wire lookup — no direct key.
+      nodeValueKey: null,
+      color: colorForName(displayLabel),
+      type: TYPE_TO_SIG_TYPE[node.type] || 'other',
+    };
+    state.signals.push(sig);
+    state.hiddenSignals.add(sig.id); // inputs are hidden by default
+  };
+
+  // Clock is the ONLY signal shown by default. Every other signal — including
+  // top-level IO — starts hidden, and the user reveals what they want either
+  // via the RECOMMENDED button (CLK + IO) or by checking individual pins.
+  nodes.forEach(n => { if (n.type === 'CLOCK') pushOutput(n, 'CLK', 0, { startHidden: false }); });
+  ['INPUT', 'MUX_SELECT', 'OUTPUT'].forEach(t => {
+    nodes.forEach(n => {
+      if (n.type !== t) return;
+      pushOutput(n, n.label || n.id, 0, { startHidden: true });
+    });
+  });
+  // Internal components — emit one signal per output pin AND per input pin,
+  // all hidden by default so the picker can reveal them on demand.
+  nodes.forEach(n => {
+    if (!PICKABLE_TYPES.has(n.type)) return;
+    if (DEFAULT_VISIBLE_TYPES.has(n.type)) return;
+    _outPinsFor(n.type).forEach(([pinName, outIdx]) => pushOutput(n, pinName, outIdx, { startHidden: true }));
+    _inPinsFor(n.type).forEach(([pinName, inIdx])   => pushInput(n, pinName, inIdx));
+  });
 }
 
-export function record(stepCount, nodeValues) {
+/** Reset the visible set to the "recommended" defaults (CLK + Inputs + Outputs + Mux). */
+export function showRecommended() {
+  state.hiddenSignals = new Set();
+  for (const s of state.signals) {
+    const isRecommended = (s.type === 'clock' || s.type === 'input' || s.type === 'mux' || s.type === 'output');
+    if (!isRecommended) state.hiddenSignals.add(s.id);
+  }
+}
+
+/** Hide every signal except the clock. User-initiated reset. */
+export function clearAllSignals() {
+  state.hiddenSignals = new Set();
+  for (const s of state.signals) {
+    if (s.type !== 'clock') state.hiddenSignals.add(s.id);
+  }
+}
+
+/** Whether a signal is currently visible (not in hiddenSignals). */
+export function isSignalVisible(sigId) {
+  return !state.hiddenSignals.has(sigId);
+}
+
+export function record(stepCount, nodeValues, wires) {
   if (!nodeValues) return;
+
+  // Build a lookup: targetNodeId → { inputIndex → sourceValueKey } so
+  // input-direction signals can resolve the value from whatever node feeds them.
+  const inputLookup = new Map();
+  if (Array.isArray(wires)) {
+    for (const w of wires) {
+      if (!w || !w.targetId) continue;
+      let m = inputLookup.get(w.targetId);
+      if (!m) { m = new Map(); inputLookup.set(w.targetId, m); }
+      // Multi-output sources (ALU/IR/etc.) expose values at `sourceId__outN`;
+      // output 0 uses the bare sourceId. This matches SimulationEngine.
+      const srcOutIdx = w.sourceOutputIndex || 0;
+      const srcKey = srcOutIdx === 0 ? w.sourceId : (w.sourceId + '__out' + srcOutIdx);
+      m.set(w.targetInputIndex || 0, srcKey);
+    }
+  }
+
   const signals = new Map();
   state.signals.forEach(sig => {
-    const v = nodeValues.get(sig.id) ?? null;
+    let v;
+    if (sig.direction === 'in') {
+      const m = inputLookup.get(sig.parentId);
+      const srcKey = m ? m.get(sig.inputIndex) : null;
+      v = srcKey ? (nodeValues.get(srcKey) ?? null) : null;
+    } else {
+      const key = sig.nodeValueKey || sig.id;
+      v = nodeValues.get(key) ?? null;
+    }
     signals.set(sig.id, v);
     if (typeof v === 'number') {
       const prev = state.signalMax.get(sig.id) ?? 0;

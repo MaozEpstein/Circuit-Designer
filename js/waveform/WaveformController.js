@@ -4,7 +4,7 @@
  * actions funnel through here; the renderer stays pure.
  */
 
-import { state, reset as stateReset, setSignals as stateSetSignals, record as stateRecord, setRadix as stateSetRadix, visibleSignals, reorderSignal, toggleHidden, showAllSignals, valueAtStep, formatValue, signalBits, isBusSignal, radixFor, nextEdgeStep, prevEdgeStep, addBookmark, removeBookmarkAt, toggleGroup, runSearch, searchNext, searchPrev, serializeView, deserializeView, applyImport } from './WaveformState.js';
+import { state, reset as stateReset, setSignals as stateSetSignals, record as stateRecord, setRadix as stateSetRadix, visibleSignals, reorderSignal, toggleHidden, showAllSignals, valueAtStep, formatValue, signalBits, isBusSignal, radixFor, nextEdgeStep, prevEdgeStep, addBookmark, removeBookmarkAt, toggleGroup, runSearch, searchNext, searchPrev, serializeView, deserializeView, applyImport, showRecommended, isSignalVisible, clearAllSignals } from './WaveformState.js';
 import * as Renderer from './WaveformRenderer.js';
 import * as VCD from './WaveformVCD.js';
 import { METRICS } from './WaveformTheme.js';
@@ -31,7 +31,7 @@ export function init(canvasEl) {
 
 export function reset()            { stateReset(); _requestRender(); }
 export function setSignals(nodes)  { stateSetSignals(nodes); _requestRender(); }
-export function record(step, vals) { stateRecord(step, vals); _requestRender(); }
+export function record(step, vals, wires) { stateRecord(step, vals, wires); _requestRender(); }
 export function isVisible()        { return state.visible; }
 
 export function show() {
@@ -101,6 +101,31 @@ export function importVCD(text) {
   show();
   _requestRender();
   return { signalCount: payload.signals.length, cycleCount: payload.history.length };
+}
+
+/** All pickable signals (used by the Signal Picker UI). */
+export function allSignals() { return state.signals.slice(); }
+
+/** Is this signal currently shown in the waveform? (Distinct from panel-level isVisible().) */
+export function isSignalShown(sigId) { return isSignalVisible(sigId); }
+
+/** Show or hide a single signal by id. */
+export function setSignalVisible(sigId, visible) {
+  if (visible) state.hiddenSignals.delete(sigId);
+  else         state.hiddenSignals.add(sigId);
+  _requestRender();
+}
+
+/** Restore the "recommended" default set (CLK + Inputs + MUX + Outputs). */
+export function restoreRecommended() {
+  showRecommended();
+  _requestRender();
+}
+
+/** Hide every signal except CLK (bulk reset). */
+export function clearAllButClock() {
+  clearAllSignals();
+  _requestRender();
 }
 
 /** Toggle full-screen mode — panel expands to fill the viewport. */

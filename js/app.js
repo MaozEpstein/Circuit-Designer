@@ -648,7 +648,7 @@ function tick() {
 
   // Record waveform data
   if (result.nodeValues) {
-    Waveform.record(state.stepCount, result.nodeValues);
+    Waveform.record(state.stepCount, result.nodeValues, scene.wires);
     if (Waveform.isVisible()) Waveform.render();
   }
 
@@ -1182,6 +1182,10 @@ function toggleWaveform() {
     waveformPanel.classList.remove('hidden');
     Waveform.show();
     btnWaveform.classList.add('active');
+    // Refresh the Signal Picker so its list reflects the current scene —
+    // without this, the first time the panel opens the picker would show
+    // whatever state it captured at module-load time (usually empty).
+    if (typeof _renderPicker === 'function') _renderPicker();
   }
 }
 
@@ -1192,14 +1196,169 @@ document.getElementById('btn-waveform-radix')?.addEventListener('click', (e) => 
   const next = Waveform.cycleRadix();
   e.target.textContent = next.toUpperCase();
 });
-document.getElementById('btn-waveform-prev')?.addEventListener('click', () => Waveform.jumpEdge(-1));
-document.getElementById('btn-waveform-next')?.addEventListener('click', () => Waveform.jumpEdge(+1));
 document.getElementById('btn-waveform-bmk') ?.addEventListener('click', () => Waveform.addBookmarkAtCursor());
 document.getElementById('btn-waveform-fullscreen')?.addEventListener('click', (e) => {
   const on = Waveform.toggleFullscreen();
   e.currentTarget.classList.toggle('active', on);
   e.currentTarget.textContent = on ? '⛶ EXIT' : '⛶ FULL';
 });
+
+// ── Signal Picker ─────────────────────────────────────────────────
+const pickerBtn    = document.getElementById('btn-waveform-picker');
+const pickerPanel  = document.getElementById('waveform-panel');
+const pickerList   = document.getElementById('waveform-picker-list');
+const pickerSearch = document.getElementById('waveform-picker-search');
+let _pickerFilter = '';
+
+// Components start collapsed by default. The set tracks which ones the user
+// has *explicitly expanded* — anything not in here is closed.
+const _pickerExpanded = new Set();
+
+function _renderPicker() {
+  if (!pickerList) return;
+  const sigs = Waveform.allSignals();
+  const q = _pickerFilter.trim().toLowerCase();
+
+  const matchesQuery = (s) => {
+    if (!q) return true;
+    return (s.label || '').toLowerCase().includes(q) ||
+           (s.parentLabel || '').toLowerCase().includes(q) ||
+           (s.pin || '').toLowerCase().includes(q);
+  };
+
+  // Group signals by their parent component. Preserve the order in which each
+  // parent first appears in state.signals (no category-based re-sorting).
+  const groups = new Map(); // parentId -> { label, type, signals: [] }
+  for (const s of sigs) {
+    if (!matchesQuery(s)) continue;
+    if (!groups.has(s.parentId)) {
+      groups.set(s.parentId, { label: s.parentLabel, type: s.type, signals: [] });
+    }
+    groups.get(s.parentId).signals.push(s);
+  }
+
+  // Separate top-level IO (rendered under a collapsible "RECOMMENDED"
+   // banner) from internal components (rendered as their own collapsibles).
+  const recommendedSignals = [];
+  const componentEntries = [];
+  for (const [pid, comp] of groups) {
+    const isClock = comp.type === 'clock';
+    const isLeafOnly = isClock || (comp.signals.length === 1 && comp.signals[0].label === comp.label);
+    if (isLeafOnly) recommendedSignals.push(comp.signals[0]);
+    else            componentEntries.push([pid, comp]);
+  }
+
+  let html = '';
+  if (recommendedSignals.length > 0) {
+    const recPid = '__recommended__';
+    const collapsed = !_pickerExpanded.has(recPid);
+    const shownCount = recommendedSignals.filter(s => Waveform.isSignalShown(s.id)).length;
+    const tri = collapsed ? '▶' : '▼';
+    html += `<div class="wf-pick-comp wf-pick-comp-recommended" data-comp="${recPid}">
+      <span class="wf-pick-tri">${tri}</span>
+      <span class="wf-pick-comp-label">RECOMMENDED</span>
+      <span class="wf-pick-comp-count">${shownCount}/${recommendedSignals.length}</span>
+    </div>`;
+    if (!collapsed) {
+      for (const s of recommendedSignals) {
+        const checked = Waveform.isSignalShown(s.id) ? 'checked' : '';
+        html += `<label class="wf-pick-row wf-pick-child" data-sigid="${s.id}">
+          <input type="checkbox" ${checked} />
+          <span class="wf-pick-label" style="color:${s.color}">${s.label}</span>
+        </label>`;
+      }
+    }
+  }
+
+  for (const [pid, comp] of componentEntries) {
+
+    // Hierarchical component — collapsible header + inputs / outputs sub-groups.
+    const collapsed = !_pickerExpanded.has(pid);
+    const shown = comp.signals.filter(s => Waveform.isSignalShown(s.id)).length;
+    const total = comp.signals.length;
+    const tri = collapsed ? '▶' : '▼';
+    html += `<div class="wf-pick-comp" data-comp="${pid}">
+      <span class="wf-pick-tri">${tri}</span>
+      <span class="wf-pick-comp-label">${comp.label}</span>
+      <span class="wf-pick-comp-count">${shown}/${total}</span>
+    </div>`;
+    if (!collapsed) {
+      const outputs = comp.signals.filter(s => s.direction !== 'in');
+      const inputs  = comp.signals.filter(s => s.direction === 'in');
+      const renderGroup = (title, rows) => {
+        if (rows.length === 0) return '';
+        let out = `<div class="wf-pick-subhead">${title}</div>`;
+        for (const s of rows) {
+          const checked = Waveform.isSignalShown(s.id) ? 'checked' : '';
+          out += `<label class="wf-pick-row wf-pick-child" data-sigid="${s.id}">
+            <input type="checkbox" ${checked} />
+            <span class="wf-pick-label" style="color:${s.color}">${s.pin}</span>
+          </label>`;
+        }
+        return out;
+      };
+      html += renderGroup('inputs',  inputs);
+      html += renderGroup('outputs', outputs);
+    }
+  }
+  if (!html) html = '<div style="padding:16px;color:#4a6080;font:10px JetBrains Mono,monospace">No signals match.</div>';
+  pickerList.innerHTML = html;
+
+  // Wire component header clicks → collapse/expand.
+  pickerList.querySelectorAll('.wf-pick-comp').forEach(el => {
+    el.addEventListener('click', () => {
+      const pid = el.dataset.comp;
+      if (_pickerExpanded.has(pid)) _pickerExpanded.delete(pid);
+      else _pickerExpanded.add(pid);
+      _renderPicker();
+    });
+  });
+
+  // Wire signal row clicks → toggle visibility.
+  pickerList.querySelectorAll('.wf-pick-row').forEach(row => {
+    const sigId = row.dataset.sigid;
+    const cb = row.querySelector('input[type="checkbox"]');
+    row.addEventListener('click', (ev) => {
+      if (ev.target !== cb) cb.checked = !cb.checked;
+      Waveform.setSignalVisible(sigId, cb.checked);
+    });
+  });
+}
+
+pickerBtn?.addEventListener('click', () => {
+  const open = !pickerPanel.classList.contains('picker-open');
+  pickerPanel.classList.toggle('picker-open', open);
+  pickerBtn.classList.toggle('picker-on', open);
+  if (open) _renderPicker();
+});
+
+pickerSearch?.addEventListener('input', () => {
+  _pickerFilter = pickerSearch.value;
+  _renderPicker();
+});
+
+document.getElementById('btn-picker-recommended')?.addEventListener('click', () => {
+  Waveform.restoreRecommended();
+  _renderPicker();
+});
+document.getElementById('btn-picker-clear')?.addEventListener('click', () => {
+  if (!window.confirm('Clear every signal from the waveform except the clock?\n\nThis only hides them from the view — you can re-enable any signal from the picker.')) return;
+  Waveform.clearAllButClock();
+  _renderPicker();
+});
+// Signal Picker is open by default when the Waveform panel is first shown.
+(function _pickerOpenByDefault() {
+  if (!pickerPanel || !pickerBtn) return;
+  pickerPanel.classList.add('picker-open');
+  pickerBtn.classList.add('picker-on');
+  _renderPicker();
+})();
+
+// Refresh picker rows whenever the scene / sim changes in a way that could
+// affect the signal list.
+bus.on('scene:loaded', () => _renderPicker());
+bus.on('node:added',   () => _renderPicker());
+bus.on('node:removed', () => _renderPicker());
 
 // Pattern search: Enter to run, N/P inside the input navigates matches.
 const wfSearchInp = document.getElementById('waveform-search');

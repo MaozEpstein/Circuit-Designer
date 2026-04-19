@@ -851,9 +851,204 @@ input.wf-search-input::placeholder {
   color: #2a4060;
 }
 
+/* Body wraps the optional Signal Picker sidebar + the main waveform canvas. */
+#waveform-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
 #waveform-canvas {
   flex: 1;
   width: 100%;
+}
+
+/* Signal Picker — hidden by default. Toggled via the ◨ SIGNALS button.
+   Wide enough to fit both header buttons (CLEAR ALL + RECOMMENDED) on one row. */
+#waveform-picker {
+  width: 280px;
+  flex: 0 0 280px;
+  background: #0a1016;
+  border-right: 1px solid #1e3a50;
+  display: none;
+  flex-direction: column;
+  min-height: 0;
+}
+#waveform-panel.picker-open #waveform-picker {
+  display: flex;
+}
+
+#waveform-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #1e3a50;
+  font: bold 11px 'JetBrains Mono', monospace;
+  color: #00d4ff;
+  letter-spacing: 1.2px;
+}
+#waveform-picker-actions {
+  display: flex;
+  gap: 6px;
+}
+
+#btn-picker-recommended,
+#btn-picker-clear {
+  font: bold 10px 'JetBrains Mono', monospace;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 1.2px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+#btn-picker-recommended {
+  background: rgba(0,212,255,0.18);
+  color: #00d4ff;
+  border: 1px solid #00d4ff;
+}
+#btn-picker-recommended:hover {
+  background: rgba(0,212,255,0.35);
+  color: #ffffff;
+}
+#btn-picker-clear {
+  background: #2a1010;
+  color: #ff6666;
+  border: 1px solid #4a2020;
+}
+#btn-picker-clear:hover {
+  background: #3a1818;
+  color: #ff8888;
+  border-color: #ff6666;
+}
+
+#waveform-picker-search {
+  margin: 6px 10px;
+  padding: 3px 8px;
+  background: #0a1520;
+  border: 1px solid #1e3040;
+  border-radius: 3px;
+  color: #c8d8f0;
+  font: 10px 'JetBrains Mono', monospace;
+  outline: none;
+  -webkit-appearance: none;
+          appearance: none;
+  /* Grow the typography (not the width) on focus so the text is readable. */
+  transition: font-size 0.2s ease-out, padding 0.2s ease-out, border-color 0.2s;
+}
+#waveform-picker-search:focus {
+  font-size: 14px;
+  padding: 8px 10px;
+  border-color: #00d4ff;
+}
+#waveform-picker-search::placeholder {
+  color: #2a4060;
+}
+
+#waveform-picker-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.wf-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: 14px 'JetBrains Mono', monospace;
+  transition: background 0.1s;
+}
+.wf-pick-row:hover {
+  background: rgba(0,212,255,0.08);
+}
+.wf-pick-row input[type="checkbox"] {
+  accent-color: #00d4ff;
+  cursor: pointer;
+}
+.wf-pick-row .wf-pick-label {
+  flex: 1;
+  color: #c8d8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wf-pick-row .wf-pick-type {
+  font-size: 8px;
+  color: #4a6080;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+/* Section banner above the flat "recommended" list at the top of the picker. */
+.wf-pick-banner {
+  padding: 8px 10px 6px;
+  font: bold 10px 'JetBrains Mono', monospace;
+  color: #00d4ff;
+  letter-spacing: 2px;
+  background: rgba(0,212,255,0.10);
+  border-bottom: 1px solid rgba(0,212,255,0.25);
+}
+
+/* Category banner — single horizontal stripe above each batch of components. */
+.wf-pick-cat {
+  padding: 6px 10px 3px;
+  font: bold 8px 'JetBrains Mono', monospace;
+  color: #4a6080;
+  letter-spacing: 1px;
+  margin-top: 6px;
+  border-top: 1px solid #12202c;
+}
+.wf-pick-cat:first-child {
+  margin-top: 0;
+  border-top: none;
+}
+
+/* Component header — collapsible parent showing N/M pins selected. */
+.wf-pick-comp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font: bold 13px 'JetBrains Mono', monospace;
+  color: #00d4ff;
+  transition: background 0.1s;
+}
+.wf-pick-comp:hover { background: rgba(0,212,255,0.08); }
+.wf-pick-tri {
+  display: inline-block;
+  width: 10px;
+  text-align: center;
+  color: #00d4ff;
+}
+.wf-pick-comp-label { flex: 1; }
+.wf-pick-comp-count {
+  font-size: 8px;
+  color: #4a6080;
+  letter-spacing: 0.5px;
+}
+
+/* "inputs" / "outputs" sub-header within a component. */
+.wf-pick-subhead {
+  padding: 5px 10px 3px 28px;
+  font: bold 11px 'JetBrains Mono', monospace;
+  color: #7090b0;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* Pin row indented under a component header. */
+.wf-pick-row.wf-pick-child {
+  padding-left: 30px;
+}
+
+/* Button "active" state for the picker toggle (matches TRIG / MEM styling). */
+.btn-waveform-ctrl.picker-on {
+  background: rgba(0,212,255,0.25);
+  color: #00d4ff;
+  border-color: #00d4ff;
 }
 
 /* Per-signal context menu inside the Waveform panel. */
