@@ -375,6 +375,7 @@
   display: flex;
   gap: 6px;
   justify-content: flex-end;
+  align-items: center;
   margin-bottom: 4px;
 }
 
@@ -578,20 +579,76 @@
 }
 
 /* ── Memory Inspector Panel ──────────────────────────────── */
+/* Panel uses `top` positioning + flex column so the body scrolls internally
+   and the resize grip stays anchored to the panel's visible bottom-right
+   corner (not the scroll content bottom). */
 #mem-inspector {
   position: fixed;
   left: 0;
   bottom: 0;
   width: 340px;
-  max-height: 45vh;
+  height: 45vh;
+  min-width: 220px;
+  min-height: 150px;
+  max-width: 95vw;
+  max-height: 95vh;
   background: #0a0e14;
-  border-top: 1px solid #5a3d8a;
-  border-right: 1px solid #5a3d8a;
+  border: 1px solid #5a3d8a;
+  border-left: none;
   border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
   z-index: 160;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
+}
+
+/* Minimal resize grip in the panel's top-right corner.
+   Three soft diagonal dashes; subtle by default, glows on hover.
+   Dragging: up → panel grows upward, right → panel widens. */
+#mem-resize-grip {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  cursor: nesw-resize;
+  border-radius: 4px;
+  background: transparent;
+  z-index: 20;
+  transition: background 0.15s ease-out;
+}
+#mem-resize-grip::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  background-image:
+    linear-gradient(45deg,
+      transparent 0 28%,
+      rgba(192,160,240,0.7) 28% 36%,
+      transparent 36% 52%,
+      rgba(192,160,240,0.7) 52% 60%,
+      transparent 60% 76%,
+      rgba(192,160,240,0.7) 76% 84%,
+      transparent 84%);
+  transition: background-image 0.15s ease-out;
+  pointer-events: none;
+}
+#mem-resize-grip:hover {
+  background: rgba(192,160,240,0.12);
+}
+#mem-resize-grip:hover::before {
+  background-image:
+    linear-gradient(45deg,
+      transparent 0 28%,
+      #e0c8ff 28% 36%,
+      transparent 36% 52%,
+      #e0c8ff 52% 60%,
+      transparent 60% 76%,
+      #e0c8ff 76% 84%,
+      transparent 84%);
 }
 
 #mem-inspector-header {
@@ -604,10 +661,8 @@
   font-weight: bold;
   font-size: 11px;
   letter-spacing: 1px;
-  position: sticky;
-  top: 0;
   background: #0a0e14;
-  z-index: 1;
+  flex: 0 0 auto;
 }
 
 #mem-inspector-header > div {
@@ -617,6 +672,9 @@
 
 #mem-inspector-body {
   padding: 4px 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .mem-row {
@@ -639,14 +697,14 @@
 }
 
 .mem-row-type {
-  color: #5a4080;
-  font-size: 8px;
+  color: #9880c8;
+  font-size: 0.8em;
   min-width: 40px;
 }
 
 .mem-row-size {
-  color: #6a5090;
-  font-size: 9px;
+  color: #a088d0;
+  font-size: 0.9em;
   min-width: 36px;
 }
 
@@ -654,12 +712,12 @@
   color: #39ff14;
   font-weight: bold;
   margin-left: auto;
-  font-size: 11px;
+  font-size: 1.1em;
 }
 
 .mem-row-binary {
-  color: #4a6080;
-  font-size: 9px;
+  color: #8098b8;
+  font-size: 0.9em;
   margin-left: 8px;
   min-width: 50px;
   text-align: right;
@@ -672,7 +730,9 @@
   border: 1px solid #3a4a60;
   border-radius: 3px;
   color: #39ff14;
-  font: bold 10px 'JetBrains Mono', monospace;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1em;
+  font-weight: bold;
   text-align: center;
   margin-left: 6px;
 }
@@ -731,13 +791,13 @@
 }
 
 .mem-bit-label {
-  font-size: 7px;
-  color: #5a4080;
+  font-size: 0.7em;
+  color: #9880c8;
   font-weight: bold;
 }
 
 .mem-bit-val {
-  font-size: 12px;
+  font-size: 1.2em;
   font-weight: bold;
 }
 
@@ -746,7 +806,7 @@
 }
 
 .mem-bit-off .mem-bit-val {
-  color: #333;
+  color: #666;
 }
 
 .mem-empty {
@@ -768,9 +828,9 @@
   border: 1px solid #2a1a40;
   border-radius: 2px;
   padding: 2px 4px;
-  font-size: 8px;
+  font-size: 0.8em;
   text-align: center;
-  color: #6a5090;
+  color: #a088d0;
 }
 
 .mem-ram-cell-active {
@@ -779,8 +839,8 @@
 }
 
 .mem-ram-addr {
-  color: #4a3070;
-  font-size: 7px;
+  color: #8060b8;
+  font-size: 0.7em;
   display: block;
 }
 
@@ -809,22 +869,22 @@
 }
 
 .mem-regfile-name {
-  color: #7a60b0;
+  color: #b098e0;
   font-weight: bold;
-  font-size: 9px;
+  font-size: 0.9em;
   min-width: 28px;
 }
 
 .mem-regfile-val {
   color: #39ff14;
   font-weight: bold;
-  font-size: 10px;
+  font-size: 1em;
   min-width: 50px;
 }
 
 .mem-regfile-bin {
-  color: #4a6080;
-  font-size: 9px;
+  color: #8098b8;
+  font-size: 0.9em;
   margin-left: auto;
 }
 
@@ -969,23 +1029,20 @@
 /* ── Palette Search ─────────────────────────────────────── */
 #palette-search {
   width: 90px;
-  margin: 2px 8px;
+  margin: 0;
   padding: 2px 6px;
   background: #0a1520;
   border: 1px solid #1e3040;
   border-radius: 3px;
   color: #c8d8f0;
-  font: 8px 'JetBrains Mono', monospace;
+  font: 10px 'JetBrains Mono', monospace;
   outline: none;
-  transition: all 0.2s;
+  transition: width 0.2s, border-color 0.2s;
 }
 
 #palette-search:focus {
-  width: 120px;
-  padding: 6px 8px;
-  font-size: 12px;
+  width: 160px;
   border-color: #00d4ff;
-  margin: 4px 8px;
 }
 
 #palette-search::placeholder {

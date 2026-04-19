@@ -7,7 +7,7 @@ import { StateManager } from './core/StateManager.js';
 import { CommandManager } from './core/CommandManager.js';
 import { SceneGraph } from './core/SceneGraph.js';
 import * as Renderer from './rendering/CanvasRenderer.js';
-import * as Waveform from './rendering/WaveformRenderer.js';
+import * as Waveform from './waveform/WaveformController.js';
 import * as Input from './interaction/InputHandler.js';
 import { MEMORY_TYPE_SET, COMPONENT_TYPES } from './components/Component.js';
 import { SetNodePropsCommand, RemoveNodeCommand } from './components/CircuitCommands.js';
@@ -1042,6 +1042,18 @@ bus.on('scene:loaded', () => {
   _renderBreakpointList();
 });
 
+// RESET — return the simulation to step 0 without touching the design.
+// Clears all sequential state (FFs, RAM/ROM working copies, RF contents,
+// PC, counters) and resets the step counter, waveform, and sim controller.
+document.getElementById('btn-reset')?.addEventListener('click', () => {
+  state.ffStates.clear();
+  state.resetSequentialState(scene.nodes);
+  simCtrl.reset();
+  Waveform.reset();
+  Waveform.setSignals(scene.nodes);
+  _updateStepCount();
+});
+
 // ── Toolbar Actions ─────────────────────────────────────────
 document.getElementById('btn-design-clear')?.addEventListener('click', () => {
   if (scene.nodeCount === 0) return;
@@ -1153,6 +1165,7 @@ function toggleWaveform() {
 
 btnWaveform?.addEventListener('click', toggleWaveform);
 document.getElementById('btn-waveform-close')?.addEventListener('click', toggleWaveform);
+document.getElementById('btn-waveform-fit')?.addEventListener('click', () => Waveform.fitToWindow());
 
 // ── Sequential Controls ─────────────────────────────────────
 function _updateSequentialUI() {
@@ -1456,6 +1469,66 @@ function _toggleMemInspector() {
 
 document.getElementById('btn-mem-toggle')?.addEventListener('click', _toggleMemInspector);
 document.getElementById('btn-mem-close')?.addEventListener('click', _toggleMemInspector);
+
+// Custom resize grip (top-right corner of Memory Inspector).
+// The grip lives in the upper-right of the panel, so:
+//   drag right → widen (left stays pinned)
+//   drag up    → panel grows upward (top moves up, bottom stays)
+//   drag down  → panel shrinks from the top
+(function initMemResize() {
+  const grip  = document.getElementById('mem-resize-grip');
+  const panel = document.getElementById('mem-inspector');
+  if (!grip || !panel) return;
+
+  // Tiered font-size: child elements use em units, so changing the panel's
+  // base font-size scales the whole readout. Three breakpoints with
+  // noticeable jumps between them:
+  //   compact   (< 300px):  10px base
+  //   normal    (300–550):  12px base
+  //   spacious  (> 550px):  14px base
+  function _applyFontTier(height) {
+    let base;
+    if (height < 300)       base = 10;
+    else if (height < 550)  base = 12;
+    else                    base = 14;
+    panel.style.fontSize = base + 'px';
+  }
+  _applyFontTier(panel.getBoundingClientRect().height);
+
+  let dragging = false, startX = 0, startY = 0, startW = 0, startH = 0, startTop = 0;
+  grip.addEventListener('mousedown', (e) => {
+    dragging = true;
+    const r = panel.getBoundingClientRect();
+    startX = e.clientX; startY = e.clientY;
+    startW = r.width;   startH = r.height;
+    startTop = r.top;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'nesw-resize';
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;     // dragging up → dy negative → height grows
+    const bottom = startTop + startH;  // pinned edge — stays constant
+    const newW = Math.max(220, Math.min(window.innerWidth  * 0.95, startW + dx));
+    let   newH = Math.max(150, Math.min(window.innerHeight * 0.95, startH - dy));
+    let   newTop = bottom - newH;
+    if (newTop < 0) { newTop = 0; newH = bottom; }
+    panel.style.width  = newW + 'px';
+    panel.style.height = newH + 'px';
+    panel.style.top    = newTop + 'px';
+    _applyFontTier(newH);
+  });
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+  });
+})();
+
 document.getElementById('btn-mem-format')?.addEventListener('click', () => {
   const btn = document.getElementById('btn-mem-format');
   if (_memFormat === 'hex') { _memFormat = 'bin'; btn.textContent = 'BIN'; }

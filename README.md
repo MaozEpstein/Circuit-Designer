@@ -227,6 +227,148 @@ Then open `http://localhost:3000/app.html` in your browser.
 
 ---
 
+## Waveform Pro — Industry-Grade Upgrade Path
+
+> Long-running initiative developed in parallel with other features. The goal is to bring the Waveform viewer to the capability level of GTKWave / Vivado / ModelSim, while keeping a modern, minimal aesthetic instead of the dense "CAD from the 90s" look.
+
+### Vision
+
+A waveform that is simultaneously:
+
+- **Professionally capable** — cursor readouts, zoom/pan, multi-bit buses, bookmarks, measurements, VCD export, trigger conditions, pattern search.
+- **Visually restful** — a narrow, harmonious palette (3–5 colors total), generous row spacing, readable typography, subtle grid, smooth motion.
+
+### Design Principles
+
+| Principle | What it means in practice |
+|---|---|
+| Narrow palette | Green for HIGH, blue-grey for LOW, yellow for CLK, cyan for interaction, white for text. No more. |
+| Readable type | JetBrains Mono 12px for values, 11px for labels. Never below 10px. |
+| Generous spacing | Row height 32–40 px. Visual gap between signal groups. |
+| Quiet grid | Time gridlines at ~10% opacity. Not a chessboard. |
+| Gentle motion | Zoom/pan eased over 150 ms. Cursor tracks smoothly. No jumps. |
+| One interaction color | Everything clickable/draggable is cyan. No rainbow of button colors. |
+
+### Folder Structure
+
+The current `js/rendering/WaveformRenderer.js` (single 216-line file) will be refactored into a dedicated module directory during Phase 1. This keeps each concern isolated and prevents the file from growing unmanageable as the 27 tasks land.
+
+```
+js/waveform/
+├── WaveformRenderer.js    — canvas drawing only (signals, grid, cursor visuals)
+├── WaveformController.js   — input handling (zoom, pan, cursor, markers, drag)
+├── WaveformState.js        — view state (zoom level, selected signals, radix, markers, bookmarks)
+├── WaveformSearch.js       — pattern matching, edge jumps, trigger conditions
+├── WaveformVCD.js          — VCD import and export
+└── WaveformTheme.js        — color palette, typography, spacing constants
+```
+
+Each file has a single responsibility. New features land in the file that matches their concern; no catch-all "utils" or "misc".
+
+### Performance Goal
+
+The Waveform must remain smooth and unobtrusive even after all 27 tasks land. The browser and the rest of the simulation must not slow down because the Waveform is open.
+
+**Concrete targets:**
+
+| Metric | Budget |
+|---|---|
+| Memory footprint | ≤ 10 MB for a typical session (20k cycles × 50 signals) |
+| Idle CPU cost | ≤ 2% at 30 fps render when panel is visible |
+| Render cost per frame | ≤ 4 ms for a typical scene (50 signals × ~500 visible steps) |
+| Peak latency (search, export) | ≤ 100 ms spike, never blocking the main thread for longer |
+| History retention | Circular buffer capped at 20k cycles; older entries drop automatically |
+
+**Required techniques:**
+
+- **Circular buffer** for signal history — never unbounded growth.
+- **`requestAnimationFrame` throttling** for cursor / hover updates (not every `mousemove`).
+- **Skip rendering when hidden** — the panel must not redraw when collapsed or covered.
+- **Early-exit** on pattern search — stop at first match unless "find all" is requested.
+- **Off-main-thread work** only if a task exceeds 100 ms — consider a `Worker` for VCD export of large runs.
+
+Every phase that adds compute (Phase 3 cursor, Phase 4 search, Phase 5 VCD) must include a measurement step: verify render time and memory stay within budget before marking tasks complete.
+
+### Development Phases
+
+Each phase is independently shippable — you can stop at the end of any phase and have a working, more useful Waveform than before. They are ordered so the earliest phases unlock the most value.
+
+#### Phase 1 — Navigation Foundations *(~1–2 days)*
+- [x] Horizontal zoom with `Ctrl+Scroll` (smooth, eased)
+  Zoom pivots around the cursor so the cycle under the pointer stays fixed.
+- [x] Horizontal pan with drag or shift-scroll
+  Drag anywhere inside the data area; shift+wheel also pans horizontally.
+- [x] Fit-to-window action + keyboard shortcut (`F`)
+  Exposed via the `FIT` button in the header and the `F` key.
+- [x] Time axis at top with cycle numbers (0, 5, 10, …) and minor ticks
+  Label spacing adapts to zoom; minor ticks every ~major/5 cycles.
+- [x] Resizable waveform panel (top-edge drag handle)
+  Cyan top-edge handle; min 120 px, max 80% of viewport height.
+
+**Refactor completed:** `js/rendering/WaveformRenderer.js` (single file) split into `js/waveform/{WaveformTheme, WaveformState, WaveformRenderer, WaveformController}.js` per the module layout in "Folder Structure" above. `WaveformSearch.js` and `WaveformVCD.js` will be created when Phases 4 and 5 begin.
+
+#### Phase 2 — Data Readability *(~1–2 days)*
+- [ ] Multi-bit bus rendering (hex/dec/bin labels inside hexagon shapes between transitions)
+- [ ] Global radix toggle (HEX / DEC / BIN) + per-signal override via context menu
+- [ ] Dynamic row height with consistent gap
+- [ ] Deterministic per-signal color assignment (hash of signal name → curated palette)
+
+#### Phase 3 — Interactivity *(~2–3 days)*
+- [ ] Vertical cursor following the mouse
+- [ ] Side panel: "All values at cursor time" (signal name + current value)
+- [ ] Click → place marker A; `Shift+Click` → marker B; footer shows `Δ = N cycles`
+- [ ] Signal list with show/hide checkboxes
+- [ ] Drag to reorder signal rows
+- [ ] Per-signal context menu (color, hide, pin to top, copy value)
+
+#### Phase 4 — Power Features *(~3–4 days)*
+- [ ] Jump to next/previous edge of active signal (`←` / `→`)
+- [ ] Pattern search ("find when `PC == 10`" or "`RegWrite` rising edge")
+- [ ] Trigger mode — begin recording only when a user-defined condition becomes true
+- [ ] Signal groups with collapsible headers (`▼ CPU core`, `▼ Memory`)
+- [ ] Named bookmarks at specific cycles
+
+#### Phase 5 — Industry Integration *(~2–3 days)*
+- [ ] **VCD export** — standard Value Change Dump format, consumable by GTKWave / ModelSim / Vivado without modification
+- [ ] VCD import — load a `.vcd` from an external tool and render it
+- [ ] Save/restore waveform view state per project (selected signals, zoom level, markers, group expansion)
+
+#### Phase 6 — Polish *(~1–2 days)*
+- [ ] Full-screen mode for the waveform panel
+- [ ] Complete keyboard shortcut set (`j`/`k` for signal navigation, `h`/`l` for time, `Home`/`End`, etc.)
+- [ ] Minimap overview strip at the top
+- [ ] Motion/animation pass — all transitions eased and consistent
+
+### Progress Tracker
+
+| Metric | Value |
+|---|---|
+| Phase 1 | 5 / 5 tasks ✅ |
+| Phase 2 | 0 / 4 tasks |
+| Phase 3 | 0 / 6 tasks |
+| Phase 4 | 0 / 5 tasks |
+| Phase 5 | 0 / 3 tasks |
+| Phase 6 | 0 / 4 tasks |
+| **Total** | **5 / 27 tasks** |
+| Last updated | 2026-04-19 |
+
+### How to update this section
+
+When a task is completed:
+
+1. Change `- [ ]` to `- [x]` on that line.
+2. Increment the "Phase X" count in the Progress Tracker table.
+3. Update "Last updated" to today's date.
+4. If the task needed a design decision worth remembering, add a one-line note beneath the checkbox (indent with two spaces).
+
+When adding new tasks discovered mid-development, append to the relevant phase and update the tracker total.
+
+### Working model
+
+This initiative runs **in parallel** with ongoing feature work — it is not a two-week freeze. Typical cadence: pick 1–2 tasks from the earliest unfinished phase per session, ship them, tick them off. The README is the single source of truth for what is done and what remains, so any session can resume from this list alone.
+
+---
+
 ## License
 
 MIT

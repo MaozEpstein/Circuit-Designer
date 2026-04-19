@@ -713,21 +713,65 @@ html, body {
   left: 0;
   right: 0;
   height: 220px;
+  min-height: 120px;
   background: #0a0e14;
-  border-top: 2px solid #1e3a50;
   z-index: 200;
   display: flex;
   flex-direction: column;
   transition: transform 0.35s ease-out, opacity 0.35s ease-out;
 }
 
+/* Top-edge drag handle for vertical resize of the waveform panel.
+   Occupies the full top edge of the panel. No dark border above it —
+   the cyan strip *is* the top of the panel, so the resize affordance is
+   the very first thing the cursor hits when approaching from above. */
+#waveform-resize-top {
+  flex: 0 0 auto;
+  height: 14px;
+  cursor: ns-resize;
+  background: #0f2030;
+  border-top: 2px solid #00d4ff;
+  border-bottom: 1px solid rgba(0,212,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  user-select: none;
+  position: relative;
+  z-index: 1;
+}
+#waveform-resize-top::before,
+#waveform-resize-top::after {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: #00d4ff;
+  border-radius: 1px;
+  pointer-events: none;
+}
+#waveform-resize-top:hover {
+  background: #163040;
+  border-top-color: #6be4ff;
+}
+#waveform-resize-top:hover::before,
+#waveform-resize-top:hover::after {
+  background: #6be4ff;
+}
+
 #waveform-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 4px 12px;
   background: rgba(14,22,33,0.95);
   border-bottom: 1px solid #1e3a50;
+}
+
+#waveform-hint {
+  font: 10px 'JetBrains Mono', monospace;
+  color: #4a6080;
+  letter-spacing: 0.5px;
+  user-select: none;
 }
 
 #waveform-title {

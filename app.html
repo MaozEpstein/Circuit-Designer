@@ -16,7 +16,6 @@
       <div id="level-label">CIRCUIT DESIGNER PRO</div>
       <div id="level-status-row">
         <div id="level-name">Design Mode</div>
-        <button id="btn-examples" style="font-size:9px;padding:2px 8px;background:#1a1430;border:1px solid #5a3d8a;color:#c0a0f0;border-radius:3px;cursor:pointer;margin-left:8px;font-family:'JetBrains Mono',monospace;font-weight:bold">EXAMPLES</button>
       </div>
     </div>
     <div id="hud-center">
@@ -28,7 +27,9 @@
         <div id="clock-controls-row">
           <button id="btn-step" title="Deliver one rising clock edge">&#9654; STEP</button>
           <button id="btn-auto-clk" class="btn-secondary" title="Toggle automatic clock">AUTO CLK</button>
+          <button id="btn-reset" class="btn-secondary" title="Reset simulation to step 0 (registers, memory, PC all cleared to initial values)" style="padding:4px 10px;font-size:9px"><span style="font-size:14px;vertical-align:-1px;margin-right:3px">&#8634;</span>RESET</button>
           <button id="btn-waveform" title="Toggle waveform display (W)">WAVEFORM</button>
+          <button id="btn-mem-toggle" class="btn-secondary" title="Toggle Memory Inspector" style="background:#1a1430;border-color:#5a3d8a;color:#c0a0f0">MEM</button>
           <div id="step-count">STEP: 0</div>
         </div>
         <div id="sim-controls-row">
@@ -51,11 +52,12 @@
     </div>
     <div id="hud-right">
       <div id="hud-right-top">
+        <button id="btn-examples" style="font-size:9px;padding:2px 8px;background:#1a1430;border:1px solid #5a3d8a;color:#c0a0f0;border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-weight:bold">EXAMPLES</button>
         <button id="btn-design-undo" class="hud-action-btn" title="Undo (Ctrl+Z)">&#8630;</button>
         <button id="btn-design-redo" class="hud-action-btn" title="Redo (Ctrl+Y)">&#8631;</button>
         <button id="btn-shortcuts" class="hud-action-btn" title="Keyboard Shortcuts (?)">?</button>
+        <input type="text" id="palette-search" placeholder="Search..." autocomplete="off" spellcheck="false" />
       </div>
-      <input type="text" id="palette-search" placeholder="Search..." autocomplete="off" spellcheck="false" />
       <div id="palette-tabs">
         <button class="palette-tab" data-tab="other">OTHER</button>
         <button class="palette-tab" data-tab="cpu">CPU</button>
@@ -261,8 +263,12 @@
 
   <!-- Waveform Panel -->
   <div id="waveform-panel" class="hidden">
+    <div id="waveform-resize-top" title="Drag up/down to resize"></div>
     <div id="waveform-header">
       <span id="waveform-title">WAVEFORM</span>
+      <span id="waveform-hint" title="Ctrl+Scroll = zoom · Shift+Scroll or drag = pan · F = fit">⌃+scroll zoom · drag to pan · F to fit</span>
+      <div style="flex:1"></div>
+      <button id="btn-waveform-fit" class="btn-waveform-ctrl" title="Fit all cycles to window (F)">FIT</button>
       <button id="btn-waveform-export" class="btn-waveform-ctrl" title="Export as PNG">EXPORT</button>
       <button id="btn-waveform-close" class="btn-waveform-ctrl">CLOSE</button>
     </div>
@@ -317,6 +323,7 @@
 
   <!-- Memory Inspector Panel (bottom-left) -->
   <div id="mem-inspector" class="hidden">
+    <div id="mem-resize-grip" title="Drag to resize"></div>
     <div id="mem-inspector-header">
       <span>MEMORY INSPECTOR</span>
       <div>
@@ -326,7 +333,6 @@
     </div>
     <div id="mem-inspector-body"></div>
   </div>
-  <button id="btn-mem-toggle" title="Toggle Memory Inspector" style="position:fixed;left:8px;bottom:8px;z-index:200;background:#0d1320;border:1px solid #5a3d8a;color:#c0a0f0;font:bold 10px 'JetBrains Mono',monospace;padding:6px 10px;cursor:pointer;border-radius:4px;letter-spacing:1px">MEM</button>
 
   <!-- Debug toggle button (fixed) -->
   <button id="btn-debug-toggle" title="Toggle debug panel (Ctrl+D)" style="position:fixed;right:8px;top:50%;transform:translateY(-50%);z-index:200;background:#0d1320;border:1px solid #2a4060;color:#00d4ff;font:bold 10px 'JetBrains Mono',monospace;padding:8px 4px;cursor:pointer;border-radius:4px;writing-mode:vertical-lr;letter-spacing:2px">DEBUG</button>
