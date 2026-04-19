@@ -40,7 +40,31 @@ export const COMPONENT_TYPES = {
   SIGN_EXT:     'SIGN_EXT',
   PIPE_REG:     'PIPE_REG',
   REG_FILE_DP:  'REG_FILE_DP',
+  SPLIT:        'SPLIT',
+  MERGE:        'MERGE',
 };
+
+/**
+ * Parse a slice spec string like "31:26, 25:21, 15" into
+ * an array of {hi, lo} ranges. A single number N means bit N (hi=lo=N).
+ * Invalid entries are dropped silently.
+ */
+export function parseSlices(spec) {
+  if (!spec || typeof spec !== 'string') return [];
+  return spec.split(',').map(part => {
+    const s = part.trim();
+    if (!s) return null;
+    const m = s.match(/^(\d+)(?:\s*:\s*(\d+))?$/);
+    if (!m) return null;
+    const hi = parseInt(m[1], 10);
+    const lo = m[2] !== undefined ? parseInt(m[2], 10) : hi;
+    if (isNaN(hi) || isNaN(lo) || hi < lo) return null;
+    return { hi, lo };
+  }).filter(Boolean);
+}
+
+/** Width in bits of a slice range. */
+export function sliceWidth(s) { return (s.hi - s.lo + 1); }
 
 export const GATE_TYPES = ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'NOT'];
 
@@ -138,6 +162,10 @@ export function createComponent(type, x, y) {
       return { ...base, channels: 4, label: 'PIPE' };
     case COMPONENT_TYPES.REG_FILE_DP:
       return { ...base, regCount: 8, dataBits: 8, initialRegs: null, label: 'RF-DP' };
+    case COMPONENT_TYPES.SPLIT:
+      return { ...base, inBits: 8, slicesSpec: '7:4, 3:0', label: 'SPLIT' };
+    case COMPONENT_TYPES.MERGE:
+      return { ...base, outBits: 8, slicesSpec: '7:4, 3:0', label: 'MERGE' };
     default:
       return base;
   }

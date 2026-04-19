@@ -11,7 +11,7 @@ import * as Waveform from './rendering/WaveformRenderer.js';
 import * as Input from './interaction/InputHandler.js';
 import { MEMORY_TYPE_SET, COMPONENT_TYPES } from './components/Component.js';
 import { SetNodePropsCommand, RemoveNodeCommand } from './components/CircuitCommands.js';
-import { assemble, disassemble, getOpcodeNames, getOpcodeFormat } from './cpu/Assembler.js';
+import { assemble, disassemble, decompileRomToC, getOpcodeNames, getOpcodeFormat } from './cpu/Assembler.js';
 import { compileCToROM } from './cpu/compiler/CCompiler.js';
 import { SubCircuitRegistry } from './core/SubCircuitRegistry.js';
 import { ShortcutManager } from './core/ShortcutManager.js';
@@ -1445,7 +1445,8 @@ window.addEventListener('keydown', (e) => {
 const memInspector = document.getElementById('mem-inspector');
 const memBody = document.getElementById('mem-inspector-body');
 let _memInspectorVisible = false;
-let _memFormat = 'hex'; // 'hex', 'bin', 'dec'
+let _memFormat = 'dec'; // 'hex', 'bin', 'dec'
+Renderer.setValueFormat(_memFormat); // sync canvas value format with inspector
 
 function _toggleMemInspector() {
   _memInspectorVisible = !_memInspectorVisible;
@@ -1460,6 +1461,7 @@ document.getElementById('btn-mem-format')?.addEventListener('click', () => {
   if (_memFormat === 'hex') { _memFormat = 'bin'; btn.textContent = 'BIN'; }
   else if (_memFormat === 'bin') { _memFormat = 'dec'; btn.textContent = 'DEC'; }
   else { _memFormat = 'hex'; btn.textContent = 'HEX'; }
+  Renderer.setValueFormat(_memFormat);
   _refreshMemInspector();
 });
 
@@ -1960,13 +1962,22 @@ let _romEditorData = {}; // addr → value
 
 let _romViewMode = 'c'; // 'c', 'asm', or 'table'
 let _romCSource = '';   // stores C source separately
+let _romAsmSource = ''; // stores the raw ASM text exactly as the user typed it
+// Which view the user has actually edited since opening the ROM editor.
+// null = no edits yet; otherwise 'c' | 'asm' | 'table'. Prevents stale views
+// from overwriting memory on tab-switch / save.
+let _romEditedMode = null;
 
 function _openRomEditor(node) {
   _romEditorNode = node;
   _romEditorData = node.memory ? { ...node.memory } : {};
   _romCSource = node._cSource || '';
+  _romAsmSource = node._asmSource || '';
   _initRomBuilderDropdowns();
-  _romViewMode = 'c';
+  _romEditedMode = null;
+  _romViewMode = node._sourceView
+    || (_romAsmSource ? 'asm'
+    : (Object.values(_romEditorData).some(v => v) && !_romCSource ? 'asm' : 'c'));
   _updateRomView();
   romOverlay?.classList.remove('hidden');
 }
@@ -2012,6 +2023,13 @@ function _updateRomView() {
 function _renderAsmView() {
   const codeView = document.getElementById('rom-code-view');
   if (!codeView || !_romEditorNode) return;
+  // If we have the verbatim ASM the user last saved, show it exactly —
+  // don't round-trip through disassemble (which drops formatting and can
+  // mask save/reload bugs). Fall back to disassembly for legacy ROMs.
+  if (_romAsmSource) {
+    codeView.value = _romAsmSource;
+    return;
+  }
   const addrCount = 1 << (_romEditorNode.addrBits || 3);
   const lines = [];
   for (let a = 0; a < addrCount; a++) {
@@ -2028,14 +2046,20 @@ function _renderAsmView() {
   codeView.value = lines.join('\n');
 }
 
-function _syncCodeViewToData() {
+function _syncCodeViewToData(force = false) {
   const codeView = document.getElementById('rom-code-view');
   if (!codeView || !_romEditorNode) return;
+  // On tab-switch, only push this view's text into memory if the user
+  // actually edited it — otherwise a fresh-opened view would clobber memory
+  // with stale/derived text. On explicit SAVE (`force`), always sync.
+  if (!force && _romEditedMode !== _romViewMode) return;
   const addrCount = 1 << (_romEditorNode.addrBits || 3);
 
   if (_romViewMode === 'c') {
     // Save C source
     _romCSource = codeView.value;
+    // Only compile if C source is non-empty
+    if (_romCSource.trim()) {
     // Compile C to ROM
     const { memory, errors, constants } = compileCToROM(codeView.value);
     for (let a = 0; a < addrCount; a++) _romEditorData[a] = 0;
@@ -2053,14 +2077,20 @@ function _syncCodeViewToData() {
         errorBar.classList.add('hidden');
       }
     }
+    } // end if (_romCSource.trim())
   } else if (_romViewMode === 'asm') {
+    // Remember the raw text so we can show it verbatim next time the editor opens.
+    _romAsmSource = codeView.value;
     const lines = codeView.value.split('\n');
+    console.log('[ASM SYNC] lines:', lines);
     for (let a = 0; a < addrCount; a++) _romEditorData[a] = 0;
     let addr = 0;
     for (let i = 0; i < lines.length && addr < addrCount; i++) {
       const line = lines[i].trim();
       if (!line || line.startsWith(';') || line.startsWith('//')) continue;
-      _romEditorData[addr] = assemble(line);
+      const assembled = assemble(line);
+      console.log(`[ASM] addr=${addr} "${line}" → 0x${assembled.toString(16)} (${assembled})`);
+      _romEditorData[addr] = assembled;
       addr++;
     }
   }
@@ -2116,6 +2146,7 @@ function _renderRomTable() {
       if (isNaN(val)) val = 0;
       val = val & 0xFFFF;
       _romEditorData[addr] = val;
+      _romEditedMode = 'table';
       inp.value = '0x' + val.toString(16).toUpperCase().padStart(4, '0');
       const asmInp = romBody.querySelector(`.rom-asm-input[data-addr="${addr}"]`);
       if (asmInp) asmInp.value = disassemble(val);
@@ -2134,6 +2165,7 @@ function _renderRomTable() {
       const addr = parseInt(inp.dataset.addr);
       const val = assemble(inp.value);
       _romEditorData[addr] = val;
+      _romEditedMode = 'table';
       const hexInp = romBody.querySelector(`.rom-hex-input[data-addr="${addr}"]`);
       if (hexInp) hexInp.value = '0x' + val.toString(16).toUpperCase().padStart(4, '0');
       inp.value = disassemble(val);
@@ -2145,6 +2177,7 @@ function _renderRomTable() {
     btn.addEventListener('click', () => {
       const addr = parseInt(btn.dataset.addr);
       _romEditorData[addr] = 0;
+      _romEditedMode = 'table';
       _renderRomTable();
     });
   });
@@ -2172,6 +2205,7 @@ document.getElementById('btn-rom-insert')?.addEventListener('click', () => {
   }
   if (addr === -1) addr = addrCount - 1; // overwrite last
   _romEditorData[addr] = val;
+  _romEditedMode = 'table';
   _renderRomTable();
 });
 
@@ -2244,9 +2278,14 @@ document.getElementById('rom-file-input')?.addEventListener('change', (e) => {
       }
     }
 
-    // Switch to ASM view for non-C files
+    // Switch to ASM view for non-C files, and invalidate any cached C source
+    // so the two views can't diverge after a binary/hex/asm import.
     if (!isCFile) {
       _romViewMode = 'asm';
+      _romCSource = '';
+      _romEditedMode = 'asm';
+    } else {
+      _romEditedMode = 'c';
     }
     _updateRomView();
   };
@@ -2261,27 +2300,63 @@ document.getElementById('rom-file-input')?.addEventListener('change', (e) => {
   e.target.value = '';
 });
 
+// Mark the active view as "edited" whenever the user types in the code textarea.
+document.getElementById('rom-code-view')?.addEventListener('input', () => {
+  _romEditedMode = _romViewMode;
+});
+
 // ROM view tab switching
 document.querySelectorAll('.rom-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    // Sync current view before switching
+    // Sync current view before switching (only syncs if user actually edited it)
     _syncCodeViewToData();
     // Save C source if leaving C tab
     if (_romViewMode === 'c') {
       const codeView = document.getElementById('rom-code-view');
       if (codeView) _romCSource = codeView.value;
     }
-    _romViewMode = tab.dataset.romview;
+    const newMode = tab.dataset.romview;
+    // Entering C after edits in ASM/table: regenerate the C source from the
+    // current memory so the C view mirrors the ASM the user just wrote.
+    if (newMode === 'c' && _romEditedMode && _romEditedMode !== 'c' && _romEditorNode) {
+      const addrCount = 1 << (_romEditorNode.addrBits || 3);
+      _romCSource = decompileRomToC(_romEditorData, addrCount);
+    }
+    _romViewMode = newMode;
     _updateRomView();
   });
 });
 
 document.getElementById('btn-rom-save')?.addEventListener('click', () => {
-  _syncCodeViewToData();
+  const codeView = document.getElementById('rom-code-view');
+  console.log('[ROM SAVE] click — viewMode:', _romViewMode, 'editedMode:', _romEditedMode, 'text:', JSON.stringify(codeView?.value));
+  // Force-sync: user clicked SAVE, they want whatever is in the view persisted,
+  // even if the input event never fired (paste, programmatic fill, etc).
+  if (_romEditedMode === null) _romEditedMode = _romViewMode;
+  _syncCodeViewToData(true);
   if (!_romEditorNode) return;
-  // Save C source on the node for persistence
+  // DEBUG: verify ROM save
+  console.log('[ROM SAVE] viewMode:', _romViewMode, 'data:', JSON.stringify(_romEditorData));
+  const foundNode = scene.getNode(_romEditorNode.id);
+  console.log('[ROM SAVE] node found:', !!foundNode, 'nodeId:', _romEditorNode.id);
+  console.log('[ROM SAVE] node.memory BEFORE:', JSON.stringify(foundNode?.memory));
+  // Whichever view was last edited becomes the authoritative source.
+  // If the user ended in ASM/table, regenerate the C view from memory so
+  // both tabs always show the same program (no divergence between C and ASM).
+  const authView = _romEditedMode || _romViewMode;
+  _romEditorNode._sourceView = authView;
+  if (authView !== 'c') {
+    const addrCount = 1 << (_romEditorNode.addrBits || 3);
+    _romCSource = decompileRomToC(_romEditorData, addrCount);
+  } else {
+    // C is authoritative — invalidate any cached ASM text so next open in ASM
+    // derives fresh from the compiled memory.
+    _romAsmSource = '';
+  }
   _romEditorNode._cSource = _romCSource;
+  _romEditorNode._asmSource = _romAsmSource;
   commands.execute(new SetNodePropsCommand(scene, _romEditorNode.id, { memory: { ..._romEditorData } }));
+  console.log('[ROM SAVE] node.memory AFTER:', JSON.stringify(foundNode?.memory));
   state.ffStates.delete(_romEditorNode.id);
 
   // Auto-load constants into connected Register Files
@@ -2337,7 +2412,7 @@ const DEFAULT_CONTROL_TABLE = [
   { name: 'JMP',   aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 1, halt: 0 },
   { name: 'JZ',    aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: -1, halt: 0 }, // -1 = conditional Z
   { name: 'JC',    aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: -2, halt: 0 }, // -2 = conditional C
-  { name: 'MOV',   aluOp: 0, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
+  { name: 'LI',    aluOp: 0, regWe: 1, memWe: 0, memRe: 0, jmp: 0, halt: 0, immSel: 1 },
   { name: 'NOP',   aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 0 },
   { name: 'HALT',  aluOp: 0, regWe: 0, memWe: 0, memRe: 0, jmp: 0, halt: 1 },
   // Extended opcodes (16-31) — immediate versions + extras
@@ -2542,49 +2617,56 @@ const EXAMPLES = [
     title: '4-Bit Counter',
     desc: 'A simple 4-bit counter driven by a clock. Press Play to see it count up from 0 to 15.',
     tags: ['beginner', 'Counter', 'CLK'],
-    file: 'examples/4bit-counter.json',
+    file: 'examples/circuits/4bit-counter.json',
   },
   {
     id: 'alu-calculator',
     title: 'ALU Calculator',
     desc: 'An 8-bit ALU performing ADD on two immediate values. Double-click the IMM nodes to change values and operation.',
     tags: ['beginner', 'ALU', 'IMM'],
-    file: 'examples/alu-calculator.json',
+    file: 'examples/circuits/alu-calculator.json',
   },
   {
     id: 'register-load',
     title: 'Register Load/Read',
     desc: 'Load a value into an 8-bit register on a clock edge, then read it back. Toggle EN to enable/disable loading.',
     tags: ['beginner', 'Register', 'CLK'],
-    file: 'examples/register-load.json',
+    file: 'examples/circuits/register-load.json',
   },
   {
     id: 'ram-readwrite',
     title: 'RAM Read/Write',
     desc: 'Write a value to a specific RAM address, then read it back. Change ADDR and DATA to experiment.',
     tags: ['intermediate', 'RAM'],
-    file: 'examples/ram-readwrite.json',
+    file: 'examples/circuits/ram-readwrite.json',
   },
   {
     id: 'fifo-pipeline',
     title: 'FIFO Queue',
     desc: 'A 4-deep FIFO buffer. Toggle WR to push data, toggle RD to pop. Watch FULL and EMPTY flags.',
     tags: ['intermediate', 'FIFO'],
-    file: 'examples/fifo-pipeline.json',
+    file: 'examples/circuits/fifo-pipeline.json',
   },
   {
     id: 'instruction-decoder',
     title: 'Instruction Decoder',
     desc: 'An IR decodes a 16-bit instruction into opcode, RD, RS1, RS2 fields. The CU generates control signals from the opcode.',
     tags: ['advanced', 'IR', 'CU'],
-    file: 'examples/instruction-decoder.json',
+    file: 'examples/circuits/instruction-decoder.json',
   },
   {
     id: 'simple-cpu',
     title: 'Simple CPU — Countdown',
     desc: 'A complete CPU with Register File. Counts down R1 from 10 to 0 using SUB R1,R1,R2 each cycle. Watch R1 decrease in real-time until HALT.',
     tags: ['advanced', 'PC', 'ROM', 'IR', 'CU', 'ALU', 'RF'],
-    file: 'examples/simple-cpu.json',
+    file: 'examples/circuits/simple-cpu.json',
+  },
+  {
+    id: 'mips-gcd',
+    title: 'MIPS Datapath — Euclid GCD',
+    desc: 'Single-cycle CPU laid out in 5 MIPS stages (Fetch/Decode/Execute/Memory/WB). Runs Euclid\u2019s GCD algorithm: gcd(12,8). Watch R1 converge to 4, then HALT.',
+    tags: ['advanced', 'MIPS', 'GCD', 'Branch', 'Jump'],
+    file: 'examples/circuits/mips-gcd.json',
   },
 ];
 

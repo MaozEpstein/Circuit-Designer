@@ -36,24 +36,10 @@ export function compileC(source) {
   const result = gen.generate(ast);
   errors.push(...result.errors);
 
-  // Process __CONST pseudo-instructions
-  const constants = {}; // reg → value
-  const cleanAsm = [];
-  for (const line of result.asm) {
-    const constMatch = line.match(/^__CONST R(\d+) (\d+)$/);
-    if (constMatch) {
-      const reg = parseInt(constMatch[1]);
-      const val = parseInt(constMatch[2]);
-      constants[reg] = val;
-      // Don't emit assembly — constants are pre-loaded in register file
-      continue;
-    }
-    // Skip comment-only lines
-    if (line.startsWith(';')) continue;
-    cleanAsm.push(line);
-  }
+  // Filter comment-only lines
+  const cleanAsm = result.asm.filter(line => !line.startsWith(';'));
 
-  return { asm: cleanAsm, errors, constants };
+  return { asm: cleanAsm, errors, constants: {} };
 }
 
 /**

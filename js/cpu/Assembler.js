@@ -6,13 +6,13 @@
  *
  * Opcodes match the CU definition:
  *   0=ADD  1=SUB  2=AND  3=OR  4=XOR  5=SHL  6=SHR  7=CMP
- *   8=LOAD 9=STORE 10=JMP 11=JZ 12=JC 13=MOV 14=NOP 15=HALT
+ *   8=LOAD 9=STORE 10=JMP 11=JZ 12=JC 13=MOV/LI 14=NOP 15=HALT
  */
 
 const OP_TABLE = {
   'ADD': 0, 'SUB': 1, 'AND': 2, 'OR': 3, 'XOR': 4,
   'SHL': 5, 'SHR': 6, 'CMP': 7, 'LOAD': 8, 'STORE': 9,
-  'JMP': 10, 'JZ': 11, 'JC': 12, 'MOV': 13, 'NOP': 14, 'HALT': 15,
+  'JMP': 10, 'JZ': 11, 'JC': 12, 'MOV': 13, 'LI': 13, 'NOP': 14, 'HALT': 15,
 };
 
 const OP_NAMES = Object.fromEntries(Object.entries(OP_TABLE).map(([k, v]) => [v, k]));
@@ -53,9 +53,30 @@ export function assemble(line) {
   const parts = line.trim().replace(/,/g, ' ').split(/\s+/).filter(Boolean);
   if (parts.length === 0) return 0;
 
-  const mnemonic = parts[0].toUpperCase();
+  let mnemonic = parts[0].toUpperCase();
+  // MOV Rd, Rs → ADD Rd, Rs, R0 (syntactic sugar)
+  // MOV Rd, IMM → LI Rd, IMM
+  if (mnemonic === 'MOV') {
+    if (parts.length >= 3 && (parts[2] || '').toUpperCase().startsWith('R')) {
+      mnemonic = 'ADD';
+      parts[0] = 'ADD';
+      parts.push('R0');
+    } else {
+      mnemonic = 'LI';
+      parts[0] = 'LI';
+    }
+  }
   const op = OP_TABLE[mnemonic];
   if (op === undefined) return 0;
+
+  // LI Rd, IMM — encodes as opcode 13 with immediate in RS1:RS2 (8-bit)
+  if (mnemonic === 'LI') {
+    const rd = parseReg(parts[1] || '');
+    const imm = parseInt(parts[2] || '0') & 0xFF;
+    const rs1 = (imm >> 4) & 0xF;
+    const rs2 = imm & 0xF;
+    return ((op & 0xF) << 12) | ((rd & 0xF) << 8) | ((rs1 & 0xF) << 4) | (rs2 & 0xF);
+  }
 
   const fmt = OP_FORMAT[op];
   let rd = 0, rs1 = 0, rs2 = 0;
@@ -113,10 +134,64 @@ export function disassemble(instr) {
     if (op === 7) return `${name} R${rs1}, R${rs2}`;
     if (op === 8) return `${name} R${rd}, R${rs2}`;
     if (op === 9) return `${name} R${rs1}, R${rs2}`;
+    if (op === 13) return `LI R${rd}, ${(rs1 << 4) | rs2}`;
     return `${name} R${rd}, R${rs1}`;
   }
   if (fmt === 1) return `${name} ${rd}`;
   return name;
+}
+
+/**
+ * Best-effort decompile of a single 16-bit instruction to a C-like statement.
+ * Used so the ROM editor's C view can mirror what was written in ASM
+ * (ops that have no natural C form fall back to `asm(...)` comments).
+ * @param {number} instr
+ * @returns {string}
+ */
+export function disassembleToC(instr) {
+  instr = instr & 0xFFFF;
+  const op  = (instr >> 12) & 0xF;
+  const rd  = (instr >> 8)  & 0xF;
+  const rs1 = (instr >> 4)  & 0xF;
+  const rs2 = instr         & 0xF;
+  switch (op) {
+    case 0: return `R${rd} = R${rs1} + R${rs2};`;
+    case 1: return `R${rd} = R${rs1} - R${rs2};`;
+    case 2: return `R${rd} = R${rs1} & R${rs2};`;
+    case 3: return `R${rd} = R${rs1} | R${rs2};`;
+    case 4: return `R${rd} = R${rs1} ^ R${rs2};`;
+    case 5: return `R${rd} = R${rs1} << R${rs2};`;
+    case 6: return `R${rd} = R${rs1} >> R${rs2};`;
+    case 7:  return `// cmp R${rs1}, R${rs2};`;
+    case 8:  return `R${rd} = mem[R${rs2}];`;
+    case 9:  return `mem[R${rs2}] = R${rs1};`;
+    case 10: return `// jmp ${rd};`;
+    case 11: return `// jz ${rd};`;
+    case 12: return `// jc ${rd};`;
+    case 13: return `R${rd} = ${(rs1 << 4) | rs2};`;
+    case 14: return ``; // NOP → blank line
+    case 15: return `halt;`;
+    default: return `// ???`;
+  }
+}
+
+/**
+ * Decompile a ROM memory map to a pseudo-C source block.
+ * Trailing NOPs are trimmed so the C view matches the visible ASM length.
+ * @param {object} memory
+ * @param {number} addrCount
+ * @returns {string}
+ */
+export function decompileRomToC(memory, addrCount) {
+  const lines = [];
+  let lastNonEmpty = -1;
+  for (let a = 0; a < addrCount; a++) {
+    const v = memory[a] ?? 0;
+    const c = disassembleToC(v);
+    lines.push(c);
+    if (c !== '') lastNonEmpty = a;
+  }
+  return lines.slice(0, lastNonEmpty + 1).join('\n');
 }
 
 /**

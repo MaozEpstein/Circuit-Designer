@@ -4,7 +4,7 @@
  * Migrated from renderer.js — full drawing logic preserved.
  */
 import { C, NODE } from './Theme.js';
-import { FF_TYPE_SET, MEMORY_TYPE_SET } from '../components/Component.js';
+import { FF_TYPE_SET, MEMORY_TYPE_SET, parseSlices, sliceWidth } from '../components/Component.js';
 import { computeRoute, detectJunctions, computeChannelOffset, simplifyPath } from '../routing/WireRouter.js';
 
 let canvas, ctx;
@@ -18,6 +18,16 @@ let _scale = 1;
 
 // ── Render state ────────────────────────────────────────────
 let _stepCount = 0;
+
+// ── Value display format (shared with Memory Inspector) ─────
+let _valueFmt = 'dec'; // 'hex' | 'dec' | 'bin'
+export function setValueFormat(fmt) { _valueFmt = fmt; }
+function _fmt(val, bits) {
+  const v = (val >>> 0);
+  if (_valueFmt === 'hex') return '0x' + v.toString(16).toUpperCase().padStart(Math.ceil((bits || 16) / 4), '0');
+  if (_valueFmt === 'bin') return v.toString(2).padStart(bits || 16, '0');
+  return v.toString();
+}
 
 export function init(canvasEl) {
   canvas = canvasEl;
@@ -371,7 +381,7 @@ function _drawBusValueLabel(path, val) {
   }
   if (bestLen < 30) return; // too short for label
 
-  const label = '0x' + (val >>> 0).toString(16).toUpperCase();
+  const label = _fmt(val);
 
   ctx.save();
   ctx.translate(bestMidX, bestMidY);
@@ -584,6 +594,17 @@ function _nodeOutputAnchor(node, outputIndex) {
   if (node.type === 'BUS_MUX') {
     return { x: node.x + 45, y: node.y };
   }
+  if (node.type === 'SPLIT') {
+    const slices = parseSlices(node.slicesSpec || '');
+    const n = Math.max(1, slices.length);
+    const h = Math.max(40, n * 18 + 10);
+    const spread = (h - 20) / Math.max(1, n - 1);
+    const startY = node.y - (h - 20) / 2;
+    return { x: node.x + 35, y: n === 1 ? node.y : startY + (outputIndex || 0) * spread };
+  }
+  if (node.type === 'MERGE') {
+    return { x: node.x + 35, y: node.y };
+  }
   if (node.type === 'SUB_CIRCUIT') {
     const outs = node.subOutputs || [];
     const ins = node.subInputs || [];
@@ -721,6 +742,17 @@ function _nodeInputAnchor(_src, node, inputIndex, isClockWire) {
     const startY = node.y - (h - 14) / 2;
     return { x: node.x - 45, y: n === 1 ? node.y : startY + inputIndex * spread };
   }
+  if (node.type === 'SPLIT') {
+    return { x: node.x - 35, y: node.y };
+  }
+  if (node.type === 'MERGE') {
+    const slices = parseSlices(node.slicesSpec || '');
+    const n = Math.max(1, slices.length);
+    const h = Math.max(40, n * 18 + 10);
+    const spread = (h - 20) / Math.max(1, n - 1);
+    const startY = node.y - (h - 20) / 2;
+    return { x: node.x - 35, y: n === 1 ? node.y : startY + inputIndex * spread };
+  }
   if (node.type === 'SUB_CIRCUIT') {
     const ins = node.subInputs || [];
     const outs = node.subOutputs || [];
@@ -826,6 +858,8 @@ function _drawNodes(nodes, nodeValues, ffStates, hoveredNodeId, selectedNodeId) 
     else if (node.type === 'PIPE_REG')  _drawPipeRegNode(node, val, hovered, ffStates);
     else if (node.type === 'SIGN_EXT')  _drawSignExtNode(node, val, hovered);
     else if (node.type === 'BUS_MUX')   _drawBusMuxNode(node, val, hovered);
+    else if (node.type === 'SPLIT')     _drawSplitNode(node, val, hovered);
+    else if (node.type === 'MERGE')     _drawMergeNode(node, val, hovered);
     else if (node.type === 'SUB_CIRCUIT') _drawSubCircuitNode(node, val, hovered);
     else if (MEMORY_TYPE_SET.has(node.type)) _drawMemoryNode(node, val, hovered, ffStates);
     else if (node.type === 'LATCH_SLOT') {
@@ -1686,7 +1720,7 @@ function _drawSignExtNode(node, val, hovered) {
   if (val !== null && val !== undefined) {
     ctx.fillStyle = '#39ff14';
     ctx.font = 'bold 8px JetBrains Mono, monospace';
-    ctx.fillText('0x' + (val >>> 0).toString(16).toUpperCase(), node.x, node.y + 18);
+    ctx.fillText(_fmt(val), node.x, node.y + 18);
   }
 
   // Node label above
@@ -1762,13 +1796,130 @@ function _drawBusMuxNode(node, val, hovered) {
     ctx.fillStyle = '#39ff14';
     ctx.font = 'bold 8px JetBrains Mono, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('0x' + (val >>> 0).toString(16).toUpperCase(), node.x - 4, node.y + 16);
+    ctx.fillText(_fmt(val), node.x - 4, node.y + 16);
   }
 
   // Node label above
   ctx.fillStyle = C.textDim;
   ctx.font = '10px JetBrains Mono, monospace';
   ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(node.label || '', node.x, y - 8);
+
+  ctx.restore();
+}
+
+// ── SPLIT node ─────────────────────────────────────────────
+// Tall trapezoid (narrow left = bus in, wide right = slices out).
+function _drawSplitNode(node, val, hovered) {
+  const slices = parseSlices(node.slicesSpec || '');
+  const n = Math.max(1, slices.length);
+  const w = 70, h = Math.max(40, n * 18 + 10);
+  const x = node.x - w / 2;
+  const y = node.y - h / 2;
+  ctx.save();
+
+  if (hovered) { ctx.shadowColor = 'rgba(128,200,255,0.5)'; ctx.shadowBlur = 18; }
+
+  ctx.fillStyle = 'rgba(10,20,30,0.96)';
+  ctx.beginPath();
+  ctx.moveTo(x,     y + 10);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x,     y + h - 10);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = hovered ? '#80c8ff' : '#3a70a0';
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#80c8ff';
+  ctx.font = 'bold 9px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('SPLIT', node.x, y + 10);
+
+  ctx.fillStyle = '#6a90b8';
+  ctx.font = '7px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  const spread = (h - 20) / Math.max(1, n - 1);
+  const startY = node.y - (h - 20) / 2;
+  for (let i = 0; i < slices.length; i++) {
+    const py = n === 1 ? node.y : startY + i * spread;
+    const s = slices[i];
+    const lbl = s.hi === s.lo ? `[${s.hi}]` : `[${s.hi}:${s.lo}]`;
+    ctx.fillText(lbl, x + w - 4, py + 1);
+  }
+
+  ctx.fillStyle = '#4a6080';
+  ctx.textAlign = 'center';
+  ctx.fillText('in=' + (node.inBits || 8), node.x, y + h - 4);
+
+  ctx.fillStyle = C.textDim;
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(node.label || '', node.x, y - 8);
+
+  ctx.restore();
+}
+
+// ── MERGE node ─────────────────────────────────────────────
+function _drawMergeNode(node, val, hovered) {
+  const slices = parseSlices(node.slicesSpec || '');
+  const n = Math.max(1, slices.length);
+  const w = 70, h = Math.max(40, n * 18 + 10);
+  const x = node.x - w / 2;
+  const y = node.y - h / 2;
+  ctx.save();
+
+  if (hovered) { ctx.shadowColor = 'rgba(255,180,80,0.5)'; ctx.shadowBlur = 18; }
+
+  ctx.fillStyle = 'rgba(30,20,10,0.96)';
+  ctx.beginPath();
+  ctx.moveTo(x,     y);
+  ctx.lineTo(x + w, y + 10);
+  ctx.lineTo(x + w, y + h - 10);
+  ctx.lineTo(x,     y + h);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = hovered ? '#ffb450' : '#a07030';
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#ffb450';
+  ctx.font = 'bold 9px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('MERGE', node.x, y + 10);
+
+  ctx.fillStyle = '#a07030';
+  ctx.font = '7px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  const spread = (h - 20) / Math.max(1, n - 1);
+  const startY = node.y - (h - 20) / 2;
+  for (let i = 0; i < slices.length; i++) {
+    const py = n === 1 ? node.y : startY + i * spread;
+    const s = slices[i];
+    const lbl = s.hi === s.lo ? `[${s.hi}]` : `[${s.hi}:${s.lo}]`;
+    ctx.fillText(lbl, x + 4, py + 1);
+  }
+
+  ctx.fillStyle = '#4a6080';
+  ctx.textAlign = 'center';
+  ctx.fillText('out=' + (node.outBits || 8), node.x, y + h - 4);
+
+  if (val !== null && val !== undefined) {
+    ctx.fillStyle = '#39ff14';
+    ctx.font = 'bold 8px JetBrains Mono, monospace';
+    ctx.fillText(_fmt(val), node.x, node.y - 2);
+  }
+
+  ctx.fillStyle = C.textDim;
+  ctx.font = '10px JetBrains Mono, monospace';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText(node.label || '', node.x, y - 8);
 
@@ -1898,7 +2049,7 @@ function _drawImmNode(node, val, hovered) {
   ctx.font = 'bold 10px JetBrains Mono, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('0x' + v.toString(16).toUpperCase().padStart(Math.ceil(bits / 4), '0'), node.x, node.y);
+  ctx.fillText(_fmt(v, bits), node.x, node.y);
 
   // Node label above
   ctx.fillStyle = C.textDim;
@@ -1938,7 +2089,7 @@ function _drawBusNode(node, val, hovered) {
   // Value
   ctx.fillStyle = val === null ? '#4a3020' : '#39ff14';
   ctx.font = 'bold 10px JetBrains Mono, monospace';
-  ctx.fillText(val === null ? 'Hi-Z' : '0x' + (val >>> 0).toString(16).toUpperCase(), node.x, node.y + 6);
+  ctx.fillText(val === null ? 'Hi-Z' : _fmt(val), node.x, node.y + 6);
 
   // Source count
   ctx.fillStyle = '#6a5030';
@@ -1982,7 +2133,7 @@ function _drawCuNode(node, val, hovered) {
   ctx.fillText('UNIT', node.x, node.y);
 
   // Opcode names for reference
-  const opNames = ['ADD','SUB','AND','OR','XOR','SHL','SHR','CMP','LD','ST','JMP','JZ','JC','MOV','NOP','HLT'];
+  const opNames = ['ADD','SUB','AND','OR','XOR','SHL','SHR','CMP','LD','ST','JMP','JZ','JC','LI','NOP','HLT'];
   ctx.fillStyle = '#6a5030';
   ctx.font = '7px JetBrains Mono, monospace';
   ctx.fillText(opNames[val & 0xF] || '?', node.x, node.y + 16);
@@ -2063,7 +2214,7 @@ function _drawIrNode(node, val, hovered, ffStates) {
   const iWidth = node.instrWidth || 16;
   ctx.fillStyle = '#39ff14';
   ctx.font = 'bold 9px JetBrains Mono, monospace';
-  ctx.fillText('0x' + instr.toString(16).toUpperCase().padStart(Math.ceil(iWidth / 4), '0'), node.x, y + 24);
+  ctx.fillText(_fmt(instr, iWidth), node.x, y + 24);
 
   // Decoded fields
   const opBits = node.opBits || 4, rdBits = node.rdBits || 4, rs1Bits = node.rs1Bits || 4, rs2Bits = node.rs2Bits || 4;
@@ -2164,7 +2315,7 @@ function _drawAluNode(node, val, hovered) {
   if (val !== null && val !== undefined) {
     ctx.fillStyle = '#39ff14';
     ctx.font = 'bold 9px JetBrains Mono, monospace';
-    ctx.fillText('0x' + (val >>> 0).toString(16).toUpperCase().padStart(Math.ceil(bits/4), '0'), node.x - 8, node.y + 18);
+    ctx.fillText(_fmt(val, bits), node.x - 8, node.y + 18);
   }
 
   // Input labels
@@ -2252,7 +2403,7 @@ function _drawMemoryNode(node, val, hovered, ffStates) {
   // Show current value in hex
   ctx.fillStyle = '#39ff14';
   ctx.font = 'bold 10px JetBrains Mono, monospace';
-  ctx.fillText('0x' + qVal.toString(16).toUpperCase().padStart(Math.ceil(bits / 4), '0'), node.x, node.y + 14);
+  ctx.fillText(_fmt(qVal, bits), node.x, node.y + 14);
 
   // FIFO/STACK: show fill level
   if (node.type === 'FIFO' || node.type === 'STACK') {
@@ -2758,6 +2909,10 @@ export function getNodeAtPoint(px, py, nodes) {
       const nn = n.inputCount || 2;
       const hw = 45 + 6, hh = Math.max(25, nn * 11 + 5) + 6;
       if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
+    } else if (n.type === 'SPLIT' || n.type === 'MERGE') {
+      const nn = Math.max(1, parseSlices(n.slicesSpec || '').length);
+      const hw = 35 + 6, hh = Math.max(20, nn * 9 + 5) + 6;
+      if (x >= n.x - hw && x <= n.x + hw && y >= n.y - hh && y <= n.y + hh) return n;
     } else if (n.type === 'SUB_CIRCUIT') {
       const maxPins = Math.max((n.subInputs||[]).length, (n.subOutputs||[]).length, 1);
       const hw = 60 + 6, hh = Math.max(30, maxPins * 10 + 10) + 6;
@@ -2922,6 +3077,8 @@ function _getNodeInputCount(node) {
   if (node.type === 'PIPE_REG') return (node.channels || 4) + 3; // D0..Dn-1, STALL, FLUSH, CLK
   if (node.type === 'SIGN_EXT') return 1;      // IN
   if (node.type === 'BUS_MUX') return (node.inputCount || 2) + 1; // D0..Dn-1, SEL
+  if (node.type === 'SPLIT')   return 1;       // one bus in
+  if (node.type === 'MERGE')   return parseSlices(node.slicesSpec || '').length || 1;
   if (node.type === 'ALU') return 3;           // A, B, OP
   if (node.type === 'CU') return 3;            // OP, Z, C
   if (node.type === 'BUS') return (node.sourceCount || 3) * 2; // D0,EN0,D1,EN1,...
@@ -2986,6 +3143,12 @@ export function getInputAnchors(node) {
       label = i < ch ? 'D' + i : ['STALL', 'FLUSH', 'CLK'][i - ch] || '';
     } else if (node.type === 'SIGN_EXT') {
       label = 'IN';
+    } else if (node.type === 'SPLIT') {
+      label = 'IN';
+    } else if (node.type === 'MERGE') {
+      const slices = parseSlices(node.slicesSpec || '');
+      const s = slices[i];
+      label = s ? (s.hi === s.lo ? `[${s.hi}]` : `[${s.hi}:${s.lo}]`) : ('I' + i);
     } else if (node.type === 'BUS_MUX') {
       const n = node.inputCount || 2;
       label = i < n ? String.fromCharCode(65 + i) : 'SEL'; // A, B, C... SEL
@@ -3051,6 +3214,18 @@ export function getOutputAnchors(node) {
       anchors.push({ ..._nodeOutputAnchor(node, i), index: i, label: 'Q' + i });
     }
   } else if (node.type === 'SIGN_EXT') {
+    anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'OUT' });
+  } else if (node.type === 'SPLIT') {
+    const slices = parseSlices(node.slicesSpec || '');
+    for (let i = 0; i < slices.length; i++) {
+      const s = slices[i];
+      const lbl = s.hi === s.lo ? `[${s.hi}]` : `[${s.hi}:${s.lo}]`;
+      anchors.push({ ..._nodeOutputAnchor(node, i), index: i, label: lbl });
+    }
+    if (slices.length === 0) {
+      anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'Y' });
+    }
+  } else if (node.type === 'MERGE') {
     anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'OUT' });
   } else if (node.type === 'BUS_MUX') {
     anchors.push({ ..._nodeOutputAnchor(node, 0), index: 0, label: 'Y' });

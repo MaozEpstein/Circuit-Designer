@@ -3,7 +3,7 @@
  * Supports combinational gates and sequential flip-flops.
  * Migrated from engine.js — same logic, ES Module format.
  */
-import { FF_TYPE_SET, MEMORY_TYPE_SET } from '../components/Component.js';
+import { FF_TYPE_SET, MEMORY_TYPE_SET, parseSlices, sliceWidth } from '../components/Component.js';
 
 // ── Combinational Gate Functions ──────────────────────────────
 export const GATE_FN = {
@@ -115,7 +115,7 @@ function _evalCU(node, op, z, c) {
       case 6: aluOp=6;regWe=1;break; case 7: aluOp=7;break;
       case 8: regWe=1;memRe=1;break; case 9: memWe=1;break;
       case 10:jmp=1;break; case 11:jmp=z;break; case 12:jmp=c;break;
-      case 13:regWe=1;break; case 14:break; case 15:halt=1;break;
+      case 13:regWe=1;immSel=1;break; case 14:break; case 15:halt=1;break;
     }
   }
   return { aluOp, regWe, memWe, memRe, jmp, halt, immSel };
@@ -130,6 +130,8 @@ function _evalCU(node, op, z, c) {
  * @returns {{ nodeValues: Map, wireValues: Map, ffUpdated: boolean }}
  */
 export function evaluate(nodes, wires, ffStates, stepCount) {
+  const _clkNode = nodes.find(n => n.type === 'CLOCK');
+  if (_clkNode && _clkNode.value === 1) console.log(`[EVAL] CLOCK=1 step=${stepCount}`);
   ffStates = ffStates || new Map();
 
   const nodeMap    = new Map(nodes.map(n => [n.id, n]));
@@ -460,6 +462,37 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         value = inVal & (_mask(inBits));
       }
 
+    } else if (node.type === 'SPLIT') {
+      // Bus splitter: one input bus → N outputs, each a bit-range slice.
+      const inputSlots = inputs.get(id);
+      const inVal = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+      const slices = parseSlices(node.slicesSpec || '');
+      for (let i = 0; i < slices.length; i++) {
+        const s = slices[i];
+        const width = sliceWidth(s);
+        const mask = width >= 32 ? 0xFFFFFFFF : ((1 << width) - 1);
+        const sliced = ((inVal >>> s.lo) & mask) >>> 0;
+        nodeValues.set(id + '__out' + i, sliced);
+      }
+      value = slices.length > 0 ? (nodeValues.get(id + '__out0') ?? 0) : 0;
+
+    } else if (node.type === 'MERGE') {
+      // Bus merger: N inputs → one output, each input placed into its bit range.
+      const inputSlots = inputs.get(id);
+      const slices = parseSlices(node.slicesSpec || '');
+      const outBits = node.outBits || 8;
+      const outMask = outBits >= 32 ? 0xFFFFFFFF : ((1 << outBits) - 1);
+      let merged = 0;
+      for (let i = 0; i < slices.length; i++) {
+        const s = slices[i];
+        const width = sliceWidth(s);
+        const partMask = width >= 32 ? 0xFFFFFFFF : ((1 << width) - 1);
+        const slot = inputSlots.find(sl => sl.inputIndex === i);
+        const v = slot ? (nodeValues.get(slot.sourceId) ?? 0) : 0;
+        merged = (merged | ((v & partMask) << s.lo)) >>> 0;
+      }
+      value = merged & outMask;
+
     } else if (node.type === 'BUS_MUX') {
       // Bus MUX: inputs D0..Dn-1, SEL (last input) → Y
       const inputSlots = inputs.get(id);
@@ -605,7 +638,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       } else if (node.type === 'DEMUX' || node.type === 'DECODER' || node.type === 'ENCODER' ||
                  node.type === 'HALF_ADDER' || node.type === 'FULL_ADDER' || node.type === 'COMPARATOR' ||
                  node.type === 'ALU' || node.type === 'CU' || node.type === 'BUS' ||
-                 node.type === 'SUB_CIRCUIT') {
+                 node.type === 'SUB_CIRCUIT' || node.type === 'SPLIT') {
         wireValues.set(wire.id, nodeValues.get(id + '__out' + outIdx) ?? null);
       } else if (node.type === 'REG_FILE_DP') {
         // Dual port: out0=RD1_DATA, out1=RD2_DATA
@@ -871,7 +904,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
 
     // REG_FILE, PC prevClk is managed by Phase 4
     // RAM: update prevClk here but skip write (Phase 4 handles write with fresh values)
-    if (node.type !== 'REG_FILE' && node.type !== 'PC' && clkNow !== null) ms.prevClkValue = clkNow;
+    if (node.type !== 'REG_FILE' && node.type !== 'REG_FILE_DP' && node.type !== 'PC' && clkNow !== null) ms.prevClkValue = clkNow;
   });
 
   // ── PHASE 3: Re-propagate FF outputs if state changed ─────
@@ -1065,13 +1098,32 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       propagate(node.id);
     }
 
-    // 4b: ALU recompute
+    // Determine current instruction opcode and immSel from CU, IMM from IR
+    let _currentOpcode = -1;
+    let _immSel = 0;
+    let _immValue = 0;
+    for (const node of nodes) {
+      if (node.type === 'CU') {
+        const cuInputs = inputs.get(node.id);
+        _currentOpcode = cuInputs[0] ? _nv(cuInputs[0].sourceId) : 0;
+        _immSel = _nv(node.id + '__out6');
+      } else if (node.type === 'IR') {
+        // Combine RS1:RS2 fields as 8-bit immediate
+        const rs1 = _nv(node.id + '__out2');
+        const rs2 = _nv(node.id + '__out3');
+        _immValue = ((rs1 & 0xF) << 4) | (rs2 & 0xF);
+      }
+    }
+
+    // 4b: ALU recompute + latch Z/C flags (persistent across ticks)
+    // Read persisted flags
+    let _flagState = ffStates.get('__cpu_flags__') || { z: 0, c: 0 };
     for (const node of nodes) {
       if (node.type !== 'ALU') continue;
       const id = node.id;
       const inputSlots = inputs.get(id);
-      const a  = inputSlots[0] ? _nv(inputSlots[0].sourceId) : 0;
-      const b  = inputSlots[1] ? _nv(inputSlots[1].sourceId) : 0;
+      const a  = _immSel ? 0 : (inputSlots[0] ? _nv(inputSlots[0].sourceId) : 0);
+      const b  = _immSel ? _immValue : (inputSlots[1] ? _nv(inputSlots[1].sourceId) : 0);
       const op = inputSlots[2] ? _nv(inputSlots[2].sourceId) : 0;
       const bits = node.bitWidth || 8, mask = _mask(bits);
       let r = 0, carry = 0;
@@ -1085,8 +1137,14 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         case 7: r = a === b ? 0 : (a - b) & mask; carry = a > b ? 1 : 0; break;
       }
       nodeValues.set(id, r);
-      nodeValues.set(id + '__out1', r === 0 ? 1 : 0);
+      const zFlag = r === 0 ? 1 : 0;
+      nodeValues.set(id + '__out1', zFlag);
       nodeValues.set(id + '__out2', carry);
+      // Only update flags when current instruction is an ALU operation (opcodes 0-7)
+      if (_currentOpcode >= 0 && _currentOpcode <= 7) {
+        _flagState = { z: zFlag, c: carry };
+        ffStates.set('__cpu_flags__', _flagState);
+      }
       propagate(id);
     }
 
@@ -1127,14 +1185,15 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       propagate(id);
     }
 
-    // 4d: CU recompute again with fresh ALU Z/C flags
+    // 4d: CU recompute with persistent Z/C flags
     for (const node of nodes) {
       if (node.type !== 'CU') continue;
       const id = node.id;
       const inputSlots = inputs.get(id);
       const op = inputSlots[0] ? _nv(inputSlots[0].sourceId) : 0;
-      const z  = inputSlots[1] ? _nv(inputSlots[1].sourceId) : 0;
-      const c  = inputSlots[2] ? _nv(inputSlots[2].sourceId) : 0;
+      // Use persistent flags from flag state register
+      const z  = _flagState.z;
+      const c  = _flagState.c;
       const { aluOp, regWe, memWe, memRe, jmp, halt, immSel } = _evalCU(node, op, z, c);
       nodeValues.set(id, aluOp);
       nodeValues.set(id+'__out0',aluOp);nodeValues.set(id+'__out1',regWe);nodeValues.set(id+'__out2',memWe);nodeValues.set(id+'__out3',memRe);nodeValues.set(id+'__out4',jmp);nodeValues.set(id+'__out5',halt);nodeValues.set(id+'__out6',immSel);
@@ -1160,8 +1219,10 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       if (!clkSlot) continue;
       const clkNow = _wv(clkSlot.wire.id);
       const prevClk = ms.prevClkValue;
+      if (node.type === 'PC') console.log(`[P4e-PC] clkNow=${clkNow} prevClk=${prevClk} edge=${clkNow===1&&(prevClk===0||prevClk===null)} PC=${ms.q}`);
+      if (node.type === 'REG_FILE_DP') console.log(`[P4e-RF] clkNow=${clkNow} prevClk=${prevClk} edge=${clkNow===1&&(prevClk===0||prevClk===null)}`);
 
-      if (clkNow === 1 && prevClk === 0) {
+      if (clkNow === 1 && (prevClk === 0 || prevClk === null)) {
         const dataSlots = inputSlots.filter(s => s !== clkSlot);
         const _w2 = (slot) => slot ? _wv(slot.wire.id) : 0;
 
@@ -1206,6 +1267,31 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         propagate(node.id);
       }
       if (clkNow !== null) ms.prevClkValue = clkNow;
+    }
+
+    // DEBUG: CPU state trace (only on clock rising edge)
+    const _anyClkHigh = nodes.some(n => n.type === 'CLOCK' && n.value === 1);
+    if (_anyClkHigh) for (const node of nodes) {
+      if (node.type === 'PC') {
+        const pc = nodeValues.get(node.id) ?? '?';
+        const irNode = nodes.find(n => n.type === 'IR');
+        const cuNode = nodes.find(n => n.type === 'CU');
+        const rfNode = nodes.find(n => n.type === 'REG_FILE_DP' || n.type === 'REG_FILE');
+        const irOp = irNode ? (_nv(irNode.id + '__out0')) : '?';
+        const irRd = irNode ? (_nv(irNode.id + '__out1')) : '?';
+        const irRs1 = irNode ? (_nv(irNode.id + '__out2')) : '?';
+        const irRs2 = irNode ? (_nv(irNode.id + '__out3')) : '?';
+        const cuRegWe = cuNode ? (_nv(cuNode.id + '__out1')) : '?';
+        const cuJmp = cuNode ? (_nv(cuNode.id + '__out4')) : '?';
+        const cuHalt = cuNode ? (_nv(cuNode.id + '__out5')) : '?';
+        const cuImmSel = cuNode ? (_nv(cuNode.id + '__out6')) : '?';
+        const rfState = rfNode ? (ffStates.get(rfNode.id)?.regs?.slice(0,4)) : '?';
+        const aluNode = nodes.find(n => n.type === 'ALU');
+        const aluR = aluNode ? (_nv(aluNode.id)) : '?';
+        const wbNode = nodes.find(n => n.type === 'BUS_MUX');
+        const wbVal = wbNode ? (_nv(wbNode.id)) : '?';
+        console.log(`[CPU] PC:${pc} IR:[op=${irOp},rd=${irRd},rs1=${irRs1},rs2=${irRs2}] CU:[regWe=${cuRegWe},jmp=${cuJmp},halt=${cuHalt},immSel=${cuImmSel}] ALU_R:${aluR} WB:${wbVal} RF:[${rfState}]`);
+      }
     }
 
     // 4e: Update outputs

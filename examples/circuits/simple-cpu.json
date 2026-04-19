@@ -1,0 +1,544 @@
+{
+  "nodes": [
+    {
+      "type": "CLOCK",
+      "x": -600,
+      "y": 300,
+      "value": 1,
+      "id": "clk"
+    },
+    {
+      "type": "INPUT",
+      "fixedValue": 1,
+      "label": "EN",
+      "x": -600,
+      "y": -100,
+      "id": "en"
+    },
+    {
+      "type": "INPUT",
+      "fixedValue": 1,
+      "label": "RE",
+      "x": -400,
+      "y": 100,
+      "id": "re_rom"
+    },
+    {
+      "type": "INPUT",
+      "fixedValue": 1,
+      "label": "LD",
+      "x": -100,
+      "y": 100,
+      "id": "ld"
+    },
+    {
+      "type": "PC",
+      "bitWidth": 4,
+      "label": "PC",
+      "x": -500,
+      "y": 0,
+      "id": "pc"
+    },
+    {
+      "type": "ROM",
+      "addrBits": 4,
+      "dataBits": 16,
+      "memory": {
+        "0": 53507,
+        "1": 53761,
+        "2": 4370,
+        "3": 28688,
+        "4": 46592,
+        "5": 41472,
+        "6": 61440
+      },
+      "label": "ROM",
+      "x": -300,
+      "y": 0,
+      "id": "rom"
+    },
+    {
+      "type": "IR",
+      "instrWidth": 16,
+      "opBits": 4,
+      "rdBits": 4,
+      "rs1Bits": 4,
+      "rs2Bits": 4,
+      "label": "IR",
+      "x": -50,
+      "y": 0,
+      "id": "ir"
+    },
+    {
+      "type": "CU",
+      "label": "CU",
+      "x": 150,
+      "y": 200,
+      "id": "cu",
+      "controlTable": null
+    },
+    {
+      "type": "REG_FILE_DP",
+      "regCount": 16,
+      "dataBits": 8,
+      "initialRegs": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      "label": "RF",
+      "x": 200,
+      "y": -100,
+      "id": "rf"
+    },
+    {
+      "type": "ALU",
+      "bitWidth": 8,
+      "label": "ALU",
+      "x": 450,
+      "y": -50,
+      "id": "alu"
+    },
+    {
+      "type": "RAM",
+      "addrBits": 4,
+      "dataBits": 8,
+      "memory": {},
+      "label": "RAM",
+      "x": 450,
+      "y": 120,
+      "id": "ram"
+    },
+    {
+      "type": "BUS_MUX",
+      "inputCount": 2,
+      "label": "WB_MUX",
+      "x": 650,
+      "y": 0,
+      "id": "wb_mux"
+    },
+    {
+      "type": "OUTPUT",
+      "label": "PC_VAL",
+      "sandbox": true,
+      "x": -500,
+      "y": -150,
+      "id": "out_pc"
+    },
+    {
+      "type": "OUTPUT",
+      "label": "ALU_R",
+      "sandbox": true,
+      "x": 600,
+      "y": -120,
+      "id": "out_alur"
+    },
+    {
+      "type": "OUTPUT",
+      "label": "HALT",
+      "sandbox": true,
+      "x": 300,
+      "y": 350,
+      "id": "out_halt"
+    },
+    {
+      "type": "OUTPUT",
+      "label": "RF_A",
+      "sandbox": true,
+      "x": 350,
+      "y": -200,
+      "id": "out_rfa"
+    },
+    {
+      "type": "OUTPUT",
+      "label": "RF_B",
+      "sandbox": true,
+      "x": 350,
+      "y": -150,
+      "id": "out_rfb"
+    }
+  ],
+  "wires": [
+    {
+      "id": "w_pc_clk",
+      "sourceId": "clk",
+      "targetId": "pc",
+      "targetInputIndex": 4,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true
+    },
+    {
+      "id": "w_pc_en",
+      "sourceId": "en",
+      "targetId": "pc",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_pc_jmpaddr",
+      "sourceId": "ir",
+      "targetId": "pc",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "JMP_ADDR",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_pc_jmp",
+      "sourceId": "cu",
+      "targetId": "pc",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 4,
+      "waypoints": [],
+      "netName": "JMP",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_pc_rom",
+      "sourceId": "pc",
+      "targetId": "rom",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "ADDR",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rom_re",
+      "sourceId": "re_rom",
+      "targetId": "rom",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rom_clk",
+      "sourceId": "clk",
+      "targetId": "rom",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true
+    },
+    {
+      "id": "w_rom_ir",
+      "sourceId": "rom",
+      "targetId": "ir",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "INSTR",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_ir_ld",
+      "sourceId": "ld",
+      "targetId": "ir",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_ir_clk",
+      "sourceId": "clk",
+      "targetId": "ir",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true
+    },
+    {
+      "id": "w_ir_cu_op",
+      "sourceId": "ir",
+      "targetId": "cu",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "OP",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_alu_cu_z",
+      "sourceId": "alu",
+      "targetId": "cu",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "Z_FLAG",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_alu_cu_c",
+      "sourceId": "alu",
+      "targetId": "cu",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 2,
+      "waypoints": [],
+      "netName": "C_FLAG",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_ir_rf_rs1",
+      "sourceId": "ir",
+      "targetId": "rf",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 2,
+      "waypoints": [],
+      "netName": "RS1",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_ir_rf_rs2",
+      "sourceId": "ir",
+      "targetId": "rf",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 3,
+      "waypoints": [],
+      "netName": "RS2",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_ir_rf_rd",
+      "sourceId": "ir",
+      "targetId": "rf",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "RD",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_wb_rf_data",
+      "sourceId": "wb_mux",
+      "targetId": "rf",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "WB_DATA",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_cu_rf_we",
+      "sourceId": "cu",
+      "targetId": "rf",
+      "targetInputIndex": 4,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "REG_WE",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rf_clk",
+      "sourceId": "clk",
+      "targetId": "rf",
+      "targetInputIndex": 5,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true
+    },
+    {
+      "id": "w_rf_alu_a",
+      "sourceId": "rf",
+      "targetId": "alu",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "A",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rf_alu_b",
+      "sourceId": "rf",
+      "targetId": "alu",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "B",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_cu_alu_op",
+      "sourceId": "cu",
+      "targetId": "alu",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "ALU_OP",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rf_ram_addr",
+      "sourceId": "rf",
+      "targetId": "ram",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "MEM_ADDR",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rf_ram_data",
+      "sourceId": "rf",
+      "targetId": "ram",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "MEM_DATA",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_cu_ram_we",
+      "sourceId": "cu",
+      "targetId": "ram",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 2,
+      "waypoints": [],
+      "netName": "MEM_WE",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_cu_ram_re",
+      "sourceId": "cu",
+      "targetId": "ram",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 3,
+      "waypoints": [],
+      "netName": "MEM_RE",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_ram_clk",
+      "sourceId": "clk",
+      "targetId": "ram",
+      "targetInputIndex": 4,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true
+    },
+    {
+      "id": "w_alu_wbmux",
+      "sourceId": "alu",
+      "targetId": "wb_mux",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "ALU_RESULT",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_ram_wbmux",
+      "sourceId": "ram",
+      "targetId": "wb_mux",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "MEM_OUT",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_cu_wbmux_sel",
+      "sourceId": "cu",
+      "targetId": "wb_mux",
+      "targetInputIndex": 2,
+      "sourceOutputIndex": 3,
+      "waypoints": [],
+      "netName": "MEM_RE_SEL",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_pc_out",
+      "sourceId": "pc",
+      "targetId": "out_pc",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_alu_out",
+      "sourceId": "alu",
+      "targetId": "out_alur",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_halt_out",
+      "sourceId": "cu",
+      "targetId": "out_halt",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 5,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rfa_out",
+      "sourceId": "rf",
+      "targetId": "out_rfa",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    },
+    {
+      "id": "w_rfb_out",
+      "sourceId": "rf",
+      "targetId": "out_rfb",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 1,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false
+    }
+  ]
+}

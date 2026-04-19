@@ -164,7 +164,7 @@ export class CodeGenerator {
     if (node.init) {
       const valReg = this._genExpr(node.init);
       if (valReg !== reg) {
-        this._emit(`MOV R${reg}, R${valReg}`);
+        this._emit(`ADD R${reg}, R${valReg}, R0`);
       }
       this._freeTemp(valReg);
     }
@@ -178,7 +178,7 @@ export class CodeGenerator {
     const targetReg = this._getVarReg(node.target.name);
     const valReg = this._genExpr(node.value);
     if (valReg !== targetReg) {
-      this._emit(`MOV R${targetReg}, R${valReg}`);
+      this._emit(`ADD R${targetReg}, R${valReg}, R0`);
     }
     this._freeTemp(valReg);
   }
@@ -274,7 +274,7 @@ export class CodeGenerator {
     if (node.value) {
       const reg = this._genExpr(node.value);
       // Return value in R1 (convention)
-      if (reg !== 1) this._emit(`MOV R1, R${reg}`);
+      if (reg !== 1) this._emit(`ADD R1, R${reg}, R0`);
       this._freeTemp(reg);
     }
     // In a simple CPU, return just halts or jumps back
@@ -430,30 +430,10 @@ export class CodeGenerator {
   }
 
   _genNumber(node) {
-    // Load immediate value into a temp register
-    // We need LI or a workaround. For small values, use ADD Rn, R0, R0 then manipulate.
-    // Simplest: use a dedicated "load immediate" approach
-    // Since our CPU doesn't have LI in 16-bit mode, we'll use a register as constant holder
-    const reg = this._allocTemp();
-    // Store the constant value — this will be handled by pre-loading constants
-    // For now, emit a pseudo-instruction that the assembler understands
     if (node.value === 0) return 0; // R0 is always 0
-    this._emit(`; LOAD_IMM R${reg}, ${node.value}`);
-    // Workaround: ADD with self to make a value — not practical for arbitrary values
-    // Real solution: pre-load constants into registers at startup
-    this._initConstant(reg, node.value);
+    const reg = this._allocTemp();
+    this._emit(`LI R${reg}, ${node.value & 0xFF}`);
     return reg;
-  }
-
-  _initConstant(reg, value) {
-    // Build a value from 0 using shifts and adds
-    // For small values (0-15), use a sequence of ADD R, R0, R0 and increments
-    if (value === 0) { this._emit(`ADD R${reg}, R0, R0`); return; }
-    if (value === 1) { this._emit(`ADD R${reg}, R0, R0`); this._emit(`ADD R${reg}, R${reg}, R0`); /* need a 1 */ }
-    // Practical approach: emit MOV with the value, rely on assembler/ROM to handle
-    // Actually, we can set a value by exploiting that the assembler's NOP slot can be used
-    // Simplest working approach: record constants to pre-load in register file
-    this._emit(`__CONST R${reg} ${value}`);
   }
 
   _genIdent(node) {
@@ -488,7 +468,7 @@ export class CodeGenerator {
       this._emit(`JMP __LABEL_${endLabel}__`);
       this._emitLabel(trueLabel);
       // result = 1 — need a way to set to 1
-      this._emit(`__CONST R${resultReg} 1`);
+      this._emit(`LI R${resultReg}, 1`);
       this._emitLabel(endLabel);
       return resultReg;
     }
@@ -524,7 +504,7 @@ export class CodeGenerator {
       this._emit(`SUB R${resultReg}, R0, R${operandReg}`); // 0 - operand
     } else if (node.op === '~') {
       // NOT: XOR with all 1s — need 0xFF constant
-      this._emit(`__CONST R${resultReg} 255`);
+      this._emit(`LI R${resultReg}, 255`);
       this._emit(`XOR R${resultReg}, R${operandReg}, R${resultReg}`);
     } else if (node.op === '!') {
       // Logical NOT: if operand == 0, result = 1, else 0
@@ -535,7 +515,7 @@ export class CodeGenerator {
       this._emit(`JZ __LABEL_${trueLabel}__`);
       this._emit(`JMP __LABEL_${endLabel}__`);
       this._emitLabel(trueLabel);
-      this._emit(`__CONST R${resultReg} 1`);
+      this._emit(`LI R${resultReg}, 1`);
       this._emitLabel(endLabel);
     }
     this._freeTemp(operandReg);
@@ -546,7 +526,7 @@ export class CodeGenerator {
     const reg = this._getVarReg(node.operand.name);
     // Need a constant 1
     const oneReg = this._allocTemp();
-    this._emit(`__CONST R${oneReg} 1`);
+    this._emit(`LI R${oneReg}, 1`);
     if (node.op === '++') {
       this._emit(`ADD R${reg}, R${reg}, R${oneReg}`);
     } else {
@@ -585,7 +565,7 @@ export class CodeGenerator {
     for (let i = 0; i < node.args.length; i++) {
       const argReg = this._genExpr(node.args[i]);
       if (argReg !== i + 1) {
-        this._emit(`MOV R${i + 1}, R${argReg}`);
+        this._emit(`ADD R${i + 1}, R${argReg}, R0`);
       }
       this._freeTemp(argReg);
     }

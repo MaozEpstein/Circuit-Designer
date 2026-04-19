@@ -71,6 +71,8 @@ const TOOL_TYPE_MAP = {
   'place-signext':       COMPONENT_TYPES.SIGN_EXT,
   'place-pipereg':       COMPONENT_TYPES.PIPE_REG,
   'place-regfiledp':     COMPONENT_TYPES.REG_FILE_DP,
+  'place-split':         COMPONENT_TYPES.SPLIT,
+  'place-merge':         COMPONENT_TYPES.MERGE,
 };
 
 // Direct gate placements (type + gate preset)
@@ -132,7 +134,7 @@ export function init(canvasEl, scene, stateManager, commandManager, selectionMan
 
   // Context menu → properties
   bus.on('node:dblclick', ({ node, screenX, screenY }) => {
-    const RESIZABLE = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG']);
+    const RESIZABLE = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG', 'SPLIT', 'MERGE']);
     if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE.has(node.type)) {
       _showComponentPropsPopup(node, screenX, screenY);
     } else {
@@ -685,7 +687,7 @@ function _onCanvasDblClick(e) {
     return;
   }
 
-  const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG']);
+  const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG', 'SPLIT', 'MERGE']);
   if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE_BLOCKS.has(node.type)) {
     _showComponentPropsPopup(node, screenX, screenY);
     return;
@@ -780,6 +782,16 @@ function _getComponentFields(node) {
       ];
     case 'BUS_MUX':
       return [{ key: 'inputCount', label: 'Inputs', min: 2, max: 16, val: node.inputCount || 2 }];
+    case 'SPLIT':
+      return [
+        { key: 'inBits',     label: 'Input Bits', min: 1, max: 64, val: node.inBits || 8 },
+        { key: 'slicesSpec', label: 'Slices',     type: 'text',    val: node.slicesSpec || '7:4, 3:0', placeholder: 'e.g. 31:26, 25:21' },
+      ];
+    case 'MERGE':
+      return [
+        { key: 'outBits',    label: 'Output Bits', min: 1, max: 64, val: node.outBits || 8 },
+        { key: 'slicesSpec', label: 'Slices',      type: 'text',    val: node.slicesSpec || '7:4, 3:0', placeholder: 'e.g. 31:26, 25:21' },
+      ];
     case 'IMM':
       return [
         { key: 'value',    label: 'Value',     min: 0, max: 4294967295,   val: node.value || 0 },
@@ -849,14 +861,15 @@ function _showComponentPropsPopup(node, screenX, screenY) {
     label.textContent = f.label;
     label.style.color = '#8090a8';
     const inp = document.createElement('input');
-    inp.type = 'number';
-    inp.min = f.min;
-    inp.max = f.max;
+    const isText = f.type === 'text';
+    inp.type = isText ? 'text' : 'number';
+    if (!isText) { inp.min = f.min; inp.max = f.max; }
+    if (isText && f.placeholder) inp.placeholder = f.placeholder;
     inp.value = f.val;
     inp.style.cssText = `
-      width: 48px; padding: 2px 6px;
+      width: ${isText ? 140 : 48}px; padding: 2px 6px;
       background: #161e2e; border: 1px solid #3a4a60; border-radius: 3px;
-      color: #c8d8f0; font: 11px 'JetBrains Mono', monospace; text-align: center;
+      color: #c8d8f0; font: 11px 'JetBrains Mono', monospace; text-align: ${isText ? 'left' : 'center'};
     `;
     inputEls[f.key] = inp;
     row.appendChild(label);
@@ -911,8 +924,12 @@ function _showComponentPropsPopup(node, screenX, screenY) {
   function apply() {
     const props = {};
     for (const f of fields) {
-      const raw = parseInt(inputEls[f.key].value, 10);
-      props[f.key] = Math.max(f.min, Math.min(f.max, isNaN(raw) ? f.val : raw));
+      if (f.type === 'text') {
+        props[f.key] = inputEls[f.key].value;
+      } else {
+        const raw = parseInt(inputEls[f.key].value, 10);
+        props[f.key] = Math.max(f.min, Math.min(f.max, isNaN(raw) ? f.val : raw));
+      }
     }
     const newLabel = labelInp.value.trim();
     if (newLabel && newLabel !== node.label) props.label = newLabel;
