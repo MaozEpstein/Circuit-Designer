@@ -1190,6 +1190,61 @@ document.getElementById('btn-waveform-prev')?.addEventListener('click', () => Wa
 document.getElementById('btn-waveform-next')?.addEventListener('click', () => Waveform.jumpEdge(+1));
 document.getElementById('btn-waveform-bmk') ?.addEventListener('click', () => Waveform.addBookmarkAtCursor());
 
+// Pattern search: Enter to run, N/P inside the input navigates matches.
+const wfSearchInp = document.getElementById('waveform-search');
+wfSearchInp?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const count = Waveform.search(wfSearchInp.value);
+    wfSearchInp.title = count + ' match' + (count === 1 ? '' : 'es');
+  } else if (e.key.toLowerCase() === 'n' && !e.ctrlKey && !e.metaKey) {
+    // N / Shift+N (inside search box) cycles matches
+    if (e.shiftKey) { e.preventDefault(); Waveform.searchPrevMatch(); }
+    // Otherwise allow typing 'n' as part of the expression
+  }
+});
+wfSearchInp?.addEventListener('blur', () => {
+  // Clear search highlight when user leaves the box if query went empty.
+  if (!wfSearchInp.value.trim()) Waveform.search('');
+});
+
+// Trigger mode toggle — prompts for a condition on arm.
+// The button also polls state to flip to "FIRED" once the condition matches
+// (so the user knows their trigger actually caught something).
+const trigBtn = document.getElementById('btn-waveform-trigger');
+trigBtn?.addEventListener('click', (e) => {
+  const btn = e.currentTarget;
+  if (btn.classList.contains('active')) {
+    Waveform.disarmTrigger();
+    btn.classList.remove('active');
+    btn.classList.remove('fired');
+    btn.textContent = 'TRIG';
+  } else {
+    const expr = window.prompt(
+      'Trigger: new incoming steps are SKIPPED until this condition becomes true.\n' +
+      'Once it fires, a "TRIG" bookmark is dropped at that cycle and recording continues.\n\n' +
+      'Examples:\n  CLK              (rising edge)\n  PC == 10\n  R1 > 0\n  RegWrite == 1',
+      'CLK'
+    );
+    if (expr && expr.trim()) {
+      Waveform.armTrigger(expr.trim());
+      btn.classList.add('active');
+      btn.textContent = 'TRIG ● ' + expr.trim();
+    }
+  }
+});
+// Poll trigger state once per second — flip the button to "FIRED" once it hits.
+setInterval(() => {
+  if (!trigBtn) return;
+  const t = Waveform.getTriggerState?.();
+  if (!t) return;
+  if (t.armed && t.fired && !trigBtn.classList.contains('fired')) {
+    trigBtn.classList.add('fired');
+    trigBtn.classList.remove('active');
+    trigBtn.textContent = 'TRIG ✓ FIRED';
+  }
+}, 500);
+
 // ── Sequential Controls ─────────────────────────────────────
 function _updateSequentialUI() {
   const isSeq = scene.hasSequentialElements();

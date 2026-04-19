@@ -762,9 +762,10 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px;
+  padding: 6px 12px;
   background: rgba(14,22,33,0.95);
   border-bottom: 1px solid #1e3a50;
+  min-height: 40px;
 }
 
 #waveform-hint {
@@ -784,21 +785,60 @@ html, body {
 
 .btn-waveform-ctrl {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
-  padding: 3px 10px;
-  border: 1px solid #1e3a50;
+  padding: 6px 14px;
+  border: 1px solid #2a4a68;
   border-radius: 4px;
-  background: rgba(30,58,80,0.3);
-  color: #888;
+  background: rgba(30,58,80,0.45);
+  color: #c8d8f0;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
 }
 
 .btn-waveform-ctrl:hover {
-  background: rgba(30,58,80,0.6);
-  color: #ccc;
+  background: rgba(0,212,255,0.18);
+  color: #ffffff;
+  border-color: #00d4ff;
+}
+
+.btn-waveform-ctrl.active {
+  background: rgba(255,204,0,0.20);
+  color: #ffcc00;
+  border-color: #ffcc00;
+}
+
+.btn-waveform-ctrl.fired {
+  background: rgba(57,255,20,0.22);
+  color: #39ff14;
+  border-color: #39ff14;
+}
+
+/* Compact by default; on focus the text GROWS (font + padding), not the width,
+   so the query is easier to read while staying in place. */
+input.wf-search-input {
+  width: 240px;
+  margin: 0 6px 0 0;
+  padding: 3px 8px;
+  background: #0a1520;
+  border: 1px solid #1e3040;
+  border-radius: 3px;
+  color: #c8d8f0;
+  font: 10px 'JetBrains Mono', monospace;
+  outline: none;
+  transition: font-size 0.2s ease-out, padding 0.2s ease-out, border-color 0.2s;
+  box-shadow: none;
+  -webkit-appearance: none;
+          appearance: none;
+}
+input.wf-search-input:focus {
+  font-size: 14px;
+  padding: 8px 10px;
+  border-color: #00d4ff;
+}
+input.wf-search-input::placeholder {
+  color: #2a4060;
 }
 
 #waveform-canvas {

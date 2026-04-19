@@ -45,6 +45,12 @@ export const state = {
   reorderDrag: null,
   // User-defined named bookmarks: [{ step, name }].
   bookmarks: [],
+  // Set of group names the user has collapsed (hides all signals in them).
+  collapsedGroups: new Set(),
+  // Pattern search state: { query, matches: [stepIdx], index, open }.
+  search: { query: '', matches: [], index: -1, open: false },
+  // Trigger mode: armed + expression; while armed-and-not-fired, record() skips storing.
+  trigger: { expr: '', armed: false, fired: false },
 };
 
 export function reset() {
@@ -55,12 +61,44 @@ export function reset() {
   state.signalMax = new Map();
 }
 
-/** Return signals that should actually be rendered, in their display order. */
+const TYPE_TO_GROUP = {
+  clock: 'Clock',
+  input: 'Inputs',
+  mux:   'Controls',
+  output:'Outputs',
+};
+
+/** Human-readable group name for a signal (based on its source-node type). */
+export function groupOf(sig) {
+  return TYPE_TO_GROUP[sig.type] || 'Signals';
+}
+
+/** Return signals that should actually be rendered, in their display order.
+ *  Signals inside a collapsed group are excluded. */
 export function visibleSignals() {
   const all = state.signalOrder
     ? state.signalOrder.map(id => state.signals.find(s => s.id === id)).filter(Boolean)
     : state.signals;
-  return all.filter(s => !state.hiddenSignals.has(s.id));
+  return all.filter(s => !state.hiddenSignals.has(s.id) && !state.collapsedGroups.has(groupOf(s)));
+}
+
+/** Ordered list of distinct group names present in the current signals. */
+export function groupsInOrder() {
+  const seen = new Set();
+  const ordered = [];
+  const source = state.signalOrder
+    ? state.signalOrder.map(id => state.signals.find(s => s.id === id)).filter(Boolean)
+    : state.signals;
+  for (const s of source) {
+    const g = groupOf(s);
+    if (!seen.has(g)) { seen.add(g); ordered.push(g); }
+  }
+  return ordered;
+}
+
+export function toggleGroup(name) {
+  if (state.collapsedGroups.has(name)) state.collapsedGroups.delete(name);
+  else state.collapsedGroups.add(name);
 }
 
 /** Move the signal at `fromIdx` to `toIdx` in the display order. */
@@ -112,13 +150,35 @@ export function record(stepCount, nodeValues) {
       if (v > prev) state.signalMax.set(sig.id, v);
     }
   });
+
+  // Trigger mode: if armed and not yet fired, evaluate the expression against
+  // this step's values; only start actually storing history once it fires.
+  if (state.trigger.armed && !state.trigger.fired) {
+    const fn = compileExpression(state.trigger.expr);
+    if (fn) {
+      // Build a temporary single-step "history" tail so the evaluator can look at it.
+      const tempIdx = state.history.length;
+      state.history.push({ step: stepCount, signals });
+      const fires = fn(tempIdx, tempIdx - 1);
+      if (fires) {
+        state.trigger.fired = true;
+        // Drop a bookmark at the trigger point so the user can always find it.
+        addBookmark(tempIdx, 'TRIG');
+        if (state.history.length > HISTORY_CAP) state.history.splice(0, state.history.length - HISTORY_CAP);
+        return;
+      } else {
+        state.history.pop(); // discard — not yet triggered
+        return;
+      }
+    }
+  }
+
   const last = state.history[state.history.length - 1];
   if (last && last.step === stepCount) {
     last.signals = signals;
   } else {
     state.history.push({ step: stepCount, signals });
   }
-  // Circular buffer: drop oldest when cap exceeded.
   if (state.history.length > HISTORY_CAP) {
     state.history.splice(0, state.history.length - HISTORY_CAP);
   }
@@ -187,6 +247,95 @@ export function removeBookmarkAt(step) {
 }
 
 export function clearBookmarks() { state.bookmarks = []; }
+
+/**
+ * Parse a simple search/trigger expression and return an evaluator function.
+ * Supported forms:
+ *   <signal>            — rising edge of the signal (0 → 1)
+ *   <signal> == <val>   — equality (numeric or hex 0x..)
+ *   <signal> != <val>   — inequality
+ *   <signal> > <val>    — greater than
+ *   <signal> < <val>    — less than
+ * Returns a function (stepIdx, prevStepIdx) → bool, or null if unparseable.
+ */
+export function compileExpression(expr) {
+  if (!expr || typeof expr !== 'string') return null;
+  const trimmed = expr.trim();
+  if (!trimmed) return null;
+
+  const findSig = (name) => {
+    const lowered = name.toLowerCase();
+    return state.signals.find(s =>
+      (s.label || '').toLowerCase() === lowered || s.id.toLowerCase() === lowered);
+  };
+
+  const parseNum = (s) => {
+    s = s.trim();
+    if (/^0x[0-9a-f]+$/i.test(s)) return parseInt(s, 16);
+    if (/^0b[01]+$/i.test(s))     return parseInt(s.slice(2), 2);
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  };
+
+  const opMatch = trimmed.match(/^([A-Za-z_][\w]*)\s*(==|!=|>=|<=|>|<)\s*(.+)$/);
+  if (opMatch) {
+    const sig = findSig(opMatch[1]);
+    if (!sig) return null;
+    const num = parseNum(opMatch[3]);
+    if (!Number.isFinite(num)) return null;
+    const op = opMatch[2];
+    return (idx) => {
+      const v = valueAtStep(sig.id, idx);
+      if (v === null || v === undefined) return false;
+      switch (op) {
+        case '==': return v === num;
+        case '!=': return v !== num;
+        case '>':  return v >  num;
+        case '<':  return v <  num;
+        case '>=': return v >= num;
+        case '<=': return v <= num;
+      }
+      return false;
+    };
+  }
+
+  // Plain signal name → rising edge (0 → non-0).
+  const sig = findSig(trimmed);
+  if (!sig) return null;
+  return (idx, prevIdx) => {
+    if (prevIdx < 0) return false;
+    const prev = valueAtStep(sig.id, prevIdx);
+    const curr = valueAtStep(sig.id, idx);
+    return (prev === 0 || prev === null) && curr > 0;
+  };
+}
+
+/** Run a search over recorded history; cache results in state.search. */
+export function runSearch(query) {
+  state.search.query = query;
+  state.search.matches = [];
+  state.search.index = -1;
+  const fn = compileExpression(query);
+  if (!fn) return 0;
+  for (let i = 0; i < state.history.length; i++) {
+    if (fn(i, i - 1)) state.search.matches.push(i);
+  }
+  if (state.search.matches.length > 0) state.search.index = 0;
+  return state.search.matches.length;
+}
+
+export function searchNext() {
+  const m = state.search.matches;
+  if (m.length === 0) return -1;
+  state.search.index = (state.search.index + 1) % m.length;
+  return m[state.search.index];
+}
+export function searchPrev() {
+  const m = state.search.matches;
+  if (m.length === 0) return -1;
+  state.search.index = (state.search.index - 1 + m.length) % m.length;
+  return m[state.search.index];
+}
 
 /**
  * Return the recorded value of `sigId` at step index `stepIdx` (floor).

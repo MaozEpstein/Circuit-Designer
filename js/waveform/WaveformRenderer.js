@@ -3,7 +3,7 @@
  * Reads from WaveformState; does not handle input or manage DOM state.
  */
 
-import { state, isBusSignal, signalBits, radixFor, formatValue, valueAtStep, visibleSignals } from './WaveformState.js';
+import { state, isBusSignal, signalBits, radixFor, formatValue, valueAtStep, visibleSignals, groupOf, groupsInOrder } from './WaveformState.js';
 import { COLORS, METRICS, TYPE } from './WaveformTheme.js';
 
 /** Invert canvas x-coord → cycle index (fractional). */
@@ -83,6 +83,46 @@ export function render() {
   _drawSignals(w, h);
   _drawMarkersAndCursor(w, h);
   _drawReorderFeedback(w, h);
+  _drawTriggerOverlay(w, h);
+}
+
+/** Non-blocking banner overlay in the top-right showing trigger armed status. */
+function _drawTriggerOverlay(w, h) {
+  if (!state.trigger.armed || state.trigger.fired) return;
+
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 350);
+  const label = 'WAITING — ' + (state.trigger.expr || '(no condition)');
+  _ctx.save();
+  _ctx.font = 'bold 11px "JetBrains Mono", monospace';
+  const tw = _ctx.measureText(label).width;
+  const padX = 10, padY = 6, dotR = 5;
+  const boxW = tw + dotR * 2 + padX * 2 + 8;
+  const boxH = 20 + padY;
+  const x = w - boxW - 10;
+  const y = METRICS.HEADER_H + 6;
+
+  _ctx.fillStyle = 'rgba(10,14,20,0.92)';
+  _ctx.strokeStyle = '#ffcc00';
+  _ctx.lineWidth = 1;
+  _ctx.beginPath();
+  _ctx.rect(x, y, boxW, boxH);
+  _ctx.fill();
+  _ctx.stroke();
+
+  // Pulsing amber dot.
+  _ctx.fillStyle = 'rgba(255,204,0,' + (0.4 + 0.6 * pulse) + ')';
+  _ctx.beginPath();
+  _ctx.arc(x + padX + dotR, y + boxH / 2, dotR, 0, Math.PI * 2);
+  _ctx.fill();
+
+  _ctx.fillStyle = '#ffcc00';
+  _ctx.textAlign = 'left';
+  _ctx.textBaseline = 'middle';
+  _ctx.fillText(label, x + padX + dotR * 2 + 8, y + boxH / 2);
+  _ctx.restore();
+
+  // Keep animating while armed.
+  requestAnimationFrame(() => { if (state.trigger.armed && !state.trigger.fired && state.visible) render(); });
 }
 
 /**
@@ -169,6 +209,17 @@ function _drawMarkersAndCursor(w, h) {
   _ctx.beginPath();
   _ctx.rect(METRICS.LABEL_W, 0, w - METRICS.LABEL_W, h);
   _ctx.clip();
+
+  // Search matches — faint cyan highlight at each matching cycle.
+  if (state.search.matches && state.search.matches.length > 0) {
+    const sw = stepWidth();
+    state.search.matches.forEach((idx, i) => {
+      const x = xForStep(idx);
+      if (x < METRICS.LABEL_W - sw || x > w) return;
+      _ctx.fillStyle = (i === state.search.index) ? 'rgba(0,212,255,0.35)' : 'rgba(0,212,255,0.12)';
+      _ctx.fillRect(x, METRICS.HEADER_H, sw, h - METRICS.HEADER_H);
+    });
+  }
 
   // Bookmarks — drawn first so markers + cursor overlay them.
   _drawBookmarks(w, h);
@@ -297,6 +348,7 @@ function _drawEmptyHint(w, h) {
   _ctx.fillText('Press STEP to see waveforms', w / 2, h / 2);
 }
 
+
 /**
  * Time axis across the top of the data area.
  * Major ticks every N cycles (auto-chosen from zoom) with cycle numbers;
@@ -384,17 +436,28 @@ function _rowHeight(sig) {
   return isBusSignal(sig.id) ? METRICS.ROW_H_BUS : METRICS.ROW_H;
 }
 
-/** Which visible signal row contains the given canvas Y (accounting for scroll)? */
-export function signalAtY(canvasY) {
-  if (canvasY < METRICS.HEADER_H) return -1;
-  const sigs = visibleSignals();
+/** Hit-test row at canvas Y (accounting for scroll).
+ *  Returns { kind: 'signal'|'group', sigIndex?, group? } or null. */
+export function rowAtY(canvasY) {
+  if (canvasY < METRICS.HEADER_H) return null;
+  const rows = _buildRows();
   let y = METRICS.HEADER_H - state.vScroll;
-  for (let i = 0; i < sigs.length; i++) {
-    const h = _rowHeight(sigs[i]);
-    if (canvasY >= y && canvasY < y + h) return i;
-    y += h;
+  let sigIdx = 0;
+  for (const r of rows) {
+    if (canvasY >= y && canvasY < y + r.h) {
+      if (r.kind === 'signal') return { kind: 'signal', sigIndex: sigIdx, sig: r.sig };
+      return { kind: 'group', group: r.name, collapsed: r.collapsed };
+    }
+    if (r.kind === 'signal') sigIdx++;
+    y += r.h;
   }
-  return -1;
+  return null;
+}
+
+/** Convenience wrapper — returns the signal-row index at Y, or -1. */
+export function signalAtY(canvasY) {
+  const r = rowAtY(canvasY);
+  return (r && r.kind === 'signal') ? r.sigIndex : -1;
 }
 
 function _rowY(idx) {
@@ -405,10 +468,36 @@ function _rowY(idx) {
   return y;
 }
 
+const GROUP_HEADER_H = 22;
+
+/**
+ * Build the unified row list for render + hit-test. Interleaves group
+ * headers between signal rows; skips signals whose group is collapsed.
+ */
+function _buildRows() {
+  const rows = [];
+  const allSigs = state.signalOrder
+    ? state.signalOrder.map(id => state.signals.find(s => s.id === id)).filter(Boolean)
+    : state.signals;
+  const visible = allSigs.filter(s => !state.hiddenSignals.has(s.id));
+  let lastGroup = null;
+  for (const sig of visible) {
+    const g = groupOf(sig);
+    if (g !== lastGroup) {
+      rows.push({ kind: 'group', name: g, collapsed: state.collapsedGroups.has(g), h: GROUP_HEADER_H });
+      lastGroup = g;
+    }
+    if (!state.collapsedGroups.has(g)) {
+      rows.push({ kind: 'signal', sig, h: _rowHeight(sig) });
+    }
+  }
+  return rows;
+}
+
 /** Total vertical height of all rows (for scroll clamping + scrollbar). */
 export function contentHeight() {
   let total = 0;
-  visibleSignals().forEach(sig => { total += _rowHeight(sig); });
+  _buildRows().forEach(r => { total += r.h; });
   return total;
 }
 
@@ -427,68 +516,79 @@ export function clampVScroll() {
 function _drawSignals(w, h) {
   clampVScroll();
   const scrollY = state.vScroll;
+  const rows = _buildRows();
+  const hasCursor = state.cursorStep !== null;
 
+  // Waveform data area (clipped to the area right of the label column).
   _ctx.save();
   _ctx.beginPath();
   _ctx.rect(METRICS.LABEL_W, METRICS.HEADER_H, w - METRICS.LABEL_W, h - METRICS.HEADER_H);
   _ctx.clip();
 
   let y0 = METRICS.HEADER_H - scrollY;
-  visibleSignals().forEach(sig => {
-    const rowH = _rowHeight(sig);
-    // Only draw rows that intersect the visible area.
-    if (y0 + rowH >= METRICS.HEADER_H && y0 < h) {
-      // Row separator
-      _ctx.strokeStyle = COLORS.grid;
-      _ctx.beginPath();
-      _ctx.moveTo(METRICS.LABEL_W, y0 + rowH);
-      _ctx.lineTo(w, y0 + rowH);
-      _ctx.stroke();
-
-      if (isBusSignal(sig.id)) {
-        _drawBusRow(sig, y0, rowH, w);
+  rows.forEach(r => {
+    if (y0 + r.h >= METRICS.HEADER_H && y0 < h) {
+      if (r.kind === 'signal') {
+        _ctx.strokeStyle = COLORS.grid;
+        _ctx.beginPath();
+        _ctx.moveTo(METRICS.LABEL_W, y0 + r.h);
+        _ctx.lineTo(w, y0 + r.h);
+        _ctx.stroke();
+        if (isBusSignal(r.sig.id)) _drawBusRow(r.sig, y0, r.h, w);
+        else                       _drawBitRow(r.sig, y0, r.h, w);
       } else {
-        _drawBitRow(sig, y0, rowH, w);
+        // Group row banner across the data area (subtle).
+        _ctx.fillStyle = 'rgba(0,212,255,0.04)';
+        _ctx.fillRect(METRICS.LABEL_W, y0, w - METRICS.LABEL_W, r.h);
       }
     }
-    y0 += rowH;
+    y0 += r.h;
   });
 
   _ctx.restore();
 
-  // Signal labels — clipped to their own band so they don't invade the header.
-  // When a cursor is active, each label also shows the signal's value at
-  // that cycle, right-aligned next to the name.
+  // Label column — signal names + values at cursor + group headers with
+  // collapse triangle. Clipped to the column so nothing leaks into data area.
   _ctx.save();
   _ctx.beginPath();
   _ctx.rect(0, METRICS.HEADER_H, METRICS.LABEL_W, h - METRICS.HEADER_H);
   _ctx.clip();
-  const hasCursor = state.cursorStep !== null;
   let lblY = METRICS.HEADER_H - scrollY;
-  visibleSignals().forEach(sig => {
-    const rowH = _rowHeight(sig);
-    if (lblY + rowH >= METRICS.HEADER_H && lblY < h) {
-      const yMid = lblY + rowH / 2;
-      _ctx.font = TYPE.label;
-      _ctx.textBaseline = 'middle';
-      if (hasCursor) {
-        // Name on the left, value on the right of the label column.
-        const val = valueAtStep(sig.id, state.cursorStep);
-        const bits = isBusSignal(sig.id) ? signalBits(sig.id) : 1;
-        const valStr = formatValue(val, bits, radixFor(sig.id));
-        _ctx.fillStyle = sig.color;
-        _ctx.textAlign = 'left';
-        _ctx.fillText(sig.label, 6, yMid);
-        _ctx.fillStyle = COLORS.text;
-        _ctx.textAlign = 'right';
-        _ctx.fillText(valStr, METRICS.LABEL_W - 8, yMid);
+  rows.forEach(r => {
+    if (lblY + r.h >= METRICS.HEADER_H && lblY < h) {
+      if (r.kind === 'signal') {
+        const sig = r.sig;
+        const yMid = lblY + r.h / 2;
+        _ctx.font = TYPE.label;
+        _ctx.textBaseline = 'middle';
+        if (hasCursor) {
+          const val = valueAtStep(sig.id, state.cursorStep);
+          const bits = isBusSignal(sig.id) ? signalBits(sig.id) : 1;
+          const valStr = formatValue(val, bits, radixFor(sig.id));
+          _ctx.fillStyle = sig.color;
+          _ctx.textAlign = 'left';
+          _ctx.fillText(sig.label, 6, yMid);
+          _ctx.fillStyle = COLORS.text;
+          _ctx.textAlign = 'right';
+          _ctx.fillText(valStr, METRICS.LABEL_W - 8, yMid);
+        } else {
+          _ctx.fillStyle = sig.color;
+          _ctx.textAlign = 'right';
+          _ctx.fillText(sig.label, METRICS.LABEL_W - 8, yMid);
+        }
       } else {
-        _ctx.fillStyle = sig.color;
-        _ctx.textAlign = 'right';
-        _ctx.fillText(sig.label, METRICS.LABEL_W - 8, yMid);
+        // Group header: triangle + name, slightly tinted background.
+        _ctx.fillStyle = 'rgba(0,212,255,0.08)';
+        _ctx.fillRect(0, lblY, METRICS.LABEL_W, r.h);
+        _ctx.fillStyle = COLORS.accent;
+        _ctx.font = 'bold 10px "JetBrains Mono", monospace';
+        _ctx.textAlign = 'left';
+        _ctx.textBaseline = 'middle';
+        const tri = r.collapsed ? '▶' : '▼';
+        _ctx.fillText(tri + '  ' + r.name.toUpperCase(), 8, lblY + r.h / 2);
       }
     }
-    lblY += rowH;
+    lblY += r.h;
   });
   _ctx.restore();
 

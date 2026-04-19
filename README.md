@@ -334,9 +334,12 @@ Each phase is independently shippable — you can stop at the end of any phase a
 #### Phase 4 — Power Features *(~3–4 days)*
 - [x] Jump to next/previous edge of active signal (`←` / `→`)
   Active signal = row under the mouse cursor (falls back to the first visible signal). Also `Home` / `End` jump to first/last cycle. Auto-scrolls horizontally to keep the cursor in view.
-- [ ] Pattern search ("find when `PC == 10`" or "`RegWrite` rising edge")
-- [ ] Trigger mode — begin recording only when a user-defined condition becomes true
-- [ ] Signal groups with collapsible headers (`▼ CPU core`, `▼ Memory`)
+- [x] Pattern search ("find when `PC == 10`" or "`RegWrite` rising edge")
+  Search input in the Waveform header; supports `<sig>`, `<sig> == <val>`, `!=`, `>`, `<`, `>=`, `<=` with decimal / hex (`0x..`) / binary (`0b..`) values. Matches are highlighted with a cyan band; Enter runs the search and jumps to the first match; Shift+N in the box cycles through. API: `Waveform.search`, `searchNextMatch`, `searchPrevMatch`.
+- [x] Trigger mode — begin recording only when a user-defined condition becomes true
+  `TRIG` button in the header toggles arm; while armed, `record()` evaluates the condition each step and silently discards samples until it fires. Same expression grammar as search.
+- [x] Signal groups with collapsible headers (`▼ CPU core`, `▼ Memory`)
+  Auto-grouped by signal type (Clock / Inputs / Controls / Outputs). Click the triangle (▼/▶) next to a group name to collapse. Data area shows a subtle banner for the group row.
 - [x] Named bookmarks at specific cycles
   `B` prompts for a name and places a bookmark at the cursor; rendered as dashed soft-purple vertical line with name tag. Right-click also exposes "Add bookmark here" and "Clear all bookmarks".
 
@@ -358,10 +361,10 @@ Each phase is independently shippable — you can stop at the end of any phase a
 | Phase 1 | 5 / 5 tasks ✅ |
 | Phase 2 | 4 / 4 tasks ✅ |
 | Phase 3 | 6 / 6 tasks ✅ |
-| Phase 4 | 2 / 5 tasks |
+| Phase 4 | 5 / 5 tasks ✅ |
 | Phase 5 | 0 / 3 tasks |
 | Phase 6 | 0 / 4 tasks |
-| **Total** | **17 / 27 tasks** |
+| **Total** | **20 / 27 tasks** |
 | Last updated | 2026-04-19 |
 
 ### How to update this section

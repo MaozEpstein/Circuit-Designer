@@ -4,7 +4,7 @@
  * actions funnel through here; the renderer stays pure.
  */
 
-import { state, reset as stateReset, setSignals as stateSetSignals, record as stateRecord, setRadix as stateSetRadix, visibleSignals, reorderSignal, toggleHidden, showAllSignals, valueAtStep, formatValue, signalBits, isBusSignal, radixFor, nextEdgeStep, prevEdgeStep, addBookmark, removeBookmarkAt } from './WaveformState.js';
+import { state, reset as stateReset, setSignals as stateSetSignals, record as stateRecord, setRadix as stateSetRadix, visibleSignals, reorderSignal, toggleHidden, showAllSignals, valueAtStep, formatValue, signalBits, isBusSignal, radixFor, nextEdgeStep, prevEdgeStep, addBookmark, removeBookmarkAt, toggleGroup, runSearch, searchNext, searchPrev } from './WaveformState.js';
 import * as Renderer from './WaveformRenderer.js';
 import { METRICS } from './WaveformTheme.js';
 
@@ -50,6 +50,42 @@ export function jumpEdge(direction) { _jumpEdge(direction); }
 
 /** Prompt for a bookmark name and place it at the cursor / last cycle. */
 export function addBookmarkAtCursor() { _promptBookmark(); }
+
+/** Run a pattern search. Returns match count; navigates cursor to first hit. */
+export function search(query) {
+  const count = runSearch(query);
+  if (count > 0) _setCursorCycle(state.search.matches[0]);
+  else _requestRender();
+  return count;
+}
+
+/** Navigate to next/prev search match. */
+export function searchNextMatch() {
+  const idx = searchNext();
+  if (idx >= 0) _setCursorCycle(idx);
+}
+export function searchPrevMatch() {
+  const idx = searchPrev();
+  if (idx >= 0) _setCursorCycle(idx);
+}
+
+/** Arm / disarm trigger mode. While armed and not fired, record() drops incoming steps. */
+export function armTrigger(expr) {
+  state.trigger.expr = expr || '';
+  state.trigger.armed = !!expr;
+  state.trigger.fired = false;
+  _requestRender();
+}
+export function disarmTrigger() {
+  state.trigger.armed = false;
+  state.trigger.fired = false;
+  _requestRender();
+}
+
+/** Expose current trigger status (for UI polling). */
+export function getTriggerState() {
+  return { armed: state.trigger.armed, fired: state.trigger.fired, expr: state.trigger.expr };
+}
 
 /** Cycle the global radix: DEC → HEX → BIN → DEC. Returns new value. */
 export function cycleRadix() {
@@ -183,8 +219,16 @@ function _attachInput() {
       return;
     }
 
-    // Pan inside the data area (outside the label column).
-    if (mx < METRICS.LABEL_W) return;
+    // Click on a group header in the label column → toggle collapse/expand.
+    if (mx < METRICS.LABEL_W) {
+      const row = Renderer.rowAtY(my);
+      if (row && row.kind === 'group') {
+        toggleGroup(row.group);
+        _requestRender();
+        e.preventDefault();
+      }
+      return;
+    }
 
     // Click places a measurement marker: plain click = A, Shift+click = B.
     // Only a "pure" click (no drag) places a marker — we detect that by
