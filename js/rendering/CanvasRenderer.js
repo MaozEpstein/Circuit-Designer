@@ -124,6 +124,8 @@ export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNo
 
   _drawWires(nodes, wires, wireValues);
   _drawPulses(nodes, wires, wireValues);
+  // Pipeline violation strokes (on top of wires, under nodes).
+  if (_pipelineViolations?.length) _drawPipelineViolations(nodes, wires);
   _drawNodes(nodes, nodeValues, ffStates, hoveredNodeId, selectedNodeId);
 
   // Wire mode: show anchor dots on hovered node (before source is picked)
@@ -183,6 +185,39 @@ let _stageOverlayState = null;
  * @param {object|null} state - { enabled, highlighted: number|null, bottleneck: number }
  */
 export function setStageOverlay(state) { _stageOverlayState = state; }
+
+let _pipelineViolations = null;
+/**
+ * Set the list of cross-stage violation wires (or null to clear).
+ * @param {Array<{wireId,srcId,dstId,srcStage,dstStage,missing}>|null} list
+ */
+export function setPipelineViolations(list) { _pipelineViolations = list; }
+
+function _drawPipelineViolations(nodes, wires) {
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  const wireById = new Map(wires.map(w => [w.id, w]));
+  ctx.save();
+  const t = (Date.now() / 300) % 2;             // 0..2 pulse
+  const alpha = 0.55 + 0.35 * Math.abs(1 - t);  // 0.55..0.9
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = '#ff3030';
+  ctx.lineWidth = 4;
+  ctx.setLineDash([6, 4]);
+  for (const v of _pipelineViolations) {
+    const w = wireById.get(v.wireId);
+    if (!w) continue;
+    const s = nodeById.get(w.sourceId);
+    const d = nodeById.get(w.targetId);
+    if (!s || !d) continue;
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y);
+    for (const wp of (w.waypoints || [])) ctx.lineTo(wp.x, wp.y);
+    ctx.lineTo(d.x, d.y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
 
 function _drawStageOverlay(nodes) {
   const s = _stageOverlayState;

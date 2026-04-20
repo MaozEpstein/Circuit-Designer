@@ -2391,6 +2391,10 @@ document.getElementById('btn-zoom-fit')?.addEventListener('click', () => {
   Renderer.zoomToFit(scene.nodes);
 });
 bus.on('nav:zoomfit', () => Renderer.zoomToFit(scene.nodes));
+bus.on('pipeline:jump-to-wire', ({ srcId, dstId }) => {
+  const s = scene.getNode(srcId), d = scene.getNode(dstId);
+  if (s && d) Renderer.zoomToFit([s, d]);
+});
 bus.on('nav:meminspector', _toggleMemInspector);
 
 // Bind shortcut from Command Palette (Ctrl+Enter)
@@ -3122,6 +3126,13 @@ const EXAMPLES = [
     desc: 'Evolving pipelining reference: AND → PIPE1 → fan-out to (NOT, OR+C) → PIPE2/PIPE3 → XOR → Q. Run "Analyze Pipeline" (Ctrl+K) to see 3 stages.',
     tags: ['pipeline', 'PIPE', 'CLK'],
     file: 'examples/circuits/pipeline-demo.json',
+  },
+  {
+    id: 'pipeline-demo-bad',
+    title: 'Pipeline Demo — Bad Wire (validation)',
+    desc: 'Same circuit as the Pipeline Demo but with a shortcut wire (A → XOR) that skips PIPE. The validator flags it and highlights it red on the canvas.',
+    tags: ['pipeline', 'validation', 'error'],
+    file: 'examples/circuits/pipeline-demo-bad.json',
   },
   {
     id: 'mips-gcd',

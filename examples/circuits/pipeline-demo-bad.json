@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    { "type": "INPUT",  "x": -420, "y": -60, "fixedValue": 1, "label": "A",    "id": "in_a" },
+    { "type": "INPUT",  "x": -420, "y":  60, "fixedValue": 1, "label": "B",    "id": "in_b" },
+    { "type": "GATE_SLOT", "x": -240, "y": 0, "gate": "AND", "label": "AND",   "id": "and_1" },
+    { "type": "PIPE_REG", "x":  -60, "y": 0, "channels": 1, "label": "PIPE",   "pipelineRole": "register", "stage": null, "id": "pipe_1" },
+    { "type": "GATE_SLOT", "x":  160, "y": 0, "gate": "XOR", "label": "XOR",   "id": "xor_1" },
+    { "type": "OUTPUT", "x":  340, "y": 0, "targetValue": 0, "label": "Q", "sandbox": true, "id": "out_q" },
+    { "type": "CLOCK",  "x":  -60, "y": 150, "value": 0, "id": "clk_1" }
+  ],
+  "wires": [
+    { "sourceId": "in_a", "targetId": "and_1", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_1" },
+    { "sourceId": "in_b", "targetId": "and_1", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_2" },
+    { "sourceId": "and_1", "targetId": "pipe_1", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_3" },
+    { "sourceId": "clk_1", "targetId": "pipe_1", "targetInputIndex": 3, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true,  "id": "w_4" },
+    { "sourceId": "pipe_1", "targetId": "xor_1", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_5" },
+    { "sourceId": "in_a",  "targetId": "xor_1", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [{"x":-380,"y":-140},{"x":100,"y":-140}], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_6_VIOLATION" },
+    { "sourceId": "xor_1", "targetId": "out_q", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_7" }
+  ]
+}

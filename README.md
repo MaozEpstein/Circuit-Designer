@@ -743,13 +743,13 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 
 ### Phase 5 — Cross-Stage Validation
 **Goal**: hard-flag wires that jump stages without an intervening `PIPE_REG`.
-- [ ] `SceneGraph.validatePipeline()` → `Violation[]` (wires where `srcStage !== dstStage - 1` without a PIPE between).
-- [ ] Violations listed in panel (red, click → jump-to-wire).
-- [ ] `ErrorOverlay` integration: red highlight on offending wires.
-- [ ] Warning mode in simulation; blocks HDL export.
-- **Example update**: add sibling `examples/pipeline-demo.bad.json` — same circuit with a deliberate cross-stage wire to showcase the violation UI.
-- **Verify L1** — unit: synthetic violation cases.
-- **Verify L2** — manual: create bad wire, confirm flag.
+- [x] Violation detection now part of `StageEvaluator.evaluate()` result (`violations[]` with `wireId, srcId, dstId, srcStage, dstStage, missing`).
+- [x] Rule: wire `src → dst` is a violation when `src` is not a `PIPE_REG` and `src` has another consumer in an earlier stage — i.e. the signal is being re-used downstream without being latched. Correctly ignores stage-agnostic inputs that happen to feed only later stages.
+- [x] Violations listed in Pipeline Panel (red section, click → zoom-to-wire endpoints via `pipeline:jump-to-wire`).
+- [x] Red dashed pulsing stroke on the offending wires via `setPipelineViolations(list)` hook in `CanvasRenderer`. (Warning mode only — simulation still runs.)
+- [x] HDL export gating deferred to Phase 11 (where HDL export itself picks up pipeline awareness).
+- **Example update**: added `examples/circuits/pipeline-demo-bad.json` — clean 2-stage pipeline with a shortcut wire `A → XOR` that skips PIPE. Validator flags it on load.
+- **Tests**: `examples/tests/test-pipeline-phase5.mjs` — passes on clean + bad demos.
 
 ### Phase 6 — Per-Stage Critical Path + Bottleneck
 **Goal**: real delay model, not just gate count.

@@ -97,10 +97,42 @@ export function evaluate(scene) {
     if (bottleneck < 0 || stages[i].depth > stages[bottleneck].depth) bottleneck = i;
   }
 
+  // Violation detection.
+  // A signal is legal in a given stage only if ALL of its consumers share the
+  // same earliest stage, OR the source is a PIPE_REG (which explicitly latches
+  // the signal forward). If the same signal is consumed in an earlier stage AND
+  // a later stage without being latched, the later-stage wire is the violator —
+  // it sees a value that is still "live" combinationally from the earlier use,
+  // and its data is out of sync with anything that passed through the PIPE.
+  const minConsumer = new Map();   // srcId → min stage among its consumers
+  for (const w of wires) {
+    const s = stage.get(w.targetId) ?? 0;
+    const curr = minConsumer.get(w.sourceId);
+    if (curr == null || s < curr) minConsumer.set(w.sourceId, s);
+  }
+  const violations = [];
+  for (const w of wires) {
+    const srcN = nodeMap.get(w.sourceId);
+    if (!srcN || srcN.type === 'PIPE_REG') continue;
+    const dstStage = stage.get(w.targetId) ?? 0;
+    const minS = minConsumer.get(w.sourceId);
+    if (minS != null && dstStage > minS) {
+      violations.push({
+        wireId: w.id,
+        srcId: w.sourceId,
+        dstId: w.targetId,
+        srcStage: minS,
+        dstStage,
+        missing: dstStage - minS,
+      });
+    }
+  }
+
   return {
     stages,
     cycles: stageCount,            // latency in clock cycles (stage count)
     bottleneck,                    // stage index of the largest depth
     hasCycle,                      // true if feedback loop detected
+    violations,                    // cross-stage wires missing a PIPE_REG
   };
 }

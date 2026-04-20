@@ -4,6 +4,7 @@
  * Updates on 'pipeline:analyzed' events and debounced scene mutations.
  */
 import { bus } from '../../core/EventBus.js';
+import { setPipelineViolations } from '../../rendering/CanvasRenderer.js';
 
 export class PipelinePanel {
   constructor(analyzer) {
@@ -55,6 +56,8 @@ export class PipelinePanel {
 
   _render(r) {
     if (!this._body || !this._summary) return;
+    // Always push violations to the renderer (null when no data).
+    setPipelineViolations(r?.violations?.length ? r.violations : null);
     if (!r || r.cycles === 0) {
       this._summary.innerHTML = '';
       this._body.innerHTML = '<div class="pipe-empty">No pipeline detected.<br>Drop a PIPE register and wire it up.</div>';
@@ -66,12 +69,17 @@ export class PipelinePanel {
     const throughput = maxDepth > 0 ? (1 / maxDepth).toFixed(3) : '—';
 
     const warn = r.hasCycle ? '<span class="warn">⚠ feedback loop</span>' : '';
+    const vioCount = r.violations?.length ?? 0;
+    const vioLine  = vioCount > 0
+      ? `<span class="k">Violations</span><span class="v warn">⚠ ${vioCount} cross-stage wire${vioCount===1?'':'s'}</span>`
+      : '';
     this._summary.innerHTML = `
       <span class="k">Latency</span><span class="v">${r.cycles} cycle${r.cycles===1?'':'s'}</span>
       <span class="k">Bottleneck</span><span class="v">stage ${r.bottleneck} (d=${maxDepth})</span>
       <span class="k">Throughput</span><span class="v">${throughput} /gate-delay</span>
       <span class="k">Balance</span><span class="v">${(balance*100).toFixed(0)}%</span>
       ${warn ? `<span class="k">Warn</span><span class="v">${warn}</span>` : ''}
+      ${vioLine}
     `;
 
     this._body.innerHTML = r.stages.map(s => {
@@ -84,6 +92,30 @@ export class PipelinePanel {
         <span class="pipe-stage-bar"><div style="width:${pct}%"></div></span>
       </div>`;
     }).join('');
+
+    // Violations section (after the stage list).
+    if (r.violations && r.violations.length) {
+      const labelOf = (id) => {
+        const n = this._analyzer._scene.getNode?.(id);
+        return n ? (n.label || n.id) : id;
+      };
+      const items = r.violations.map(v => `
+        <div class="pipe-violation-row" data-wire="${v.wireId}" data-src="${v.srcId}" data-dst="${v.dstId}">
+          <span class="pvi-stages">S${v.srcStage} → S${v.dstStage}</span>
+          <span class="pvi-names">${labelOf(v.srcId)} → ${labelOf(v.dstId)}</span>
+          <span class="pvi-missing">missing ${v.missing} PIPE</span>
+        </div>`).join('');
+      this._body.insertAdjacentHTML('beforeend',
+        `<div class="pipe-violations-header">VIOLATIONS (${r.violations.length})</div>${items}`);
+
+      this._body.querySelectorAll('.pipe-violation-row').forEach(row => {
+        row.addEventListener('click', () => {
+          bus.emit('pipeline:jump-to-wire', {
+            srcId: row.dataset.src, dstId: row.dataset.dst, wireId: row.dataset.wire,
+          });
+        });
+      });
+    }
 
     // Row clicks emit a highlight event — the StageOverlay controller listens.
     this._body.querySelectorAll('.pipe-stage-row').forEach(row => {
