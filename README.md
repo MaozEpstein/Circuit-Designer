@@ -735,12 +735,11 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 
 ### Phase 4 — Stage Overlay (canvas)
 **Goal**: color-code stages on the main canvas.
-- [ ] `js/pipeline/ui/StageOverlay.js` hook into `CanvasRenderer`.
-- [ ] Each stage a distinct hue (Theme-aware); bottleneck pulses red.
-- [ ] Optional mode: dim other stages when one is highlighted.
-- [ ] Toggle button: *Stage View* in design toolbar.
-- **Example update**: `pipeline-demo.json` now looks visually distinct under Stage View — colors per stage verified in screenshot.
-- **Verify L2** — manual: mixed-stage circuit, confirm colors + toggle.
+- [x] `js/pipeline/ui/StageOverlay.js` + `setStageOverlay(state)` hook in `CanvasRenderer` — draws translucent coloured halos under each node, per `node.stage`.
+- [x] Rotating palette of 8 distinct hues; bottleneck always overridden to red with a thicker stroke (no animation yet — deferred).
+- [x] Highlight mode: click a stage row in the Pipeline Panel → that stage stays bright, others dim; click again to clear.
+- [x] Toggle via Command Palette (*Toggle Stage View*) — live status shown in a toast.
+- **Example update**: load `pipeline-demo.json`, enable Stage View → three distinct hues (cyan/green/yellow) visible; click a row in Pipeline Panel to isolate a stage.
 
 ### Phase 5 — Cross-Stage Validation
 **Goal**: hard-flag wires that jump stages without an intervening `PIPE_REG`.

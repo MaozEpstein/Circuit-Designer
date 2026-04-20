@@ -29,6 +29,7 @@ import { ProjectStorage } from './ui/ProjectStorage.js';
 import { exportCircuit as exportVerilog } from './hdl/VerilogExporter.js';
 import { PipelineAnalyzer } from './pipeline/PipelineAnalyzer.js';
 import { PipelinePanel } from './pipeline/ui/PipelinePanel.js';
+import { StageOverlay } from './pipeline/ui/StageOverlay.js';
 
 // ── Singletons ──────────────────────────────────────────────
 const scene    = new SceneGraph();
@@ -39,6 +40,16 @@ const commands = new CommandManager(100);
 const simCtrl  = new SimulationController();
 const pipelineAnalyzer = new PipelineAnalyzer(scene);
 const pipelinePanel    = new PipelinePanel(pipelineAnalyzer);
+const stageOverlay     = new StageOverlay(pipelineAnalyzer);
+
+function _toggleStageView() {
+  stageOverlay.toggle();
+  const on = stageOverlay.isEnabled();
+  const btn = document.getElementById('btn-stageview-toggle');
+  if (btn) btn.classList.toggle('active', on);
+  _showRomNotification(on ? 'Stage View: ON' : 'Stage View: OFF');
+}
+document.getElementById('btn-stageview-toggle')?.addEventListener('click', _toggleStageView);
 const probes     = new ProbeManager();
 const watchList  = new WatchList();
 const tracer     = new SignalTracer();
@@ -1832,9 +1843,9 @@ document.getElementById('btn-mem-close')?.addEventListener('click', _toggleMemIn
 
   function _applyPipelineFontTier(height) {
     let base;
-    if (height < 300)       base = 10;
-    else if (height < 550)  base = 12;
-    else                    base = 14;
+    if (height < 300)       base = 12;
+    else if (height < 550)  base = 14;
+    else                    base = 16;
     panel.style.fontSize = base + 'px';
   }
   _applyPipelineFontTier(panel.getBoundingClientRect().height);
@@ -2049,7 +2060,7 @@ bus.on('palette:action', (action) => {
     case 'toggle-waveform': toggleWaveform(); break;
     case 'zoom-fit': Renderer.zoomToFit(scene.nodes); break;
     case 'gen-truthtable': document.getElementById('btn-gen-truthtable')?.click(); break;
-    case 'toggle-stageview': bus.emit('pipeline:stageview:toggle'); _showRomNotification('Stage View — coming in Phase 4'); break;
+    case 'toggle-stageview': _toggleStageView(); break;
     case 'analyze-pipeline': {
       const r = pipelineAnalyzer.analyze({ force: true });
       console.group('[Pipeline] analyze');

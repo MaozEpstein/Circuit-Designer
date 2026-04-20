@@ -42,12 +42,14 @@ export class PipelinePanel {
   show() {
     this._visible = true;
     this._el?.classList.remove('hidden');
+    document.getElementById('btn-pipeline-toggle')?.classList.add('active');
     const r = this._analyzer.analyze({ force: true });
     this._render(r);
   }
   hide() {
     this._visible = false;
     this._el?.classList.add('hidden');
+    document.getElementById('btn-pipeline-toggle')?.classList.remove('active');
   }
   toggle() { this._visible ? this.hide() : this.show(); }
 
@@ -82,5 +84,20 @@ export class PipelinePanel {
         <span class="pipe-stage-bar"><div style="width:${pct}%"></div></span>
       </div>`;
     }).join('');
+
+    // Row clicks emit a highlight event — the StageOverlay controller listens.
+    this._body.querySelectorAll('.pipe-stage-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const idx = parseInt(row.dataset.stage, 10);
+        const already = row.classList.contains('active-hl');
+        this._body.querySelectorAll('.pipe-stage-row').forEach(r => r.classList.remove('active-hl'));
+        if (already) {
+          bus.emit('pipeline:highlight-stage', null);
+        } else {
+          row.classList.add('active-hl');
+          bus.emit('pipeline:highlight-stage', idx);
+        }
+      });
+    });
   }
 }

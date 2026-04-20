@@ -119,6 +119,9 @@ export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNo
   ctx.translate(_offsetX, _offsetY);
   if (_scale !== 1) ctx.scale(_scale, _scale);
 
+  // Pipeline stage overlay (drawn UNDER nodes as coloured halos).
+  if (_stageOverlayState?.enabled) _drawStageOverlay(nodes);
+
   _drawWires(nodes, wires, wireValues);
   _drawPulses(nodes, wires, wireValues);
   _drawNodes(nodes, nodeValues, ffStates, hoveredNodeId, selectedNodeId);
@@ -165,6 +168,70 @@ export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNo
   // Tooltips
   if (hoveredNodeId && activeTool !== 'wire') {
     _drawNodeTooltip(nodes, hoveredNodeId, nodeValues);
+  }
+}
+
+// ── Pipeline Stage Overlay ──────────────────────────────────
+// Rotating palette of distinct hues. Bottleneck always overridden to red.
+const _STAGE_COLOURS = [
+  '#00d4ff', '#39ff14', '#ffd028', '#ff28a0',
+  '#a878ff', '#28ffe0', '#ff8028', '#88ff88',
+];
+let _stageOverlayState = null;
+/**
+ * Configure the stage overlay.
+ * @param {object|null} state - { enabled, highlighted: number|null, bottleneck: number }
+ */
+export function setStageOverlay(state) { _stageOverlayState = state; }
+
+function _drawStageOverlay(nodes) {
+  const s = _stageOverlayState;
+  const highlighted = s.highlighted;                // null = show all stages
+  const bottleneck  = s.bottleneck ?? -1;
+  for (const n of nodes) {
+    if (n.stage == null) continue;
+    const dim = highlighted != null && highlighted !== n.stage;
+    const isBN = n.stage === bottleneck;
+    const col  = isBN ? '#ff5050' : _STAGE_COLOURS[n.stage % _STAGE_COLOURS.length];
+    const alpha = dim ? 0.06 : (isBN ? 0.32 : 0.22);
+    ctx.save();
+    ctx.fillStyle = col;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 48, 0, Math.PI * 2);
+    ctx.fill();
+    if (!dim) {
+      ctx.globalAlpha = isBN ? 0.9 : 0.55;
+      ctx.strokeStyle = col;
+      ctx.lineWidth = isBN ? 2 : 1.2;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // Second pass: stage badges above each node (drawn last so they sit on top).
+  for (const n of nodes) {
+    if (n.stage == null) continue;
+    const dim = highlighted != null && highlighted !== n.stage;
+    if (dim) continue;
+    const isBN = n.stage === bottleneck;
+    const col  = isBN ? '#ff5050' : _STAGE_COLOURS[n.stage % _STAGE_COLOURS.length];
+    const badge = 'S' + n.stage;
+    const bx = n.x + 34, by = n.y - 34;
+    ctx.save();
+    ctx.fillStyle = '#0a0e14';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    const r = 10;
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.font = 'bold 10px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badge, bx, by + 1);
+    ctx.restore();
   }
 }
 
@@ -1648,9 +1715,11 @@ function _drawPipeRegNode(node, val, hovered, ffStates) {
     // Output label + value
     ctx.textAlign = 'left';
     ctx.fillText('Q' + i, x + w - 14, py + 1);
-    const v = chData[i] ?? 0;
-    if (v !== 0) {
-      ctx.fillStyle = '#39ff14';
+    // Draw captured value only when the register has actually been clocked.
+    // Non-zero → green (live); zero → red (explicitly held 0, not "no data").
+    if (i < chData.length) {
+      const v = chData[i] ?? 0;
+      ctx.fillStyle = v !== 0 ? '#39ff14' : '#ff5050';
       ctx.fillText(v.toString(), x + w - 26, py + 1);
     }
   }

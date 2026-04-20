@@ -667,7 +667,16 @@
 
 #mem-inspector-header > div {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+}
+
+/* Readable header buttons — scales with panel tier. */
+#mem-inspector-header button {
+  font-size: 0.95em !important;
+  padding: 0.35em 0.8em;
+  letter-spacing: 0.5px;
+  font-weight: bold;
+  border-width: 1px;
 }
 
 #mem-inspector-body {
@@ -682,9 +691,9 @@
   position: fixed;
   right: 0;
   bottom: 0;
-  width: 340px;
+  width: 440px;
   height: 45vh;
-  min-width: 220px;
+  min-width: 320px;
   min-height: 150px;
   max-width: 95vw;
   max-height: 95vh;
@@ -752,7 +761,26 @@
   letter-spacing: 1px;
   flex: 0 0 auto;
 }
-#pipeline-panel-header > div { display: flex; gap: 4px; }
+#pipeline-panel-header > div { display: flex; gap: 6px; }
+
+/* Override the tiny inline font-size on header buttons — scales with panel tier. */
+#pipeline-panel-header button {
+  font-size: 0.95em !important;
+  padding: 0.35em 0.8em;
+  letter-spacing: 0.5px;
+  font-weight: bold;
+  border-width: 1px;
+}
+#pipeline-panel-header #btn-stageview-toggle {
+  background: #0d2030;
+  border-color: #2a6a8a;
+  color: #8fd4ff;
+}
+#pipeline-panel-header #btn-stageview-toggle.active {
+  background: #163a5a;
+  color: #ffffff;
+  box-shadow: 0 0 6px rgba(143,212,255,0.6);
+}
 
 #pipeline-panel-summary {
   padding: 0.8em 1.2em;
@@ -809,6 +837,14 @@
 .pipe-stage-row.bottleneck .pipe-stage-bar > div {
   background: linear-gradient(90deg, #8a2a2a, #ff8080);
 }
+#btn-stageview-toggle.active, #btn-pipeline-toggle.active {
+  background: #163a5a !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 6px rgba(143,212,255,0.6);
+}
+.pipe-stage-row { cursor: pointer; }
+.pipe-stage-row:hover { background: #0e1820; }
+.pipe-stage-row.active-hl { outline: 1px solid #8fd4ff; background: #0a1a28; }
 .pipe-empty { padding: 2em 1.2em; color: #567; text-align: center; font-size: 1em; }
 
 .mem-row {
