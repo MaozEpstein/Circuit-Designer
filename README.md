@@ -753,13 +753,13 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 
 ### Phase 6 — Per-Stage Critical Path + Bottleneck
 **Goal**: real delay model, not just gate count.
-- [ ] Per-gate-type delay table (configurable, defaults in picoseconds).
-- [ ] `StageEvaluator` switches to weighted longest-path.
-- [ ] Bottleneck visualization: the exact path highlighted in the overlay.
-- [ ] Panel shows max delay per stage, slack, **f_max** estimate.
-- **Example update**: enrich `pipeline-demo.json` with an imbalanced stage (extra gates in stage 2) so bottleneck highlighting is visible; record f_max in a comment field.
-- **Verify L1** — unit: known-delay circuits.
-- **Verify L2** — manual: adjust delays, observe f_max change.
+- [x] `js/pipeline/DelayModel.js` — per-component delay table in picoseconds (gate 50 ps, adder 150, MUX 200, ALU 800, registers/IO 0, …); unknown types default to 100 ps.
+- [x] `StageEvaluator` now computes weighted longest-path (`delayPs`) alongside gate count (`depth`). Tracks `critPred` per node to recover the exact critical chain.
+- [x] Per-stage result includes `delayPs` and ordered `criticalPath[]` node IDs. Top-level `maxDelayPs` and `fMaxMHz` exposed.
+- [x] Bottleneck is now delay-based (stage with max `delayPs`).
+- [x] Panel shows `ps` per stage and **f_max** (auto-scales to MHz/GHz). Clicking a stage row highlights its critical path on the canvas (yellow dashed via `setPipelineCriticalPath`).
+- **Example update**: same demo — measurable numbers now visible (3 × 50 ps ≈ 20 GHz theoretical with these toy delays).
+- **Tests**: `examples/tests/test-pipeline-phase6.mjs` — passes.
 
 ### Phase 7 — Stall / Flush (synchronous control)
 **Goal**: PIPE register responds to `enable` (stall) and `clear` (flush/bubble).

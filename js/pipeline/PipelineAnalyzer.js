@@ -11,6 +11,7 @@ export class PipelineAnalyzer {
     this._scene = scene;
     this._cache = null;
     this._dirty = true;
+    this._warnedUnknown = new Set();   // types we've already warned about
 
     const invalidate = () => { this._dirty = true; };
     bus.on('node:added', invalidate);
@@ -25,6 +26,13 @@ export class PipelineAnalyzer {
     if (!force && !this._dirty && this._cache) return this._cache;
     this._cache = evaluate(this._scene);
     this._dirty = false;
+    // Warn once per unknown type — prompts the designer to update DelayModel.js.
+    for (const t of (this._cache.unknownTypes || [])) {
+      if (!this._warnedUnknown.has(t)) {
+        this._warnedUnknown.add(t);
+        console.warn(`[Pipeline] unknown component type '${t}' — add it to js/pipeline/DelayModel.js (falling back to 100 ps)`);
+      }
+    }
     bus.emit('pipeline:analyzed', this._cache);
     return this._cache;
   }

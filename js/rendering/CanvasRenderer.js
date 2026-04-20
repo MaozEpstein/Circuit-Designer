@@ -126,6 +126,8 @@ export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNo
   _drawPulses(nodes, wires, wireValues);
   // Pipeline violation strokes (on top of wires, under nodes).
   if (_pipelineViolations?.length) _drawPipelineViolations(nodes, wires);
+  // Pipeline critical path (yellow dashed, sits above wires).
+  if (_pipelineCriticalPath?.length) _drawCriticalPath(nodes);
   _drawNodes(nodes, nodeValues, ffStates, hoveredNodeId, selectedNodeId);
 
   // Wire mode: show anchor dots on hovered node (before source is picked)
@@ -192,6 +194,32 @@ let _pipelineViolations = null;
  * @param {Array<{wireId,srcId,dstId,srcStage,dstStage,missing}>|null} list
  */
 export function setPipelineViolations(list) { _pipelineViolations = list; }
+
+let _pipelineCriticalPath = null;   // Array<nodeId> — ordered critical path
+/** Highlight a single stage's critical path (or null to clear). */
+export function setPipelineCriticalPath(nodeIds) { _pipelineCriticalPath = nodeIds; }
+
+function _drawCriticalPath(nodes) {
+  const ids = _pipelineCriticalPath;
+  if (!ids || ids.length < 2) return;
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  ctx.save();
+  ctx.strokeStyle = '#ffd028';
+  ctx.lineWidth = 3;
+  ctx.globalAlpha = 0.8;
+  ctx.setLineDash([8, 4]);
+  ctx.beginPath();
+  let first = true;
+  for (const id of ids) {
+    const n = nodeById.get(id);
+    if (!n) continue;
+    if (first) { ctx.moveTo(n.x, n.y); first = false; }
+    else       ctx.lineTo(n.x, n.y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
 
 function _drawPipelineViolations(nodes, wires) {
   const nodeById = new Map(nodes.map(n => [n.id, n]));

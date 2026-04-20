@@ -4,7 +4,7 @@
  * Updates on 'pipeline:analyzed' events and debounced scene mutations.
  */
 import { bus } from '../../core/EventBus.js';
-import { setPipelineViolations } from '../../rendering/CanvasRenderer.js';
+import { setPipelineViolations, setPipelineCriticalPath } from '../../rendering/CanvasRenderer.js';
 
 export class PipelinePanel {
   constructor(analyzer) {
@@ -51,6 +51,7 @@ export class PipelinePanel {
     this._visible = false;
     this._el?.classList.add('hidden');
     document.getElementById('btn-pipeline-toggle')?.classList.remove('active');
+    setPipelineCriticalPath(null);
   }
   toggle() { this._visible ? this.hide() : this.show(); }
 
@@ -63,32 +64,38 @@ export class PipelinePanel {
       this._body.innerHTML = '<div class="pipe-empty">No pipeline detected.<br>Drop a PIPE register and wire it up.</div>';
       return;
     }
-    const maxDepth = r.stages.reduce((m, s) => Math.max(m, s.depth), 0);
-    const minDepth = r.stages.reduce((m, s) => Math.min(m, s.depth), Infinity);
-    const balance  = maxDepth > 0 ? (minDepth / maxDepth) : 1;
-    const throughput = maxDepth > 0 ? (1 / maxDepth).toFixed(3) : '—';
+    const maxDelay = r.maxDelayPs ?? 0;
+    const minDelay = r.stages.reduce((m, s) => Math.min(m, s.delayPs), Infinity);
+    const balance  = maxDelay > 0 ? (minDelay / maxDelay) : 1;
+    const fMax     = r.fMaxMHz;
+    const fMaxStr  = (!isFinite(fMax)) ? '—' : (fMax >= 1000 ? (fMax/1000).toFixed(2) + ' GHz' : fMax.toFixed(0) + ' MHz');
 
     const warn = r.hasCycle ? '<span class="warn">⚠ feedback loop</span>' : '';
     const vioCount = r.violations?.length ?? 0;
     const vioLine  = vioCount > 0
       ? `<span class="k">Violations</span><span class="v warn">⚠ ${vioCount} cross-stage wire${vioCount===1?'':'s'}</span>`
       : '';
+    const unknown = r.unknownTypes ?? [];
+    const unknownLine = unknown.length > 0
+      ? `<span class="k">Unknown</span><span class="v warn" title="Types missing from DelayModel.js — add an entry or they'll use the 100 ps fallback">⚠ ${unknown.join(', ')}</span>`
+      : '';
     this._summary.innerHTML = `
       <span class="k">Latency</span><span class="v">${r.cycles} cycle${r.cycles===1?'':'s'}</span>
-      <span class="k">Bottleneck</span><span class="v">stage ${r.bottleneck} (d=${maxDepth})</span>
-      <span class="k">Throughput</span><span class="v">${throughput} /gate-delay</span>
+      <span class="k">Bottleneck</span><span class="v">S${r.bottleneck} (${maxDelay} ps)</span>
+      <span class="k">f_max</span><span class="v">${fMaxStr}</span>
       <span class="k">Balance</span><span class="v">${(balance*100).toFixed(0)}%</span>
       ${warn ? `<span class="k">Warn</span><span class="v">${warn}</span>` : ''}
       ${vioLine}
+      ${unknownLine}
     `;
 
     this._body.innerHTML = r.stages.map(s => {
-      const pct = maxDepth > 0 ? Math.max(2, Math.round(100 * s.depth / maxDepth)) : 0;
+      const pct = maxDelay > 0 ? Math.max(2, Math.round(100 * s.delayPs / maxDelay)) : 0;
       const bn  = s.idx === r.bottleneck ? ' bottleneck' : '';
       return `<div class="pipe-stage-row${bn}" data-stage="${s.idx}">
         <span class="pipe-stage-idx">S${s.idx}</span>
-        <span class="pipe-stage-depth">d=${s.depth}</span>
-        <span class="pipe-stage-count">${s.nodes.length} node${s.nodes.length===1?'':'s'}</span>
+        <span class="pipe-stage-depth">${s.delayPs} ps</span>
+        <span class="pipe-stage-count">d=${s.depth} · ${s.nodes.length}n</span>
         <span class="pipe-stage-bar"><div style="width:${pct}%"></div></span>
       </div>`;
     }).join('');
@@ -117,7 +124,8 @@ export class PipelinePanel {
       });
     }
 
-    // Row clicks emit a highlight event — the StageOverlay controller listens.
+    // Row clicks emit a highlight event — the StageOverlay controller listens,
+    // and locally we also push the critical path of that stage to the renderer.
     this._body.querySelectorAll('.pipe-stage-row').forEach(row => {
       row.addEventListener('click', () => {
         const idx = parseInt(row.dataset.stage, 10);
@@ -125,9 +133,11 @@ export class PipelinePanel {
         this._body.querySelectorAll('.pipe-stage-row').forEach(r => r.classList.remove('active-hl'));
         if (already) {
           bus.emit('pipeline:highlight-stage', null);
+          setPipelineCriticalPath(null);
         } else {
           row.classList.add('active-hl');
           bus.emit('pipeline:highlight-stage', idx);
+          setPipelineCriticalPath(r.stages[idx]?.criticalPath ?? null);
         }
       });
     });

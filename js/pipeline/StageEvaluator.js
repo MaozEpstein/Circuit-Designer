@@ -15,6 +15,8 @@
  * Bottleneck = stage with the largest depth.
  */
 
+import { delayOf, isKnownType } from './DelayModel.js';
+
 /** Types that don't contribute to combinational depth (clocked / boundary). */
 const ZERO_DEPTH_TYPES = new Set(['PIPE_REG', 'CLOCK', 'INPUT', 'OUTPUT']);
 
@@ -60,41 +62,69 @@ export function evaluate(scene) {
   // Nodes in cycles: default to stage 0, flagged via hasCycle
   for (const n of nodes) if (!stage.has(n.id)) stage.set(n.id, 0);
 
-  // Per-node combinational depth within its stage.
-  // Counts combinational gates along the longest same-stage chain.
-  // Register/boundary nodes (PIPE_REG, INPUT, OUTPUT, CLOCK) pass-through without adding.
-  const depth = new Map();
+  // Per-node combinational depth (gate count) AND per-node accumulated delay
+  // (picoseconds) within the current stage. Both track the longest same-stage
+  // chain ending at this node. For critical-path recovery we also remember the
+  // predecessor that contributed the max delay.
+  const depth    = new Map();
+  const delayPs  = new Map();
+  const critPred = new Map();     // id → predecessor that won the delay max
   for (const id of order) {
     const n = nodeMap.get(id);
     const s = stage.get(id);
-    let maxPred = 0;
+    let maxDepth = 0;
+    let maxDelay = 0;
+    let winner   = null;
     for (const p of preds.get(id)) {
-      if (stage.get(p) === s) {
-        maxPred = Math.max(maxPred, depth.get(p) ?? 0);
-      }
+      if (stage.get(p) !== s) continue;
+      const pd = depth.get(p) ?? 0;
+      if (pd > maxDepth) maxDepth = pd;
+      const pde = delayPs.get(p) ?? 0;
+      if (pde > maxDelay) { maxDelay = pde; winner = p; }
     }
     const combinational = !ZERO_DEPTH_TYPES.has(n.type);
-    depth.set(id, combinational ? maxPred + 1 : maxPred);
+    depth.set(id, combinational ? maxDepth + 1 : maxDepth);
+    delayPs.set(id, maxDelay + delayOf(n));
+    if (winner) critPred.set(id, winner);
   }
 
   // Write back metadata (derived field — analyzer owns it)
   for (const n of nodes) n.stage = stage.get(n.id) ?? null;
 
-  // Collect per-stage summary
+  // Collect per-stage summary.
   const stageCount = nodes.length ? Math.max(0, ...stage.values()) + 1 : 0;
   const stages = [];
-  for (let i = 0; i < stageCount; i++) stages.push({ idx: i, nodes: [], depth: 0 });
+  for (let i = 0; i < stageCount; i++) {
+    stages.push({ idx: i, nodes: [], depth: 0, delayPs: 0, criticalPath: [] });
+  }
+  // For each stage, find the node with the greatest accumulated delay — the
+  // tail of the stage's critical path. Walk back via critPred to recover it.
+  const stageTailByDelay = new Array(stageCount).fill(null);
+  const stageTailDelay   = new Array(stageCount).fill(-1);
   for (const n of nodes) {
     const s = stage.get(n.id);
     if (s == null || s < 0) continue;
     stages[s].nodes.push(n.id);
-    const d = depth.get(n.id) ?? 0;
-    if (d > stages[s].depth) stages[s].depth = d;
+    const d  = depth.get(n.id) ?? 0;
+    const de = delayPs.get(n.id) ?? 0;
+    if (d  > stages[s].depth)   stages[s].depth   = d;
+    if (de > stages[s].delayPs) stages[s].delayPs = de;
+    if (de > stageTailDelay[s]) { stageTailDelay[s] = de; stageTailByDelay[s] = n.id; }
+  }
+  // Walk back critPred chain for each stage tail to recover its critical path.
+  for (let i = 0; i < stageCount; i++) {
+    const path = [];
+    let cur = stageTailByDelay[i];
+    while (cur != null) {
+      path.unshift(cur);
+      cur = critPred.get(cur) ?? null;
+    }
+    stages[i].criticalPath = path;
   }
 
   let bottleneck = -1;
   for (let i = 0; i < stages.length; i++) {
-    if (bottleneck < 0 || stages[i].depth > stages[bottleneck].depth) bottleneck = i;
+    if (bottleneck < 0 || stages[i].delayPs > stages[bottleneck].delayPs) bottleneck = i;
   }
 
   // Violation detection.
@@ -128,11 +158,23 @@ export function evaluate(scene) {
     }
   }
 
+  const maxDelayPs = stages.reduce((m, s) => Math.max(m, s.delayPs), 0);
+  // f_max in MHz = 1 / (max stage delay in seconds) = 1e6 / delayPs
+  const fMaxMHz = maxDelayPs > 0 ? (1e6 / maxDelayPs) : Infinity;
+
+  // Collect component types that are missing from the delay table — designer
+  // needs to add them to DelayModel.js or accept the 100 ps fallback.
+  const unknownTypes = new Set();
+  for (const n of nodes) if (!isKnownType(n.type)) unknownTypes.add(n.type);
+
   return {
     stages,
     cycles: stageCount,            // latency in clock cycles (stage count)
-    bottleneck,                    // stage index of the largest depth
+    bottleneck,                    // stage index with the largest delay
     hasCycle,                      // true if feedback loop detected
     violations,                    // cross-stage wires missing a PIPE_REG
+    maxDelayPs,                    // worst stage delay (ps)
+    fMaxMHz,                       // estimated f_max (MHz)
+    unknownTypes: [...unknownTypes],   // component types without an explicit delay entry
   };
 }
