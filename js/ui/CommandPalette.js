@@ -149,6 +149,7 @@ export class CommandPalette {
       { id: 'action-debug', label: 'Toggle Debug Panel', category: 'View', shortcut: 'Ctrl+D', action: () => bus.emit('palette:action', 'toggle-debug') },
       { id: 'action-waveform', label: 'Toggle Waveform', category: 'View', action: () => bus.emit('palette:action', 'toggle-waveform') },
       { id: 'action-truthtable', label: 'Generate Truth Table', category: 'Debug', action: () => bus.emit('palette:action', 'gen-truthtable') },
+      { id: 'action-stageview', label: 'Toggle Stage View', category: 'Pipeline', action: () => bus.emit('palette:action', 'toggle-stageview') },
     ];
 
     this._items = [...tools, ...components, ...actions];

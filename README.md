@@ -700,12 +700,12 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 
 ### Phase 1 — Foundations (Component + Metadata)
 **Goal**: `PIPE_REG` is a first-class pipeline element; every node carries a `stage` field.
-- [ ] Extend `PIPE_REG` in `js/components/Component.js`: add `enable`, `clear`/`flush`, optional `valid`/`ready` ports; width parameter (`channels` 1–64).
-- [ ] Add derived `stage: number | null` to node metadata in `SceneGraph` (computed, not persisted).
-- [ ] Add `pipelineRole: 'data'|'control'|'register'|'boundary'` tag on nodes.
-- [ ] Palette: new **"Pipeline"** tab in `app.html`; move PIPE to it; add `HANDSHAKE` + `STAGE_BOUNDARY` stubs.
-- [ ] Command palette entries: *Insert PIPE Register*, *Toggle Stage View*.
-- **Example update**: create `examples/pipeline-demo.json` — minimal 2-stage design (INPUT → AND → PIPE_REG → OR → OUTPUT) to exercise the new fields.
+- [x] `PIPE_REG` already supports `channels` width + STALL/FLUSH pins in engine; default factory now also seeds `pipelineRole: 'register'` and `stage: null`. (`valid`/`ready` deferred to Phase 8.)
+- [x] Added `stage: number | null` to node metadata (seeded at create; serializer keeps it; analyzer will overwrite in Phase 2).
+- [x] Added `pipelineRole: 'data'|'control'|'register'|'boundary'` tag on nodes.
+- [x] Palette: new **"Pipeline"** tab in `app.html`; PIPE moved to it. (`HANDSHAKE` + `STAGE_BOUNDARY` stubs deferred to their own phases — avoiding non-rendering chips.)
+- [x] Command palette: *Insert PIPE Register* already existed; added *Toggle Stage View* (stub wired to `pipeline:stageview:toggle`, UX: toast "coming in Phase 4").
+- **Example update**: created `examples/circuits/pipeline-demo.json` — 2-stage design (INPUT A/B → AND → PIPE_REG → OR with INPUT C → OUTPUT) + registered in the Examples menu.
 - **Deliverable**: user drops a width-N PIPE, wires through, field nullable until analyzed.
 - **Verify L1** — unit: serialize/deserialize preserves new fields.
 - **Verify L2** — manual: drop PIPE, wire through, simulate → output arrives 1 cycle later.

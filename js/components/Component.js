@@ -159,7 +159,7 @@ export function createComponent(type, x, y) {
     case COMPONENT_TYPES.SIGN_EXT:
       return { ...base, inBits: 4, outBits: 8, label: 'SEXT' };
     case COMPONENT_TYPES.PIPE_REG:
-      return { ...base, channels: 4, label: 'PIPE' };
+      return { ...base, channels: 4, label: 'PIPE', pipelineRole: 'register', stage: null };
     case COMPONENT_TYPES.REG_FILE_DP:
       return { ...base, regCount: 8, dataBits: 8, initialRegs: null, label: 'RF-DP' };
     case COMPONENT_TYPES.SPLIT:

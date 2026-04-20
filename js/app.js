@@ -1837,7 +1837,7 @@ function _refreshMemInspector() {
   const memNodes = scene.nodes.filter(n =>
     n.type === 'REGISTER' || n.type === 'SHIFT_REG' || n.type === 'COUNTER' ||
     n.type === 'RAM' || n.type === 'ROM' || n.type === 'REG_FILE' || n.type === 'REG_FILE_DP' ||
-    n.type === 'FIFO' || n.type === 'STACK' || n.type === 'PC'
+    n.type === 'FIFO' || n.type === 'STACK' || n.type === 'PC' || n.type === 'PIPE_REG'
   );
 
   if (memNodes.length === 0) {
@@ -1845,7 +1845,7 @@ function _refreshMemInspector() {
     return;
   }
 
-  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'RF', REG_FILE_DP: 'RF-DP', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC' };
+  const typeLabels = { REGISTER: 'REG', SHIFT_REG: 'SHREG', COUNTER: 'CNT', RAM: 'RAM', ROM: 'ROM', REG_FILE: 'RF', REG_FILE_DP: 'RF-DP', FIFO: 'FIFO', STACK: 'STACK', PC: 'PC', PIPE_REG: 'PIPE' };
   let html = '';
 
   for (const node of memNodes) {
@@ -1992,6 +1992,7 @@ bus.on('palette:action', (action) => {
     case 'toggle-waveform': toggleWaveform(); break;
     case 'zoom-fit': Renderer.zoomToFit(scene.nodes); break;
     case 'gen-truthtable': document.getElementById('btn-gen-truthtable')?.click(); break;
+    case 'toggle-stageview': bus.emit('pipeline:stageview:toggle'); _showRomNotification('Stage View — coming in Phase 4'); break;
   }
 });
 bus.on('palette:select-node', (nodeId) => {
@@ -3034,6 +3035,13 @@ const EXAMPLES = [
     desc: 'A complete CPU with Register File. Counts down R1 from 10 to 0 using SUB R1,R1,R2 each cycle. Watch R1 decrease in real-time until HALT.',
     tags: ['advanced', 'PC', 'ROM', 'IR', 'CU', 'ALU', 'RF'],
     file: 'examples/circuits/simple-cpu.json',
+  },
+  {
+    id: 'pipeline-demo',
+    title: 'Pipeline Demo (2-stage)',
+    desc: 'Evolving pipelining reference: AND feeds a PIPE register, output ORed with C. Grows with every Pipelining Plan phase.',
+    tags: ['pipeline', 'PIPE', 'CLK'],
+    file: 'examples/circuits/pipeline-demo.json',
   },
   {
     id: 'mips-gcd',
