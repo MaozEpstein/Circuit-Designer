@@ -974,8 +974,9 @@ function _initKeyboard() {
           'tool-clock': 'place-clock',
         };
         if (toolMap[match]) { _state.tool = toolMap[match]; return; }
+        if (match === 'action-save') { bus.emit('action:save'); return; }
         if (match === 'action-undo') { _commands.undo(); return; }
-        if (match === 'action-redo') { _commands.redo(); return; }
+        if (match === 'action-redo' || match === 'action-redo2') { _commands.redo(); return; }
         if (match === 'nav-stepclock') { bus.emit('clock:step'); return; }
         if (match === 'nav-zoomfit') { bus.emit('nav:zoomfit'); return; }
         if (match === 'nav-meminspector') { bus.emit('nav:meminspector'); return; }

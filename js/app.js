@@ -677,18 +677,22 @@ function tick() {
 
 // ── Auto-save ───────────────────────────────────────────────
 let _designSaveTimer = null;
+function _saveDesignNow() {
+  localStorage.setItem('circuit_designer_pro', JSON.stringify(scene.serialize()));
+  try { localStorage.setItem('circuit_designer_waveform_view', JSON.stringify(Waveform.saveViewState())); } catch (_) {}
+}
 function _scheduleDesignSave() {
   if (_designSaveTimer) return;
   _designSaveTimer = setTimeout(() => {
     _designSaveTimer = null;
-    if (scene.nodeCount > 0) {
-      localStorage.setItem('circuit_designer_pro', JSON.stringify(scene.serialize()));
-      // Waveform view state — saved separately so the waveform module
-      // remains optional and doesn't pollute the core scene payload.
-      try { localStorage.setItem('circuit_designer_waveform_view', JSON.stringify(Waveform.saveViewState())); } catch (_) {}
-    }
+    if (scene.nodeCount > 0) _saveDesignNow();
   }, 2000);
 }
+bus.on('action:save', () => {
+  if (_designSaveTimer) { clearTimeout(_designSaveTimer); _designSaveTimer = null; }
+  _saveDesignNow();
+  _showRomNotification('Project saved');
+});
 
 // ── Design Tool Selection ───────────────────────────────────
 function _updateDesignToolActive(tool) {

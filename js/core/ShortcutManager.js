@@ -19,8 +19,10 @@ const DEFAULT_SHORTCUTS = {
   'tool-output':      { key: 'KeyO',    label: 'Place Output',     group: 'Tools' },
   'tool-clock':       { key: 'KeyC',    label: 'Place Clock',      group: 'Tools' },
   // Actions
-  'action-undo':      { key: 'ctrl+KeyZ',       label: 'Undo',            group: 'Actions' },
+  'action-save':      { key: 'ctrl+KeyS',        label: 'Save Project',    group: 'Actions' },
+  'action-undo':      { key: 'ctrl+KeyZ',        label: 'Undo',            group: 'Actions' },
   'action-redo':      { key: 'ctrl+KeyY',        label: 'Redo',            group: 'Actions' },
+  'action-redo2':     { key: 'ctrl+shift+KeyZ',  label: 'Redo (alt)',      group: 'Actions' },
   'action-copy':      { key: 'ctrl+KeyC',        label: 'Copy',            group: 'Actions' },
   'action-paste':     { key: 'ctrl+KeyV',        label: 'Paste',           group: 'Actions' },
   'action-selectall': { key: 'ctrl+KeyA',        label: 'Select All',      group: 'Actions' },
