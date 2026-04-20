@@ -26,6 +26,7 @@ import { MiniMap } from './ui/MiniMap.js';
 import { SelectionManager } from './ui/SelectionManager.js';
 import { AnnotationLayer } from './ui/AnnotationLayer.js';
 import { ProjectStorage } from './ui/ProjectStorage.js';
+import { exportCircuit as exportVerilog } from './hdl/VerilogExporter.js';
 
 // ── Singletons ──────────────────────────────────────────────
 const scene    = new SceneGraph();
@@ -2269,6 +2270,17 @@ document.getElementById('btn-export-json')?.addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = url;
   a.download = 'circuit-project.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('btn-export-verilog')?.addEventListener('click', () => {
+  const verilog = exportVerilog(scene.serialize(), { topName: 'top' });
+  const blob = new Blob([verilog], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'circuit.v';
   a.click();
   URL.revokeObjectURL(url);
 });
