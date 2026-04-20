@@ -712,11 +712,12 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 
 ### Phase 2 — Stage Evaluator (core pass)
 **Goal**: clean, reusable levelization + per-stage depth pass (currently missing from the engine).
-- [ ] `js/pipeline/StageEvaluator.js`: BFS/topo-sort from inputs; cut at every `PIPE_REG`; assign `node.stage` 0..K-1; compute per-stage logic depth (gate levels initially).
-- [ ] Public API: `evaluate(scene) → { stages: Stage[], cycles: number, bottleneck: stageIdx }`.
-- [ ] Cache invalidation on scene mutation via `EventBus`.
-- [ ] Support fan-out / fan-in across stages (multi-source, multi-sink wires).
-- **Example update**: extend `pipeline-demo.json` to 3 stages with a fan-out branch so the evaluator has something non-trivial to analyze.
+- [x] `js/pipeline/StageEvaluator.js`: Kahn topo-sort over data wires (clock wires skipped); cut at every `PIPE_REG`; assign `node.stage` 0..K-1; per-stage combinational depth (gate levels — PIPE/INPUT/OUTPUT/CLOCK pass-through).
+- [x] Public API: `evaluate(scene) → { stages, cycles, bottleneck, hasCycle }` in `StageEvaluator.js`; wrapped by `PipelineAnalyzer` class with cache.
+- [x] Cache invalidation on scene mutation via `EventBus` (`node:added/removed`, `wire:added/removed`, `scene:loaded/cleared`).
+- [x] Fan-out / fan-in handled naturally — stage = max over predecessors + PIPE bump.
+- [x] Hooked into Command Palette: *Analyze Pipeline* — logs stage table to console + toast with stage count & bottleneck. Exposed on `window.pipeline` for DevTools testing (`pipeline.analyze()`).
+- **Example update**: `examples/circuits/pipeline-demo.json` extended to 3 stages with fan-out (`AND → PIPE1 → {NOT, OR+C} → PIPE2/PIPE3 → XOR → Q`).
 - **Deliverable**: `PipelineAnalyzer.analyze()` returns correct stages for linear, branching, merging pipelines.
 - **Verify L1** — unit: golden graphs (3-stage MAC, 5-stage RISC datapath).
 - **Verify L2** — integration: run on bundled `examples/`.

@@ -150,6 +150,7 @@ export class CommandPalette {
       { id: 'action-waveform', label: 'Toggle Waveform', category: 'View', action: () => bus.emit('palette:action', 'toggle-waveform') },
       { id: 'action-truthtable', label: 'Generate Truth Table', category: 'Debug', action: () => bus.emit('palette:action', 'gen-truthtable') },
       { id: 'action-stageview', label: 'Toggle Stage View', category: 'Pipeline', action: () => bus.emit('palette:action', 'toggle-stageview') },
+      { id: 'action-analyze-pipeline', label: 'Analyze Pipeline', category: 'Pipeline', action: () => bus.emit('palette:action', 'analyze-pipeline') },
     ];
 
     this._items = [...tools, ...components, ...actions];

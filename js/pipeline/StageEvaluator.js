@@ -1,0 +1,106 @@
+/**
+ * StageEvaluator — core levelization pass for pipelining.
+ * Given a SceneGraph, assigns each node a `stage` index and computes
+ * per-stage combinational depth. Cuts stages at PIPE_REG boundaries.
+ *
+ * Algorithm:
+ *   1. Build DAG over data wires (skip clock wires).
+ *   2. Topological sort (Kahn's).
+ *   3. For each node: stage = max(pred.stage + (pred is PIPE_REG ? 1 : 0)).
+ *      Sources (no predecessors) start at stage 0.
+ *   4. Per-stage depth: combinational chain length from stage boundary.
+ *      Only nodes in the same stage contribute; crossing a stage edge
+ *      resets the depth counter at the receiving node.
+ *
+ * Bottleneck = stage with the largest depth.
+ */
+
+/** Types that don't contribute to combinational depth (clocked / boundary). */
+const ZERO_DEPTH_TYPES = new Set(['PIPE_REG', 'CLOCK', 'INPUT', 'OUTPUT']);
+
+export function evaluate(scene) {
+  const nodes = scene.nodes;
+  const wires = scene.wires.filter(w => !w.isClockWire);
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  const preds = new Map(nodes.map(n => [n.id, []]));
+  const succs = new Map(nodes.map(n => [n.id, []]));
+  for (const w of wires) {
+    if (preds.has(w.targetId)) preds.get(w.targetId).push(w.sourceId);
+    if (succs.has(w.sourceId)) succs.get(w.sourceId).push(w.targetId);
+  }
+
+  // Kahn's topological sort
+  const inDeg = new Map();
+  for (const n of nodes) inDeg.set(n.id, preds.get(n.id).length);
+  const queue = [];
+  for (const n of nodes) if (inDeg.get(n.id) === 0) queue.push(n.id);
+  const order = [];
+  while (queue.length) {
+    const id = queue.shift();
+    order.push(id);
+    for (const s of succs.get(id) || []) {
+      inDeg.set(s, inDeg.get(s) - 1);
+      if (inDeg.get(s) === 0) queue.push(s);
+    }
+  }
+  const hasCycle = order.length !== nodes.length;
+
+  // Stage assignment
+  const stage = new Map();
+  for (const id of order) {
+    let s = 0;
+    for (const p of preds.get(id)) {
+      const pn = nodeMap.get(p);
+      const bump = pn && pn.type === 'PIPE_REG' ? 1 : 0;
+      s = Math.max(s, (stage.get(p) ?? 0) + bump);
+    }
+    stage.set(id, s);
+  }
+  // Nodes in cycles: default to stage 0, flagged via hasCycle
+  for (const n of nodes) if (!stage.has(n.id)) stage.set(n.id, 0);
+
+  // Per-node combinational depth within its stage.
+  // Counts combinational gates along the longest same-stage chain.
+  // Register/boundary nodes (PIPE_REG, INPUT, OUTPUT, CLOCK) pass-through without adding.
+  const depth = new Map();
+  for (const id of order) {
+    const n = nodeMap.get(id);
+    const s = stage.get(id);
+    let maxPred = 0;
+    for (const p of preds.get(id)) {
+      if (stage.get(p) === s) {
+        maxPred = Math.max(maxPred, depth.get(p) ?? 0);
+      }
+    }
+    const combinational = !ZERO_DEPTH_TYPES.has(n.type);
+    depth.set(id, combinational ? maxPred + 1 : maxPred);
+  }
+
+  // Write back metadata (derived field — analyzer owns it)
+  for (const n of nodes) n.stage = stage.get(n.id) ?? null;
+
+  // Collect per-stage summary
+  const stageCount = nodes.length ? Math.max(0, ...stage.values()) + 1 : 0;
+  const stages = [];
+  for (let i = 0; i < stageCount; i++) stages.push({ idx: i, nodes: [], depth: 0 });
+  for (const n of nodes) {
+    const s = stage.get(n.id);
+    if (s == null || s < 0) continue;
+    stages[s].nodes.push(n.id);
+    const d = depth.get(n.id) ?? 0;
+    if (d > stages[s].depth) stages[s].depth = d;
+  }
+
+  let bottleneck = -1;
+  for (let i = 0; i < stages.length; i++) {
+    if (bottleneck < 0 || stages[i].depth > stages[bottleneck].depth) bottleneck = i;
+  }
+
+  return {
+    stages,
+    cycles: stageCount,            // latency in clock cycles (stage count)
+    bottleneck,                    // stage index of the largest depth
+    hasCycle,                      // true if feedback loop detected
+  };
+}

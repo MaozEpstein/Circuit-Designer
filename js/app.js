@@ -27,6 +27,7 @@ import { SelectionManager } from './ui/SelectionManager.js';
 import { AnnotationLayer } from './ui/AnnotationLayer.js';
 import { ProjectStorage } from './ui/ProjectStorage.js';
 import { exportCircuit as exportVerilog } from './hdl/VerilogExporter.js';
+import { PipelineAnalyzer } from './pipeline/PipelineAnalyzer.js';
 
 // ── Singletons ──────────────────────────────────────────────
 const scene    = new SceneGraph();
@@ -35,6 +36,7 @@ const shortcuts = new ShortcutManager();
 const state    = new StateManager();
 const commands = new CommandManager(100);
 const simCtrl  = new SimulationController();
+const pipelineAnalyzer = new PipelineAnalyzer(scene);
 const probes     = new ProbeManager();
 const watchList  = new WatchList();
 const tracer     = new SignalTracer();
@@ -1993,6 +1995,17 @@ bus.on('palette:action', (action) => {
     case 'zoom-fit': Renderer.zoomToFit(scene.nodes); break;
     case 'gen-truthtable': document.getElementById('btn-gen-truthtable')?.click(); break;
     case 'toggle-stageview': bus.emit('pipeline:stageview:toggle'); _showRomNotification('Stage View — coming in Phase 4'); break;
+    case 'analyze-pipeline': {
+      const r = pipelineAnalyzer.analyze({ force: true });
+      console.group('[Pipeline] analyze');
+      console.log(`cycles (latency) = ${r.cycles}`);
+      console.log(`bottleneck stage = ${r.bottleneck} (depth ${r.stages[r.bottleneck]?.depth ?? 0})`);
+      if (r.hasCycle) console.warn('feedback loop detected — stages may be incomplete');
+      console.table(r.stages.map(s => ({ stage: s.idx, depth: s.depth, nodes: s.nodes.length, ids: s.nodes.join(',') })));
+      console.groupEnd();
+      _showRomNotification(`Pipeline: ${r.cycles} stage${r.cycles===1?'':'s'}, bottleneck #${r.bottleneck} (depth ${r.stages[r.bottleneck]?.depth ?? 0})`);
+      break;
+    }
   }
 });
 bus.on('palette:select-node', (nodeId) => {
@@ -3038,8 +3051,8 @@ const EXAMPLES = [
   },
   {
     id: 'pipeline-demo',
-    title: 'Pipeline Demo (2-stage)',
-    desc: 'Evolving pipelining reference: AND feeds a PIPE register, output ORed with C. Grows with every Pipelining Plan phase.',
+    title: 'Pipeline Demo (3-stage)',
+    desc: 'Evolving pipelining reference: AND → PIPE1 → fan-out to (NOT, OR+C) → PIPE2/PIPE3 → XOR → Q. Run "Analyze Pipeline" (Ctrl+K) to see 3 stages.',
     tags: ['pipeline', 'PIPE', 'CLK'],
     file: 'examples/circuits/pipeline-demo.json',
   },
@@ -3147,6 +3160,9 @@ function start() {
 
   // Start render loop
   _rafId = requestAnimationFrame(tick);
+
+  // Expose handles for pipeline debugging via DevTools console.
+  window.pipeline = { analyzer: pipelineAnalyzer, analyze: () => pipelineAnalyzer.analyze({ force: true }), scene };
 
   console.log('[Circuit Designer Pro] initialized');
 }
