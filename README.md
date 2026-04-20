@@ -680,6 +680,196 @@ Kept visible so future contributors inherit the caveats that drove the design, n
 
 ---
 
+## Pipelining — Development Plan
+
+**Status**: design-stage. Prioritized ahead of the HDL Toolchain so pipeline-aware IR is available when HDL export matures.
+
+**Goal**: Turn Circuit-Designer into a pipeline-aware EDA tool — identify stages, measure latency/throughput/f_max, flag cross-stage violations, support stall/flush and valid/ready handshake, detect hazards, and (stretch) auto-retime. Culminates in pipeline-aware Verilog export that feeds back into the HDL Toolchain.
+
+**Architecture overview**: dedicated `js/pipeline/` feature folder (mirrors `cpu/`, `hdl/`, `waveform/`), with minimal, targeted hooks in `components/`, `core/`, `engine/`, `ui/`, and `hdl/`. One feature = one folder; shared code stays in the kernel.
+
+### Running "PIPELINE" Example
+Each phase — whenever applicable — adds to / updates a single evolving reference circuit: **`examples/pipeline-demo.json`**. It starts as the simplest possible pipelined design and grows with every new capability (stages, stall/flush, handshake, hazards, retime). At the end of the plan it is the canonical showcase: opens in-app, exercises every pipeline feature, matches a ready-to-run Verilog cosim in `examples/pipeline-demo.v`.
+
+Per-phase update obligations are listed as **Example update** bullets inside each phase.
+
+### Per-Phase Commit Discipline
+Every phase ends with a commit — message format `pipeline(phase-N): <short summary>`. Scope: code + docs + example update for that phase, nothing else. Checkboxes in this plan are ticked in the same commit.
+
+---
+
+### Phase 1 — Foundations (Component + Metadata)
+**Goal**: `PIPE_REG` is a first-class pipeline element; every node carries a `stage` field.
+- [ ] Extend `PIPE_REG` in `js/components/Component.js`: add `enable`, `clear`/`flush`, optional `valid`/`ready` ports; width parameter (`channels` 1–64).
+- [ ] Add derived `stage: number | null` to node metadata in `SceneGraph` (computed, not persisted).
+- [ ] Add `pipelineRole: 'data'|'control'|'register'|'boundary'` tag on nodes.
+- [ ] Palette: new **"Pipeline"** tab in `app.html`; move PIPE to it; add `HANDSHAKE` + `STAGE_BOUNDARY` stubs.
+- [ ] Command palette entries: *Insert PIPE Register*, *Toggle Stage View*.
+- **Example update**: create `examples/pipeline-demo.json` — minimal 2-stage design (INPUT → AND → PIPE_REG → OR → OUTPUT) to exercise the new fields.
+- **Deliverable**: user drops a width-N PIPE, wires through, field nullable until analyzed.
+- **Verify L1** — unit: serialize/deserialize preserves new fields.
+- **Verify L2** — manual: drop PIPE, wire through, simulate → output arrives 1 cycle later.
+
+### Phase 2 — Stage Evaluator (core pass)
+**Goal**: clean, reusable levelization + per-stage depth pass (currently missing from the engine).
+- [ ] `js/pipeline/StageEvaluator.js`: BFS/topo-sort from inputs; cut at every `PIPE_REG`; assign `node.stage` 0..K-1; compute per-stage logic depth (gate levels initially).
+- [ ] Public API: `evaluate(scene) → { stages: Stage[], cycles: number, bottleneck: stageIdx }`.
+- [ ] Cache invalidation on scene mutation via `EventBus`.
+- [ ] Support fan-out / fan-in across stages (multi-source, multi-sink wires).
+- **Example update**: extend `pipeline-demo.json` to 3 stages with a fan-out branch so the evaluator has something non-trivial to analyze.
+- **Deliverable**: `PipelineAnalyzer.analyze()` returns correct stages for linear, branching, merging pipelines.
+- **Verify L1** — unit: golden graphs (3-stage MAC, 5-stage RISC datapath).
+- **Verify L2** — integration: run on bundled `examples/`.
+
+### Phase 3 — Pipeline Panel (UI, read-only)
+**Goal**: visible panel with latency / throughput / per-stage table.
+- [ ] `js/pipeline/ui/PipelinePanel.js` — follows Waveform panel pattern: static container in `app.html`, controller manages visibility.
+- [ ] Panel shows: stage list (idx, depth, node count, bottleneck marker); summary (latency = K cycles, throughput = 1 / depth_max, balance ratio); *Highlight stage N* button → overlay on canvas.
+- [ ] Toggle via HUD button + shortcut.
+- [ ] Real-time update on scene mutation (debounced 200ms).
+- **Example update**: open `pipeline-demo.json` → confirm panel shows K=3, correct bottleneck; screenshot added as `examples/pipeline-demo.panel.png`.
+- **Deliverable**: user opens panel, sees accurate numbers, can highlight any stage.
+- **Verify L2** — manual on example circuits.
+- **Verify L3** — screenshot regression.
+
+### Phase 4 — Stage Overlay (canvas)
+**Goal**: color-code stages on the main canvas.
+- [ ] `js/pipeline/ui/StageOverlay.js` hook into `CanvasRenderer`.
+- [ ] Each stage a distinct hue (Theme-aware); bottleneck pulses red.
+- [ ] Optional mode: dim other stages when one is highlighted.
+- [ ] Toggle button: *Stage View* in design toolbar.
+- **Example update**: `pipeline-demo.json` now looks visually distinct under Stage View — colors per stage verified in screenshot.
+- **Verify L2** — manual: mixed-stage circuit, confirm colors + toggle.
+
+### Phase 5 — Cross-Stage Validation
+**Goal**: hard-flag wires that jump stages without an intervening `PIPE_REG`.
+- [ ] `SceneGraph.validatePipeline()` → `Violation[]` (wires where `srcStage !== dstStage - 1` without a PIPE between).
+- [ ] Violations listed in panel (red, click → jump-to-wire).
+- [ ] `ErrorOverlay` integration: red highlight on offending wires.
+- [ ] Warning mode in simulation; blocks HDL export.
+- **Example update**: add sibling `examples/pipeline-demo.bad.json` — same circuit with a deliberate cross-stage wire to showcase the violation UI.
+- **Verify L1** — unit: synthetic violation cases.
+- **Verify L2** — manual: create bad wire, confirm flag.
+
+### Phase 6 — Per-Stage Critical Path + Bottleneck
+**Goal**: real delay model, not just gate count.
+- [ ] Per-gate-type delay table (configurable, defaults in picoseconds).
+- [ ] `StageEvaluator` switches to weighted longest-path.
+- [ ] Bottleneck visualization: the exact path highlighted in the overlay.
+- [ ] Panel shows max delay per stage, slack, **f_max** estimate.
+- **Example update**: enrich `pipeline-demo.json` with an imbalanced stage (extra gates in stage 2) so bottleneck highlighting is visible; record f_max in a comment field.
+- **Verify L1** — unit: known-delay circuits.
+- **Verify L2** — manual: adjust delays, observe f_max change.
+
+### Phase 7 — Stall / Flush (synchronous control)
+**Goal**: PIPE register responds to `enable` (stall) and `clear` (flush/bubble).
+- [ ] `SimulationEngine`: respect `PIPE_REG.enable` (skip capture if 0) and `clear` (drive 0).
+- [ ] Palette commands: *Insert Stall* / *Insert Flush* auto-wire control lines.
+- [ ] Panel per-stage indicator (stalled / bubble).
+- **Example update**: wire an `enable` + `clear` input into `pipeline-demo.json` — toggle in-app to demonstrate stall and flush on the same circuit.
+- **Verify L1** — unit: clock with stall → data frozen.
+- **Verify L2** — manual: RISC hazard scenario.
+
+---
+
+**Milestone 1 (Phases 1–7)**: *"Pipeline-aware design + static analysis + basic control."* The tool can model a pipeline, measure it, validate it, stall it. Ship-ready mid-point.
+
+---
+
+### Phase 8 — Valid / Ready Handshake (elastic pipeline)
+**Goal**: proper back-pressure between stages.
+- [ ] `HANDSHAKE` component bundles `valid` / `ready`.
+- [ ] Convention: `ready` backward, `valid` forward; auto-stall upstream when downstream not ready.
+- [ ] Analyzer identifies elastic segments; panel marks them.
+- [ ] Example templates: FIFO-separated stages.
+- **Example update**: promote `pipeline-demo.json` to elastic — insert HANDSHAKE between stages; toggling downstream `ready=0` freezes the whole chain visibly.
+- **Verify L1** — unit: 3-stage elastic, downstream stall → upstream freezes.
+- **Verify L2** — manual: elastic pipeline, observe correct behavior in waveform.
+
+### Phase 9 — Hazard Detection
+**Goal**: detect RAW / WAR / WAW across stages with feedback.
+- [ ] Analyze back-edges where a later stage writes a node read earlier.
+- [ ] Report: hazard type, source stage, sink stage, offending signal.
+- [ ] Suggestion engine: *"insert forwarding mux here"* or *"insert PIPE to match stages."*
+- [ ] Panel tab **"Hazards"**.
+- **Example update**: add a feedback arc to `pipeline-demo.json` that creates a RAW hazard; panel flags it and proposes a forwarding mux — screenshot saved.
+- **Verify L1** — unit: classic 5-stage RISC hazards.
+- **Verify L2** — manual: construct hazard, confirm report + placement suggestion.
+
+### Phase 10 — Auto-Retime (Leiserson–Saxe)
+**Goal**: optionally move `PIPE_REG`s to balance stages while preserving semantics.
+- [ ] `js/pipeline/Retimer.js` — classic retiming on the sequential graph.
+- [ ] Opt-in: *Suggest Retiming* → preview overlay → accept/reject.
+- [ ] Invariants preserved: initial state + I/O behavior, verified by simulation diff on N random vectors.
+- [ ] Fallback: if verification fails, revert and warn.
+- **Example update**: snapshot `pipeline-demo.json` pre-retime; accept the retime suggestion; commit the retimed version alongside as `pipeline-demo.retimed.json` for before/after comparison.
+- **Verify L1** — unit: known retimeable graphs reach optimal balance.
+- **Verify L2** — manual: unbalanced pipeline → accept suggestion → latency same, throughput up.
+- **Verify L3** — differential sim: N random vectors, before/after outputs identical at matching cycle offset.
+
+### Phase 11 — HDL Export Integration
+**Goal**: pipeline structure survives Verilog export.
+- [ ] Extend `js/hdl/VerilogExporter.js`: stage-wise `always @(posedge clk)` with `if (enable) q <= d;` / `if (clear) q <= 0;` semantics.
+- [ ] Stage comments (`// Stage 2: ALU`).
+- [ ] Export blocked on violations (override with `--force`).
+- [ ] IR additions for stage metadata — shared with HDL Toolchain once it starts.
+- **Example update**: export `pipeline-demo.json` → commit generated `examples/pipeline-demo.v`; matches in-tool simulation for golden input vectors.
+- **Verify L2** — export sample pipeline → inspect generated Verilog.
+- **Verify L3** — `iverilog` cosim: same vectors, matching outputs.
+
+### Phase 12 — Templates, Docs, Examples
+**Goal**: onboarding + reusable building blocks.
+- [ ] `examples/`: 3-stage MAC, 5-stage RISC skeleton, elastic FIFO chain, hazard demo, retime demo.
+- [ ] README section: *Pipelining — Quick Start*.
+- [ ] In-app tutorial overlay (optional) pointing to panel + shortcut.
+- **Example update**: `pipeline-demo.json` is the anchor example for the Quick Start — final polish pass on naming, labels, and initial panel layout.
+- **Verify L4** — user-level: onboard via Quick Start, measure time-to-first-pipeline.
+
+### Phase 13 — Polish, Telemetry, Stretch
+**Goal**: ready for upstream HDL Toolchain consumption.
+- [ ] Performance: analyzer < 50ms on 500-node pipelines (profile + memoize).
+- [ ] Keyboard shortcuts: `P` toggle panel, `Shift+P` overlay, `Ctrl+Shift+R` retime.
+- [ ] Local telemetry hooks: count analyses, panel opens.
+- [ ] Accessibility: colorblind palette variant for stage colors.
+- [ ] Stretch: latency-insensitive protocol (LIP) checker.
+- [ ] Stretch: clock-domain-crossing awareness (multi-clock pipelines).
+
+---
+
+### Success Criteria (end-of-plan)
+1. Any pipelined design built in the tool is analyzed, validated, and visualized.
+2. Latency, throughput, and f_max reported accurately.
+3. Stall/flush and valid/ready primitives work end-to-end (waveform-verified).
+4. Hazards detected; fixes suggested.
+5. Auto-retime preserves semantics on random-vector diff.
+6. Exported Verilog preserves pipeline structure and passes cosim.
+
+### Module Layout (final)
+```
+js/pipeline/
+├── PipelineAnalyzer.js         # public API, event wiring
+├── StageEvaluator.js           # levelization + critical path
+├── PipelineState.js            # metrics, cached results
+├── HazardDetector.js           # RAW/WAR/WAW
+├── Retimer.js                  # Leiserson–Saxe
+└── ui/
+    ├── PipelinePanel.js        # side panel
+    └── StageOverlay.js         # canvas color overlay
+```
+Plus minor hooks in: `components/Component.js`, `core/SceneGraph.js`, `engine/SimulationEngine.js`, `hdl/VerilogExporter.js`, `ui/CommandPalette.js`, `core/ShortcutManager.js`, `app.html`.
+
+### Known Risks
+
+| Risk | Mitigation |
+|------|------------|
+| Critical-path pass slow on large circuits | Memoize + incremental update on mutation |
+| Retiming breaks semantics on corner cases | Random-vector diff gate before commit |
+| Stall/flush interact unexpectedly with memory | Dedicated unit tests per FF type |
+| Palette gets too crowded | New "Pipeline" tab, not overload CPU tab |
+| HDL export + pipeline metadata clash with Phase 2 of HDL plan | Share IR; co-design the `stage` field |
+
+---
+
 ## License
 
 MIT
