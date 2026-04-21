@@ -487,6 +487,7 @@ The IR is introduced *before* any more translators are written, so every subsequ
 - [x] Implement `ir/fromCircuit.js` — rewrites the net-gathering logic from Phase 1 into IR construction with formalised translator `ctx` API (`netOf`, `widthOf`, `instanceName`, `sanitize`).
 - [x] Implement `ir/toVerilog.js` — deterministic pretty printer (sorted portMap / params, explicit determinism contract). Produces byte-identical output for structurally-identical IR.
 - [x] Implement `ir/equals.js` — structural equality via canonicalised JSON (ignores `sourceRef` / `attributes`), plus `equalsByVerilog` fallback.
+- [ ] **Pipeline metadata** (merged in from the old *Pipelining Phase 11*) — `fromCircuit` copies each node's `stage` field (populated by the pipelining analyzer) into `IRInstance.attributes.stage`. Consumed by the Phase 4 PIPE translator (stall/flush semantics) and the Phase 7 export UX (stage comments + violation-gate). The IR type system needs no change — `attributes[]` was designed exactly for opaque cross-phase metadata.
 - [x] Refactor `VerilogExporter.js` to the 3-stage pipeline: `validateCircuit → fromCircuit → toVerilog`. Phase 1 tests pass unchanged.
 - [x] Implement `verify/iverilog.js` — detects iverilog on PATH, wraps `iverilog -g2012 -o out.vvp … && vvp out.vvp`, returns `{ vcd, stderr, ok, skipped }`. Skips cleanly if iverilog absent.
 - [x] Implement `verify/vcdDiff.js` — parses two VCDs, aligns by signal name + time, reports first divergence with context.
@@ -520,7 +521,10 @@ Start with one gate end-to-end through **all four verification tiers including Y
 - [ ] Registers (N-bit, EN / CLR / CLK).
 - [ ] Shift Register (bidirectional, parametric width).
 - [ ] Counter (EN / LOAD / DATA / CLR) with TC output.
-- [ ] Pipeline Register (STALL / FLUSH).
+- [ ] **Pipeline Register** (`PIPE_REG`) — full pipeline-aware translation (merged in from the old *Pipelining Phase 11*):
+  - Stage-wise `always @(posedge clk)` with `if (!stall) q <= d;` / `if (flush) q <= 0;` semantics, mirroring the engine's runtime behaviour.
+  - `stage` attribute (placed on the IR node by `fromCircuit`) preserved through to Verilog as a leading comment (`// Stage N: <label>`) so the generated HDL is navigable without losing the pipeline structure.
+  - **L2/L3 gate**: a scripted stimulus across `examples/circuits/pipeline-demo.json` must produce a VCD that matches the native simulation bit-for-bit over ≥256 cycles after the standard stability window.
 - [ ] Clock tree correctness — a circuit with multiple clock domains must emit each `always` block sensitive to the correct clock.
 - [ ] **L1/L2/L3 gate**: clocked stimulus simulated in both engines for ≥1024 cycles, VCD identical; round-trip through IR stable.
 - [ ] `examples/tests/test-hdl-sequential.mjs`.
@@ -554,6 +558,8 @@ One-click flow, no configuration needed for the common case.
 - [ ] Testbench generator — emits `<top>_tb.v` that replays the current waveform stimulus and dumps a VCD; bundled in the project zip.
 - [ ] Error surface — any component lacking a translator → non-blocking warning panel with component type, `id`, and the `// TODO:` line number in the preview.
 - [ ] Progress indicator for designs with >1000 components (should still be <1 s, but feedback is mandatory).
+- [ ] **Pipeline-violation gate** (merged in from the old *Pipelining Phase 11*) — when the pipelining analyzer reports cross-stage violations on the circuit, `exportCircuit` refuses to produce Verilog and the modal surfaces the violation list with a *"force anyway"* checkbox. Override sets `options.forcePipelineViolations = true`, which emits the Verilog unchanged but tags every offending wire with a `// WARNING: pipeline violation` comment.
+- [ ] Stage comments pass — when IR nodes carry a `stage` attribute (set by `fromCircuit` from the pipeline analysis), the pretty-printer groups instances by stage and emits `// ─── Stage N ───` dividers between groups. Applies to `toVerilog` generally, not just to PIPE registers.
 - [ ] `examples/tests/test-hdl-export-ux.mjs` (DOM-only, no browser).
 
 #### Phase 8 — Hand-Written Verilog Lexer & Parser (Fidelity Layer)
@@ -851,15 +857,8 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 - **Verify L2** — manual: unbalanced pipeline → accept suggestion → latency same, throughput up.
 - **Verify L3** — differential sim: N random vectors, before/after outputs identical at matching cycle offset.
 
-### Phase 11 — HDL Export Integration
-**Goal**: pipeline structure survives Verilog export.
-- [ ] Extend `js/hdl/VerilogExporter.js`: stage-wise `always @(posedge clk)` with `if (enable) q <= d;` / `if (clear) q <= 0;` semantics.
-- [ ] Stage comments (`// Stage 2: ALU`).
-- [ ] Export blocked on violations (override with `--force`).
-- [ ] IR additions for stage metadata — shared with HDL Toolchain once it starts.
-- **Example update**: export `pipeline-demo.json` → commit generated `examples/pipeline-demo.v`; matches in-tool simulation for golden input vectors.
-- **Verify L2** — export sample pipeline → inspect generated Verilog.
-- **Verify L3** — `iverilog` cosim: same vectors, matching outputs.
+### Phase 11 — *moved to the HDL Toolchain plan*
+Pipeline-aware Verilog export is fundamentally HDL-generation work, not pipeline-analysis work: the code lives in [js/hdl/](js/hdl/), the relevant `PIPE_REG` translator sits alongside the other sequential translators, and gating export on pipeline violations is an exporter-UX concern. Those responsibilities were migrated into the **HDL Toolchain** plan (see Phase 2, Phase 4, and Phase 7 of that plan for the specific bullets). This slot in the pipelining plan is kept as a cross-reference marker so the phase numbering stays stable for prior commits.
 
 ### Phase 12 — Templates, Docs, Examples
 **Goal**: onboarding + reusable building blocks.
@@ -902,7 +901,7 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 4. Hardware hazards detected; fixes suggested.
 5. Program-level hazards detected per-ISA; MIPS-5 demos report correct RAW / load-use bubble counts (Phase 9.5), and forwarding-aware suppression matches a reference ISS (Phase 14).
 6. Auto-retime preserves semantics on random-vector diff.
-7. Exported Verilog preserves pipeline structure and passes cosim.
+7. *Pipeline-aware Verilog export is owned by the HDL Toolchain plan (see its Phase 4 + 7). Not a deliverable of this plan.*
 
 ### Module Layout (final)
 ```
@@ -923,7 +922,7 @@ js/pipeline/
     ├── PipelinePanel.js        # side panel (Hazards + Program Hazards sections)
     └── StageOverlay.js         # canvas color overlay
 ```
-Plus minor hooks in: `components/Component.js`, `core/SceneGraph.js`, `engine/SimulationEngine.js`, `hdl/VerilogExporter.js`, `ui/CommandPalette.js`, `core/ShortcutManager.js`, `app.html`.
+Plus minor hooks in: `components/Component.js`, `core/SceneGraph.js`, `engine/SimulationEngine.js`, `ui/CommandPalette.js`, `core/ShortcutManager.js`, `app.html`. (HDL export hooks belong to the HDL Toolchain plan — this module does not touch `js/hdl/`.)
 
 ### Known Risks
 
@@ -933,7 +932,7 @@ Plus minor hooks in: `components/Component.js`, `core/SceneGraph.js`, `engine/Si
 | Retiming breaks semantics on corner cases | Random-vector diff gate before commit |
 | Stall/flush interact unexpectedly with memory | Dedicated unit tests per FF type |
 | Palette gets too crowded | New "Pipeline" tab, not overload CPU tab |
-| HDL export + pipeline metadata clash with Phase 2 of HDL plan | Share IR; co-design the `stage` field |
+| HDL export + pipeline metadata clash | Resolved by moving pipeline-aware export into the HDL Toolchain plan (Phase 2 / 4 / 7); no `js/hdl/` code is owned by this module |
 | ISA JSON proliferates (Phase 9.5 Medium) | Ship MIPS-I + nano-MIPS as reference; validate user JSON against a schema at load time |
 | Auto-ISA inference (Phase 14) brittle on non-MIPS datapaths | Fall back to explicit ISA JSON when inference confidence is low; surface a "confidence score" in the panel |
 | Forwarding-mux pattern matching (Phase 14) too strict / too loose | Unit-test against both hand-built forwarded MIPS and deliberately mis-wired variants; require user-toggleable override |
