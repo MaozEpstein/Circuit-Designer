@@ -1,0 +1,61 @@
+{
+  "nodes": [
+    { "type": "INPUT",     "x": -520, "y": -350, "fixedValue": 1, "label": "A",       "id": "a_in"  },
+    { "type": "GATE_SLOT", "x": -340, "y": -350, "gate": "XOR",   "label": "XOR_A",   "id": "a_xor" },
+    { "type": "PIPE_REG",  "x": -160, "y": -350, "channels": 1, "pipelineRole": "register", "stage": null, "label": "PIPE_A1", "id": "a_p1"  },
+    { "type": "GATE_SLOT", "x":   20, "y": -350, "gate": "NOT",   "label": "NOT_A",   "id": "a_not" },
+    { "type": "PIPE_REG",  "x":  200, "y": -350, "channels": 1, "pipelineRole": "register", "stage": null, "label": "PIPE_A2", "id": "a_p2"  },
+    { "type": "OUTPUT",    "x":  400, "y": -350, "targetValue": 0, "sandbox": true, "label": "Q_RAW",  "id": "a_out" },
+
+    { "type": "INPUT",     "x": -520, "y": -150, "fixedValue": 0, "label": "SEED",    "id": "b_seed" },
+    { "type": "GATE_SLOT", "x": -340, "y": -150, "gate": "NAND",  "label": "NAND_B1", "id": "b_g1"   },
+    { "type": "GATE_SLOT", "x": -160, "y": -150, "gate": "NAND",  "label": "NAND_B2", "id": "b_g2"   },
+    { "type": "OUTPUT",    "x":   20, "y": -150, "targetValue": 0, "sandbox": true, "label": "Q_LOOP", "id": "b_out"  },
+
+    { "type": "INPUT",     "x": -520, "y":   60, "fixedValue": 1, "label": "B",       "id": "c_in"  },
+    { "type": "PIPE_REG",  "x": -340, "y":   60, "channels": 2, "pipelineRole": "register", "stage": null, "label": "PIPE_C1", "id": "c_p1"  },
+    { "type": "GATE_SLOT", "x": -160, "y":   60, "gate": "AND",   "label": "AND_C",   "id": "c_and" },
+    { "type": "PIPE_REG",  "x":   20, "y":   60, "channels": 1, "pipelineRole": "register", "stage": null, "label": "PIPE_C2", "id": "c_p2"  },
+    { "type": "OUTPUT",    "x":  200, "y":   60, "targetValue": 0, "sandbox": true, "label": "Q_WAR", "id": "c_out" },
+
+    { "type": "INPUT",     "x": -520, "y":  240, "fixedValue": 1, "label": "C",       "id": "d_in_c" },
+    { "type": "INPUT",     "x": -520, "y":  320, "fixedValue": 0, "label": "D",       "id": "d_in_d" },
+    { "type": "PIPE_REG",  "x": -340, "y":  240, "channels": 1, "pipelineRole": "register", "stage": null, "label": "PIPE_D1", "id": "d_p1"  },
+    { "type": "PIPE_REG",  "x": -340, "y":  320, "channels": 1, "pipelineRole": "register", "stage": null, "label": "PIPE_D2", "id": "d_p2"  },
+    { "type": "GATE_SLOT", "x": -140, "y":  280, "gate": "XOR",   "label": "XOR_D",   "id": "d_xor" },
+    { "type": "OUTPUT",    "x":   60, "y":  280, "targetValue": 0, "sandbox": true, "label": "Q_WAW", "id": "d_out" },
+
+    { "type": "CLOCK",     "x": -160, "y":  460, "value": 0, "id": "clk" }
+  ],
+  "wires": [
+    { "id": "wa1", "sourceId": "a_in",  "targetId": "a_xor", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wa2", "sourceId": "a_xor", "targetId": "a_p1",  "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wa3", "sourceId": "clk",   "targetId": "a_p1",  "targetInputIndex": 3, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true  },
+    { "id": "wa4", "sourceId": "a_p1",  "targetId": "a_not", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wa5", "sourceId": "a_not", "targetId": "a_p2",  "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wa6", "sourceId": "clk",   "targetId": "a_p2",  "targetInputIndex": 3, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true  },
+    { "id": "wa7", "sourceId": "a_p2",  "targetId": "a_out", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wa_raw", "sourceId": "a_p2", "targetId": "a_xor", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [{ "x": 200, "y": -440 }, { "x": -340, "y": -440 }], "netName": "raw_feedback", "colorGroup": null, "isClockWire": false },
+
+    { "id": "wb1", "sourceId": "b_seed", "targetId": "b_g1", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wb2", "sourceId": "b_g1",   "targetId": "b_g2", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wb3", "sourceId": "b_g2",   "targetId": "b_out", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wb_loop", "sourceId": "b_g2", "targetId": "b_g1", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [{ "x": -160, "y": -80 }, { "x": -340, "y": -80 }], "netName": "comb_loop", "colorGroup": null, "isClockWire": false },
+
+    { "id": "wc1", "sourceId": "c_in",  "targetId": "c_p1",  "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wc2", "sourceId": "clk",   "targetId": "c_p1",  "targetInputIndex": 4, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true  },
+    { "id": "wc3", "sourceId": "c_p1",  "targetId": "c_and", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wc4", "sourceId": "c_and", "targetId": "c_p2",  "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wc5", "sourceId": "clk",   "targetId": "c_p2",  "targetInputIndex": 3, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true  },
+    { "id": "wc6", "sourceId": "c_p2",  "targetId": "c_out", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wc_war", "sourceId": "c_and", "targetId": "c_p1", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [{ "x": -160, "y": 140 }, { "x": -340, "y": 140 }], "netName": "war_feedback", "colorGroup": null, "isClockWire": false },
+
+    { "id": "wd1", "sourceId": "d_in_c", "targetId": "d_p1", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wd2", "sourceId": "d_in_d", "targetId": "d_p2", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wd3", "sourceId": "clk",    "targetId": "d_p1", "targetInputIndex": 3, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true  },
+    { "id": "wd4", "sourceId": "clk",    "targetId": "d_p2", "targetInputIndex": 3, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true  },
+    { "id": "wd5", "sourceId": "d_p1",   "targetId": "d_xor", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wd6", "sourceId": "d_p2",   "targetId": "d_xor", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false },
+    { "id": "wd7", "sourceId": "d_xor",  "targetId": "d_out", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false }
+  ]
+}

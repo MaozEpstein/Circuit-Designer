@@ -51,6 +51,16 @@ export class PipelinePanel {
     bus.on('wire:removed', schedule);
     bus.on('scene:loaded', schedule);
     bus.on('scene:cleared', schedule);
+
+    // Label renames (or other property edits) don't change the hazard graph,
+    // so we re-render from the cached analyzer result instead of re-analyzing.
+    // This keeps the displayed node names in the Violations / Hazards rows
+    // in sync with live edits.
+    bus.on('node:props-changed', () => {
+      if (!this._visible) return;
+      const cached = this._analyzer.analyze();   // cache-hit, no recompute
+      this._render(cached);
+    });
   }
 
   show() {

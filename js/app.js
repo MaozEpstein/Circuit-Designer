@@ -1105,8 +1105,10 @@ document.getElementById('btn-reset')?.addEventListener('click', () => {
   state.ffStates.clear();
   state.resetSequentialState(scene.nodes);
   simCtrl.reset();
-  Waveform.reset();
-  Waveform.setSignals(scene.nodes);
+  // Clear recorded history but keep the user's tracked signals — RESET is a
+  // simulation reset, not a waveform re-setup, so the signals the user added
+  // to the wave view should stay there, ready for the next run.
+  Waveform.clearHistory();
   _updateStepCount();
 });
 
@@ -3193,6 +3195,13 @@ const EXAMPLES = [
     file: 'examples/circuits/pipeline-demo-hazard.json',
   },
   {
+    id: 'pipeline-demo-hazard-all',
+    title: 'Pipeline Demo — All Hazards (RAW/WAR/WAW/LOOP)',
+    desc: 'Four isolated lanes, one hazard per lane: (top) RAW feedback through two PIPEs, (upper-mid) a pure combinational NAND loop, (lower-mid) a WAR feedback into a 2-channel PIPE, (bottom) a WAW collision with two PIPEs writing the same XOR pin. Open the Pipeline panel to see all four classified.',
+    tags: ['pipeline', 'hazard', 'RAW', 'WAR', 'WAW', 'LOOP'],
+    file: 'examples/circuits/pipeline-demo-hazard-all.json',
+  },
+  {
     id: 'mips-gcd',
     title: 'MIPS Datapath — Euclid GCD',
     desc: 'Single-cycle CPU laid out in 5 MIPS stages (Fetch/Decode/Execute/Memory/WB). Runs Euclid\u2019s GCD algorithm: gcd(12,8). Watch R1 converge to 4, then HALT.',
@@ -3204,10 +3213,26 @@ const EXAMPLES = [
 const examplesOverlay = document.getElementById('examples-overlay');
 const examplesList = document.getElementById('examples-list');
 
-function _showExamples() {
-  examplesList.innerHTML = EXAMPLES.map(ex => {
+const EXAMPLES_CATEGORIES = [
+  { id: 'beginner',     label: 'Beginner'     },
+  { id: 'intermediate', label: 'Intermediate' },
+  { id: 'advanced',     label: 'Advanced'     },
+  { id: 'pipeline',     label: 'Pipeline'     },
+];
+let _examplesActiveTab = 'beginner';
+
+function _categoryOf(ex) {
+  // Category is the first tag that matches a known category id.
+  for (const t of (ex.tags || [])) {
+    if (EXAMPLES_CATEGORIES.some(c => c.id === t)) return t;
+  }
+  return 'advanced';   // fallback bucket for un-categorized examples
+}
+
+function _renderExamplesCards(category) {
+  const cards = EXAMPLES.filter(ex => _categoryOf(ex) === category).map(ex => {
     const tagHtml = ex.tags.map(t => {
-      const level = t === 'beginner' ? 'beginner' : t === 'intermediate' ? 'intermediate' : t === 'advanced' ? 'advanced' : 'component';
+      const level = EXAMPLES_CATEGORIES.some(c => c.id === t) ? t : 'component';
       return `<span class="example-tag example-tag-${level}">${t.toUpperCase()}</span>`;
     }).join('');
     return `<div class="example-card" data-file="${ex.file}">
@@ -3216,8 +3241,9 @@ function _showExamples() {
       <div class="example-card-tags">${tagHtml}</div>
     </div>`;
   }).join('');
-
-  examplesList.querySelectorAll('.example-card').forEach(card => {
+  const container = examplesList.querySelector('.examples-cards');
+  container.innerHTML = cards || '<div class="examples-empty">No examples in this category yet.</div>';
+  container.querySelectorAll('.example-card').forEach(card => {
     card.addEventListener('click', async () => {
       const file = card.dataset.file;
       try {
@@ -3237,7 +3263,33 @@ function _showExamples() {
       examplesOverlay.classList.add('hidden');
     });
   });
+}
 
+function _showExamples() {
+  const counts = {};
+  for (const c of EXAMPLES_CATEGORIES) counts[c.id] = 0;
+  for (const ex of EXAMPLES) counts[_categoryOf(ex)]++;
+
+  const tabsHtml = EXAMPLES_CATEGORIES.map(c =>
+    `<button class="examples-tab${c.id === _examplesActiveTab ? ' active' : ''}" data-cat="${c.id}">
+       ${c.label}<span class="examples-tab-count">${counts[c.id]}</span>
+     </button>`
+  ).join('');
+
+  examplesList.innerHTML = `
+    <div class="examples-tabs">${tabsHtml}</div>
+    <div class="examples-cards"></div>
+  `;
+
+  examplesList.querySelectorAll('.examples-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _examplesActiveTab = btn.dataset.cat;
+      examplesList.querySelectorAll('.examples-tab').forEach(b => b.classList.toggle('active', b.dataset.cat === _examplesActiveTab));
+      _renderExamplesCards(_examplesActiveTab);
+    });
+  });
+
+  _renderExamplesCards(_examplesActiveTab);
   examplesOverlay.classList.remove('hidden');
 }
 

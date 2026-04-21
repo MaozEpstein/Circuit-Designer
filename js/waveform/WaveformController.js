@@ -4,7 +4,7 @@
  * actions funnel through here; the renderer stays pure.
  */
 
-import { state, reset as stateReset, setSignals as stateSetSignals, record as stateRecord, setRadix as stateSetRadix, visibleSignals, reorderSignal, toggleHidden, showAllSignals, valueAtStep, formatValue, signalBits, isBusSignal, radixFor, nextEdgeStep, prevEdgeStep, addBookmark, removeBookmarkAt, toggleGroup, runSearch, searchNext, searchPrev, serializeView, deserializeView, applyImport, showRecommended, isSignalVisible, clearAllSignals } from './WaveformState.js';
+import { state, reset as stateReset, clearHistory as stateClearHistory, setSignals as stateSetSignals, record as stateRecord, setRadix as stateSetRadix, visibleSignals, reorderSignal, toggleHidden, showAllSignals, valueAtStep, formatValue, signalBits, isBusSignal, radixFor, nextEdgeStep, prevEdgeStep, addBookmark, removeBookmarkAt, toggleGroup, runSearch, searchNext, searchPrev, serializeView, deserializeView, applyImport, showRecommended, isSignalVisible, clearAllSignals } from './WaveformState.js';
 import * as Renderer from './WaveformRenderer.js';
 import * as VCD from './WaveformVCD.js';
 import { METRICS } from './WaveformTheme.js';
@@ -30,6 +30,7 @@ export function init(canvasEl) {
 }
 
 export function reset()            { stateReset(); _requestRender(); }
+export function clearHistory()     { stateClearHistory(); _requestRender(); }
 export function setSignals(nodes)  { stateSetSignals(nodes); _requestRender(); }
 export function record(step, vals, wires) { stateRecord(step, vals, wires); _requestRender(); }
 export function isVisible()        { return state.visible; }

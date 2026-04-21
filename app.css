@@ -1668,8 +1668,10 @@
   background: #0a0e14;
   border: 1px solid #5a3d8a;
   border-radius: 10px;
-  width: 520px;
-  max-height: 75vh;
+  width: 96vw;
+  max-width: 1700px;
+  height: 92vh;
+  max-height: 94vh;
   overflow-y: auto;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -1695,12 +1697,14 @@
 }
 
 .example-card {
-  padding: 12px 14px;
-  margin: 4px 0;
+  padding: 14px 16px;
+  margin: 0;
   border: 1px solid #1a1228;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 
 .example-card:hover {
@@ -1711,14 +1715,15 @@
 .example-card-title {
   color: #c0a0f0;
   font-weight: bold;
-  font-size: 12px;
-  margin-bottom: 4px;
+  font-size: 15px;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
 }
 
 .example-card-desc {
-  color: #6a7a90;
-  font-size: 10px;
-  line-height: 1.4;
+  color: #8a9ab0;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .example-card-tags {
@@ -1757,6 +1762,77 @@
   background: #10101a;
   color: #5a6a80;
   border: 1px solid #1a1a28;
+}
+
+.examples-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px 0 8px;
+  border-bottom: 1px solid #2a1a40;
+  position: sticky;
+  top: 38px;
+  background: #0a0e14;
+  z-index: 1;
+}
+.examples-tab {
+  flex: 1;
+  background: transparent;
+  color: #6a7a90;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 8px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.examples-tab:hover {
+  color: #c0a0f0;
+  background: #140a28;
+}
+.examples-tab.active {
+  color: #c0a0f0;
+  background: #1a1430;
+  border-color: #3a2060;
+  border-bottom-color: #1a1430;
+  margin-bottom: -1px;
+}
+.examples-tab-count {
+  background: #2a1a40;
+  color: #a080d0;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+.examples-tab.active .examples-tab-count {
+  background: #3a2060;
+  color: #d8b8ff;
+}
+.examples-cards {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .examples-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .examples-cards { grid-template-columns: 1fr; }
+}
+.examples-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #5a6a80;
+  font-size: 11px;
 }
 
 /* ── General Fixes ───────────────────────────────────────── */

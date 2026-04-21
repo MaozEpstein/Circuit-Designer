@@ -63,6 +63,19 @@ export function reset() {
   state.signalMax = new Map();
 }
 
+/**
+ * Clear only the recorded history (and stale bus-width maxes). Leaves the
+ * signal list and the user's curation (hiddenSignals / signalOrder) intact.
+ * Used by the simulation RESET button — design is unchanged, so the tracked
+ * signals should stay tracked.
+ */
+export function clearHistory() {
+  state.history = [];
+  state.signalMax = new Map();
+  state.zoom = 1;
+  state.panOffset = 0;
+}
+
 const TYPE_TO_GROUP = {
   clock: 'Clock',
   input: 'Inputs',

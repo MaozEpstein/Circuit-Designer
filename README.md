@@ -791,6 +791,28 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 - **Example update**: `examples/circuits/pipeline-demo-hazard.json` — 2-PIPE forward path + feedback arc from PIPE2 back to XOR (stage-0 reader) → classic RAW flagged on load. Registered in the Examples menu as *Pipeline Demo — RAW Hazard*.
 - **Tests**: `examples/tests/test-pipeline-phase9.mjs` — 14 checks across the hazard demo (RAW on `w_raw`), a synthetic 2-NOT combinational loop (LOOP), a WAW collision (two PIPEs → same XOR pin), and the clean demos (no false positives).
 
+### Phase 9.5 — Program Hazard Analysis (ISA-level)
+**Goal**: detect RAW / WAR / WAW / load-use hazards **between consecutive instructions in ROM**, independently of the hardware graph. Phase 9 detects topological hazards in the datapath; Phase 9.5 detects hazards in the *program* running on that datapath. Two sub-milestones — **Easy** (hardcoded MIPS-5) ships first, then **Medium** (user-defined ISA + branches).
+
+**Easy (MVP — hardcoded MIPS 5-stage):**
+- [ ] `js/pipeline/isa/mips.js` — MIPS-I opcode table: `{opcode → {name, reads:[rs,rt], writes:[rd], fields:{rs:[25,21],rt:[20,16],rd:[15,11],imm:[15,0]}, latency, isLoad, isBranch}}`. Covers the ops used in `simple-cpu` + `mips-gcd`.
+- [ ] `js/pipeline/InstructionDecoder.js` — reads a ROM node's memory, decodes word-by-word into `Array<{pc, raw, opcode, rs, rt, rd, imm}>`.
+- [ ] `js/pipeline/ProgramHazardDetector.js` — pipeline-window scan with `W=5`. For each pair `(i, j)` with `j - i < W`: if `j` reads a register that `i` writes, emit `{type:RAW, loadUse:(i.isLoad && j-i===1), instI:i.pc, instJ:j.pc, reg, bubbles: W - (j - i) - 1}`. WAR/WAW fall out the same way under OOO; for a strict in-order 5-stage, report them as informational. Assumes no forwarding (Phase 14 adds that).
+- [ ] Panel section **PROGRAM HAZARDS (N)** — rows like `PC 0x04 → PC 0x08  RAW on R1  (2 bubbles)` with a tooltip showing the decoded source/sink instructions. Clickable → highlights the two ROM addresses.
+
+**Medium (user-defined ISA + branches):**
+- [ ] ISA as data: `examples/isa/*.json` — `{name, wordBits, opcodes: {...}}`. Loader in `js/pipeline/isa/IsaLoader.js`.
+- [ ] ISA picker: dropdown in the Pipeline panel header + auto-detect via `scene.meta.isaId` stored on the ROM node.
+- [ ] Branch handling: for each branch, analyze the fall-through *and* the target path within the pipeline window; emit hazards that appear on any path (annotated with which path).
+- [ ] Loop detection: if a branch target PC is ≤ current PC, report "steady-state" hazards in the loop body separately from cold-start hazards in the header row (`3 RAW (steady-state in loop @ 0x0C)`).
+- [ ] Pipeline-depth knob: ISA JSON carries `pipelineDepth` (default 5); the window scanner uses it.
+
+- **Example update**: `examples/circuits/pipeline-demo-program.json` — minimal MIPS-style datapath with a 4-instruction ROM containing a deliberate RAW (`ADD R1,R2,R3` → `SUB R4,R1,R5`) and a load-use (`LW R3,0(R2)` → `ADD R5,R3,R6`). Registered in the Examples menu. `pipeline-demo-program-isa.json` variant carries the ISA JSON reference, exercising the Medium loader.
+- **Tests**: `examples/tests/test-pipeline-phase9-5.mjs` — textbook RAW / load-use / WAR / WAW sequences; branch-path hazards; loop steady-state detection. Plus: no false positives on NOP-padded clean programs.
+- **Verify L1** — unit: Patterson & Hennessy classic 3-instruction hazard sequences produce the documented bubble counts.
+- **Verify L2** — manual: open `mips-gcd` → Program Hazards tab lists the loop-body hazards with correct PCs.
+- **Verify L3** — differential: hand-insert the reported number of NOPs into the ROM, re-run simulation; outputs match the un-padded version at shifted cycle offsets.
+
 ### Phase 10 — Auto-Retime (Leiserson–Saxe)
 **Goal**: optionally move `PIPE_REG`s to balance stages while preserving semantics.
 - [ ] `js/pipeline/Retimer.js` — classic retiming on the sequential graph.
@@ -829,15 +851,31 @@ Every phase ends with a commit — message format `pipeline(phase-N): <short sum
 - [ ] Stretch: latency-insensitive protocol (LIP) checker.
 - [ ] Stretch: clock-domain-crossing awareness (multi-clock pipelines).
 
+### Phase 14 — Auto-ISA Inference + Forwarding-Aware Program Analysis
+**Goal**: eliminate the ISA-JSON requirement from Phase 9.5 by deriving the ISA directly from the user's circuit, and suppress program hazards that the datapath already resolves via forwarding muxes. This is the bridge from "educational analyzer" to "works on any CPU the user draws".
+
+- [ ] `js/pipeline/isa/IsaInference.js` — wire-trace from each `REG_FILE` port back through the datapath to the `IR` node to identify which instruction-word bit slices drive read/write address ports. Cross-reference with the `CU` lookup table (already structured in `cu:edit` metadata) to derive the opcode → `{reads, writes}` map without user input.
+- [ ] `js/pipeline/ForwardingDetector.js` — recognize forwarding-mux patterns: a MUX on a REG_FILE read port whose select input is driven by a comparator between the current RS/RT field and a later stage's destination register (EX/MEM or MEM/WB). Each detected forwarding path is recorded as `{fromStage, toStage, register}`.
+- [ ] Hazard suppression: Program Hazard rows are annotated `✓ resolved by EX→EX forwarding` and hidden by default; remaining hazards show `⚠ N bubbles required (no forwarding available)`. Toggle to show-all.
+- [ ] Multi-cycle instructions: per-opcode latency > 1 (IDIV, multi-cycle MUL) widens the dependency window for that specific instruction pair.
+- [ ] Induction-variable loop analysis: detect `BNE/BEQ` back-edges combined with a monotonic counter (ADDI on the branch register) → report "steady-state" hazards distinct from cold-start hazards. Surface loop bounds when derivable.
+- [ ] Panel: **"Forwarding Paths"** collapsible subsection under Program Hazards — one row per detected forwarding path with its coverage; a summary like `Forwarding: EX→EX ✓, MEM→EX ✓, MEM→ID ✗`.
+- **Example update**: `examples/circuits/mips-forwarding-demo.json` — MIPS 5-stage with full forwarding muxes wired correctly. Inference extracts the ISA; forwarding detection suppresses the basic RAW hazards; only the load-use hazard (which forwarding can't resolve) remains in the report.
+- **Tests**: `examples/tests/test-pipeline-phase14.mjs` — (a) ISA inference matches the hand-written MIPS table from Phase 9.5 on `mips-gcd`; (b) scenes with/without forwarding muxes produce the expected hazard deltas; (c) induction loops in `mips-gcd` reported correctly.
+- **Verify L1** — unit: synthetic scenes with known ISA / known forwarding configurations.
+- **Verify L2** — manual: hand-build a MIPS forwarding mux → watch the Program Hazards count drop → delete the mux → count rises.
+- **Verify L3** — differential vs. a reference MIPS ISS (50+ random programs, same bubble counts).
+
 ---
 
 ### Success Criteria (end-of-plan)
 1. Any pipelined design built in the tool is analyzed, validated, and visualized.
 2. Latency, throughput, and f_max reported accurately.
 3. Stall/flush and valid/ready primitives work end-to-end (waveform-verified).
-4. Hazards detected; fixes suggested.
-5. Auto-retime preserves semantics on random-vector diff.
-6. Exported Verilog preserves pipeline structure and passes cosim.
+4. Hardware hazards detected; fixes suggested.
+5. Program-level hazards detected per-ISA; MIPS-5 demos report correct RAW / load-use bubble counts (Phase 9.5), and forwarding-aware suppression matches a reference ISS (Phase 14).
+6. Auto-retime preserves semantics on random-vector diff.
+7. Exported Verilog preserves pipeline structure and passes cosim.
 
 ### Module Layout (final)
 ```
@@ -845,10 +883,17 @@ js/pipeline/
 ├── PipelineAnalyzer.js         # public API, event wiring
 ├── StageEvaluator.js           # levelization + critical path
 ├── PipelineState.js            # metrics, cached results
-├── HazardDetector.js           # RAW/WAR/WAW
+├── HazardDetector.js           # hardware RAW/WAR/WAW/LOOP
+├── InstructionDecoder.js       # ROM → instruction stream         (Phase 9.5)
+├── ProgramHazardDetector.js    # ISA-level pair-wise hazard pass   (Phase 9.5)
+├── ForwardingDetector.js       # detect forwarding muxes            (Phase 14)
 ├── Retimer.js                  # Leiserson–Saxe
+├── isa/
+│   ├── mips.js                 # hardcoded MIPS-5 table             (Phase 9.5 Easy)
+│   ├── IsaLoader.js            # JSON ISA loader                    (Phase 9.5 Medium)
+│   └── IsaInference.js         # wire-trace ISA derivation          (Phase 14)
 └── ui/
-    ├── PipelinePanel.js        # side panel
+    ├── PipelinePanel.js        # side panel (Hazards + Program Hazards sections)
     └── StageOverlay.js         # canvas color overlay
 ```
 Plus minor hooks in: `components/Component.js`, `core/SceneGraph.js`, `engine/SimulationEngine.js`, `hdl/VerilogExporter.js`, `ui/CommandPalette.js`, `core/ShortcutManager.js`, `app.html`.
@@ -862,6 +907,9 @@ Plus minor hooks in: `components/Component.js`, `core/SceneGraph.js`, `engine/Si
 | Stall/flush interact unexpectedly with memory | Dedicated unit tests per FF type |
 | Palette gets too crowded | New "Pipeline" tab, not overload CPU tab |
 | HDL export + pipeline metadata clash with Phase 2 of HDL plan | Share IR; co-design the `stage` field |
+| ISA JSON proliferates (Phase 9.5 Medium) | Ship MIPS-I + nano-MIPS as reference; validate user JSON against a schema at load time |
+| Auto-ISA inference (Phase 14) brittle on non-MIPS datapaths | Fall back to explicit ISA JSON when inference confidence is low; surface a "confidence score" in the panel |
+| Forwarding-mux pattern matching (Phase 14) too strict / too loose | Unit-test against both hand-built forwarded MIPS and deliberately mis-wired variants; require user-toggleable override |
 
 ---
 

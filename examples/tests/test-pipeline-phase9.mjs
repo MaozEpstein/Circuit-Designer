@@ -116,5 +116,26 @@ console.log('\n-- simple DAG through one PIPE (sanity) --');
   check('no hazards on clean linear pipeline', hz.length === 0, `got ${hz.length}`);
 }
 
+// ── 6. complex demo: all 4 hazard types in one circuit ─────────────
+console.log('\n-- pipeline-demo-hazard-all.json (RAW + WAR + WAW + LOOP) --');
+{
+  const data = load('../circuits/pipeline-demo-hazard-all.json');
+  const scene = { nodes: data.nodes, wires: data.wires };
+  evaluate(scene);
+  const hz = detectHazards(scene);
+  const byType = { RAW: [], WAR: [], WAW: [], LOOP: [] };
+  for (const h of hz) (byType[h.type] ||= []).push(h);
+  console.log(`  (hazards=${hz.length}  RAW=${byType.RAW.length} WAR=${byType.WAR.length} WAW=${byType.WAW.length} LOOP=${byType.LOOP.length})`);
+  check('exactly one RAW hazard',  byType.RAW.length  === 1);
+  check('exactly one WAR hazard',  byType.WAR.length  === 1);
+  check('exactly one WAW hazard',  byType.WAW.length  === 1);
+  check('exactly one LOOP hazard', byType.LOOP.length === 1);
+  check('RAW on feedback wa_raw',    byType.RAW[0]?.wireId  === 'wa_raw');
+  check('LOOP on feedback wb_loop',  byType.LOOP[0]?.wireId === 'wb_loop');
+  check('WAR on feedback wc_war',    byType.WAR[0]?.wireId  === 'wc_war');
+  check('WAW on colliding wd5/wd6',  ['wd5','wd6'].includes(byType.WAW[0]?.wireId));
+  check('every hazard carries a suggestion', hz.every(h => typeof h.suggestion === 'string' && h.suggestion.length > 0));
+}
+
 console.log(`\n${failed === 0 ? 'ALL PASS' : failed + ' FAILED'}`);
 process.exit(failed === 0 ? 0 : 1);

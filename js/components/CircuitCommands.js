@@ -3,6 +3,7 @@
  * Each command captures enough state to undo/redo the action.
  */
 import { Command } from '../core/CommandManager.js';
+import { bus } from '../core/EventBus.js';
 
 /**
  * Add a node to the scene.
@@ -215,6 +216,7 @@ export class SetNodePropsCommand extends Command {
       this._oldProps[key] = node[key];
       node[key] = val;
     }
+    bus.emit('node:props-changed', { nodeId: this._nodeId, keys: Object.keys(this._newProps) });
   }
 
   undo() {
@@ -223,6 +225,7 @@ export class SetNodePropsCommand extends Command {
     for (const [key, val] of Object.entries(this._oldProps)) {
       node[key] = val;
     }
+    bus.emit('node:props-changed', { nodeId: this._nodeId, keys: Object.keys(this._oldProps) });
   }
 }
 
