@@ -2534,12 +2534,16 @@ document.getElementById('btn-retime-accept')?.addEventListener('click', () => {
   commands.execute(new RetimeCommand(scene, proposal));
   const imp   = proposal.improvementPs;
   const after = proposal.after.maxDelayPs;
-  const b     = check.budget || {};
-  const vMsg  = b.runCycles
+  const b       = check.budget || {};
+  const est     = b.estimate || null;
+  const vMsg    = b.runCycles
     ? `${b.vectorCount}\u00A0vectors \u00D7 ${b.runCycles}\u00A0cycles`
     : '6 random vectors';
+  const estMsg  = (est && est.confidence && est.confidence !== 'unknown')
+    ? ` (${est.confidence}-confidence run-length estimate)`
+    : '';
   _clearRetimePreview();
-  _showRetimeApplied(`Pipeline balanced — every stage now ${after} ps (\u2212${imp} ps). Verified on ${vMsg}.`);
+  _showRetimeApplied(`Pipeline balanced — every stage now ${after} ps (\u2212${imp} ps). Verified on ${vMsg}${estMsg}.`);
 });
 
 // Prominent success banner shown bottom-center after a retime is applied.

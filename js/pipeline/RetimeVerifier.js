@@ -18,7 +18,7 @@
  * uses this result to decide whether to commit or revert the retime.
  */
 import { evaluate } from '../engine/SimulationEngine.js';
-import { evaluate as stageEvaluate } from './StageEvaluator.js';
+import { estimateRunLength } from '../analysis/RunLengthEstimator.js';
 
 /**
  * Defaults used when the caller asks for an *explicit* budget
@@ -51,18 +51,21 @@ const DEFAULT_OPTS = {
  * Returns { warmupCycles, runCycles, vectorCount, sampleMs, pipelineDepth }.
  */
 function _computeAutoBudget(sceneBefore, opts) {
-  // 1. pipeline depth (cycles = stage count).
-  let pipelineDepth = 1;
-  try { pipelineDepth = Math.max(1, stageEvaluate(sceneBefore)?.cycles || 1); } catch (_) { /* ignore */ }
+  // 1. Single call to the RunLengthEstimator gives us both the pipeline
+  //    depth (for warmup sizing) and an informed minimum number of
+  //    compared cycles (longer programs get more coverage automatically).
+  const estimate      = estimateRunLength(sceneBefore);
+  const pipelineDepth = Math.max(1, estimate.pipelineDepth || 1);
 
   // Correctness floors:
-  //   warmup ≥ depth + 1    → every register has been written at least once
-  //                           before we compare, so initial-x state is flushed.
-  //   runCycles ≥ depth     → the first random input has time to propagate
-  //                           all the way through and reach the OUTPUT.
-  //   12 is a floor for shallow pipelines where depth under-counts exercise.
+  //   warmup ≥ depth + 1   → fill every register with real data before
+  //                          measuring, flushing any initial-state bias.
+  //   runCycles ≥ estimate → run long enough to exercise the program's
+  //                          natural length (HALT offset, ROM end, loop
+  //                          body, or the pipeline-default). The estimator
+  //                          already enforces a 12-cycle floor internally.
   const warmupCycles = Math.max(3, pipelineDepth + 1);
-  const minRun       = Math.max(opts.minRunCycles, pipelineDepth);
+  const minRun       = Math.max(opts.minRunCycles, estimate.cycles);
   const vectorCount  = opts.minVectors;
 
   // 2. Sample — five back-to-back evaluate() calls, take the median to damp
@@ -88,7 +91,15 @@ function _computeAutoBudget(sceneBefore, opts) {
   const fittedRun  = Math.floor(headroom / (perCycleMs * vectorCount));
   const runCycles  = Math.max(minRun, Math.min(opts.maxRunCycles, fittedRun || minRun));
 
-  return { warmupCycles, runCycles, vectorCount, sampleMs, pipelineDepth };
+  return {
+    warmupCycles, runCycles, vectorCount, sampleMs, pipelineDepth,
+    estimate: {
+      cycles:     estimate.cycles,
+      confidence: estimate.confidence,
+      reason:     estimate.reason,
+      sources:    estimate.sources,
+    },
+  };
 }
 
 export function verifyRetiming(sceneBefore, sceneAfter, optsIn = {}) {
@@ -192,12 +203,13 @@ export function verifyRetiming(sceneBefore, sceneAfter, optsIn = {}) {
   return {
     ok: true,
     budget: {
-      runCycles:   opts.runCycles,
-      vectorCount: opts.vectorCount,
-      warmupCycles: opts.warmupCycles,
-      sampleMs:    budgetInfo?.sampleMs     ?? null,
+      runCycles:     opts.runCycles,
+      vectorCount:   opts.vectorCount,
+      warmupCycles:  opts.warmupCycles,
+      sampleMs:      budgetInfo?.sampleMs      ?? null,
       pipelineDepth: budgetInfo?.pipelineDepth ?? null,
-      mode:        explicit ? 'fixed' : 'auto',
+      estimate:      budgetInfo?.estimate      ?? null,
+      mode:          explicit ? 'fixed' : 'auto',
     },
   };
 }

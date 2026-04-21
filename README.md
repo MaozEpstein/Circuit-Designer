@@ -967,6 +967,18 @@ Every time a new component type is introduced, walk through this list **in order
 ### 12. Smoke test
 - [ ] Drop the new chip onto an empty canvas → confirm it renders, accepts wires, simulates, appears in the Pipeline panel, Memory Inspector, and exports/imports cleanly via JSON.
 
+### 13. Run-length analysis — [js/analysis/](js/analysis/)
+These only matter for components that change how a circuit *terminates* or *oscillates*. Skip for combinational gates and simple I/O; mandatory for anything stateful, counting, halting, or holding a program.
+
+- [ ] **Holds state across clock edges** (any new register, latch, or memory-like type):
+      Add its type to `STATE_HOLDING_TYPES` in [js/analysis/RunLengthEstimator.js](js/analysis/RunLengthEstimator.js). Without this, feedback loops through the new component may be mis-classified as combinational oscillators.
+- [ ] **Counts/oscillates monotonically without reset** (counter / PC variant):
+      Extend the check in `_findNakedCounter()` so a "naked" instance (no CLR/LOAD wired) is flagged as unbounded.
+- [ ] **Emits a halt signal** through a dedicated pin or a `"HALT"` label convention:
+      Extend `_detectHalt()` in [js/analysis/RunLengthMeasurer.js](js/analysis/RunLengthMeasurer.js) so simulation-based measurement terminates on it.
+- [ ] **Is a program container** (ROM-like, memory holds instructions):
+      Extend `findRomNode()` in [js/pipeline/InstructionDecoder.js](js/pipeline/InstructionDecoder.js) and ensure the ISA decoder handles any new instruction-word layout.
+
 ---
 
 ## License
