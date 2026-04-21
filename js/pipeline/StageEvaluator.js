@@ -20,10 +20,35 @@ import { delayOf, isKnownType } from './DelayModel.js';
 /** Types that don't contribute to combinational depth (clocked / boundary). */
 const ZERO_DEPTH_TYPES = new Set(['PIPE_REG', 'CLOCK', 'INPUT', 'OUTPUT']);
 
+/**
+ * Wires feeding the write-port pins of a register file close a writeback
+ * cycle (WB_MUX → RF.wdata → ALU → WB_MUX in single-cycle CPUs; MEM/WB →
+ * RF.wdata in pipelined ones). They're real data wires but must be excluded
+ * from stage levelization or the cycle collapses the whole graph.
+ *
+ * Port conventions (must stay in sync with SimulationEngine):
+ *   REG_FILE_DP: 0=raddr1, 1=raddr2, 2=waddr, 3=wdata, 4=we
+ *   REG_FILE:    0=raddr,  1=waddr,  2=wdata, 3=we
+ */
+function _isWritebackEdge(w, nodeMap) {
+  const dst = nodeMap.get(w.targetId);
+  if (!dst) return false;
+  if (dst.type === 'REG_FILE_DP') return (w.targetInputIndex ?? -1) >= 2;
+  if (dst.type === 'REG_FILE')    return (w.targetInputIndex ?? -1) >= 1;
+  return false;
+}
+
 export function evaluate(scene) {
   const nodes = scene.nodes;
-  const wires = scene.wires.filter(w => !w.isClockWire);
+  const allWires = scene.wires.filter(w => !w.isClockWire);
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  // Drop writeback wires entirely — they're the canonical cycle-closure in
+  // any circuit with a register-file write-back path (single-cycle or
+  // pipelined). Cutting them makes the remaining graph acyclic for Kahn's
+  // sort, and also stops REG_FILE/REG_FILE_DP from being levelized to the
+  // WB stage via its write-port preds.
+  const wires = allWires.filter(w => !_isWritebackEdge(w, nodeMap));
 
   const preds = new Map(nodes.map(n => [n.id, []]));
   const succs = new Map(nodes.map(n => [n.id, []]));
@@ -48,7 +73,7 @@ export function evaluate(scene) {
   }
   const hasCycle = order.length !== nodes.length;
 
-  // Stage assignment
+  // Stage assignment — single pass in topo order over the writeback-free DAG.
   const stage = new Map();
   for (const id of order) {
     let s = 0;
@@ -59,7 +84,8 @@ export function evaluate(scene) {
     }
     stage.set(id, s);
   }
-  // Nodes in cycles: default to stage 0, flagged via hasCycle
+  // Nodes not reached by Kahn (remaining cycles through non-writeback paths —
+  // e.g. forwarding MUX loops) default to stage 0. Still reported via hasCycle.
   for (const n of nodes) if (!stage.has(n.id)) stage.set(n.id, 0);
 
   // Per-node combinational depth (gate count) AND per-node accumulated delay
