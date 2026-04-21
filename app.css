@@ -913,29 +913,31 @@
 .pipe-hazard-row {
   display: grid;
   grid-template-columns: auto auto 1fr;
-  gap: 0.6em;
-  padding: 0.5em 1.2em 0.2em 1.2em;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.6em 1.2em 0.3em 1.2em;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 1em;
   color: #ffd8a0;
   transition: background 0.15s;
 }
 .pipe-hazard-row:hover { background: #2a1a08; }
 .pipe-hazard-fix {
-  padding: 0 1.2em 0.5em 2.6em;
+  padding: 0 1.2em 0.7em 2.6em;
   border-bottom: 1px solid #1a1208;
-  color: #9b8a66;
-  font-size: 0.82em;
+  color: #c4b48c;
+  font-size: 0.95em;
+  line-height: 1.35;
   font-style: italic;
 }
 .pipe-hz-type {
   display: inline-block;
-  min-width: 2.4em;
-  padding: 1px 6px;
-  border-radius: 3px;
+  min-width: 3em;
+  padding: 3px 10px;
+  border-radius: 4px;
   font-weight: bold;
-  font-size: 0.78em;
-  letter-spacing: 0.5px;
+  font-size: 0.95em;
+  letter-spacing: 0.6px;
   text-align: center;
   background: #2a1a08;
   color: #ffd8a0;
