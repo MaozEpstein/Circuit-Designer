@@ -3363,6 +3363,13 @@ const EXAMPLES = [
     file: 'examples/circuits/pipeline-demo-program-all.json',
   },
   {
+    id: 'mips-5stage-forwarding-demo',
+    title: 'Pipeline Demo — MIPS 5-stage + EX→EX forwarding',
+    desc: 'The no-forwarding MIPS demo extended with two 2:1 forwarding MUXes on the ALU.A/B paths. Each MUX selects between the normal ID/EX read and the latched EX/MEM.alu_result, gated by an EQ comparator between ID/EX.rs{1,2}_field and EX/MEM.rd plus an AND with EX/MEM.regWe. The same 6-instruction program runs: 3 of the 4 RAW hazards are now marked ✓ resolved by forwarding; only the LOAD→ADD load-use remains with its full bubble cost. The canonical demo for Phase 14b detection on a real pipelined CPU.',
+    tags: ['pipeline', 'mips', 'forwarding', 'hazard', 'RAW', 'load-use', '5-stage'],
+    file: 'examples/circuits/mips-5stage-forwarding-demo.json',
+  },
+  {
     id: 'mips-5stage-demo',
     title: 'Pipeline Demo — MIPS 5-stage (no forwarding)',
     desc: 'Classical 5-stage MIPS datapath: IF (PC→ROM→IR) · ID (CU+RF reads) · EX (ALU) · MEM (DMEM) · WB (MUX→RF.wdata). IR serves as the IF/ID latch, so the panel shows 4 visible stages. The ROM runs a 6-instruction program exercising back-to-back RAW, 2-apart RAW, and a classic load-use hazard (LOAD R7 → ADD using R7). No forwarding is wired — every RAW reports its full bubble cost. Intended as the canonical pipelined-MIPS reference and the benchmark for a future forwarding-enabled variant.',

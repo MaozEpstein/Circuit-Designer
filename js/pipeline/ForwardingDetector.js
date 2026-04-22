@@ -138,14 +138,33 @@ export function detectForwardingPaths(scene, opts = {}) {
     );
     const rfSources   = classified.filter(c => c.kind === 'REG_FILE');
     const pipeSources = classified.filter(c => c.kind === 'PIPE_REG');
-    if (rfSources.length === 0 || pipeSources.length === 0) continue;
 
-    // (3) For every PIPE_REG source, emit one forwarding path. The target ALU
-    // input index distinguishes rs1 vs rs2 — ALU.A convention = rs1.
+    // A PIPE_REG source is on the "normal read" path if one of its direct
+    // predecessors is a REG_FILE — meaning the MUX is choosing between a
+    // latched RF read (normal) and something else (forwarded). In MIPS
+    // 5-stage, the ID/EX register carries the RF read to EX, so both MUX
+    // inputs look like PIPE_REG outputs; distinguishing them this way is
+    // what lets us recognize the canonical textbook pattern.
+    const normalPipe = pipeSources.filter(s => {
+      const ppreds = preds.get(s.nodeId) || [];
+      return ppreds.some(pp => {
+        const pn = nodeMap.get(pp.sourceId);
+        return pn && (pn.type === 'REG_FILE' || pn.type === 'REG_FILE_DP');
+      });
+    });
+    const forwardedPipe = pipeSources.filter(s => !normalPipe.includes(s));
+
+    // Match either:
+    //   (a) RF direct + at least one PIPE source (Phase 14b demo), or
+    //   (b) a normal-path PIPE (fed by RF) + a forwarded-path PIPE (MIPS 5-stage).
+    const hasNormal = rfSources.length > 0 || normalPipe.length > 0;
+    if (!hasNormal || forwardedPipe.length === 0) continue;
+
+    // (3) Emit one forwarding path per forwarded-PIPE source per ALU consumer.
     for (const consumer of downstream) {
       const register = consumer.inputIndex === 0 ? 'rs1' : 'rs2';
       const aluStage = nodeMap.get(consumer.targetId)?.stage ?? null;
-      for (const src of pipeSources) {
+      for (const src of forwardedPipe) {
         const srcStage = src.stage ?? null;
         paths.push({
           id:        `fwd_${paths.length}`,
