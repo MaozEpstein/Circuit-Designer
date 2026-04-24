@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    { "type": "CLOCK", "x": -350, "y": 0, "value": 0, "id": "clk_1" },
+
+    { "type": "INPUT",  "x": -180, "y": -240, "fixedValue": 1, "label": "D",   "id": "in_d" },
+    { "type": "FF_SLOT","x":    0, "y": -240, "ffType": "D",  "initialQ": 0, "label": "D-FF",  "id": "ff_d" },
+    { "type": "OUTPUT", "x":  220, "y": -240, "targetValue": 0, "label": "Q(D)", "sandbox": true, "id": "out_d" },
+
+    { "type": "INPUT",  "x": -180, "y":  -80, "fixedValue": 1, "label": "T",   "id": "in_t" },
+    { "type": "FF_SLOT","x":    0, "y":  -80, "ffType": "T",  "initialQ": 0, "label": "T-FF",  "id": "ff_t" },
+    { "type": "OUTPUT", "x":  220, "y":  -80, "targetValue": 0, "label": "Q(T)", "sandbox": true, "id": "out_t" },
+
+    { "type": "INPUT",  "x": -220, "y":   60, "fixedValue": 1, "label": "S",   "id": "in_s" },
+    { "type": "INPUT",  "x": -220, "y":  100, "fixedValue": 0, "label": "R",   "id": "in_r" },
+    { "type": "FF_SLOT","x":    0, "y":   80, "ffType": "SR", "initialQ": 0, "label": "SR-FF", "id": "ff_sr" },
+    { "type": "OUTPUT", "x":  220, "y":   80, "targetValue": 0, "label": "Q(SR)", "sandbox": true, "id": "out_sr" },
+
+    { "type": "INPUT",  "x": -220, "y":  220, "fixedValue": 1, "label": "J",   "id": "in_j" },
+    { "type": "INPUT",  "x": -220, "y":  260, "fixedValue": 1, "label": "K",   "id": "in_k" },
+    { "type": "FF_SLOT","x":    0, "y":  240, "ffType": "JK", "initialQ": 0, "label": "JK-FF", "id": "ff_jk" },
+    { "type": "OUTPUT", "x":  220, "y":  240, "targetValue": 0, "label": "Q(JK)", "sandbox": true, "id": "out_jk" }
+  ],
+  "wires": [
+    { "sourceId": "in_d", "targetId": "ff_d", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_d_data" },
+    { "sourceId": "clk_1","targetId": "ff_d", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true,  "id": "w_d_clk"  },
+    { "sourceId": "ff_d", "targetId": "out_d","targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_d_out"  },
+
+    { "sourceId": "in_t", "targetId": "ff_t", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_t_data" },
+    { "sourceId": "clk_1","targetId": "ff_t", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true,  "id": "w_t_clk"  },
+    { "sourceId": "ff_t", "targetId": "out_t","targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_t_out"  },
+
+    { "sourceId": "in_s", "targetId": "ff_sr","targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_sr_s"   },
+    { "sourceId": "in_r", "targetId": "ff_sr","targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_sr_r"   },
+    { "sourceId": "clk_1","targetId": "ff_sr","targetInputIndex": 2, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true,  "id": "w_sr_clk" },
+    { "sourceId": "ff_sr","targetId": "out_sr","targetInputIndex":0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_sr_out" },
+
+    { "sourceId": "in_j", "targetId": "ff_jk","targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_jk_j"   },
+    { "sourceId": "in_k", "targetId": "ff_jk","targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_jk_k"   },
+    { "sourceId": "clk_1","targetId": "ff_jk","targetInputIndex": 2, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": true,  "id": "w_jk_clk" },
+    { "sourceId": "ff_jk","targetId": "out_jk","targetInputIndex":0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_jk_out" }
+  ]
+}

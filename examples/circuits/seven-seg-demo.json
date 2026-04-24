@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    { "type": "INPUT", "x": -260, "y": -180, "fixedValue": 1, "label": "a", "id": "in_a" },
+    { "type": "INPUT", "x": -260, "y": -120, "fixedValue": 1, "label": "b", "id": "in_b" },
+    { "type": "INPUT", "x": -260, "y":  -60, "fixedValue": 1, "label": "c", "id": "in_c" },
+    { "type": "INPUT", "x": -260, "y":    0, "fixedValue": 1, "label": "d", "id": "in_d" },
+    { "type": "INPUT", "x": -260, "y":   60, "fixedValue": 1, "label": "e", "id": "in_e" },
+    { "type": "INPUT", "x": -260, "y":  120, "fixedValue": 1, "label": "f", "id": "in_f" },
+    { "type": "INPUT", "x": -260, "y":  180, "fixedValue": 1, "label": "g", "id": "in_g" },
+
+    { "type": "DISPLAY_7SEG", "x": 40, "y": 0, "label": "7SEG", "id": "seg_1" }
+  ],
+  "wires": [
+    { "sourceId": "in_a", "targetId": "seg_1", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_a" },
+    { "sourceId": "in_b", "targetId": "seg_1", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_b" },
+    { "sourceId": "in_c", "targetId": "seg_1", "targetInputIndex": 2, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_c" },
+    { "sourceId": "in_d", "targetId": "seg_1", "targetInputIndex": 3, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_d" },
+    { "sourceId": "in_e", "targetId": "seg_1", "targetInputIndex": 4, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_e" },
+    { "sourceId": "in_f", "targetId": "seg_1", "targetInputIndex": 5, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_f" },
+    { "sourceId": "in_g", "targetId": "seg_1", "targetInputIndex": 6, "sourceOutputIndex": 0, "waypoints": [], "netName": "", "colorGroup": null, "isClockWire": false, "id": "w_g" }
+  ]
+}
