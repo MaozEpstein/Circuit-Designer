@@ -267,6 +267,30 @@ export class PipelinePanel {
         `<div class="pipe-prog-header">PROGRAM HAZARDS (0)</div><div class="pipe-prog-clean">No inter-instruction hazards detected over ${r.instructions.length} instruction${r.instructions.length===1?'':'s'}.</div>`);
     }
 
+    // Performance metrics — aggregate CPI/IPC/throughput.
+    if (r.metrics) {
+      const m = r.metrics;
+      const cpi = m.cpi.toFixed(2);
+      const ipc = m.ipc.toFixed(2);
+      const eff = (m.efficiency * 100).toFixed(0);
+      const mips = (m.throughputMIPS != null)
+        ? (m.throughputMIPS >= 1000 ? (m.throughputMIPS/1000).toFixed(2) + ' GIPS' : m.throughputMIPS.toFixed(0) + ' MIPS')
+        : '—';
+      const fwdLine = (m.bubblesRemovedByForwarding > 0)
+        ? `<div class="pipe-perf-row"><span class="k">Forwarding</span><span class="v">−${m.bubblesRemovedByForwarding} bubble${m.bubblesRemovedByForwarding===1?'':'s'} · ${m.speedupFromForwarding.toFixed(2)}× speedup</span></div>`
+        : '';
+      this._body.insertAdjacentHTML('beforeend',
+        `<div class="pipe-perf-header">PERFORMANCE</div>
+         <div class="pipe-perf-grid">
+           <div class="pipe-perf-row"><span class="k">Instructions</span><span class="v">${m.instructionCount}</span></div>
+           <div class="pipe-perf-row"><span class="k">Cycles</span><span class="v">${m.actualCycles} (ideal ${m.idealCycles} + ${m.stallBubbles} stall)</span></div>
+           <div class="pipe-perf-row"><span class="k">CPI / IPC</span><span class="v">${cpi} / ${ipc}</span></div>
+           <div class="pipe-perf-row"><span class="k">Efficiency</span><span class="v">${eff}%</span></div>
+           <div class="pipe-perf-row"><span class="k">Throughput</span><span class="v">${_esc(mips)}</span></div>
+           ${fwdLine}
+         </div>`);
+    }
+
     // Loops section (Phase 14 — induction-variable loop analysis).
     if (r.loops && r.loops.length) {
       const pcHex = (pc) => '0x' + pc.toString(16).toUpperCase().padStart(2, '0');

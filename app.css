@@ -1042,6 +1042,13 @@
 .pipe-lip-hs  { color: #b090ff; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
 .pipe-lip-msg { color: #cfe6f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Performance metrics panel — CPI / IPC / throughput. */
+.pipe-perf-header { margin-top: 0.6em; padding: 0.5em 1.2em; font-weight: bold; color: #6adfff; border-top: 1px solid #082030; border-bottom: 1px solid #082030; background: #051218; font-size: 0.95em; letter-spacing: 1px; }
+.pipe-perf-grid { padding: 0.5em 1.2em 0.6em 1.2em; display: grid; grid-template-columns: 1fr; gap: 0.25em; background: #040e12; }
+.pipe-perf-row { display: grid; grid-template-columns: 110px 1fr; gap: 0.6em; font-size: 0.90em; color: #cfe6f0; font-family: 'JetBrains Mono', monospace; }
+.pipe-perf-row .k { color: #6adfff; font-size: 0.85em; letter-spacing: 0.5px; }
+.pipe-perf-row .v { color: #e0f0ff; }
+
 .mem-row {
   display: flex;
   align-items: center;

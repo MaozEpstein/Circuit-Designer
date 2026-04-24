@@ -14,6 +14,7 @@ import { DEFAULT_ISA } from './isa/default.js';
 import { detectForwardingPaths } from './ForwardingDetector.js';
 import { detectCdc } from './CdcDetector.js';
 import { checkLip } from './LipChecker.js';
+import { computeMetrics } from './PerformanceMetrics.js';
 import * as Telemetry from './Telemetry.js';
 
 export class PipelineAnalyzer {
@@ -68,6 +69,9 @@ export class PipelineAnalyzer {
     this._cache.cdc = detectCdc(this._scene);
     this._cache.lip = checkLip(this._scene);
 
+    // Phase-extension: performance metrics aggregated from everything above.
+    this._cache.metrics = computeMetrics(this._cache);
+
     this._dirty = false;
     // Warn once per unknown type — prompts the designer to update DelayModel.js.
     for (const t of (this._cache.unknownTypes || [])) {
@@ -104,6 +108,7 @@ function _annotateHazardsWithForwarding(hazards, paths) {
       const match = paths.find(p => p.toStage === 'EX');
       h.resolvedByForwarding = true;
       h.forwardingPathId     = match.id;
+      h.bubblesOriginal      = h.bubbles;
       h.bubbles              = 0;
     } else {
       h.resolvedByForwarding = false;
