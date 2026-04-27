@@ -612,5 +612,70 @@ export class PipelinePanel {
         }
       });
     });
+
+    // Collapsible sections — wrap each "*-header" + its trailing siblings in
+    // a .pipe-section block, hook a click toggle, and restore persisted state
+    // from localStorage. Done as a post-render walk so individual section
+    // renderers above don't have to know about it.
+    this._applyCollapsibleSections();
+  }
+
+  _applyCollapsibleSections() {
+    if (!this._body) return;
+    const collapsed = this._loadCollapsedState();
+    const HEADER_RE = /(?:^|\s)pipe-(\w+)-header(?:\s|$)/;
+    const children = Array.from(this._body.children);
+
+    // Group: each header starts a new section; following non-header siblings
+    // belong to that section's body until the next header.
+    const groups = [];
+    let cur = null;
+    for (const el of children) {
+      if (el.classList.contains('pipe-section')) continue;   // already wrapped (defensive)
+      const cls = el.className || '';
+      const m = cls.match(HEADER_RE);
+      if (m) {
+        cur = { id: m[1], header: el, body: [] };
+        groups.push(cur);
+      } else if (cur) {
+        cur.body.push(el);
+      }
+    }
+
+    for (const g of groups) {
+      const section = document.createElement('div');
+      section.className = 'pipe-section';
+      section.dataset.section = g.id;
+      const isCollapsed = !!collapsed[g.id];
+      if (isCollapsed) section.classList.add('pipe-section-collapsed');
+
+      // Insert section wrapper before the header, then move header + body in.
+      g.header.parentNode.insertBefore(section, g.header);
+      const toggle = document.createElement('span');
+      toggle.className = 'pipe-section-toggle';
+      toggle.textContent = '▾';
+      g.header.classList.add('pipe-section-header');
+      g.header.insertBefore(toggle, g.header.firstChild);
+      section.appendChild(g.header);
+
+      const bodyWrap = document.createElement('div');
+      bodyWrap.className = 'pipe-section-body';
+      for (const node of g.body) bodyWrap.appendChild(node);
+      section.appendChild(bodyWrap);
+
+      g.header.addEventListener('click', () => {
+        section.classList.toggle('pipe-section-collapsed');
+        const state = this._loadCollapsedState();
+        state[g.id] = section.classList.contains('pipe-section-collapsed');
+        try { localStorage.setItem('pipe-panel-collapsed', JSON.stringify(state)); } catch {}
+      });
+    }
+  }
+
+  _loadCollapsedState() {
+    try {
+      const raw = localStorage.getItem('pipe-panel-collapsed');
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
   }
 }

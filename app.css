@@ -1136,6 +1136,24 @@
 .pred-cmp-good     { color: #50d090; font-weight: 700; }
 .pred-cmp-bad      { color: #ff6080; }
 
+/* Collapsible sections — wraps each PIP-panel section. Header is clickable;
+   chevron rotates 90° when the section is collapsed; body is display:none. */
+.pipe-section                    { display: block; }
+.pipe-section-header             { cursor: pointer; user-select: none; }
+.pipe-section-header:hover       { filter: brightness(1.2); }
+.pipe-section-header:hover .pipe-section-toggle { background: currentColor; color: #050410; }
+.pipe-section-toggle             {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+  margin-right: 8px;
+  border: 1.5px solid currentColor; border-radius: 4px;
+  font-size: 0.92em; font-weight: 900; line-height: 1;
+  transition: transform 0.15s ease-out, background 0.12s, color 0.12s;
+  vertical-align: middle;
+}
+.pipe-section-collapsed > .pipe-section-header > .pipe-section-toggle { transform: rotate(-90deg); }
+.pipe-section-collapsed > .pipe-section-body { display: none; }
+
 .mem-row {
   display: flex;
   align-items: center;
