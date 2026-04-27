@@ -1081,6 +1081,61 @@
 .pdc-STALL { background: #3a1010; color: #ff8080; border: 1px dashed #7a2020; padding: 3px 0; }
 .pdc-FLUSH { background: #181820; color: #707080; border: 1px solid #303040; }
 
+/* Hazard heatmap — color-coded stall/flush cells by hazard kind. Override
+   the base .pdc-STALL / .pdc-FLUSH backgrounds; same dashed/solid borders
+   are kept so the cell shape still reads as a bubble. */
+.pdc-haz-raw     { background: #ff8c42; color: #1a0a00; border-color: #c0601a; }
+.pdc-haz-loaduse { background: #ffd23f; color: #1a1400; border-color: #b89010; }
+.pdc-haz-war     { background: #a06a3f; color: #f0e0c8; border-color: #604018; }
+.pdc-haz-waw     { background: #b85cd9; color: #140020; border-color: #7030a0; }
+.pdc-haz-control { background: #e63946; color: #ffe0e0; border-color: #901820; }
+/* Phase 15 Phase 2 — mispredict gets a brighter hot-red with a thicker border
+   so it stands out from regular control flush even at small cell sizes. */
+.pdc-haz-mispred { background: #ff2050; color: #fff0f0; border: 2px solid #ff90a0; box-shadow: 0 0 4px #ff4060 inset; }
+
+/* Iteration + per-branch prediction badges shown on the row label. */
+.pdr-b-iter      { background: #051820; color: #6adfff; border: 1px solid #103848; font-weight: 700; }
+.pdr-b-pred      { background: #081a10; color: #50d090; border: 1px solid #103820; font-weight: 700; }
+.pdr-b-pred-miss { background: #2a0410; color: #ff6080; border: 1px solid #5a1020; }
+
+/* Branch Predictor panel (Phase 15) — dropdown + per-PC state table. */
+.pipe-pred-header { margin-top: 0.6em; padding: 0.5em 1.2em; font-weight: bold; color: #b090ff; border-top: 1px solid #1a1430; border-bottom: 1px solid #1a1430; background: #0c0820; font-size: 0.95em; letter-spacing: 1px; }
+.pred-controls    { display: flex; gap: 10px; align-items: center; padding: 0.5em 1.2em; background: #08061a; font-size: 0.85em; color: #cfe6f0; }
+.pred-label       { color: #9080d0; font-size: 0.82em; letter-spacing: 0.5px; }
+.pred-select      { background: #14102a; color: #e0d0ff; border: 1px solid #3a2868; border-radius: 3px; padding: 3px 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; cursor: pointer; }
+.pred-select:hover { border-color: #5a4090; }
+.pred-summary     { margin-left: auto; color: #b090ff; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.pred-summary b   { color: #d0a8ff; }
+.pred-table       { padding: 0.3em 1.2em 0.6em 1.2em; background: #050410; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.pred-row         { display: grid; grid-template-columns: 60px 1.6fr 50px 60px 40px 60px; gap: 8px; padding: 3px 0; align-items: center; border-bottom: 1px solid #14102a; }
+.pred-row-head    { color: #9080d0; font-size: 0.78em; letter-spacing: 0.5px; border-bottom: 1px solid #3a2868; padding-bottom: 5px; }
+.pred-pc          { color: #7088a0; }
+.pred-state       { color: #e0d0ff; }
+.pred-pred        { color: #b090ff; text-align: center; }
+.pred-actual      { color: #ffc840; text-align: center; }
+.pred-hit         { text-align: center; }
+.pred-ok          { color: #50d090; }
+.pred-miss        { color: #ff6080; }
+.pred-rate        { color: #80a0c0; text-align: right; font-size: 0.82em; }
+.pred-empty       { padding: 0.5em 0; color: #707080; font-style: italic; }
+
+/* Compare-predictors button + result table (Phase 15 Phase 3). */
+.pred-btn          { background: #1a1430; color: #d0a8ff; border: 1px solid #3a2868; border-radius: 3px; padding: 4px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.78em; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; }
+.pred-btn:hover    { background: #2a1a48; border-color: #5a4090; color: #e8d0ff; }
+.pred-cmp-header   { padding: 0.5em 1.2em 0.3em 1.2em; color: #b090ff; font-weight: bold; font-size: 0.85em; letter-spacing: 1px; background: #050410; border-top: 1px solid #1a1430; }
+.pred-cmp-row      { display: grid; grid-template-columns: 2fr 80px 80px 80px 60px 1.2fr; gap: 8px; padding: 4px 1.2em; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #050410; border-bottom: 1px solid #14102a; }
+.pred-cmp-row-head { color: #9080d0; font-size: 0.78em; letter-spacing: 0.5px; border-bottom: 1px solid #3a2868; padding-bottom: 6px; }
+.pred-cmp-winner   { background: #0a1a14; border-left: 3px solid #50d090; }
+.pred-cmp-name     { color: #e0d0ff; }
+.pred-cmp-rate     { color: #6adfff; text-align: right; }
+.pred-cmp-mp       { color: #ffc840; text-align: right; }
+.pred-cmp-cyc      { color: #e0f0ff; text-align: right; font-weight: 700; }
+.pred-cmp-cpi      { color: #80a0c0; text-align: right; }
+.pred-cmp-delta    { text-align: right; }
+.pred-cmp-base     { color: #80a0c0; font-style: italic; }
+.pred-cmp-good     { color: #50d090; font-weight: 700; }
+.pred-cmp-bad      { color: #ff6080; }
+
 .mem-row {
   display: flex;
   align-items: center;

@@ -3381,6 +3381,31 @@ const EXAMPLES = [
     tags: ['pipeline', 'cdc', 'clock-domain', 'synchronizer', 'multi-clock'],
     file: 'examples/circuits/pipeline-demo-cdc.json',
   },
+  // ── Branch Predictor tab — phased demos for the predictor visualizer.
+  // Phase 1 (read-only state): observe a predictor's evolving FSM/state
+  // table over a synthesized outcome trace. Schedule unchanged from Pipeline
+  // tab equivalents; switch predictors in the dropdown to see the table react.
+  {
+    id: 'branch-predictor-01-loop',
+    title: '1. Predictor State — Backward Loop (Phase 1)',
+    desc: 'Demo for the BRANCH PREDICTOR section in the PIP panel. The program has one backward JZ at 0x03 → 0x00; the loop body unrolls 6 iterations (5 × taken + 1 × not-taken). Open the PIP panel, scroll to BRANCH PREDICTOR, and switch between Static-NT / Static-BTFN / 1-bit / 2-bit. Watch the State column converge for 2-bit (Strongly T) and the per-row hit/miss badges (✓/✗) flip as you switch. Phase 1 focus is the read-only state table.',
+    tags: ['predictor', 'branch', 'loop', '2-bit', 'state-table'],
+    file: 'examples/circuits/branch-predictor-01-loop.json',
+  },
+  {
+    id: 'branch-predictor-02-loop6',
+    title: '2. Loop Unroll & Mispredict Flush (Phase 2)',
+    desc: 'Same loop circuit, but now the Gantt itself is driven by the chosen predictor. The loop body unrolls into 6 separate iteration rows (badge "#N/6"). Each back-edge JZ shows ✓ (HIT) or ✗ (MISS) — on a MISS, two FLUSH cells appear in hot pink-red ("MISPRED" tooltip). Switch predictors in the dropdown: Static-NT mispredicts every taken iter (5 misses); 2-bit converges after one bad guess and only mispredicts at the loop exit (2 misses total). Cycle count drops visibly with a smarter predictor.',
+    tags: ['predictor', 'branch', 'loop', 'mispredict', 'unroll', 'gantt'],
+    file: 'examples/circuits/branch-predictor-02-loop6.json',
+  },
+  {
+    id: 'branch-predictor-03-compare',
+    title: '3. Compare All Predictors — Cycles & Hit Rate (Phase 3)',
+    desc: 'Open the PIP panel and click the COMPARE button in the BRANCH PREDICTOR section to score all four predictors against the current program in one shot. Results are sorted by cycles ascending; the winner is marked 🏆. On this 5×6 loop, Static-BTFN ties or beats the dynamic predictors because every branch is backward-taken — exactly the case BTFN was designed for. The Δ column shows cycles saved versus the Static-Not-Taken baseline. PERFORMANCE panel also gains "Predictor / Branches / Flush penalty" lines that update with the selected predictor.',
+    tags: ['predictor', 'compare', 'metrics', 'cpi', 'hit-rate'],
+    file: 'examples/circuits/branch-predictor-03-compare.json',
+  },
   {
     id: 'cpu-detailed',
     title: '2. Harvard CPU — Full 14-op Datapath ⭐',
@@ -3394,10 +3419,11 @@ const examplesOverlay = document.getElementById('examples-overlay');
 const examplesList = document.getElementById('examples-list');
 
 const EXAMPLES_CATEGORIES = [
-  { id: 'beginner',     label: 'Beginner'     },
-  { id: 'intermediate', label: 'Intermediate' },
-  { id: 'advanced',     label: 'Advanced'     },
-  { id: 'pipeline',     label: 'Pipeline'     },
+  { id: 'beginner',     label: 'Beginner'         },
+  { id: 'intermediate', label: 'Intermediate'     },
+  { id: 'advanced',     label: 'Advanced'         },
+  { id: 'pipeline',     label: 'Pipeline'         },
+  { id: 'predictor',    label: 'Branch Predictor' },
 ];
 let _examplesActiveTab = 'beginner';
 

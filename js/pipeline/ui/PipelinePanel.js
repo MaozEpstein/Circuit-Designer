@@ -7,6 +7,7 @@ import { bus } from '../../core/EventBus.js';
 import { setPipelineViolations, setPipelineCriticalPath, setPipelineHazards } from '../../rendering/CanvasRenderer.js';
 import { disassemble } from '../InstructionDecoder.js';
 import { cellAt as _cellAt } from '../PipelineScheduler.js';
+import { HAZARD_TYPES } from '../HazardDetector.js';
 import * as Telemetry from '../Telemetry.js';
 
 function _hazardSummary(hazards) {
@@ -97,6 +98,46 @@ export class PipelinePanel {
     setPipelineHazards(null);
   }
   toggle() { this._visible ? this.hide() : this.show(); }
+
+  _renderPredictorCompare() {
+    const host = document.getElementById('pipe-predictor-compare-table');
+    if (!host) return;
+    const results = this._analyzer.comparePredictors();
+    if (!results || results.length === 0) {
+      host.innerHTML = '<div class="pred-empty">No program to compare.</div>';
+      return;
+    }
+    const baseline = results.find(r => r.id === 'static-nt') ?? results[results.length - 1];
+    const fmtPct = (x) => (x * 100).toFixed(1) + '%';
+    const rows = results.map((r, i) => {
+      const delta = r.cycles - baseline.cycles;
+      const deltaTxt = delta === 0
+        ? '<span class="pred-cmp-base">baseline</span>'
+        : (delta < 0
+            ? `<span class="pred-cmp-good">−${-delta} cycles</span>`
+            : `<span class="pred-cmp-bad">+${delta} cycles</span>`);
+      const winnerCls = i === 0 ? ' pred-cmp-winner' : '';
+      return `<div class="pred-cmp-row${winnerCls}">
+        <span class="pred-cmp-name">${i === 0 ? '🏆 ' : ''}${_esc(r.name)}</span>
+        <span class="pred-cmp-rate">${fmtPct(r.hitRate)}</span>
+        <span class="pred-cmp-mp">${r.misses}/${r.branches}</span>
+        <span class="pred-cmp-cyc">${r.cycles}</span>
+        <span class="pred-cmp-cpi">${r.cpi.toFixed(2)}</span>
+        <span class="pred-cmp-delta">${deltaTxt}</span>
+      </div>`;
+    }).join('');
+    host.innerHTML = `
+      <div class="pred-cmp-header">PREDICTOR COMPARISON · sorted by cycles</div>
+      <div class="pred-cmp-row pred-cmp-row-head">
+        <span class="pred-cmp-name">Predictor</span>
+        <span class="pred-cmp-rate">Hit rate</span>
+        <span class="pred-cmp-mp">Mispred</span>
+        <span class="pred-cmp-cyc">Cycles</span>
+        <span class="pred-cmp-cpi">CPI</span>
+        <span class="pred-cmp-delta">Δ vs Static-NT</span>
+      </div>
+      ${rows}`;
+  }
 
   _render(r) {
     if (!this._body || !this._summary) return;
@@ -280,6 +321,26 @@ export class PipelinePanel {
       const fwdLine = (m.bubblesRemovedByForwarding > 0)
         ? `<div class="pipe-perf-row"><span class="k">Forwarding</span><span class="v">−${m.bubblesRemovedByForwarding} bubble${m.bubblesRemovedByForwarding===1?'':'s'} · ${m.speedupFromForwarding.toFixed(2)}× speedup</span></div>`
         : '';
+      // Phase 15 Phase 3 — predictor-derived counters. Counted off the
+      // schedule rows (each back-edge / JMP row carries `mispredict`),
+      // not the predictor's getEntries (those collapse iterations per PC).
+      let predLine = '';
+      if (r.schedule && r.predictor) {
+        let branches = 0, mispred = 0;
+        for (const row of r.schedule.rows) {
+          if (row.predicted === null) continue;     // not a predicted branch
+          branches++;
+          if (row.mispredict) mispred++;
+        }
+        if (branches > 0) {
+          const hitPct = (((branches - mispred) / branches) * 100).toFixed(1);
+          const flushPenalty = mispred * 2;
+          predLine =
+            `<div class="pipe-perf-row"><span class="k">Predictor</span><span class="v">${_esc(r.predictor.name)}</span></div>
+             <div class="pipe-perf-row"><span class="k">Branches</span><span class="v">${branches} · ${mispred} mispredict${mispred===1?'':'s'} · ${hitPct}% hit rate</span></div>
+             <div class="pipe-perf-row"><span class="k">Flush penalty</span><span class="v">${flushPenalty} cycle${flushPenalty===1?'':'s'}</span></div>`;
+        }
+      }
       this._body.insertAdjacentHTML('beforeend',
         `<div class="pipe-perf-header">PERFORMANCE</div>
          <div class="pipe-perf-grid">
@@ -289,6 +350,7 @@ export class PipelinePanel {
            <div class="pipe-perf-row"><span class="k">Efficiency</span><span class="v">${eff}%</span></div>
            <div class="pipe-perf-row"><span class="k">Throughput</span><span class="v">${_esc(mips)}</span></div>
            ${fwdLine}
+           ${predLine}
          </div>`);
     }
 
@@ -311,8 +373,9 @@ export class PipelinePanel {
         `  <span class="pdl-cell pdc-EX">EX</span>`,
         `  <span class="pdl-cell pdc-MEM">MEM</span>`,
         `  <span class="pdl-cell pdc-WB">WB</span>`,
-        `  <span class="pdl-cell pdc-STALL" title="Bubble from RAW dependency">**</span>`,
-        `  <span class="pdl-cell pdc-FLUSH" title="IF slot flushed by taken branch">✗</span>`,
+        `  <span class="pdl-cell pdc-STALL pdc-haz-raw"     title="${HAZARD_TYPES.RAW.desc}">RAW</span>`,
+        `  <span class="pdl-cell pdc-STALL pdc-haz-loaduse" title="${HAZARD_TYPES.LOAD_USE.desc}">LDU</span>`,
+        `  <span class="pdl-cell pdc-FLUSH pdc-haz-control" title="${HAZARD_TYPES.CONTROL.desc}">CTL</span>`,
         `</div>`,
       ].join('');
 
@@ -330,24 +393,46 @@ export class PipelinePanel {
         const cells = [];
         for (let c = 0; c < cycles; c++) {
           if (prev && c >= flushStart && c < flushEnd) {
-            cells.push(`<div class="pdr-cell pdc-FLUSH" title="Flushed by ${prev.name} @ ${pcHex(prev.pc)}">✗</div>`);
+            const ctlInfo = HAZARD_TYPES.CONTROL;
+            const isMispred = (prev.flushReason === 'mispredict');
+            const flushClass = isMispred ? 'pdc-haz-mispred' : ctlInfo.cssClass;
+            const reasonLine = isMispred
+              ? `Mispredict — predicted ${prev.predicted ? 'T' : 'NT'}, actual ${prev.actualTaken ? 'T' : 'NT'}`
+              : `${ctlInfo.label}: ${ctlInfo.desc}`;
+            const ctlTip = `${reasonLine}\nFlushed by ${prev.name} @ ${pcHex(prev.pc)}${prev.iterIdx ? ` #${prev.iterIdx}/${prev.iterTotal}` : ''}`;
+            cells.push(`<div class="pdr-cell pdc-FLUSH ${flushClass}" title="${_esc(ctlTip)}">✗</div>`);
             continue;
           }
           const lbl = _cellAt(row, c);
           if (!lbl) { cells.push(`<div class="pdr-cell pdc-empty"></div>`); continue; }
           if (lbl === 'STALL') {
-            const by = row.stalledBy.map(s => `${pcHex(s.producerPc)} (${s.bubbles})`).join(', ');
-            cells.push(`<div class="pdr-cell pdc-STALL" title="Stall: waiting on ${_esc(by)}">**</div>`);
+            const first = row.stalledBy && row.stalledBy[0];
+            const hazInfo = first && HAZARD_TYPES[first.type];
+            const hazClass = hazInfo ? hazInfo.cssClass : '';
+            const by = row.stalledBy.map(s => `${pcHex(s.producerPc)}${s.producerName ? ' ' + s.producerName : ''} (${s.bubbles})`).join(', ');
+            const reg = first && Number.isFinite(first.register) ? ` (R${first.register})` : '';
+            const tip = hazInfo
+              ? `${hazInfo.label}: ${hazInfo.desc}\nProducer: ${by}${reg}`
+              : `Stall: waiting on ${by}`;
+            cells.push(`<div class="pdr-cell pdc-STALL ${hazClass}" title="${_esc(tip)}">**</div>`);
           } else {
             cells.push(`<div class="pdr-cell pdc-${lbl}">${lbl}</div>`);
           }
         }
 
+        const iterBadge = row.iterIdx
+          ? `<span class="pdr-badge pdr-b-iter" title="Iteration ${row.iterIdx} of ${row.iterTotal}">#${row.iterIdx}/${row.iterTotal}</span>`
+          : '';
+        const predBadge = row.isBackEdge && row.predicted !== null
+          ? `<span class="pdr-badge pdr-b-pred${row.mispredict ? ' pdr-b-pred-miss' : ''}" title="Predictor: ${row.mispredict ? 'MISS' : 'HIT'} — predicted ${row.predicted ? 'T' : 'NT'}, actual ${row.actualTaken ? 'T' : 'NT'}">${row.mispredict ? '✗' : '✓'}</span>`
+          : '';
         const badges = [
           row.isLoad      ? '<span class="pdr-badge pdr-b-load">LD</span>' : '',
           row.isBranch    ? '<span class="pdr-badge pdr-b-branch">BR</span>' : '',
           row.speculative ? '<span class="pdr-badge pdr-b-spec" title="Conditional branch — flush not modelled">?</span>' : '',
           row.isHalt      ? '<span class="pdr-badge pdr-b-halt">HLT</span>' : '',
+          iterBadge,
+          predBadge,
         ].join('');
         const labelTitle = `${pcHex(row.pc)} · ${_esc(row.disasm)}`;
         return `<div class="pipe-diag-row" title="${labelTitle}">
@@ -403,6 +488,60 @@ export class PipelinePanel {
       ).join(' · ');
       this._body.insertAdjacentHTML('beforeend',
         `<div class="pipe-cov-row">COVERAGE: ${covLine}</div>`);
+    }
+
+    // Branch Predictor section (Phase 15 — read-only state visualizer).
+    // Renders a dropdown to switch predictors and a per-PC state table fed
+    // by the synthesized outcome trace from the analyzer.
+    if (r.predictor) {
+      const p = r.predictor;
+      const pcHex = (pc) => '0x' + pc.toString(16).toUpperCase().padStart(2, '0');
+      const opts = p.available.map(opt =>
+        `<option value="${opt.id}"${opt.id === p.id ? ' selected' : ''}>${_esc(opt.name)}</option>`
+      ).join('');
+      const rows = p.entries.length
+        ? p.entries.map(e => {
+            const predTxt   = e.lastPred   === null ? '—' : (e.lastPred   ? 'T' : 'NT');
+            const actualTxt = e.lastActual === null ? '—' : (e.lastActual ? 'T' : 'NT');
+            const hitTxt    = e.hit === null ? '—' : (e.hit ? '<span class="pred-ok">✓</span>' : '<span class="pred-miss">✗</span>');
+            const rate      = e.total > 0 ? `${e.hits}/${e.total}` : '0/0';
+            return `<div class="pred-row">
+              <span class="pred-pc">${pcHex(e.pc)}</span>
+              <span class="pred-state">${_esc(e.stateLabel)}</span>
+              <span class="pred-pred">${predTxt}</span>
+              <span class="pred-actual">${actualTxt}</span>
+              <span class="pred-hit">${hitTxt}</span>
+              <span class="pred-rate">${rate}</span>
+            </div>`;
+          }).join('')
+        : '<div class="pred-empty">No branches in program.</div>';
+      const hitPct = p.totalBranches > 0 ? (p.hitRate * 100).toFixed(1) + '%' : '—';
+      this._body.insertAdjacentHTML('beforeend',
+        `<div class="pipe-pred-header">BRANCH PREDICTOR</div>
+         <div class="pred-controls">
+           <label class="pred-label">Predictor:</label>
+           <select id="pipe-predictor-select" class="pred-select">${opts}</select>
+           <span class="pred-summary">Hit rate: <b>${hitPct}</b> · ${p.totalHits}/${p.totalBranches}</span>
+           <button id="pipe-predictor-compare" class="pred-btn">COMPARE</button>
+         </div>
+         <div class="pred-table">
+           <div class="pred-row pred-row-head">
+             <span class="pred-pc">PC</span>
+             <span class="pred-state">State</span>
+             <span class="pred-pred">Pred</span>
+             <span class="pred-actual">Actual</span>
+             <span class="pred-hit">✓/✗</span>
+             <span class="pred-rate">Hits</span>
+           </div>
+           ${rows}
+         </div>
+         <div id="pipe-predictor-compare-table"></div>`);
+      const sel = document.getElementById('pipe-predictor-select');
+      sel?.addEventListener('change', (e) => {
+        this._analyzer.setPredictor(e.target.value);
+      });
+      const cmpBtn = document.getElementById('pipe-predictor-compare');
+      cmpBtn?.addEventListener('click', () => this._renderPredictorCompare());
     }
 
     // CDC section (Phase 13 stretch) — only when the scene has ≥2 clocks.

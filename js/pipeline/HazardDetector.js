@@ -20,6 +20,17 @@
  * Each hazard carries a short suggestion string for the panel.
  */
 
+// Hazard taxonomy shared with the Gantt renderer. `cssClass` is applied to
+// stall/flush cells so each hazard kind gets its own color; `label`/`desc`
+// drive the legend chips and the cell tooltip.
+export const HAZARD_TYPES = {
+  RAW:      { label: 'RAW',      desc: 'Read-After-Write data dependency',     cssClass: 'pdc-haz-raw' },
+  LOAD_USE: { label: 'Load-use', desc: 'RAW after LOAD — unavoidable bubble',  cssClass: 'pdc-haz-loaduse' },
+  WAR:      { label: 'WAR',      desc: 'Write-After-Read anti-dependency',     cssClass: 'pdc-haz-war' },
+  WAW:      { label: 'WAW',      desc: 'Write-After-Write output dependency',  cssClass: 'pdc-haz-waw' },
+  CONTROL:  { label: 'Control',  desc: 'Branch resolution flush',              cssClass: 'pdc-haz-control' },
+};
+
 const STATEFUL_TYPES = new Set([
   'PIPE_REG', 'REGISTER', 'REG_FILE', 'REG_FILE_DP',
   'RAM', 'FIFO', 'STACK', 'SHIFT_REG',

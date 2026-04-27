@@ -877,6 +877,14 @@ These only matter for components that change how a circuit *terminates* or *osci
 
 ---
 
+## Future Work — Pipeline Engine
+
+- **Hazard heatmap on Gantt** — color-code pipeline bubbles by hazard type (RAW / WAW / WAR / control / structural / load-use) with hover tooltips explaining the cause and a "Suggest fixes" panel that proposes forwarding paths or reorderings.
+- **Branch predictor visualizer** — pluggable predictors (static BTFN, 1-bit, 2-bit saturating counter, BTB) with a live FSM/state-table panel, speculative-execution shading on the Gantt, misprediction flush highlighting, and side-by-side hit-rate / CPI comparison across predictors.
+- **L1 cache simulator** — optional cache block between CPU and RAM (configurable size / line / associativity / replacement / write policy) with a live cache-inspector panel, hit/miss visualization, 3C miss breakdown (compulsory / capacity / conflict), memory-access heatmap, and a sweep tool for plotting hit-rate vs. cache size.
+
+---
+
 ## License
 
 MIT

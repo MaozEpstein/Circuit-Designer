@@ -1,46 +1,45 @@
 /**
  * PipelineScheduler — builds a static cycle-by-cycle Gantt schedule
- * (instruction × cycle) over the decoded instruction stream, honouring
- * RAW stalls (forwarding-aware via ProgramHazardDetector) and unconditional
- * branch flushes. This is compile-time projection of an ideal in-order
- * 5-stage pipeline — no live simulation state is required.
+ * (instruction × cycle) over the decoded instruction stream.
+ *
+ * Phase 15 (Branch predictor visualizer, Phase 2): when a `predictor` is
+ * supplied via options, loops detected by LoopAnalyzer are *unrolled* — each
+ * iteration becomes its own row — and the predictor is consulted at each
+ * back-edge branch (and JMP) to drive `flushAfter` per row. Mispredictions
+ * carry `flushReason: 'mispredict'` so the renderer can colour them.
+ *
+ * Without a predictor (e.g. analyzer was constructed without one), the
+ * scheduler falls back to the linear PC walk and the textbook "JMP=2 flush,
+ * JZ/JC=0" heuristic — backward-compatible with Phase 1.
  *
  * Output shape:
  *   {
  *     stageNames: ['IF','ID','EX','MEM','WB'],
  *     rows: [{
  *       idx, pc, name, disasm,
- *       ifCycle,          // cycle in which IF occurs
- *       stallBefore,      // # of bubble cells inserted between ID and EX
- *       flushAfter,       // # of flushed IF slots caused by this row (for JMP)
- *       stalledBy,        // [{ producerPc, bubbles }] — UI tooltip hint
- *     }],
- *     totalCycles,        // last WB cycle + 1
- *     truncated,          // true if we stopped at MAX_INSTRUCTIONS
- *     haltedAt,           // idx of HALT row, or -1
- *   }
+ *       ifCycle, stallBefore, flushAfter,
+ *       stalledBy:    [{ producerPc, bubbles, type, register, producerName }],
+ *       isBranch, isHalt, isLoad, speculative,
  *
- * Design notes:
- *   - Linear PC walk: follows ROM order, NOT branch targets. JMP is drawn
- *     with a 2-cycle flush on the following two instructions (textbook MIPS:
- *     branch resolves at EX). JZ/JC are conditional — modelled as zero-cost
- *     to keep the diagram deterministic; a `speculative` flag is set so the
- *     UI can badge the row.
- *   - Hard cap at MAX_INSTRUCTIONS rows to keep loop-heavy ROMs bounded.
- *   - Trusts the `bubbles` / `resolvedByForwarding` fields already computed
- *     by ProgramHazardDetector + the forwarding annotator in PipelineAnalyzer,
- *     so CPI here matches the numbers in the PERFORMANCE panel.
+ *       // Phase-15 (loop-expansion) fields:
+ *       iterIdx, iterTotal, loopId,    // null when not in an unrolled loop
+ *       isBackEdge,                    // this row is the back-edge branch
+ *       predicted, actualTaken,        // booleans, null when no predictor
+ *       mispredict,                    // bool, default false
+ *       flushReason,                   // 'mispredict' | 'unconditional' | null
+ *     }],
+ *     totalCycles, truncated, haltedAt,
+ *   }
  */
 import { disassemble } from './InstructionDecoder.js';
 
-const MAX_INSTRUCTIONS = 64;
+const MAX_ROWS = 96;            // total emitted rows after loop expansion
 const STAGE_NAMES = ['IF', 'ID', 'EX', 'MEM', 'WB'];
+export const LOOP_ITERS = 6;    // iterations to unroll per detected loop
 
-export function scheduleProgram(instructions, programHazards, _isa) {
+export function scheduleProgram(instructions, programHazards, _isa, options = {}) {
   if (!Array.isArray(instructions) || instructions.length === 0) return null;
-
-  const items = instructions.slice(0, MAX_INSTRUCTIONS);
-  const truncated = instructions.length > items.length;
+  const { loops = [], predictor = null } = options;
 
   // Index unresolved RAW hazards by consumer PC.
   const stallsByConsumer = new Map();
@@ -49,62 +48,114 @@ export function scheduleProgram(instructions, programHazards, _isa) {
     if (h.resolvedByForwarding) continue;
     if (!(h.bubbles > 0)) continue;
     if (!stallsByConsumer.has(h.instJ)) stallsByConsumer.set(h.instJ, []);
-    stallsByConsumer.get(h.instJ).push({ producerPc: h.instI, bubbles: h.bubbles });
+    stallsByConsumer.get(h.instJ).push({
+      producerPc:   h.instI,
+      bubbles:      h.bubbles,
+      type:         h.loadUse ? 'LOAD_USE' : 'RAW',
+      register:     h.register,
+      producerName: h.nameI,
+    });
+  }
+
+  // Loop indexing — only loops whose start PC is in the decoded stream count.
+  const pcToIdx = new Map(instructions.map((ins, i) => [ins.pc, i]));
+  const loopByStartPc = new Map();
+  for (const L of loops) {
+    if (pcToIdx.has(L.startPc) && pcToIdx.has(L.endPc)) {
+      loopByStartPc.set(L.startPc, L);
+    }
   }
 
   const rows = [];
   let haltedAt = -1;
+  let truncated = false;
+  const expandedLoops = new Set();
 
-  for (let i = 0; i < items.length; i++) {
-    const ins = items[i];
-    const prev = rows[i - 1];
-    const prevIns = items[i - 1];
+  let i = 0;
+  outer: while (i < instructions.length) {
+    if (rows.length >= MAX_ROWS) { truncated = true; break; }
+    const ins = instructions[i];
+    const loop = loopByStartPc.get(ins.pc);
 
-    let ifCycle;
-    if (i === 0) {
-      ifCycle = 0;
-    } else {
-      // Sequential baseline: follow prev's IF + its own stalls + branch flush.
-      ifCycle = prev.ifCycle + 1 + prev.stallBefore + prev.flushAfter;
+    if (loop && !expandedLoops.has(loop.id)) {
+      expandedLoops.add(loop.id);
+      const startIdx = i;
+      const endIdx = pcToIdx.get(loop.endPc);
+      if (endIdx == null || endIdx < startIdx) { i++; continue; }
+
+      for (let iter = 1; iter <= LOOP_ITERS; iter++) {
+        const isLastIter = (iter === LOOP_ITERS);
+        for (let j = startIdx; j <= endIdx; j++) {
+          if (rows.length >= MAX_ROWS) { truncated = true; break outer; }
+          const insJ = instructions[j];
+          const isBackEdge = (insJ.pc === loop.endPc);
+          const extras = {
+            iterIdx:   iter,
+            iterTotal: LOOP_ITERS,
+            loopId:    loop.id,
+            isBackEdge,
+            flushAfter: 0,
+            flushReason: null,
+            predicted:   null,
+            actualTaken: null,
+            mispredict:  false,
+          };
+          if (isBackEdge) {
+            const actualTaken = !isLastIter;
+            extras.actualTaken = actualTaken;
+            if (predictor) {
+              const p = predictor.predict(insJ.pc, loop.startPc);
+              extras.predicted  = p.taken;
+              extras.mispredict = (p.taken !== actualTaken);
+              predictor.update(insJ.pc, actualTaken, loop.startPc);
+            } else {
+              // No predictor: textbook static-NT for conditional branches.
+              extras.predicted  = false;
+              extras.mispredict = actualTaken;
+            }
+            extras.flushAfter  = extras.mispredict ? 2 : 0;
+            extras.flushReason = extras.mispredict ? 'mispredict' : null;
+          }
+          rows.push(_buildRow(insJ, rows, stallsByConsumer, extras));
+          if (insJ.isHalt) { haltedAt = rows.length - 1; break outer; }
+        }
+      }
+      i = endIdx + 1;
+      continue;
     }
 
-    // Enforce RAW stall: consumer's EX must land after producer's EX + bubbles.
-    let stallBefore = 0;
-    const stalledBy = [];
-    const needs = stallsByConsumer.get(ins.pc) || [];
-    for (const s of needs) {
-      const prod = rows.find(r => r.pc === s.producerPc);
-      if (!prod) continue;
-      const producerExCycle = prod.ifCycle + 2 + prod.stallBefore;
-      const requiredConsumerExCycle = producerExCycle + s.bubbles + 1;
-      const naturalConsumerExCycle  = ifCycle + 2 + stallBefore;
-      const need = Math.max(0, requiredConsumerExCycle - naturalConsumerExCycle);
-      if (need > 0) {
-        stallBefore = Math.max(stallBefore, need);
-        stalledBy.push({ producerPc: s.producerPc, bubbles: s.bubbles });
+    // Non-loop (or already-expanded) instruction. Linear walk semantics.
+    const extras = {
+      iterIdx: null, iterTotal: null, loopId: null, isBackEdge: false,
+      flushAfter: 0, flushReason: null,
+      predicted: null, actualTaken: null, mispredict: false,
+    };
+    if (ins.name === 'JMP') {
+      // Unconditional. With a predictor + a "BTB" (just the literal target
+      // here), we could predict-taken with 0 flush. For now: predict via
+      // the chosen predictor; treat actual = always taken.
+      extras.actualTaken = true;
+      if (predictor) {
+        const p = predictor.predict(ins.pc, ins.addr ?? null);
+        extras.predicted  = p.taken;
+        extras.mispredict = !p.taken;
+        predictor.update(ins.pc, true, ins.addr ?? null);
+      } else {
+        extras.predicted  = false;
+        extras.mispredict = true;
+      }
+      extras.flushAfter  = extras.mispredict ? 2 : 0;
+      extras.flushReason = extras.mispredict ? 'mispredict' : null;
+      // Legacy heuristic for strict-static no-predictor: 2 flushes regardless,
+      // matching the pre-Phase-15 Gantt for circuits without a predictor.
+      if (!predictor) {
+        extras.flushAfter  = 2;
+        extras.flushReason = 'unconditional';
       }
     }
-
-    // Unconditional branch → flush the next two IF slots.
-    const flushAfter = (ins.name === 'JMP') ? 2 : 0;
-    const speculative = (ins.name === 'JZ' || ins.name === 'JC');
-
-    rows.push({
-      idx:         i,
-      pc:          ins.pc,
-      name:        ins.name,
-      disasm:      disassemble(ins),
-      ifCycle,
-      stallBefore,
-      flushAfter,
-      stalledBy,
-      isBranch:    !!ins.isBranch,
-      isHalt:      !!ins.isHalt,
-      isLoad:      !!ins.isLoad,
-      speculative,
-    });
-
-    if (ins.isHalt) { haltedAt = i; break; }
+    rows.push(_buildRow(ins, rows, stallsByConsumer, extras));
+    if (ins.isHalt) { haltedAt = rows.length - 1; break; }
+    i++;
   }
 
   const last = rows[rows.length - 1];
@@ -122,12 +173,71 @@ export function scheduleProgram(instructions, programHazards, _isa) {
   };
 }
 
+function _buildRow(ins, rows, stallsByConsumer, extras) {
+  const prev = rows[rows.length - 1];
+  const ifCycle = prev
+    ? prev.ifCycle + 1 + prev.stallBefore + prev.flushAfter
+    : 0;
+
+  // RAW stall computation. With loop expansion, multiple emitted rows can
+  // share the same PC; the producer of interest is the *most recent* one
+  // before us (handles cross-iteration steady-state RAW automatically).
+  let stallBefore = 0;
+  const stalledBy = [];
+  const needs = stallsByConsumer.get(ins.pc) || [];
+  for (const s of needs) {
+    let prod = null;
+    for (let k = rows.length - 1; k >= 0; k--) {
+      if (rows[k].pc === s.producerPc) { prod = rows[k]; break; }
+    }
+    if (!prod) continue;
+    const producerExCycle = prod.ifCycle + 2 + prod.stallBefore;
+    const requiredConsumerExCycle = producerExCycle + s.bubbles + 1;
+    const naturalConsumerExCycle  = ifCycle + 2 + stallBefore;
+    const need = Math.max(0, requiredConsumerExCycle - naturalConsumerExCycle);
+    if (need > 0) {
+      stallBefore = Math.max(stallBefore, need);
+      stalledBy.push({
+        producerPc:   s.producerPc,
+        bubbles:      s.bubbles,
+        type:         s.type,
+        register:     s.register,
+        producerName: s.producerName,
+      });
+    }
+  }
+
+  return {
+    idx:         rows.length,
+    pc:          ins.pc,
+    name:        ins.name,
+    disasm:      disassemble(ins),
+    ifCycle,
+    stallBefore,
+    flushAfter:  extras.flushAfter,
+    stalledBy,
+    isBranch:    !!ins.isBranch,
+    isHalt:      !!ins.isHalt,
+    isLoad:      !!ins.isLoad,
+    // Legacy `speculative` badge: the JZ/JC marker we used pre-Phase-15.
+    // With loop expansion we know taken/NT exactly, so the badge is only
+    // meaningful for conditional branches *outside* unrolled loops.
+    speculative: (ins.name === 'JZ' || ins.name === 'JC') && !extras.iterIdx,
+    iterIdx:     extras.iterIdx,
+    iterTotal:   extras.iterTotal,
+    loopId:      extras.loopId,
+    isBackEdge:  !!extras.isBackEdge,
+    predicted:   extras.predicted,
+    actualTaken: extras.actualTaken,
+    mispredict:  !!extras.mispredict,
+    flushReason: extras.flushReason,
+  };
+}
+
 /**
  * For a given row, return the stage label occupying `cycleIdx`, or null if
  * the row is idle at that cycle. Stage order with B=stallBefore bubbles:
  *   IF | ID | (B × STALL) | EX | MEM | WB
- * Cells before IF represent FLUSH slots if the preceding row was a taken
- * branch — caller handles that by looking at prev row's `flushAfter`.
  */
 export function cellAt(row, cycleIdx) {
   const rel = cycleIdx - row.ifCycle;

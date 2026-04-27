@@ -16,6 +16,7 @@ import { detectCdc } from './CdcDetector.js';
 import { checkLip } from './LipChecker.js';
 import { computeMetrics } from './PerformanceMetrics.js';
 import { scheduleProgram } from './PipelineScheduler.js';
+import { predictorById } from './BranchPredictor.js';
 import * as Telemetry from './Telemetry.js';
 
 export class PipelineAnalyzer {
@@ -24,6 +25,7 @@ export class PipelineAnalyzer {
     this._cache = null;
     this._dirty = true;
     this._warnedUnknown = new Set();   // types we've already warned about
+    this._predictorId = 'static-nt';   // Phase-15: branch predictor visualizer
 
     const invalidate = () => { this._dirty = true; };
     bus.on('node:added', invalidate);
@@ -76,9 +78,43 @@ export class PipelineAnalyzer {
     // Gantt-style pipeline schedule (instruction × cycle) for the DIAGRAM
     // panel. Built from the already-annotated program hazards so stall
     // counts match the PERFORMANCE numbers exactly. Null when no ROM.
+    // Phase-15 (Branch predictor visualizer, Phase 2). The selected predictor
+    // is fed *into* the scheduler — it drives loop unrolling and per-row
+    // flush counts. After scheduling, we read the predictor's accumulated
+    // state out for the BRANCH PREDICTOR panel.
+    let predictor = null;
+    let PredictorClass = null;
+    if (this._cache.hasProgram) {
+      PredictorClass = predictorById(this._predictorId);
+      predictor = new PredictorClass();
+    }
+
     this._cache.schedule = this._cache.hasProgram
-      ? scheduleProgram(this._cache.instructions, this._cache.programHazards, isa)
+      ? scheduleProgram(this._cache.instructions, this._cache.programHazards, isa, {
+          loops:     this._cache.loops,
+          predictor,
+        })
       : null;
+
+    if (predictor) {
+      const entries = predictor.getEntries();
+      let totalHits = 0, totalBranches = 0;
+      for (const e of entries) { totalHits += e.hits; totalBranches += e.total; }
+      this._cache.predictor = {
+        id:         PredictorClass.id,
+        name:       PredictorClass.name,
+        available:  [{ id: 'static-nt',   name: 'Static Not-Taken' },
+                     { id: 'static-btfn', name: 'Static BTFN' },
+                     { id: '1bit',        name: '1-bit (last-outcome)' },
+                     { id: '2bit',        name: '2-bit saturating counter' }],
+        entries,
+        totalBranches,
+        totalHits,
+        hitRate: totalBranches > 0 ? (totalHits / totalBranches) : 0,
+      };
+    } else {
+      this._cache.predictor = null;
+    }
 
     this._dirty = false;
     // Warn once per unknown type — prompts the designer to update DelayModel.js.
@@ -93,6 +129,58 @@ export class PipelineAnalyzer {
   }
 
   invalidate() { this._dirty = true; }
+
+  setPredictor(id) {
+    if (id === this._predictorId) return;
+    this._predictorId = id;
+    this._dirty = true;
+    this.analyze({ force: true });
+  }
+
+  /**
+   * Phase 15 Phase 3 — run every available predictor against the current
+   * decoded program and return their relative performance. Read-only: does
+   * NOT change the currently-selected predictor.
+   *
+   * Returns: [{ id, name, branches, hits, misses, hitRate, cycles, cpi }]
+   * sorted by cycles ascending. `null` when there is no program.
+   */
+  comparePredictors() {
+    if (!this._cache?.hasProgram) return null;
+    const isa = this._cache.isa;
+    const PredictorClasses = [
+      predictorById('static-nt'),
+      predictorById('static-btfn'),
+      predictorById('1bit'),
+      predictorById('2bit'),
+    ];
+    const results = PredictorClasses.map(Cls => {
+      const p = new Cls();
+      const sch = scheduleProgram(this._cache.instructions, this._cache.programHazards, isa, {
+        loops:     this._cache.loops,
+        predictor: p,
+      });
+      let branches = 0, misses = 0;
+      for (const row of (sch?.rows || [])) {
+        if (row.predicted === null) continue;
+        branches++;
+        if (row.mispredict) misses++;
+      }
+      const hits   = branches - misses;
+      const cycles = sch?.totalCycles ?? 0;
+      const instr  = sch?.rows?.length ?? 0;
+      const cpi    = instr > 0 ? cycles / instr : 0;
+      return {
+        id:       Cls.id,
+        name:     Cls.name,
+        branches, hits, misses,
+        hitRate:  branches > 0 ? hits / branches : 0,
+        cycles, cpi,
+      };
+    });
+    results.sort((a, b) => a.cycles - b.cycles);
+    return results;
+  }
 }
 
 /**
