@@ -722,6 +722,150 @@
 }
 #pipeline-panel.hidden { display: none; }
 
+/* Fullscreen mode — overrides size/position so the panel fills the viewport.
+   The resize grip is hidden; CLOSE / FULLSCREEN buttons remain accessible. */
+#pipeline-panel.pipeline-fullscreen {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border: none;
+  z-index: 9999;
+}
+#pipeline-panel.pipeline-fullscreen #pipeline-resize-grip { display: none; }
+
+/* In fullscreen, lay sections out as a responsive grid so 2–3 fit side-by-side
+   on wide screens. The PIPELINE DIAGRAM section keeps its own full-width row
+   because the Gantt grid is much wider than other sections. */
+#pipeline-panel.pipeline-fullscreen {
+  font-size: 20px;       /* base bump — children using em/rem inherit */
+}
+#pipeline-panel.pipeline-fullscreen #pipeline-panel-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(620px, 1fr));
+  gap: 22px;
+  align-items: start;
+  padding: 24px 32px;
+  font-size: 18px;
+}
+/* In fullscreen the summary is moved INTO the body as a grid item, sitting
+   on the left half of the top row alongside the stages-area on the right. */
+#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > #pipeline-panel-summary {
+  grid-column: 1 / span 1;
+  font-size: 19px;
+  padding: 16px 22px;
+  border-bottom: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 18px;
+  row-gap: 6px;
+  align-self: start;
+  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+  border: 1px solid rgba(143, 212, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > #pipeline-panel-summary .v {
+  text-align: right;
+}
+/* Stages-area takes the rest of the top row — rows stacked vertically, each
+   showing its delay bar so relative stage durations are visible at a glance. */
+#pipeline-panel.pipeline-fullscreen #pipe-stages-area {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+  border: 1px solid rgba(143, 212, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+/* Outside fullscreen the wrapper is a passthrough — children render full-width. */
+.pipe-stages-area { display: block; }
+
+/* Compact stage list in fullscreen — render rows as inline "chips" that wrap,
+   with the timing shown right next to the stage label. Each stage takes the
+   minimum it needs instead of an entire panel-wide row. */
+#pipeline-panel.pipeline-fullscreen #pipeline-panel-body { padding-bottom: 4px; }
+/* Each stage is a full-width row inside the stages-area, with the relative-
+   delay bar restored so the longest stage visually pops as the bottleneck. */
+#pipeline-panel.pipeline-fullscreen .pipe-stage-row {
+  display: flex;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid rgba(143, 212, 255, 0.10);
+  border-radius: 5px;
+  gap: 0.8em;
+  background: rgba(143, 212, 255, 0.02);
+  align-items: center;
+}
+#pipeline-panel.pipeline-fullscreen .pipe-stage-row.bottleneck {
+  background: rgba(255, 80, 80, 0.10);
+  border-color: rgba(255, 80, 80, 0.55);
+}
+#pipeline-panel.pipeline-fullscreen .pipe-stage-bar { display: block; height: 0.9em; }
+/* Section "card": subtle dark surface, faint border, soft shadow for depth.
+   Far more readable than the previous bright red boxes. The card uses the
+   panel's existing cool palette so each section's own accent (its colored
+   header text) reads cleanly against the neutral surface. */
+#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > .pipe-section {
+  min-width: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+  border: 1px solid rgba(143, 212, 255, 0.14);
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > .pipe-section[data-section="diag"] {
+  grid-column: 1 / -1;   /* PIPELINE DIAGRAM gets its own full-width row */
+}
+#pipeline-panel.pipeline-fullscreen .pipe-section-header {
+  font-size: 1.1em;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+/* Drag-to-reorder visual states (fullscreen only). The drag is handle-only,
+   so the section body keeps its normal cursor — only the handle shows grab. */
+#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > .pipe-section {
+  transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+/* Drag handle — hidden by default, visible only in fullscreen. */
+.pipe-section-drag-handle { display: none; }
+#pipeline-panel.pipeline-fullscreen .pipe-section-drag-handle {
+  display: inline-block;
+  cursor: grab;
+  user-select: none;
+  margin-right: 10px;
+  padding: 0 6px;
+  color: rgba(143, 212, 255, 0.55);
+  font-weight: 900;
+  letter-spacing: -2px;
+  font-size: 1.05em;
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s;
+}
+#pipeline-panel.pipeline-fullscreen .pipe-section-drag-handle:hover {
+  background: rgba(143, 212, 255, 0.12);
+  color: #cfe6f0;
+}
+#pipeline-panel.pipeline-fullscreen .pipe-section-drag-handle:active { cursor: grabbing; }
+#pipeline-panel.pipeline-fullscreen .pipe-section-dragging {
+  opacity: 0.45;
+  transform: scale(0.99);
+}
+#pipeline-panel.pipeline-fullscreen .pipe-section-drop-target {
+  box-shadow: 0 0 0 2px rgba(143, 212, 255, 0.55), 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+/* Don't let drag start from inputs / buttons inside a section. */
+#pipeline-panel.pipeline-fullscreen .pipe-section input,
+#pipeline-panel.pipeline-fullscreen .pipe-section select,
+#pipeline-panel.pipeline-fullscreen .pipe-section button { cursor: auto; }
+
 #pipeline-resize-grip {
   position: absolute;
   top: 6px;
@@ -1058,7 +1202,17 @@
 .pdl-cell { padding: 2px 8px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 0.82em; border: 1px solid transparent; }
 
 .pipe-diag-grid { overflow-x: auto; padding: 0.5em 0.6em 0.8em 0.6em; background: #040608; font-family: 'JetBrains Mono', monospace; }
-.pipe-diag-row { display: grid; grid-template-columns: 180px repeat(var(--pdg-cols), 30px); gap: 2px; align-items: stretch; margin-bottom: 2px; }
+.pipe-diag-row { display: grid; grid-template-columns: 180px repeat(var(--pdg-cols), 30px); gap: 2px; align-items: stretch; margin-bottom: 2px; border-bottom: 1px solid rgba(143, 212, 255, 0.06); padding-bottom: 2px; }
+.pipe-diag-row:nth-child(even):not(.pipe-diag-cyc-header) { background: rgba(143, 212, 255, 0.025); }
+.pipe-diag-row:hover:not(.pipe-diag-cyc-header) { background: rgba(143, 212, 255, 0.07); }
+.pipe-diag-row .pdr-label { border-right: 1px solid rgba(143, 212, 255, 0.10); padding-right: 8px; }
+/* Cycle gridlines every 5 cycles — drawn into the row gap via outside box-shadow
+   so the colored cells aren't cut into. Children are [label, cell0, cell1, ...],
+   so :nth-child(5n+7) targets cycles 5, 10, 15, ... (skipping cycle 0). */
+.pipe-diag-row > :nth-child(5n+7) { box-shadow: -1px 0 0 rgba(143, 212, 255, 0.18); }
+/* Bolder, brighter cycle labels at every 5th tick — easy visual anchor. */
+.pipe-diag-row.pipe-diag-cyc-header > .pdr-cyc:nth-child(5n+7),
+.pipe-diag-row.pipe-diag-cyc-header > .pdr-cyc:nth-child(2)        { color: #a8d8f0; font-weight: 700; }
 .pipe-diag-row.pipe-diag-cyc-header { position: sticky; top: 0; z-index: 2; background: #040608; padding-bottom: 3px; border-bottom: 1px solid #1a1a20; }
 .pipe-diag-row.pipe-diag-cyc-header .pdr-cyc { color: #6088a0; font-size: 0.72em; text-align: center; padding: 2px 0; }
 

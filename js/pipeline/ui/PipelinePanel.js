@@ -58,6 +58,14 @@ export class PipelinePanel {
     document.getElementById('btn-pipeline-close')?.addEventListener('click', () => this.hide());
     this._wireExportMenu();
 
+    const fsBtn = document.getElementById('btn-pipeline-fullscreen');
+    fsBtn?.addEventListener('click', () => this._toggleFullscreen());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this._el?.classList.contains('pipeline-fullscreen')) {
+        this._toggleFullscreen();
+      }
+    });
+
     // Live updates
     bus.on('pipeline:analyzed', (r) => { if (this._visible) this._render(r); });
     const schedule = () => {
@@ -98,6 +106,39 @@ export class PipelinePanel {
   }
   toggle() { this._visible ? this.hide() : this.show(); }
 
+  _toggleFullscreen() {
+    if (!this._el) return;
+    const on = this._el.classList.toggle('pipeline-fullscreen');
+    const btn = document.getElementById('btn-pipeline-fullscreen');
+    if (btn) btn.textContent = on ? 'EXIT FS' : 'FULLSCREEN';
+    if (on) {
+      this._fsSaved = {
+        width:    this._el.style.width,
+        height:   this._el.style.height,
+        fontSize: this._el.style.fontSize,
+      };
+      this._el.style.width    = '';
+      this._el.style.height   = '';
+      this._el.style.fontSize = '';
+      // Move the summary INTO the body so it can become a grid item that
+      // sits side-by-side with the stages-area on the top row.
+      if (this._summary && this._body && this._summary.parentNode !== this._body) {
+        this._body.insertBefore(this._summary, this._body.firstChild);
+      }
+    } else {
+      if (this._fsSaved) {
+        this._el.style.width    = this._fsSaved.width;
+        this._el.style.height   = this._fsSaved.height;
+        this._el.style.fontSize = this._fsSaved.fontSize;
+        this._fsSaved = null;
+      }
+      // Restore summary as a sibling of the body (its original position).
+      if (this._summary && this._body && this._summary.parentNode === this._body) {
+        this._el.insertBefore(this._summary, this._body);
+      }
+    }
+  }
+
   _wireExportMenu() {
     const btn  = document.getElementById('btn-pipeline-export');
     const menu = document.getElementById('pipe-export-menu');
@@ -125,7 +166,15 @@ export class PipelinePanel {
         if      (action === 'json') exportJSON(r);
         else if (action === 'csv')  exportCSV(r);
         else if (action === 'md')   exportMarkdown(r);
-        else if (action === 'png')      await exportPNG(this._el,   `pipeline-panel-${Date.now()}.png`);
+        else if (action === 'png') {
+          // Always export the fullscreen layout — it has the wide grid that
+          // looks good in a presentation. Toggle FS on if needed, render,
+          // then restore. The user sees a brief flash, which is acceptable.
+          const wasFs = this._el.classList.contains('pipeline-fullscreen');
+          if (!wasFs) this._toggleFullscreen();
+          try { await exportPNG(this._el, `pipeline-panel-${Date.now()}.png`); }
+          finally { if (!wasFs) this._toggleFullscreen(); }
+        }
         else if (action === 'copyjson') {
           const ok = await copyJSON(r);
           btn.textContent = ok ? 'COPIED ✓' : 'COPY FAILED';
@@ -222,7 +271,7 @@ export class PipelinePanel {
       ${unknownLine}
     `;
 
-    this._body.innerHTML = r.stages.map(s => {
+    const stagesHtml = r.stages.map(s => {
       const pct = maxDelay > 0 ? Math.max(2, Math.round(100 * s.delayPs / maxDelay)) : 0;
       const bn  = s.idx === r.bottleneck ? ' bottleneck' : '';
       const badges = [
@@ -238,6 +287,12 @@ export class PipelinePanel {
         <span class="pipe-stage-bar"><div style="width:${pct}%"></div></span>
       </div>`;
     }).join('');
+    this._body.innerHTML = `<div id="pipe-stages-area" class="pipe-stages-area">${stagesHtml}</div>`;
+    // In fullscreen the summary lives INSIDE body as a grid item — re-attach
+    // it after the innerHTML reset wiped it.
+    if (this._el?.classList.contains('pipeline-fullscreen') && this._summary) {
+      this._body.insertBefore(this._summary, this._body.firstChild);
+    }
 
     // Violations section (after the stage list).
     if (r.violations && r.violations.length) {
@@ -709,6 +764,13 @@ export class PipelinePanel {
       toggle.textContent = '▾';
       g.header.classList.add('pipe-section-header');
       g.header.insertBefore(toggle, g.header.firstChild);
+      // Drag handle — visible only in fullscreen via CSS. Clicking elsewhere
+      // on the section will NOT start a drag.
+      const handle = document.createElement('span');
+      handle.className = 'pipe-section-drag-handle';
+      handle.title = 'Drag to reorder';
+      handle.textContent = '⋮⋮';
+      g.header.insertBefore(handle, g.header.firstChild);
       section.appendChild(g.header);
 
       const bodyWrap = document.createElement('div');
@@ -721,6 +783,104 @@ export class PipelinePanel {
         const state = this._loadCollapsedState();
         state[g.id] = section.classList.contains('pipe-section-collapsed');
         try { localStorage.setItem('pipe-panel-collapsed', JSON.stringify(state)); } catch {}
+      });
+    }
+
+    this._applySectionOrderAndDrag();
+  }
+
+  _loadSectionOrder() {
+    try {
+      const raw = localStorage.getItem('pipe-panel-order');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  }
+  _saveSectionOrder(order) {
+    try { localStorage.setItem('pipe-panel-order', JSON.stringify(order)); } catch {}
+  }
+
+  /**
+   * Reorders the .pipe-section children of #pipeline-panel-body to match the
+   * saved order, then wires HTML5 drag-and-drop so the user can rearrange
+   * sections by dragging their headers. Drag is enabled only in fullscreen
+   * mode — in the narrow side-panel it would just be noise.
+   */
+  _applySectionOrderAndDrag() {
+    if (!this._body) return;
+    const sections = Array.from(this._body.querySelectorAll(':scope > .pipe-section'));
+    if (sections.length === 0) return;
+
+    // 1. Apply saved order: pull sections that exist in saved order to the
+    //    front (in saved order), leave new/unknown sections at the back.
+    const saved = this._loadSectionOrder();
+    const byId  = new Map(sections.map(s => [s.dataset.section, s]));
+    for (const id of saved) {
+      const s = byId.get(id);
+      if (s) this._body.appendChild(s);
+    }
+    for (const s of sections) {
+      if (!saved.includes(s.dataset.section)) this._body.appendChild(s);
+    }
+
+    // 2. Wire drag handlers on each section. The section is draggable ONLY
+    //    when the user grabs the dedicated drag handle (⋮⋮) in the header —
+    //    this prevents accidental drags from text selection / button clicks.
+    for (const sec of sections) {
+      sec.draggable = false;
+      const handle = sec.querySelector('.pipe-section-drag-handle');
+      if (handle) {
+        handle.addEventListener('mousedown', () => { sec.draggable = true; });
+        // Stop the header's toggle-collapse click when interacting with the handle.
+        handle.addEventListener('click', (e) => e.stopPropagation());
+      }
+
+      sec.addEventListener('dragstart', (e) => {
+        // Only reorder in fullscreen — outside FS the side-panel is too narrow
+        // to make horizontal/vertical reordering meaningful.
+        if (!this._el?.classList.contains('pipeline-fullscreen')) {
+          e.preventDefault();
+          return;
+        }
+        sec.classList.add('pipe-section-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', sec.dataset.section);
+      });
+      sec.addEventListener('dragend', () => {
+        sec.classList.remove('pipe-section-dragging');
+        sec.draggable = false;   // re-arm: must re-grab the handle to drag again
+        const newOrder = Array.from(this._body.querySelectorAll(':scope > .pipe-section'))
+          .map(s => s.dataset.section);
+        this._saveSectionOrder(newOrder);
+      });
+      // Live reorder — as the cursor moves over a section, immediately swap
+      // it into place. Feels much more responsive than the standard
+      // "wait for drop" model. We compare against current DOM position to
+      // avoid useless work that would cause flicker on every dragover tick.
+      sec.addEventListener('dragover', (e) => {
+        const dragging = this._body.querySelector('.pipe-section-dragging');
+        if (!dragging || dragging === sec) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const r = sec.getBoundingClientRect();
+        // Use both axes so reorder works in multi-column grid: midpoint of the
+        // longer dimension drives "before vs after".
+        const horizontal = (r.width > r.height * 1.2);
+        const before = horizontal
+          ? (e.clientX - r.left) < r.width  / 2
+          : (e.clientY - r.top)  < r.height / 2;
+
+        const target = before ? sec : sec.nextSibling;
+        if (dragging !== target && dragging.nextSibling !== target) {
+          this._body.insertBefore(dragging, target);
+        }
+      });
+      sec.addEventListener('drop', (e) => {
+        e.preventDefault();
+        // Position is already correct (set during dragover) — just persist it.
+        const newOrder = Array.from(this._body.querySelectorAll(':scope > .pipe-section'))
+          .map(s => s.dataset.section);
+        this._saveSectionOrder(newOrder);
       });
     }
   }
