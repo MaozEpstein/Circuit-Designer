@@ -233,17 +233,25 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       }
 
     } else if (node.type === 'MUX') {
-      // MUX: first N inputs are data, remaining are select lines
+      // MUX: first N inputs are data, remaining are select lines.
+      // Read each input using its wire's sourceOutputIndex so multi-output
+      // drivers (PIPE_REG channels, IR fields, etc.) deliver the right value.
       const n = node.inputCount || 2;
       const selCount = Math.ceil(Math.log2(n));
       const inputSlots = inputs.get(id);
       const dataInputs = inputSlots.slice(0, n);
       const selInputs = inputSlots.slice(n, n + selCount);
+      const _readSlot = (slot) => {
+        if (!slot) return null;
+        const outIdx = slot.wire.sourceOutputIndex || 0;
+        const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+        return nodeValues.get(key);
+      };
 
       let selIdx = 0;
       let selValid = true;
       for (let s = 0; s < selInputs.length; s++) {
-        const sv = nodeValues.get(selInputs[s]?.sourceId);
+        const sv = _readSlot(selInputs[s]);
         if (sv === null || sv === undefined) { selValid = false; break; }
         selIdx |= (sv << s);
       }
@@ -251,7 +259,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       if (!selValid || selIdx >= dataInputs.length) {
         value = null;
       } else {
-        value = nodeValues.get(dataInputs[selIdx]?.sourceId) ?? null;
+        value = _readSlot(dataInputs[selIdx]) ?? null;
       }
 
     } else if (node.type === 'DEMUX') {
@@ -560,6 +568,8 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
 
     } else if (node.type === 'MERGE') {
       // Bus merger: N inputs → one output, each input placed into its bit range.
+      // Read inputs from the actual sourceOutputIndex so multi-output drivers
+      // (IR fields, PIPE_REG channels, etc.) deliver the right value.
       const inputSlots = inputs.get(id);
       const slices = parseSlices(node.slicesSpec || '');
       const outBits = node.outBits || 8;
@@ -570,7 +580,12 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const width = sliceWidth(s);
         const partMask = width >= 32 ? 0xFFFFFFFF : ((1 << width) - 1);
         const slot = inputSlots.find(sl => sl.inputIndex === i);
-        const v = slot ? (nodeValues.get(slot.sourceId) ?? 0) : 0;
+        let v = 0;
+        if (slot) {
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+          v = nodeValues.get(key) ?? 0;
+        }
         merged = (merged | ((v & partMask) << s.lo)) >>> 0;
       }
       value = merged & outMask;
@@ -664,7 +679,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       const op = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
       const z  = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
       const c  = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
-      const { aluOp, regWe, memWe, memRe, jmp, halt } = _evalCU(node, op, z, c);
+      const { aluOp, regWe, memWe, memRe, jmp, halt, immSel } = _evalCU(node, op, z, c);
       value = aluOp;
       nodeValues.set(id + '__out0', aluOp);
       nodeValues.set(id + '__out1', regWe);
@@ -672,13 +687,22 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       nodeValues.set(id + '__out3', memRe);
       nodeValues.set(id + '__out4', jmp);
       nodeValues.set(id + '__out5', halt);
+      nodeValues.set(id + '__out6', immSel);
 
     } else if (node.type === 'ALU') {
-      // Combinational ALU: inputs A(0), B(1), OP(2) → outputs R, Z(flag), C(flag)
+      // Combinational ALU: inputs A(0), B(1), OP(2) → outputs R, Z(flag), C(flag).
+      // Read each input via sourceOutputIndex so multi-output sources
+      // (like pipe_idex.alu_op channel) deliver the right value.
       const inputSlots = inputs.get(id);
-      const a  = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
-      const b  = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
-      const op = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
+      const _readSlot = (slot) => {
+        if (!slot) return 0;
+        const outIdx = slot.wire.sourceOutputIndex || 0;
+        const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+        return nodeValues.get(key) ?? 0;
+      };
+      const a  = _readSlot(inputSlots[0]);
+      const b  = _readSlot(inputSlots[1]);
+      const op = _readSlot(inputSlots[2]);
       const bits = node.bitWidth || 8;
       const mask = _mask(bits);
       let r = 0, carry = 0;
@@ -703,6 +727,7 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         }
       }
       value = r;
+      nodeValues.set(id + '__out0', r);                  // Result (also primary)
       nodeValues.set(id + '__out1', r === 0 ? 1 : 0);  // Z flag
       nodeValues.set(id + '__out2', carry);              // C flag
 
@@ -1118,6 +1143,69 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const cu = _evalCU(node, op, z, c);
         value = cu.aluOp;
         nodeValues.set(id+'__out0',cu.aluOp);nodeValues.set(id+'__out1',cu.regWe);nodeValues.set(id+'__out2',cu.memWe);nodeValues.set(id+'__out3',cu.memRe);nodeValues.set(id+'__out4',cu.jmp);nodeValues.set(id+'__out5',cu.halt);nodeValues.set(id+'__out6',cu.immSel);
+      } else if (node.type === 'MUX') {
+        // Re-evaluate so multi-output sources (PIPE_REG channels, IR fields)
+        // deliver the right post-edge values to data + select inputs.
+        const n = node.inputCount || 2;
+        const selCount = Math.ceil(Math.log2(n));
+        const dataInputs = inputSlots.slice(0, n);
+        const selInputs = inputSlots.slice(n, n + selCount);
+        const _readSlot = (slot) => {
+          if (!slot) return null;
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+          return nodeValues.get(key);
+        };
+        let selIdx = 0;
+        let selValid = true;
+        for (let s = 0; s < selInputs.length; s++) {
+          const sv = _readSlot(selInputs[s]);
+          if (sv === null || sv === undefined) { selValid = false; break; }
+          selIdx |= (sv << s);
+        }
+        if (!selValid || selIdx >= dataInputs.length) {
+          value = null;
+        } else {
+          value = _readSlot(dataInputs[selIdx]) ?? null;
+        }
+      } else if (node.type === 'MERGE') {
+        // Re-evaluate so IR-field inputs deliver post-edge values into
+        // the merged immediate that pipe_idex captures next cycle.
+        const slices = parseSlices(node.slicesSpec || '');
+        const outBits = node.outBits || 8;
+        const outMask = outBits >= 32 ? 0xFFFFFFFF : ((1 << outBits) - 1);
+        let merged = 0;
+        for (let i = 0; i < slices.length; i++) {
+          const s = slices[i];
+          const width = sliceWidth(s);
+          const partMask = width >= 32 ? 0xFFFFFFFF : ((1 << width) - 1);
+          const slot = inputSlots.find(sl => sl.inputIndex === i);
+          let v = 0;
+          if (slot) {
+            const outIdx = slot.wire.sourceOutputIndex || 0;
+            const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+            v = nodeValues.get(key) ?? 0;
+          }
+          merged = (merged | ((v & partMask) << s.lo)) >>> 0;
+        }
+        value = merged & outMask;
+      } else if (node.type === 'SIGN_EXT') {
+        const slot = inputSlots[0];
+        let inVal = 0;
+        if (slot) {
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+          inVal = nodeValues.get(key) ?? 0;
+        }
+        const inBits = node.inBits || 4;
+        const outBits = node.outBits || 8;
+        const signBit = (inVal >> (inBits - 1)) & 1;
+        if (signBit) {
+          const mask = (_mask(outBits)) ^ (_mask(inBits));
+          value = (inVal | mask) & (_mask(outBits));
+        } else {
+          value = inVal & (_mask(inBits));
+        }
       } else if (node.type === 'HDU' || node.type === 'FWD') {
         // Re-evaluate using the current __out values of multi-output sources.
         const get = (i) => {
@@ -1155,14 +1243,20 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
           value = fwdA;
         }
       } else if (node.type === 'ALU') {
-        const a = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
-        const b = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
-        const op = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? 0) : 0;
+        const _readSlot = (slot) => {
+          if (!slot) return 0;
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+          return nodeValues.get(key) ?? 0;
+        };
+        const a = _readSlot(inputSlots[0]);
+        const b = _readSlot(inputSlots[1]);
+        const op = _readSlot(inputSlots[2]);
         const bits = node.bitWidth || 8; const mask = (1<<bits)-1;
         let r=0, carry=0;
         switch(op&7){case 0:{const s=a+b;r=s&mask;carry=(s>>bits)&1;break;}case 1:{const s=a-b;r=s&mask;carry=s<0?1:0;break;}case 2:r=(a&b)&mask;break;case 3:r=(a|b)&mask;break;case 4:r=(a^b)&mask;break;case 5:{const s=a<<(b&0xF);r=s&mask;carry=(s>>bits)&1;break;}case 6:r=(a>>>(b&0xF))&mask;break;case 7:{if(node.sraMode){const k=b&0x7;const sb=(a>>(bits-1))&1;r=(a>>>k)&mask;if(sb&&k>0)r=(r|(((_mask(bits))<<(bits-k))&mask))&mask;}else{r=a===b?0:(a-b)&mask;carry=a>b?1:0;}break;}}
         value = r;
-        nodeValues.set(id+'__out1',r===0?1:0);nodeValues.set(id+'__out2',carry);
+        nodeValues.set(id+'__out0',r);nodeValues.set(id+'__out1',r===0?1:0);nodeValues.set(id+'__out2',carry);
       } else {
         // Generic combinational: read first input
         if (inputSlots.length > 0) {

@@ -45,7 +45,7 @@ check('2 SPLITs for FWD bit-decode', have('SPLIT').length === 2);
 const idex  = scene.nodes.find(n => n.id === 'pipe_idex');
 const exmem = scene.nodes.find(n => n.id === 'pipe_exmem');
 const memwb = scene.nodes.find(n => n.id === 'pipe_memwb');
-check('ID/EX has 9 channels (rs1d, rs2d, rd, alu_op, reg_we, mem_we, mem_re, rs1#, rs2#)', idex.channels === 9);
+check('ID/EX has 11 channels (rs1d, rs2d, rd, alu_op, reg_we, mem_we, mem_re, rs1#, rs2#, imm_value, imm_signal)', idex.channels === 11);
 check('EX/MEM has 6 channels',  exmem.channels === 6);
 check('MEM/WB has 5 channels',  memwb.channels === 5);
 
@@ -57,7 +57,7 @@ check('HDU.PCWrite → PC',
 check('HDU.IFIDWrite → IR.LD',
       hduWires.some(w => w.targetId === 'ir' && w.targetInputIndex === 1 && w.sourceOutputIndex === 1));
 check('HDU.Bubble → ID/EX.FLUSH',
-      hduWires.some(w => w.targetId === 'pipe_idex' && w.targetInputIndex === 10 && w.sourceOutputIndex === 2));
+      hduWires.some(w => w.targetId === 'pipe_idex' && w.targetInputIndex === 12 && w.sourceOutputIndex === 2));
 
 const fwdWires = scene.wires.filter(w => w.sourceId === 'fwd');
 check('FWD.ForwardA → split_a',
