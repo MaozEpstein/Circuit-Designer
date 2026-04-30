@@ -43,6 +43,7 @@
     { "type": "SIGN_EXT","id": "imm_sext",  "label": "SEXT",    "inBits": 8,   "outBits": 16, "x": -260, "y": -60 },
     { "type": "MUX",     "id": "alu_a_imm_mux", "label": "imm-A", "inputCount": 2, "x": 340, "y": -260 },
     { "type": "MUX",     "id": "alu_b_imm_mux", "label": "imm-B", "inputCount": 2, "x": 340, "y": -140 },
+    { "type": "GATE_SLOT","id": "gate_force_a","label": "OR",   "gate": "OR",    "x": 240, "y": -340 },
 
     { "type": "FWD",   "id": "fwd",  "label": "FWD", "regAddrBits": 4, "pipelineRole": "control",
       "x": 220, "y": -440 },
@@ -140,7 +141,9 @@
 
     { "sourceId": "mux_a",          "targetId": "alu_a_imm_mux", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "wa1" },
     { "sourceId": "gnd",            "targetId": "alu_a_imm_mux", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "wai_a_const0" },
-    { "sourceId": "pipe_idex",      "targetId": "alu_a_imm_mux", "targetInputIndex": 2, "sourceOutputIndex": 10, "waypoints": [], "isClockWire": false, "id": "wai_a_sel" },
+    { "sourceId": "gate_force_a",   "targetId": "alu_a_imm_mux", "targetInputIndex": 2, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "wai_a_sel" },
+    { "sourceId": "pipe_idex",      "targetId": "gate_force_a",  "targetInputIndex": 0, "sourceOutputIndex": 5,  "waypoints": [], "isClockWire": false, "id": "wgfa0" },
+    { "sourceId": "pipe_idex",      "targetId": "gate_force_a",  "targetInputIndex": 1, "sourceOutputIndex": 10, "waypoints": [], "isClockWire": false, "id": "wgfa1" },
     { "sourceId": "alu_a_imm_mux",  "targetId": "alu",           "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "wai_a_out" },
 
     { "sourceId": "mux_b",          "targetId": "alu_b_imm_mux", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "wa2" },
@@ -157,7 +160,7 @@
     { "sourceId": "cu",        "targetId": "pipe_idex", "targetInputIndex": 10, "sourceOutputIndex": 6, "waypoints": [], "isClockWire": false, "id": "wim4" },
 
     { "sourceId": "alu",        "targetId": "pipe_exmem", "targetInputIndex": 0, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "we0" },
-    { "sourceId": "mux_b",      "targetId": "pipe_exmem", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "we1" },
+    { "sourceId": "mux_a",      "targetId": "pipe_exmem", "targetInputIndex": 1, "sourceOutputIndex": 0, "waypoints": [], "isClockWire": false, "id": "we1" },
     { "sourceId": "pipe_idex",  "targetId": "pipe_exmem", "targetInputIndex": 2, "sourceOutputIndex": 2, "waypoints": [], "isClockWire": false, "id": "we2" },
     { "sourceId": "pipe_idex",  "targetId": "pipe_exmem", "targetInputIndex": 3, "sourceOutputIndex": 4, "waypoints": [], "isClockWire": false, "id": "we3" },
     { "sourceId": "pipe_idex",  "targetId": "pipe_exmem", "targetInputIndex": 4, "sourceOutputIndex": 5, "waypoints": [], "isClockWire": false, "id": "we4" },

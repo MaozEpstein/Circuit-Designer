@@ -224,7 +224,11 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         value = null;
       } else {
         const inputSlots = inputs.get(id);
-        const args = inputSlots.map(slot => nodeValues.get(slot.sourceId));
+        const args = inputSlots.map(slot => {
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+          return nodeValues.get(key);
+        });
         if (args.some(a => a === null || a === undefined)) {
           value = null;
         } else {
@@ -519,19 +523,33 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       // REG_FILE_DP: dual-port async read
       if (node.type === 'REG_FILE_DP') {
         const inputSlots = inputs.get(id);
-        const rd1Addr = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
-        const rd2Addr = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? 0) : 0;
+        const _readSlot = (slot) => {
+          if (!slot) return 0;
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+          return nodeValues.get(key) ?? 0;
+        };
+        if (!ms.regs) ms.regs = node.initialRegs ? [...node.initialRegs] : new Array(node.regCount || 8).fill(0);
+        const rd1Addr = _readSlot(inputSlots[0]);
+        const rd2Addr = _readSlot(inputSlots[1]);
         const regIdx1 = rd1Addr % (node.regCount || 8);
         const regIdx2 = rd2Addr % (node.regCount || 8);
         const readR0 = (idx) => (node.protectR0 && idx === 0) ? 0 : (ms.regs[idx] ?? 0);
         value = readR0(regIdx1);
+        nodeValues.set(id + '__out0', value);
         nodeValues.set(id + '__out1', readR0(regIdx2));
         ms.q = value;
       }
       // REG_FILE: async read — read address comes from input 0
       if (node.type === 'REG_FILE') {
         const inputSlots = inputs.get(id);
-        const rdAddr = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? 0) : 0;
+        const slot = inputSlots[0];
+        let rdAddr = 0;
+        if (slot) {
+          const outIdx = slot.wire.sourceOutputIndex || 0;
+          const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+          rdAddr = nodeValues.get(key) ?? 0;
+        }
         const regIdx = rdAddr % (node.regCount || 8);
         value = (ms.regs[regIdx] ?? 0);
         ms.q = value;
@@ -1107,7 +1125,11 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
 
       if (node.type === 'GATE_SLOT') {
         if (node.gate != null) {
-          const args = inputSlots.map(slot => nodeValues.get(slot.sourceId));
+          const args = inputSlots.map(slot => {
+            const outIdx = slot.wire.sourceOutputIndex || 0;
+            const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+            return nodeValues.get(key);
+          });
           if (!args.some(a => a === null || a === undefined)) {
             value = GATE_FN[node.gate](...args);
           }
