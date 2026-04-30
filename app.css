@@ -744,32 +744,13 @@
 #pipeline-panel.pipeline-fullscreen {
   font-size: 20px;       /* base bump — children using em/rem inherit */
 }
-/* Masonry-style packing: cards flow into the column with the most free
- * vertical space, so a tall HAZARDS card no longer leaves big empty
- * gutters next to short PERFORMANCE / RUNTIME cards. The browser picks
- * the column count automatically from the viewport width. */
 #pipeline-panel.pipeline-fullscreen #pipeline-panel-body {
-  column-width: 620px;
-  column-gap: 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(620px, 1fr));
+  gap: 22px;
+  align-items: start;
   padding: 24px 32px;
   font-size: 18px;
-}
-/* Each section card must stay intact across columns. */
-#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > .pipe-section,
-#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > #pipeline-panel-summary,
-#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > #pipe-stages-area {
-  break-inside: avoid;
-  page-break-inside: avoid;        /* legacy */
-  -webkit-column-break-inside: avoid;
-  display: block;
-  width: 100%;
-  margin: 0 0 22px 0;
-}
-/* The summary + stages overview sit at the top spanning every column,
- * mirroring the original two-band layout above the section cards. */
-#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > #pipeline-panel-summary,
-#pipeline-panel.pipeline-fullscreen #pipeline-panel-body > #pipe-stages-area {
-  column-span: all;
 }
 /* In fullscreen the summary is moved INTO the body as a grid item, sitting
    on the left half of the top row alongside the stages-area on the right. */
@@ -841,7 +822,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 #pipeline-panel.pipeline-fullscreen #pipeline-panel-body > .pipe-section[data-section="diag"] {
-  column-span: all;      /* PIPELINE DIAGRAM keeps its own full-width band */
+  grid-column: 1 / -1;   /* PIPELINE DIAGRAM gets its own full-width row */
 }
 #pipeline-panel.pipeline-fullscreen .pipe-section-header {
   font-size: 1.1em;
