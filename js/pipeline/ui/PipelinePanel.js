@@ -357,13 +357,13 @@ export class PipelinePanel {
   _renderLiveBranchFlushes() {
     const log = this._liveBranchFlushes || [];
     if (log.length === 0) {
-      return `<div class="pipe-perf-row"><span class="k">Branch flushes (live)</span><span class="v">0 — none yet (run AUTO CLK on a program with a taken JZ/JC/JMP)</span></div>`;
+      return `<div class="pipe-perf-row"><span class="k">Count</span><span class="v">0 — updates only while AUTO CLK runs</span></div>`;
     }
     const max = 6;
     const recent = log.slice(-max);
     const pcs = recent.map(e => `PC=${e.pc}`).join(', ');
     const more = log.length > max ? ` (+${log.length - max} earlier)` : '';
-    return `<div class="pipe-perf-row"><span class="k">Branch flushes (live)</span><span class="v">${log.length} — at ${pcs}${more}</span></div>`;
+    return `<div class="pipe-perf-row"><span class="k">Count</span><span class="v">${log.length} — at ${pcs}${more}</span></div>`;
   }
 
   _render(r) {
@@ -591,7 +591,7 @@ export class PipelinePanel {
     // show this. Always renders so the user can find it before the
     // first branch fires.
     this._body.insertAdjacentHTML('beforeend',
-      `<div class="pipe-runtime-header">RUNTIME</div>
+      `<div class="pipe-runtime-header">BRANCH FLUSHES (LIVE)</div>
        <div class="pipe-perf-grid">
          ${this._renderLiveBranchFlushes()}
        </div>`);
