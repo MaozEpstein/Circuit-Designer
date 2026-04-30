@@ -1188,6 +1188,9 @@
 
 /* Performance metrics panel — CPI / IPC / throughput. */
 .pipe-perf-header { margin-top: 0.6em; padding: 0.5em 1.2em; font-weight: bold; color: #6adfff; border-top: 1px solid #082030; border-bottom: 1px solid #082030; background: #051218; font-size: 0.95em; letter-spacing: 1px; }
+/* Runtime telemetry — live counters straight from the engine. Greener
+ * tint to distinguish from the cyan static-analysis PERFORMANCE block. */
+.pipe-runtime-header { margin-top: 0.6em; padding: 0.5em 1.2em; font-weight: bold; color: #80ffa0; border-top: 1px solid #08301a; border-bottom: 1px solid #08301a; background: #051810; font-size: 0.95em; letter-spacing: 1px; }
 .pipe-perf-grid { padding: 0.5em 1.2em 0.6em 1.2em; display: grid; grid-template-columns: 1fr; gap: 0.25em; background: #040e12; }
 .pipe-perf-row { display: grid; grid-template-columns: 110px 1fr; gap: 0.6em; font-size: 0.90em; color: #cfe6f0; font-family: 'JetBrains Mono', monospace; }
 .pipe-perf-row .k { color: #6adfff; font-size: 0.85em; letter-spacing: 0.5px; }
