@@ -488,6 +488,26 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         if (re) ms.q = ((node.memory && node.memory[addr]) ?? 0) & dMaskAsync;
         value = ms.q ?? 0;
       }
+      // RAM combinational read — needed for pipelined LOAD so the data
+      // reaches MEM/WB at the same cycle as the rest of the LOAD bundle.
+      // Address inputs read with sourceOutputIndex so PIPE_REG channels
+      // deliver the right value.
+      if (node.type === 'RAM' && node.asyncRead) {
+        const inputSlotsRam = inputs.get(id);
+        const _readSlotR = (s) => {
+          if (!s) return 0;
+          const outIdx = s.wire.sourceOutputIndex || 0;
+          const k = outIdx === 0 ? s.sourceId : (s.sourceId + '__out' + outIdx);
+          return nodeValues.get(k) ?? 0;
+        };
+        const addrSlot = inputSlotsRam.find(s => s.inputIndex === 0);
+        const reSlot   = inputSlotsRam.find(s => s.inputIndex === 3);
+        const addr = _readSlotR(addrSlot);
+        const re   = reSlot ? _readSlotR(reSlot) : 1;
+        const dMaskAsync = _mask(node.dataBits || 4);
+        if (re) ms.q = ((ms.memory && ms.memory[addr]) ?? 0) & dMaskAsync;
+        value = ms.q ?? 0;
+      }
       // IR: decode stored instruction into fields
       if (node.type === 'IR') {
         const instr = ms.q ?? 0;

@@ -62,7 +62,7 @@
       "channels": 6, "pipelineRole": "register", "stage": null,
       "x": 600, "y": -200 },
 
-    { "type": "RAM",   "id": "ram",  "label": "DMEM", "addrBits": 4, "dataBits": 16,
+    { "type": "RAM",   "id": "ram",  "label": "DMEM", "addrBits": 4, "dataBits": 16, "asyncRead": true,
       "memory": {}, "x": 780, "y": -200 },
 
     { "type": "PIPE_REG", "id": "pipe_memwb", "label": "MEM/WB",
