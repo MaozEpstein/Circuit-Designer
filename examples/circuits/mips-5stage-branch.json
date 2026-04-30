@@ -1,5 +1,5 @@
 {
-  "_comment": "5-stage MIPS pipeline using HDU + FWD. Clean RAM and Register File (all zeros at start). Small LI/STORE/LOAD demo: LI R1,7 → LI R2,99 → 3 NOPs → STORE R2,R1 → 2 NOPs → LOAD R3,R1 → HALT. After ~8 cycles RAM[7]=99 is visible in DMEM. After ~12 cycles R3=99 is visible in the register file.",
+  "_comment": "5-stage MIPS pipeline — branch-flush demo. Program: LI R1,5 / NOPs / CMP R0,R0 (sets Z=1) / NOPs / JZ 8 / [POISON: LI R5,99 at PC=7 — would corrupt R5 if not flushed] / LI R3,42 (target) / HALT. With branch-flush wiring (CU.JMP → MUX-before-IR), the POISON in IF when JZ resolves gets squashed to NOP, so R5 stays 0 and only R3=42 lands.",
   "nodes": [
     { "type": "CLOCK", "id": "clk",  "label": "CLK", "value": 0, "x": -940, "y": -220 },
 
@@ -8,15 +8,15 @@
     { "type": "ROM",   "id": "rom",  "label": "IMEM", "addrBits": 6, "dataBits": 16, "asyncRead": true,
       "x": -620, "y": -220,
       "memory": {
-        "0":  53511,
-        "1":  53859,
+        "0":  53509,
+        "1":  57344,
         "2":  57344,
-        "3":  57344,
+        "3":  28672,
         "4":  57344,
-        "5":  36897,
-        "6":  57344,
-        "7":  57344,
-        "8":  33537,
+        "5":  57344,
+        "6":  47104,
+        "7":  54627,
+        "8":  54058,
         "9":  61440
       } },
 

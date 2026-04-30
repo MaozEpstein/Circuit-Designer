@@ -56,8 +56,15 @@ check('HDU.PCWrite → PC',
       hduWires.some(w => w.targetId === 'pc' && w.sourceOutputIndex === 0));
 check('HDU.IFIDWrite → IR.LD',
       hduWires.some(w => w.targetId === 'ir' && w.targetInputIndex === 1 && w.sourceOutputIndex === 1));
-check('HDU.Bubble → ID/EX.FLUSH',
-      hduWires.some(w => w.targetId === 'pipe_idex' && w.targetInputIndex === 12 && w.sourceOutputIndex === 2));
+// HDU.Bubble reaches ID/EX.FLUSH either directly or via an OR gate that also
+// folds in CU.JMP for branch-flush. Accept either wiring.
+const flushDirect = hduWires.some(w => w.targetId === 'pipe_idex' && w.targetInputIndex === 12 && w.sourceOutputIndex === 2);
+const flushViaGate = hduWires.some(w => {
+  const gate = scene.nodes.find(n => n.id === w.targetId && n.type === 'GATE_SLOT');
+  if (!gate || w.sourceOutputIndex !== 2) return false;
+  return scene.wires.some(w2 => w2.sourceId === gate.id && w2.targetId === 'pipe_idex' && w2.targetInputIndex === 12);
+});
+check('HDU.Bubble → ID/EX.FLUSH (direct or via OR gate)', flushDirect || flushViaGate);
 
 const fwdWires = scene.wires.filter(w => w.sourceId === 'fwd');
 check('FWD.ForwardA → split_a',
