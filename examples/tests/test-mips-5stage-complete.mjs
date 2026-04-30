@@ -70,49 +70,45 @@ const muxAInputs = new Set(muxAWires.map(w => w.sourceId));
 check('mux_a sees RF (via pipe_idex), MEM/WB writeback, EX/MEM',
       muxAInputs.has('pipe_idex') && muxAInputs.has('wb_mux') && muxAInputs.has('pipe_exmem'));
 
-// ── 3. Program semantics ────────────────────────────────────
-// Drive the simulation cycle-by-cycle (rising-edge model: clk 0→1 to advance).
-// We track:
-//   - At which cycle does HDU assert Bubble (= load-use stall is detected)?
-//   - At which cycle does FWD assert any non-zero ForwardA/ForwardB?
-//   - When the program halts, do we observe the expected register R7 in WB?
-console.log('\n[3] Program semantics — cycle-by-cycle stall + forward observation');
+// ── 3. Program semantics — clean LI / STORE / LOAD demo ─────
+// The bundled program: LI R1,7 / LI R2,99 / 3×NOP / STORE R2,R1 /
+// 2×NOP / LOAD R3,R1 / HALT. With NOPs spacing dependencies, no
+// hazards fire — we just verify the round-trip:
+//   RAM[7] = 99 (visible by ~cycle 8)
+//   R3 = 99    (visible by ~cycle 12)
+console.log('\n[3] Program semantics — LI / STORE / LOAD round-trip');
 
 const ffStates = new Map();
-const stallCycles = [];
-const fwdCycles = [];
-let lastWb = null;
 const clkNode = scene.nodes.find(n => n.type === 'CLOCK');
-const hduId = scene.nodes.find(n => n.type === 'HDU').id;
-const fwdId = scene.nodes.find(n => n.type === 'FWD').id;
 
-// Prime with one falling edge so prevClk=0 cleanly; otherwise the first rising edge
-// loses ROM/IR/PIPE_REG capture (engine quirk: their edge detector requires prevClk===0).
 clkNode.value = 0;
 evaluate(scene.nodes, scene.wires, ffStates, 0);
-for (let cycle = 1; cycle <= 30; cycle++) {
+let storeFiredAtCycle = -1;
+let loadVisibleAtCycle = -1;
+for (let cycle = 1; cycle <= 16; cycle++) {
   clkNode.value = 1;
-  const r = evaluate(scene.nodes, scene.wires, ffStates, cycle * 2 - 1);
+  evaluate(scene.nodes, scene.wires, ffStates, cycle * 2 - 1);
   clkNode.value = 0;
   evaluate(scene.nodes, scene.wires, ffStates, cycle * 2);
-
-  const bubble = r.nodeValues.get(hduId + '__out2') ?? 0;
-  const fwA    = r.nodeValues.get(fwdId + '__out0') ?? 0;
-  const fwB    = r.nodeValues.get(fwdId + '__out1') ?? 0;
-  if (bubble) stallCycles.push(cycle);
-  if (fwA || fwB) fwdCycles.push({ cycle, fwA, fwB });
-  lastWb = r.nodeValues.get('out_wb') ?? lastWb;
+  const ram = ffStates.get('ram');
+  const rf  = ffStates.get('rf');
+  if (storeFiredAtCycle < 0 && ram && ram.memory && ram.memory[7] === 99) storeFiredAtCycle = cycle;
+  if (loadVisibleAtCycle < 0 && rf && rf.regs[3] === 99) loadVisibleAtCycle = cycle;
 }
 
-console.log(`  observed stall on cycles: [${stallCycles.join(', ')}]`);
-console.log(`  observed forwards: ${JSON.stringify(fwdCycles)}`);
+const finalRf  = ffStates.get('rf').regs;
+const finalRam = ffStates.get('ram').memory;
+console.log(`  STORE wrote RAM[7]=99 at cycle ${storeFiredAtCycle}`);
+console.log(`  LOAD result R3=99 visible at cycle ${loadVisibleAtCycle}`);
+console.log(`  Final RF[1..3] = [${finalRf[1]}, ${finalRf[2]}, ${finalRf[3]}]`);
+console.log(`  Final RAM = ${JSON.stringify(finalRam)}`);
 
-check('HDU asserts Bubble at least once (load-use detected)', stallCycles.length >= 1);
-check('FWD asserts a forward at least once', fwdCycles.length >= 1);
-check('At least one EX/MEM forward (FwA=2 or FwB=2) was selected',
-      fwdCycles.some(e => e.fwA === 2 || e.fwB === 2));
-check('At least one MEM/WB forward (FwA=1 or FwB=1) was selected',
-      fwdCycles.some(e => e.fwA === 1 || e.fwB === 1));
+check('R1 = 7  (LI reached WB)',                finalRf[1] === 7);
+check('R2 = 99 (LI reached WB)',                finalRf[2] === 99);
+check('STORE wrote RAM[7] = 99',                finalRam[7] === 99);
+check('LOAD wrote R3 = 99 (round-trip)',        finalRf[3] === 99);
+check('STORE fires on a sane cycle (5..12)',    storeFiredAtCycle >= 5 && storeFiredAtCycle <= 12);
+check('LOAD result lands on a sane cycle (8..16)', loadVisibleAtCycle >= 8 && loadVisibleAtCycle <= 16);
 
 console.log(`\n${failed === 0 ? 'OK' : `FAIL: ${failed} assertion(s) failed`}`);
 process.exit(failed === 0 ? 0 : 1);

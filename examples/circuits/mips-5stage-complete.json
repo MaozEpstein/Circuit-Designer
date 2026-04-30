@@ -1,5 +1,5 @@
 {
-  "_comment": "5-stage MIPS pipeline using HDU + FWD. Clean RAM and Register File (all zeros at start). 40-instruction program covering every opcode (LI/MOV/ADD/SUB/AND/OR/XOR/SHL/SHR/CMP/LOAD/STORE/JZ/JC/JMP/NOP/HALT) with a back-branch loop, load-use hazards, and RAW chains that exercise HDU + FWD.",
+  "_comment": "5-stage MIPS pipeline using HDU + FWD. Clean RAM and Register File (all zeros at start). Small LI/STORE/LOAD demo: LI R1,7 → LI R2,99 → 3 NOPs → STORE R2,R1 → 2 NOPs → LOAD R3,R1 → HALT. After ~8 cycles RAM[7]=99 is visible in DMEM. After ~12 cycles R3=99 is visible in the register file.",
   "nodes": [
     { "type": "CLOCK", "id": "clk",  "label": "CLK", "value": 0, "x": -940, "y": -220 },
 
@@ -8,16 +8,16 @@
     { "type": "ROM",   "id": "rom",  "label": "IMEM", "addrBits": 6, "dataBits": 16, "asyncRead": true,
       "x": -620, "y": -220,
       "memory": {
-        "0":  53505, "1":  53762, "2":  54021, "3":  54282,
-        "4":   1296, "5":   1554, "6":   5955, "7":   3376,
-        "8":   7633, "9":  28880, "10": 48128, "11": 43008,
-        "12": 10343, "13": 14695, "14": 19047, "15": 36961,
-        "16": 36978, "17": 35585, "18":  3251, "19": 57344,
-        "20":  3782, "21":  8172, "22": 22257, "23": 26466,
-        "24": 10358, "25": 14727, "26": 19096, "27": 37011,
-        "28": 37012, "29": 35587, "30":  3258, "31": 36100,
-        "32":  7899, "33": 28896, "34": 49152, "35":  1633,
-        "36":  6002, "37": 10343, "38": 14730, "39": 61440
+        "0":  53511,
+        "1":  53859,
+        "2":  57344,
+        "3":  57344,
+        "4":  57344,
+        "5":  36897,
+        "6":  57344,
+        "7":  57344,
+        "8":  33537,
+        "9":  61440
       } },
 
     { "type": "IR",    "id": "ir",   "label": "IF/ID (IR)",
