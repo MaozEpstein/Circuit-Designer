@@ -6,6 +6,7 @@
 import { C, NODE } from './Theme.js';
 import { FF_TYPE_SET, MEMORY_TYPE_SET, parseSlices, sliceWidth } from '../components/Component.js';
 import { computeRoute, detectJunctions, computeChannelOffset, simplifyPath } from '../routing/WireRouter.js';
+import { disassemble as _disassembleInstr } from '../cpu/Assembler.js';
 
 let canvas, ctx;
 let W, H;
@@ -1565,6 +1566,18 @@ function _drawOutputNode(node, val, hovered) {
       ctx.textBaseline = 'middle';
       ctx.fillText(sv.toString(), acx, node.y);
     }
+  } else if (node.displayFormat === 'instr16' && val !== null && val !== undefined) {
+    // Disassemble the 16-bit value as a CPU instruction (e.g. 0xD105 → "LI R1, 5").
+    // Used by the LEARN-mode CPU build track to show ROM data as readable
+    // mnemonics instead of raw hex. Falls back to the numeric display if
+    // disassembly throws (defensive — disassemble should be total).
+    let text = '?';
+    try { text = _disassembleInstr(val & 0xFFFF) || '?'; } catch (_) { text = (val|0).toString(); }
+    ctx.fillStyle    = '#e0a030';
+    ctx.font         = 'bold 13px JetBrains Mono, monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, node.x, node.y);
   } else {
     ctx.fillStyle    = val === null ? C.wireNull : isBusVal ? '#e0a030' : (val === 1 ? C.textHigh : C.textLow);
     ctx.font         = isBusVal ? 'bold 18px JetBrains Mono, monospace' : 'bold 26px JetBrains Mono, monospace';

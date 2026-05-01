@@ -77,7 +77,11 @@ export class LessonPanel {
     if (!t) return;
     const act = t.dataset.act;
     if (act === 'close') {
-      if (this.engine.active) this.engine.exit();
+      // Hide the panel without exiting the lesson — the learner keeps the
+      // current circuit on the canvas to continue working with it outside
+      // Learn Mode. Reopening LEARN returns them to the same lesson state.
+      // To actually exit and restore the pre-tutorial circuit, use the
+      // "↩ Back to menu" button inside a lesson (which calls engine.exit()).
       this.hide();
     } else if (act === 'open-lesson') {
       this.engine.enter(t.dataset.lessonId);

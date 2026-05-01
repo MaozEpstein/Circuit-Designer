@@ -188,9 +188,51 @@ export class TutorialEngine {
 
   _loadStepInitialCircuit() {
     const step = this.currentStep();
-    if (step && step.initialCircuit) {
+
+    // Resolve the initial circuit for this step. Three sources, in order:
+    //   1. step.initialCircuit — explicit per-step override
+    //   2. lesson.startsFrom (only on step 0) — preload the LAST step
+    //      solution of the named prerequisite lesson, so an incremental
+    //      build track opens with the previous lesson's circuit already on
+    //      the canvas as the foundation for the current lesson
+    //   3. nothing — leave the canvas empty
+    let data = step?.initialCircuit || null;
+    if (!data && this.stepIndex === 0) {
+      const lesson = this.currentLesson();
+      if (lesson?.startsFrom) {
+        const prev = findLesson(lesson.startsFrom);
+        if (prev) {
+          const lastIdx = Math.max(0, prev.steps.length - 1);
+          data = buildSolution(lesson.startsFrom, lastIdx);
+        }
+      }
+    }
+
+    if (data) {
+      // Optional per-lesson ROM patch — when startsFrom loads a previous
+      // solution but the new lesson needs a different program already in
+      // ROM (so the learner doesn't have to re-paste assembly).
+      const lesson = this.currentLesson();
+      if (this.stepIndex === 0 && lesson?.startsFromROM) {
+        try {
+          const rom = data.nodes?.find(n => n.type === 'ROM');
+          if (rom) {
+            const patch = lesson.startsFromROM;
+            if (patch.memory)     rom.memory      = { ...patch.memory };
+            if (patch.asmSource)  rom._asmSource  = patch.asmSource;
+            if (patch.sourceView) rom._sourceView = patch.sourceView;
+          }
+        } catch (_) { /* ignore */ }
+      }
+      // Optional per-lesson node-level customization. Used by the CPU build
+      // track to strip diagnostic LEDs from the previous lesson that have
+      // become redundant once a real component consumes the same signal —
+      // keeps each step focused on the new component being introduced.
+      if (this.stepIndex === 0 && typeof lesson?.startsFromCustomize === 'function') {
+        try { lesson.startsFromCustomize(data); } catch (_) { /* ignore */ }
+      }
       try {
-        this.scene.deserialize(step.initialCircuit);
+        this.scene.deserialize(data);
         this.state?.resetSequentialState?.(this.scene.nodes);
         this.commands?.clear?.();
         setTimeout(() => this.renderer?.zoomToFit?.(this.scene.nodes), 50);

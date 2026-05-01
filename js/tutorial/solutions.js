@@ -730,6 +730,7 @@ HALT`;
     _sourceView: 'asm', // force ROM editor to open on the ASM tab — paste-safe
   });
   const data = _output(880, 380, 'DATA');
+  data.displayFormat = 'instr16';
 
   en.fixedValue = 1;
   rst.fixedValue = 0;
@@ -749,226 +750,857 @@ HALT`;
   };
 }
 
-// ── CPU Build, Lesson 3: ROM Picks the Register ──────────────
-// Carries forward PC + ROM from lesson 2 and adds:
-//   - IR (pure bit-splitter, fed from ROM, LD held high by IMM(1))
-//   - REG_FILE (single-port, 4 regs × 8 bits)
-// The single new pedagogical wire: IR.RD (out 1) → RF.WR_ADDR (in 1).
-// WR_DATA stays a manual IMM constant — the ALU connection is lesson 4.
+// ── CPU Build, Lesson 3: IR + CU ─────────────────────────────
+// Carries forward PC + ROM from c02 (same positions, same program). Adds:
+//   - IR (Instruction Register): captures ROM output on every clock edge,
+//     splits the 16-bit instruction into OP/RD/RS1/RS2 fields. LD held high
+//     by a constant-1 IMM so it captures every cycle.
+//   - CU (Control Unit): pure combinational decoder. Reads OP, drives the
+//     control signals. In this lesson only OP is connected on the input
+//     side (Z/C flags arrive when the ALU does, in step 5).
+// Three CU outputs are wired to LEDs so the learner can watch the decoded
+// control pattern flip per instruction:
+//   - ALU_OP (out 0) → ALU_OP LED
+//   - RG_WE  (out 1) → RG_WE  LED
+//   - HALT   (out 5) → HALT   LED
+// A diagnostic OP LED above the IR shows the raw 4-bit opcode.
+// Nothing else is wired — the other CU outputs (MM_WE, MM_RE, JMP, IMM)
+// arrive in later steps when RAM / branches are added.
 function _c03s1() {
   // ── Inputs ───────────────────────────────────────────────
-  const en  = _input(120, 100, 'EN');
-  const rst = _input(120, 200, 'RST');
-  const we  = _input(120, 540, 'WE');
-  const clk = _clock(260, 360);
+  const en   = _input(140, 200, 'EN');
+  const rst  = _input(140, 320, 'RST');
+  const clk  = _clock(140, 460);
 
-  // ── PC + ROM (carry-overs) ──────────────────────────────
-  const pc    = _block(COMPONENT_TYPES.PC, 360, 160, { bitWidth: 4 });
-  const pcOut = _output(580, 80, 'PC');
+  // ── PC + ROM (carry-overs from c02, same positions) ─────
+  const pc    = _block(COMPONENT_TYPES.PC, 380, 320, { bitWidth: 4 });
+  const pcOut = _output(620, 200, 'PC');
+
+  // Step-3 specific program — chosen to exercise as many distinct CU
+  // output patterns as possible. LOAD / STORE / JMP do nothing visible
+  // here (no RAM, no PC.JMP wiring yet) — but the CU still emits the
+  // right control signals, and that's the whole point of this lesson.
   const _asmSource =
-`; In this lesson only the RD field of each instruction matters —
-; the data being written is a manual IMM constant (0x77).
-; LI's actual immediate value is decoded properly in lesson 6.
+`; Step 3 demo — exercise the CU.
+; Each instruction lights a different combination of control LEDs.
+; LOAD / STORE / JMP don't actually do anything yet (no RAM / no
+; jump wiring); they're here so you can watch MM_WE, MM_RE, and JMP
+; flip when the right opcode is decoded.
 
-LI  R1, 5
-LI  R2, 3
-ADD R3, R1, R2
-HALT`;
-  const rom = _block(COMPONENT_TYPES.ROM, 580, 200, {
-    addrBits:    4,
-    dataBits:    16,
-    asyncRead:   true,
-    memory:      { 0: 0xD105, 1: 0xD203, 2: 0x0312, 3: 0xF000 },
-    label:       'IMEM',
+LI    R1, 5         ; OP=13 → RG_WE=1, IMM=5
+LI    R2, 3         ; OP=13 → RG_WE=1, IMM=3
+ADD   R3, R1, R2    ; OP=0  → ALU_OP=0, RG_WE=1
+SUB   R4, R1, R2    ; OP=1  → ALU_OP=1, RG_WE=1
+AND   R5, R1, R2    ; OP=2  → ALU_OP=2, RG_WE=1
+OR    R6, R1, R2    ; OP=3  → ALU_OP=3, RG_WE=1
+XOR   R7, R1, R2    ; OP=4  → ALU_OP=4, RG_WE=1
+CMP   R1, R2        ; OP=7  → ALU runs, RG_WE=0 (no write-back)
+LOAD  R8, R0        ; OP=8  → MM_RE=1, RG_WE=1
+STORE R1, R0        ; OP=9  → MM_WE=1, RG_WE=0
+JMP   0             ; OP=10 → JMP=1
+NOP                 ; OP=14 → all signals low
+HALT                ; OP=15 → HALT=1`;
+
+  const rom = _block(COMPONENT_TYPES.ROM, 620, 380, {
+    addrBits:  4,
+    dataBits:  16,
+    asyncRead: true,
+    memory:    {
+      0:  0xD105,   // LI    R1, 5
+      1:  0xD203,   // LI    R2, 3
+      2:  0x0312,   // ADD   R3, R1, R2
+      3:  0x1412,   // SUB   R4, R1, R2
+      4:  0x2512,   // AND   R5, R1, R2
+      5:  0x3612,   // OR    R6, R1, R2
+      6:  0x4712,   // XOR   R7, R1, R2
+      7:  0x7012,   // CMP   R1, R2
+      8:  0x8800,   // LOAD  R8, R0
+      9:  0x9010,   // STORE R1, R0
+      10: 0xA000,   // JMP   0
+      11: 0xE000,   // NOP
+      12: 0xF000,   // HALT
+    },
+    label:     'IMEM',
     _asmSource,
     _sourceView: 'asm',
   });
-  const dataOut = _output(820, 200, 'DATA');
 
-  // ── IR (bit-splitter) + diagnostic outputs ──────────────
-  const ldImm = _block(COMPONENT_TYPES.IMM, 820, 320, { value: 1, bitWidth: 1, label: 'LD=1' });
-  const ir    = _block(COMPONENT_TYPES.IR,  580, 380, {
+  // ── DATA output carry-over from c02 (keeps the lesson additive — opens
+  //    with c02's circuit unchanged, IR + CU are placed to the right of it).
+  const data = _output(880, 380, 'DATA');
+  data.displayFormat = 'instr16';
+
+  // ── IR ───────────────────────────────────────────────────
+  // Constant-1 input drives IR.LD so the IR captures every rising edge.
+  const ldHi = _input(1020, 540, 'LD=1');
+  const ir   = _block(COMPONENT_TYPES.IR, 1120, 380, {
     instrWidth: 16, opBits: 4, rdBits: 4, rs1Bits: 4, rs2Bits: 4,
-    label: 'IR',
   });
-  const opOut  = _output(820, 380, 'OP');
-  const rdOut  = _output(820, 440, 'RD');
-  const rs1Out = _output(820, 500, 'RS1');
-  const rs2Out = _output(820, 560, 'RS2');
+  const opLed = _output(1120, 200, 'OP');
 
-  // ── RegFile demo (manual data + RD inspect, write addr from IR) ──
-  const rdAddr  = _block(COMPONENT_TYPES.IMM, 120, 660, { value: 1,    bitWidth: 8, label: 'RD_ADDR' });
-  const wrData  = _block(COMPONENT_TYPES.IMM, 120, 740, { value: 0x77, bitWidth: 8, label: 'DATA' });
-  const rf      = _block(COMPONENT_TYPES.REG_FILE, 360, 720, {
-    regCount:    4,
-    dataBits:    8,
-    initialRegs: [0, 0, 0, 0],
-    label:       'RF',
-  });
-  const q       = _output(620, 720, 'Q');
+  // ── CU ───────────────────────────────────────────────────
+  const cu = _block(COMPONENT_TYPES.CU, 1400, 380);
 
-  en.fixedValue = 1;
-  rst.fixedValue = 0;
-  we.fixedValue = 0;
+  // ── Control-signal LEDs (all 7 CU outputs visible) ───────
+  const aluOpLed = _output(1700,  80, 'ALU_OP');
+  const rgWeLed  = _output(1700, 180, 'RG_WE');
+  const mmWeLed  = _output(1700, 280, 'MM_WE');
+  const mmReLed  = _output(1700, 380, 'MM_RE');
+  const jmpLed   = _output(1700, 480, 'JMP');
+  const haltLed  = _output(1700, 580, 'HALT');
+  const immLed   = _output(1700, 680, 'IMM');
+
+  en.fixedValue   = 1;
+  rst.fixedValue  = 0;
+  ldHi.fixedValue = 1;
 
   return {
     nodes: [
-      en, rst, we, clk,
-      pc, pcOut, rom, dataOut,
-      ldImm, ir, opOut, rdOut, rs1Out, rs2Out,
-      rdAddr, wrData, rf, q,
+      en, rst, clk,
+      pc, pcOut, rom, data,
+      ldHi, ir, opLed,
+      cu,
+      aluOpLed, rgWeLed, mmWeLed, mmReLed, jmpLed, haltLed, immLed,
     ],
     wires: [
-      // ── PC controls + clock ──
+      // PC control (same as c02)
       _wire(en.id,  pc.id, 2),
       _wire(rst.id, pc.id, 3),
       _wire(clk.id, pc.id, 4, 0, { isClockWire: true }),
+      // PC → PC display, PC → ROM address
       _wire(pc.id, pcOut.id, 0, 0),
       _wire(pc.id, rom.id,   0, 0),
+      // ROM → DATA carry-over from c02
+      _wire(rom.id, data.id, 0, 0),
 
-      // ── ROM → IR (and DATA diagnostic) ──
-      _wire(rom.id, dataOut.id, 0, 0),
-      _wire(rom.id, ir.id,      0, 0),     // INSTR ← ROM out
-      _wire(ldImm.id, ir.id,    1),        // LD=1 always
-      _wire(clk.id, ir.id,      2, 0, { isClockWire: true }),
+      // ROM → IR.INSTR ; LD high ; CLK → IR
+      _wire(rom.id,  ir.id, 0, 0),                            // INSTR
+      _wire(ldHi.id, ir.id, 1, 0),                            // LD = 1
+      _wire(clk.id,  ir.id, 2, 0, { isClockWire: true }),     // CLK
 
-      // ── IR field diagnostics ──
-      _wire(ir.id, opOut.id,  0, 0),
-      _wire(ir.id, rdOut.id,  0, 1),
-      _wire(ir.id, rs1Out.id, 0, 2),
-      _wire(ir.id, rs2Out.id, 0, 3),
+      // IR.OP → CU.OP ; IR.OP → diagnostic LED
+      _wire(ir.id, cu.id,    0, 0),                           // OP → CU.OP
+      _wire(ir.id, opLed.id, 0, 0),                           // OP → LED
 
-      // ── RegFile wiring ──
-      _wire(rdAddr.id, rf.id, 0),       // manual RD inspect addr
-      _wire(ir.id,     rf.id, 1, 1),    // ★ IR.RD (out 1) → RF.WR_ADDR — lesson's key wire
-      _wire(wrData.id, rf.id, 2),       // manual WR_DATA
-      _wire(we.id,     rf.id, 3),
-      _wire(clk.id,    rf.id, 4, 0, { isClockWire: true }),
-      _wire(rf.id,     q.id,  0, 0),
+      // All 7 CU outputs → LEDs
+      _wire(cu.id, aluOpLed.id, 0, 0),  // ALU_OP
+      _wire(cu.id, rgWeLed.id,  0, 1),  // RG_WE
+      _wire(cu.id, mmWeLed.id,  0, 2),  // MM_WE
+      _wire(cu.id, mmReLed.id,  0, 3),  // MM_RE
+      _wire(cu.id, jmpLed.id,   0, 4),  // JMP
+      _wire(cu.id, haltLed.id,  0, 5),  // HALT
+      _wire(cu.id, immLed.id,   0, 6),  // IMM
     ],
   };
 }
 
-// ── CPU Build, Lesson 4: ROM Drives the RegFile ──────────────
-// Carries forward PC + ROM from lessons 1–3 and adds IR + REG_FILE_DP +
-// ALU so a real instruction in ROM updates the Register File on STEP.
-//
-// Wiring summary:
-//   PC → ROM.ADDR ; ROM.OUT → IR.INSTR
-//   IR.RS1 → RF.RD1_ADDR ; IR.RS2 → RF.RD2_ADDR ; IR.RD → RF.WR_ADDR
-//   RF.RD1 → ALU.A ; RF.RD2 → ALU.B ; IMM(0) → ALU.OP_IN
-//   ALU.Y → RF.WR_DATA ; manual WE → RF.WE
-//   Shared CLOCK → PC, IR, RF (all isClockWire: true)
-//
-// Initial state: R0=0, R1=5, R2=3, R3=0 (initialRegs preload). ROM contains
-// just `ADD R3, R1, R2` and `HALT` — LI is skipped because the immediate
-// path arrives in lesson 6.
+// ── CPU Build, Lesson 4: Register File (RF-DP) ───────────────
+// Strict superset of _c03s1 — every node and wire from lesson 3 is preserved
+// at the same coordinates, and we additively place an RF-DP plus two read-
+// port LEDs below the existing layout. New wires (6 total):
+//   IR.RD  (out 1) → RF.WR_ADDR   (in 2)
+//   IR.RS1 (out 2) → RF.RD1_ADDR  (in 0)
+//   IR.RS2 (out 3) → RF.RD2_ADDR  (in 1)
+//   CU.RG_WE (out 1) → RF.WE      (in 4)   (fan-out from existing rgWeLed wire)
+//   CU.IMM   (out 6) → RF.WR_DATA (in 3)   (fan-out from existing immLed wire)
+//   CLK              → RF.CLK     (in 5)
+//   RF.RD1 (out 0) → rd1Led
+//   RF.RD2 (out 1) → rd2Led
 function _c04s1() {
   // ── Inputs ───────────────────────────────────────────────
-  const en  = _input(120, 100, 'EN');
-  const rst = _input(120, 200, 'RST');
-  const we  = _input(120, 540, 'WE');
-  const clk = _clock(260, 360);
+  const en   = _input(140, 200, 'EN');
+  const rst  = _input(140, 320, 'RST');
+  const clk  = _clock(140, 460);
 
-  // ── PC + ROM (carry-overs) ──────────────────────────────
-  const pc    = _block(COMPONENT_TYPES.PC, 360, 160, { bitWidth: 4 });
-  const pcOut = _output(580, 80, 'PC');
+  // ── PC + ROM (carry-overs from c02/c03) ──────────────────
+  const pc    = _block(COMPONENT_TYPES.PC, 380, 320, { bitWidth: 4 });
+  const pcOut = _output(620, 200, 'PC');
   const _asmSource =
-`; R1=5 and R2=3 are pre-loaded into the RegFile.
-; The single meaningful instruction is the ADD; HALT stops the loop.
+`; Step 4 demo — instructions finally change CPU state.
+; Two leading NOPs let the learner watch PC advance 0→1→2
+; through an "empty pipeline" before the first real
+; instruction (LI R1, 5) executes on STEP 3.
 
-ADD R3, R1, R2
+NOP
+NOP
+LI  R1, 5
+LI  R2, 3
+LI  R3, 9
+LI  R4, 1
+CMP R1, R2
+CMP R3, R4
 HALT`;
-  const rom   = _block(COMPONENT_TYPES.ROM, 580, 200, {
-    addrBits:    4,
-    dataBits:    16,
-    asyncRead:   true,
-    memory:      { 0: 0x0312, 1: 0xF000 },
-    label:       'IMEM',
+  const rom = _block(COMPONENT_TYPES.ROM, 620, 380, {
+    addrBits:  4,
+    dataBits:  16,
+    asyncRead: true,
+    memory:    {
+      0: 0xE000, 1: 0xE000,                                // NOP, NOP (warmup)
+      2: 0xD105, 3: 0xD203, 4: 0xD309, 5: 0xD401,          // LI R1..R4
+      6: 0x7012, 7: 0x7034,                                 // CMP, CMP
+      8: 0xF000,                                            // HALT
+    },
+    label:     'IMEM',
     _asmSource,
     _sourceView: 'asm',
   });
-  const dataOut = _output(820, 200, 'DATA');
+  const data = _output(880, 380, 'DATA');
+  data.displayFormat = 'instr16';
 
-  // ── IR (bit-splitter — gets ROM data + a constant LD=1) ──
-  const ldImm = _block(COMPONENT_TYPES.IMM, 820, 320, { value: 1, bitWidth: 1, label: 'LD=1' });
-  const ir    = _block(COMPONENT_TYPES.IR,  580, 380, {
+  // ── IR + CU (carry-overs from c03; OP LED is gone — IR.OP feeds CU now,
+  //    and the CU LEDs that survive are only those still telling a story
+  //    in this lesson)
+  const ldHi = _input(1020, 540, 'LD=1');
+  const ir   = _block(COMPONENT_TYPES.IR, 1120, 380, {
     instrWidth: 16, opBits: 4, rdBits: 4, rs1Bits: 4, rs2Bits: 4,
-    label: 'IR',
   });
-  // Diagnostic outputs for IR fields so the learner sees decode happen.
-  const opOut  = _output(820, 380, 'OP');
-  const rdOut  = _output(820, 440, 'RD');
-  const rs1Out = _output(820, 500, 'RS1');
-  const rs2Out = _output(820, 560, 'RS2');
+  const cu   = _block(COMPONENT_TYPES.CU, 1360, 380);
 
-  // ── ALU OP IMM (hard-coded ADD until CU arrives in lesson 5) ──
-  const opImm = _block(COMPONENT_TYPES.IMM, 1080, 760, { value: 0, bitWidth: 3, label: 'ADD' });
+  // ── Surviving CU LEDs — placed directly above and below the CU so the
+  //    relationship is visually obvious without long wires
+  const rgWeLed = _output(1360, 140, 'RG_WE');
+  const haltLed = _output(1360, 640, 'HALT');
 
-  // ── RegFile (dual-port, 4 regs × 8 bits, R0 protected, R1=5, R2=3) ──
-  const rf = _block(COMPONENT_TYPES.REG_FILE_DP, 360, 720, {
-    regCount:    4,
-    dataBits:    8,
-    initialRegs: [0, 5, 3, 0],
-    protectR0:   true,
-    label:       'RF',
+  // ── NEW: Register File (dual-port), placed in the middle row right of
+  //    the CU so the data path reads left-to-right
+  const rf     = _block(COMPONENT_TYPES.REG_FILE_DP, 1620, 380, {
+    regCount: 8, dataBits: 8, label: 'RF',
   });
-  const aIn = _output(620, 700, 'A_IN');
-  const bIn = _output(620, 780, 'B_IN');
+  const rd1Led = _output(1880, 280, 'RD1');
+  const rd2Led = _output(1880, 480, 'RD2');
 
-  // ── ALU ──
-  const alu  = _block(COMPONENT_TYPES.ALU, 880, 740, { bitWidth: 8, label: 'ALU' });
-  const aluY = _output(1140, 740, 'ALU_Y');
-
-  // Pre-set EN, WE so the demo behaviour matches the lesson copy.
-  en.fixedValue = 1;
-  rst.fixedValue = 0;
-  we.fixedValue = 0;
+  en.fixedValue   = 1;
+  rst.fixedValue  = 0;
+  ldHi.fixedValue = 1;
 
   return {
     nodes: [
-      en, rst, we, clk,
-      pc, pcOut, rom, dataOut,
-      ldImm, ir, opOut, rdOut, rs1Out, rs2Out,
-      opImm, rf, aIn, bIn, alu, aluY,
+      en, rst, clk,
+      pc, pcOut, rom, data,
+      ldHi, ir,
+      cu, rgWeLed, haltLed,
+      rf, rd1Led, rd2Led,
     ],
     wires: [
-      // ── PC controls + clock ──
+      // ── PC + ROM (from c02)
       _wire(en.id,  pc.id, 2),
       _wire(rst.id, pc.id, 3),
       _wire(clk.id, pc.id, 4, 0, { isClockWire: true }),
       _wire(pc.id, pcOut.id, 0, 0),
       _wire(pc.id, rom.id,   0, 0),
+      _wire(rom.id, data.id, 0, 0),
 
-      // ── ROM → IR (and DATA diagnostic) ──
-      _wire(rom.id, dataOut.id, 0, 0),
-      _wire(rom.id, ir.id,      0, 0),     // INSTR ← ROM out
-      _wire(ldImm.id, ir.id,    1),        // LD=1 always
-      _wire(clk.id, ir.id,      2, 0, { isClockWire: true }),
+      // ── IR (from c03)
+      _wire(rom.id,  ir.id, 0, 0),
+      _wire(ldHi.id, ir.id, 1, 0),
+      _wire(clk.id,  ir.id, 2, 0, { isClockWire: true }),
+      _wire(ir.id, cu.id,    0, 0),
 
-      // ── IR field diagnostics + RF address routing ──
-      _wire(ir.id, opOut.id,  0, 0),
-      _wire(ir.id, rdOut.id,  0, 1),
-      _wire(ir.id, rs1Out.id, 0, 2),
-      _wire(ir.id, rs2Out.id, 0, 3),
-      _wire(ir.id, rf.id, 0, 2),  // RS1 (out 2) → RD1_ADDR (in 0)
-      _wire(ir.id, rf.id, 1, 3),  // RS2 (out 3) → RD2_ADDR (in 1)
-      _wire(ir.id, rf.id, 2, 1),  // RD  (out 1) → WR_ADDR  (in 2)
+      // ── Surviving CU LEDs
+      _wire(cu.id, rgWeLed.id, 0, 1),
+      _wire(cu.id, haltLed.id, 0, 5),
 
-      // ── RF read ports → ALU operands (and diagnostics) ──
-      _wire(rf.id, aIn.id,  0, 0),
-      _wire(rf.id, bIn.id,  0, 1),
-      _wire(rf.id, alu.id,  0, 0),  // RD1 → ALU.A
-      _wire(rf.id, alu.id,  1, 1),  // RD2 → ALU.B
-      _wire(opImm.id, alu.id, 2),   // ALU OP_IN ← IMM(0)=ADD
+      // ── NEW: IR fields → RF address + data ports
+      _wire(ir.id, rf.id, 0, 2),   // IR.RS1 (out 2) → RD1_ADDR
+      _wire(ir.id, rf.id, 1, 3),   // IR.RS2 (out 3) → RD2_ADDR
+      _wire(ir.id, rf.id, 2, 1),   // IR.RD  (out 1) → WR_ADDR
+      _wire(ir.id, rf.id, 3, 3),   // IR.RS2 (out 3) → WR_DATA
+                                    // (the immediate field doubles as the
+                                    //  write-back value here. Step 5 adds a
+                                    //  MUX that picks between this and
+                                    //  ALU.Y, with CU.IMM as the selector.)
+      // ── NEW: CU control → RF
+      _wire(cu.id, rf.id, 4, 1),   // CU.RG_WE → WE
+      _wire(clk.id, rf.id, 5, 0, { isClockWire: true }),  // CLK → RF.CLK
+      // ── NEW: RF read ports → LEDs
+      _wire(rf.id, rd1Led.id, 0, 0),
+      _wire(rf.id, rd2Led.id, 0, 1),
+    ],
+  };
+}
 
-      // ── ALU output → RF write-back (and diagnostic) ──
-      _wire(alu.id, aluY.id, 0, 0),
-      _wire(alu.id, rf.id,   3, 0),  // ALU.Y → RF.WR_DATA
+// ── CPU Build, Lesson 5: ALU + Write-Back MUX ────────────────
+// Strict superset of _c04s1 with one wire replaced:
+//   c04 had  IR.RS2 → RF.WR_DATA  (direct, immediate-only)
+//   c05 has  IR.RS2 → MUX.D1
+//            ALU.Y  → MUX.D0
+//            CU.IMM → MUX.SEL
+//            MUX.Y  → RF.WR_DATA
+// Plus: RF.RD1 → ALU.A, RF.RD2 → ALU.B, CU.ALU_OP → ALU.OP
+//       ALU.Y → ALU_R LED  (live result display)
+//       ALU.Z → CU.Z, ALU.C → CU.C (placed early for step-7 branches)
+function _c05s1() {
+  // ── Inputs (same as c04) ─────────────────────────────────
+  const en   = _input(140, 200, 'EN');
+  const rst  = _input(140, 320, 'RST');
+  const clk  = _clock(140, 460);
 
-      // ── WE + RF clock ──
-      _wire(we.id,  rf.id, 4),
+  // ── PC + ROM (same positions as c04) ─────────────────────
+  const pc    = _block(COMPONENT_TYPES.PC, 380, 320, { bitWidth: 4 });
+  const pcOut = _output(620, 200, 'PC');
+  const _asmSource =
+`; Step 5 demo — ALU + write-back MUX.
+; CU.IMM (1 bit) picks the WB MUX:
+;   IMM=1  → MUX picks IR.RS2 (the immediate, used by LI)
+;   IMM=0  → MUX picks ALU.Y (the compute result)
+
+NOP
+NOP
+LI  R1, 5
+LI  R2, 3
+ADD R3, R1, R2
+SUB R4, R1, R2
+AND R5, R1, R2
+XOR R6, R1, R2
+HALT`;
+  const rom = _block(COMPONENT_TYPES.ROM, 620, 380, {
+    addrBits:  4,
+    dataBits:  16,
+    asyncRead: true,
+    memory:    {
+      0: 0xE000, 1: 0xE000,
+      2: 0xD105, 3: 0xD203,
+      4: 0x0312, 5: 0x1412, 6: 0x2512, 7: 0x4612,
+      8: 0xF000,
+    },
+    label:     'IMEM',
+    _asmSource,
+    _sourceView: 'asm',
+  });
+  const data = _output(880, 380, 'DATA');
+  data.displayFormat = 'instr16';
+
+  // ── IR + CU (carry-overs; same trimmed shape as c04)
+  const ldHi = _input(1020, 540, 'LD=1');
+  const ir   = _block(COMPONENT_TYPES.IR, 1120, 380, {
+    instrWidth: 16, opBits: 4, rdBits: 4, rs1Bits: 4, rs2Bits: 4,
+  });
+  const cu = _block(COMPONENT_TYPES.CU, 1360, 380);
+
+  // ── Surviving CU LEDs (same shape and positions as c04)
+  const rgWeLed = _output(1360, 140, 'RG_WE');
+  const haltLed = _output(1360, 640, 'HALT');
+
+  // ── RF (carry-over from c04, same position; RD1/RD2 LEDs are gone —
+  //    the ALU now consumes those signals visibly)
+  const rf = _block(COMPONENT_TYPES.REG_FILE_DP, 1620, 380, {
+    regCount: 8, dataBits: 8, label: 'RF',
+  });
+
+  // ── NEW: ALU + WB MUX + ALU_R LED ────────────────────────
+  const alu = _block(COMPONENT_TYPES.ALU, 1880, 380, { bitWidth: 8 });
+  const mux = _block(COMPONENT_TYPES.BUS_MUX, 1880, 620, {
+    inputCount: 2, label: 'WB_MUX',
+  });
+  const aluResLed = _output(2140, 380, 'ALU_R');
+
+  en.fixedValue   = 1;
+  rst.fixedValue  = 0;
+  ldHi.fixedValue = 1;
+
+  return {
+    nodes: [
+      en, rst, clk,
+      pc, pcOut, rom, data,
+      ldHi, ir,
+      cu, rgWeLed, haltLed,
+      rf,
+      alu, mux, aluResLed,
+    ],
+    wires: [
+      // ── PC + ROM (c02)
+      _wire(en.id,  pc.id, 2),
+      _wire(rst.id, pc.id, 3),
+      _wire(clk.id, pc.id, 4, 0, { isClockWire: true }),
+      _wire(pc.id, pcOut.id, 0, 0),
+      _wire(pc.id, rom.id,   0, 0),
+      _wire(rom.id, data.id, 0, 0),
+
+      // ── IR (c03)
+      _wire(rom.id,  ir.id, 0, 0),
+      _wire(ldHi.id, ir.id, 1, 0),
+      _wire(clk.id,  ir.id, 2, 0, { isClockWire: true }),
+      _wire(ir.id, cu.id,    0, 0),
+
+      // ── Surviving CU LEDs
+      _wire(cu.id, rgWeLed.id, 0, 1),
+      _wire(cu.id, haltLed.id, 0, 5),
+
+      // ── RF address ports + WE + CLK (c04 wiring kept)
+      _wire(ir.id, rf.id, 0, 2),   // IR.RS1 → RD1_ADDR
+      _wire(ir.id, rf.id, 1, 3),   // IR.RS2 → RD2_ADDR
+      _wire(ir.id, rf.id, 2, 1),   // IR.RD  → WR_ADDR
+      _wire(cu.id, rf.id, 4, 1),   // CU.RG_WE → WE
       _wire(clk.id, rf.id, 5, 0, { isClockWire: true }),
+
+      // ── NEW: ALU
+      _wire(rf.id, alu.id, 0, 0),   // RF.RD1 (out 0) → ALU.A
+      _wire(rf.id, alu.id, 1, 1),   // RF.RD2 (out 1) → ALU.B
+      _wire(cu.id, alu.id, 2, 0),   // CU.ALU_OP (out 0) → ALU.OP
+      _wire(alu.id, aluResLed.id, 0, 0),  // ALU.Y → ALU_R LED
+      // Flag feedback to CU (placed now, used in step 7)
+      _wire(alu.id, cu.id, 1, 1),   // ALU.Z → CU.Z
+      _wire(alu.id, cu.id, 2, 2),   // ALU.C → CU.C
+
+      // ── NEW: WB MUX (selects what RF.WR_DATA receives)
+      _wire(alu.id, mux.id, 0, 0),  // ALU.Y  → MUX.D0  (compute path)
+      _wire(ir.id,  mux.id, 1, 3),  // IR.RS2 → MUX.D1  (immediate path)
+      _wire(cu.id,  mux.id, 2, 6),  // CU.IMM → MUX.SEL
+      _wire(mux.id, rf.id,  3, 0),  // MUX.Y  → RF.WR_DATA  (replaces c04's direct wire)
+    ],
+  };
+}
+
+// ── CPU Build, Lesson 6: RAM ─────────────────────────────────
+// Strict superset of _c05s1 with two changes:
+//   (1) ALU_R LED is gone (MEM_MUX visibly consumes ALU.Y now).
+//   (2) The c05 wire ALU.Y → WB_MUX.D0 is replaced by:
+//          ALU.Y    → MEM_MUX.D0
+//          RAM.OUT  → MEM_MUX.D1
+//          CU.MM_RE → MEM_MUX.SEL
+//          MEM_MUX.Y → WB_MUX.D0
+// Plus all RAM wires (ADDR, DATA, WE, RE, CLK) and a MEM_OUT LED.
+function _c06s1() {
+  // ── Inputs ───────────────────────────────────────────────
+  const en   = _input(140, 200, 'EN');
+  const rst  = _input(140, 320, 'RST');
+  const clk  = _clock(140, 460);
+
+  // ── PC + ROM (same positions; new program loaded) ────────
+  const pc    = _block(COMPONENT_TYPES.PC, 380, 320, { bitWidth: 4 });
+  const pcOut = _output(620, 200, 'PC');
+  const _asmSource =
+`; Step 6 demo — RAM (data memory).
+; Setup R1..R3 with 3 data values, R4..R6 with 3 addresses,
+; then STORE all three into RAM and LOAD them back into R7.
+
+NOP
+NOP
+LI    R1, 5
+LI    R2, 8
+LI    R3, 15
+LI    R4, 1
+LI    R5, 2
+LI    R6, 3
+STORE R1, R4
+STORE R2, R5
+STORE R3, R6
+LOAD  R7, R4
+LOAD  R7, R5
+LOAD  R7, R6
+HALT`;
+  const rom = _block(COMPONENT_TYPES.ROM, 620, 380, {
+    addrBits:  4,
+    dataBits:  16,
+    asyncRead: true,
+    memory:    {
+      0:  0xE000, 1:  0xE000,
+      2:  0xD105, 3:  0xD208, 4:  0xD30F,
+      5:  0xD401, 6:  0xD502, 7:  0xD603,
+      8:  0x9014, 9:  0x9025, 10: 0x9036,
+      11: 0x8704, 12: 0x8705, 13: 0x8706,
+      14: 0xF000,
+    },
+    label:     'IMEM',
+    _asmSource,
+    _sourceView: 'asm',
+  });
+  const data = _output(880, 380, 'DATA');
+  data.displayFormat = 'instr16';
+
+  // ── IR + CU (same trimmed shape as c04/c05) ─────────────
+  const ldHi = _input(1020, 540, 'LD=1');
+  const ir   = _block(COMPONENT_TYPES.IR, 1120, 380, {
+    instrWidth: 16, opBits: 4, rdBits: 4, rs1Bits: 4, rs2Bits: 4,
+  });
+  const cu = _block(COMPONENT_TYPES.CU, 1360, 380);
+  const rgWeLed = _output(1360, 140, 'RG_WE');
+  const haltLed = _output(1360, 640, 'HALT');
+
+  // ── RF (same position) ───────────────────────────────────
+  const rf = _block(COMPONENT_TYPES.REG_FILE_DP, 1620, 380, {
+    regCount: 8, dataBits: 8, label: 'RF',
+  });
+
+  // ── ALU + WB MUX (same positions as c05; ALU_R LED is gone — MEM_MUX
+  //    consumes ALU.Y visibly)
+  const alu = _block(COMPONENT_TYPES.ALU, 1880, 380, { bitWidth: 8 });
+  const wbMux = _block(COMPONENT_TYPES.BUS_MUX, 1880, 620, {
+    inputCount: 2, label: 'WB_MUX',
+  });
+
+  // ── NEW: RAM + MEM_MUX + MEM_OUT LED ─────────────────────
+  const ram = _block(COMPONENT_TYPES.RAM, 2140, 380, {
+    addrBits: 4, dataBits: 8, asyncRead: true, label: 'DMEM', memory: {},
+  });
+  const memMux = _block(COMPONENT_TYPES.BUS_MUX, 2140, 620, {
+    inputCount: 2, label: 'MEM_MUX',
+  });
+  const memOutLed = _output(2400, 380, 'MEM_OUT');
+
+  en.fixedValue   = 1;
+  rst.fixedValue  = 0;
+  ldHi.fixedValue = 1;
+
+  return {
+    nodes: [
+      en, rst, clk,
+      pc, pcOut, rom, data,
+      ldHi, ir,
+      cu, rgWeLed, haltLed,
+      rf,
+      alu,
+      // RAM + MEM_MUX must precede WB_MUX in this list — the simulator's
+      // Phase 4c3 evaluates BUS_MUX nodes in array order, and WB_MUX.D0
+      // reads MEM_MUX.Y, so MEM_MUX must run first.
+      ram, memMux, memOutLed,
+      wbMux,
+    ],
+    wires: [
+      // ── PC + ROM (c02)
+      _wire(en.id,  pc.id, 2),
+      _wire(rst.id, pc.id, 3),
+      _wire(clk.id, pc.id, 4, 0, { isClockWire: true }),
+      _wire(pc.id, pcOut.id, 0, 0),
+      _wire(pc.id, rom.id,   0, 0),
+      _wire(rom.id, data.id, 0, 0),
+
+      // ── IR (c03)
+      _wire(rom.id,  ir.id, 0, 0),
+      _wire(ldHi.id, ir.id, 1, 0),
+      _wire(clk.id,  ir.id, 2, 0, { isClockWire: true }),
+      _wire(ir.id, cu.id,    0, 0),
+
+      // ── Surviving CU LEDs
+      _wire(cu.id, rgWeLed.id, 0, 1),
+      _wire(cu.id, haltLed.id, 0, 5),
+
+      // ── RF (c04)
+      _wire(ir.id, rf.id, 0, 2),
+      _wire(ir.id, rf.id, 1, 3),
+      _wire(ir.id, rf.id, 2, 1),
+      _wire(cu.id, rf.id, 4, 1),
+      _wire(clk.id, rf.id, 5, 0, { isClockWire: true }),
+
+      // ── ALU (c05)
+      _wire(rf.id, alu.id, 0, 0),
+      _wire(rf.id, alu.id, 1, 1),
+      _wire(cu.id, alu.id, 2, 0),
+      _wire(alu.id, cu.id, 1, 1),
+      _wire(alu.id, cu.id, 2, 2),
+
+      // ── WB MUX (c05; D0 source replaced below to come from MEM_MUX)
+      _wire(ir.id,  wbMux.id, 1, 3),  // IR.RS2 → WB_MUX.D1 (immediate path)
+      _wire(cu.id,  wbMux.id, 2, 6),  // CU.IMM → WB_MUX.SEL
+      _wire(wbMux.id, rf.id,  3, 0),  // WB_MUX.Y → RF.WR_DATA
+
+      // ── NEW: RAM
+      _wire(rf.id,  ram.id, 0, 1),  // RF.RD2 → RAM.ADDR
+      _wire(rf.id,  ram.id, 1, 0),  // RF.RD1 → RAM.DATA
+      _wire(cu.id,  ram.id, 2, 2),  // CU.MM_WE → RAM.WE
+      _wire(cu.id,  ram.id, 3, 3),  // CU.MM_RE → RAM.RE
+      _wire(clk.id, ram.id, 4, 0, { isClockWire: true }),
+      _wire(ram.id, memOutLed.id, 0, 0),
+
+      // ── NEW: MEM_MUX (selects ALU.Y vs RAM.OUT, fed by CU.MM_RE)
+      _wire(alu.id,    memMux.id, 0, 0),  // ALU.Y   → MEM_MUX.D0
+      _wire(ram.id,    memMux.id, 1, 0),  // RAM.OUT → MEM_MUX.D1
+      _wire(cu.id,     memMux.id, 2, 3),  // CU.MM_RE → MEM_MUX.SEL
+      _wire(memMux.id, wbMux.id,  0, 0),  // MEM_MUX.Y → WB_MUX.D0
+    ],
+  };
+}
+
+// ── CPU Build, Lesson 7: JMP / Branch ────────────────────────
+// Strict superset of _c06s1. Two new wires close the PC feedback loop:
+//   IR.RD  (out 1) → PC.JUMP_ADDR (in 0)
+//   CU.JMP (out 4) → PC.JMP       (in 1)
+// And we bring back the JMP LED (was trimmed in c04 because the signal
+// did nothing meaningful at that point — it does now).
+function _c07s1() {
+  // ── Inputs ───────────────────────────────────────────────
+  const en   = _input(140, 200, 'EN');
+  const rst  = _input(140, 320, 'RST');
+  const clk  = _clock(140, 460);
+
+  // ── PC + ROM (same positions; new countdown program) ────
+  const pc    = _block(COMPONENT_TYPES.PC, 380, 320, { bitWidth: 4 });
+  const pcOut = _output(620, 200, 'PC');
+  const _asmSource =
+`; Step 7 demo — JMP / JZ.
+; A 4-iteration countdown loop:
+;   R1 starts at 4; each iteration subtracts 1.
+;   JZ uses ALU.Z to fall out into HALT when R1==0.
+
+NOP
+NOP
+LI  R1, 4
+LI  R2, 1
+SUB R1, R1, R2
+JZ  7
+JMP 4
+HALT`;
+  const rom = _block(COMPONENT_TYPES.ROM, 620, 380, {
+    addrBits:  4,
+    dataBits:  16,
+    asyncRead: true,
+    memory:    {
+      0: 0xE000, 1: 0xE000,
+      2: 0xD104, 3: 0xD201,
+      4: 0x1112, 5: 0xB700, 6: 0xA400,
+      7: 0xF000,
+    },
+    label:     'IMEM',
+    _asmSource,
+    _sourceView: 'asm',
+  });
+  const data = _output(880, 380, 'DATA');
+  data.displayFormat = 'instr16';
+
+  // ── IR + CU + surviving CU LEDs ─────────────────────────
+  const ldHi = _input(1020, 540, 'LD=1');
+  const ir   = _block(COMPONENT_TYPES.IR, 1120, 380, {
+    instrWidth: 16, opBits: 4, rdBits: 4, rs1Bits: 4, rs2Bits: 4,
+  });
+  const cu = _block(COMPONENT_TYPES.CU, 1360, 380);
+  const rgWeLed = _output(1360, 140, 'RG_WE');
+  const haltLed = _output(1360, 640, 'HALT');
+  // JMP LED comes back — placed just above HALT on the same column
+  const jmpLed  = _output(1360,  60, 'JMP');
+
+  // ── RF, ALU, WB MUX, RAM, MEM_MUX, MEM_OUT (all from c06) ─
+  const rf = _block(COMPONENT_TYPES.REG_FILE_DP, 1620, 380, {
+    regCount: 8, dataBits: 8, label: 'RF',
+  });
+  const alu = _block(COMPONENT_TYPES.ALU, 1880, 380, { bitWidth: 8 });
+  const wbMux = _block(COMPONENT_TYPES.BUS_MUX, 1880, 620, {
+    inputCount: 2, label: 'WB_MUX',
+  });
+  const ram = _block(COMPONENT_TYPES.RAM, 2140, 380, {
+    addrBits: 4, dataBits: 8, asyncRead: true, label: 'DMEM', memory: {},
+  });
+  const memMux = _block(COMPONENT_TYPES.BUS_MUX, 2140, 620, {
+    inputCount: 2, label: 'MEM_MUX',
+  });
+  const memOutLed = _output(2400, 380, 'MEM_OUT');
+
+  en.fixedValue   = 1;
+  rst.fixedValue  = 0;
+  ldHi.fixedValue = 1;
+
+  return {
+    nodes: [
+      en, rst, clk,
+      pc, pcOut, rom, data,
+      ldHi, ir,
+      cu, rgWeLed, haltLed, jmpLed,
+      rf,
+      alu,
+      ram, memMux, memOutLed,
+      wbMux,
+    ],
+    wires: [
+      // ── PC + ROM (c02)
+      _wire(en.id,  pc.id, 2),
+      _wire(rst.id, pc.id, 3),
+      _wire(clk.id, pc.id, 4, 0, { isClockWire: true }),
+      _wire(pc.id, pcOut.id, 0, 0),
+      _wire(pc.id, rom.id,   0, 0),
+      _wire(rom.id, data.id, 0, 0),
+
+      // ── IR (c03)
+      _wire(rom.id,  ir.id, 0, 0),
+      _wire(ldHi.id, ir.id, 1, 0),
+      _wire(clk.id,  ir.id, 2, 0, { isClockWire: true }),
+      _wire(ir.id, cu.id, 0, 0),
+
+      // ── Surviving CU LEDs + new JMP LED
+      _wire(cu.id, rgWeLed.id, 0, 1),
+      _wire(cu.id, haltLed.id, 0, 5),
+      _wire(cu.id, jmpLed.id,  0, 4),
+
+      // ── RF (c04)
+      _wire(ir.id, rf.id, 0, 2),
+      _wire(ir.id, rf.id, 1, 3),
+      _wire(ir.id, rf.id, 2, 1),
+      _wire(cu.id, rf.id, 4, 1),
+      _wire(clk.id, rf.id, 5, 0, { isClockWire: true }),
+
+      // ── ALU (c05)
+      _wire(rf.id, alu.id, 0, 0),
+      _wire(rf.id, alu.id, 1, 1),
+      _wire(cu.id, alu.id, 2, 0),
+      _wire(alu.id, cu.id, 1, 1),
+      _wire(alu.id, cu.id, 2, 2),
+
+      // ── WB MUX (c05)
+      _wire(ir.id,  wbMux.id, 1, 3),
+      _wire(cu.id,  wbMux.id, 2, 6),
+      _wire(wbMux.id, rf.id,  3, 0),
+
+      // ── RAM (c06)
+      _wire(rf.id,  ram.id, 0, 1),
+      _wire(rf.id,  ram.id, 1, 0),
+      _wire(cu.id,  ram.id, 2, 2),
+      _wire(cu.id,  ram.id, 3, 3),
+      _wire(clk.id, ram.id, 4, 0, { isClockWire: true }),
+      _wire(ram.id, memOutLed.id, 0, 0),
+
+      // ── MEM_MUX (c06)
+      _wire(alu.id,    memMux.id, 0, 0),
+      _wire(ram.id,    memMux.id, 1, 0),
+      _wire(cu.id,     memMux.id, 2, 3),
+      _wire(memMux.id, wbMux.id,  0, 0),
+
+      // ── NEW: PC feedback loop (closes the CPU)
+      _wire(ir.id, pc.id, 0, 1),  // IR.RD  → PC.JUMP_ADDR
+      _wire(cu.id, pc.id, 1, 4),  // CU.JMP → PC.JMP
+    ],
+  };
+}
+
+// ── CPU Build, Lesson 8: Showcase ────────────────────────────
+// No hardware changes. Same circuit as _c07s1, but the RAM is pre-loaded
+// with four values and the ROM holds an array-sum program.
+function _c08s1() {
+  // ── Inputs ───────────────────────────────────────────────
+  const en   = _input(140, 200, 'EN');
+  const rst  = _input(140, 320, 'RST');
+  const clk  = _clock(140, 460);
+
+  // ── PC + ROM (sum-of-RAM program) ────────────────────────
+  const pc    = _block(COMPONENT_TYPES.PC, 380, 320, { bitWidth: 4 });
+  const pcOut = _output(620, 200, 'PC');
+  const _asmSource =
+`; Step 8 — Fibonacci on your CPU.
+; Computes F(2)..F(6) and stores them at RAM[0..4].
+; Result: mem[0..4] = 1, 2, 3, 5, 8.
+
+NOP
+NOP
+LI  R1, 0
+LI  R2, 1
+LI  R3, 0
+LI  R4, 1
+LI  R5, 5
+ADD R6, R1, R2          ; LOOP
+STORE R6, R3
+ADD R3, R3, R4
+OR  R1, R2, R0
+OR  R2, R6, R0
+SUB R5, R5, R4
+JZ  15
+JMP 7
+HALT`;
+  const rom = _block(COMPONENT_TYPES.ROM, 620, 380, {
+    addrBits:  4,
+    dataBits:  16,
+    asyncRead: true,
+    memory:    {
+      0:  0xE000, 1:  0xE000,
+      2:  0xD100, 3:  0xD201, 4:  0xD300, 5:  0xD401, 6:  0xD505,
+      7:  0x0612, 8:  0x9063, 9:  0x0334,
+      10: 0x3120, 11: 0x3260, 12: 0x1554,
+      13: 0xBF00, 14: 0xA700, 15: 0xF000,
+    },
+    label:     'IMEM',
+    _asmSource,
+    _sourceView: 'asm',
+  });
+  const data = _output(880, 380, 'DATA');
+  data.displayFormat = 'instr16';
+
+  // ── IR + CU + LEDs ──────────────────────────────────────
+  const ldHi = _input(1020, 540, 'LD=1');
+  const ir   = _block(COMPONENT_TYPES.IR, 1120, 380, {
+    instrWidth: 16, opBits: 4, rdBits: 4, rs1Bits: 4, rs2Bits: 4,
+  });
+  const cu = _block(COMPONENT_TYPES.CU, 1360, 380);
+  const rgWeLed = _output(1360, 140, 'RG_WE');
+  const haltLed = _output(1360, 640, 'HALT');
+  const jmpLed  = _output(1360,  60, 'JMP');
+
+  // ── RF, ALU, WB MUX, RAM (pre-loaded), MEM_MUX, MEM_OUT ──
+  const rf = _block(COMPONENT_TYPES.REG_FILE_DP, 1620, 380, {
+    regCount: 8, dataBits: 8, label: 'RF',
+  });
+  const alu = _block(COMPONENT_TYPES.ALU, 1880, 380, { bitWidth: 8 });
+  const wbMux = _block(COMPONENT_TYPES.BUS_MUX, 1880, 620, {
+    inputCount: 2, label: 'WB_MUX',
+  });
+  const ram = _block(COMPONENT_TYPES.RAM, 2140, 380, {
+    addrBits: 4, dataBits: 8, asyncRead: true, label: 'DMEM',
+    // Fibonacci writes its own outputs — RAM starts empty.
+    memory: {},
+  });
+  const memMux = _block(COMPONENT_TYPES.BUS_MUX, 2140, 620, {
+    inputCount: 2, label: 'MEM_MUX',
+  });
+  const memOutLed = _output(2400, 380, 'MEM_OUT');
+
+  en.fixedValue   = 1;
+  rst.fixedValue  = 0;
+  ldHi.fixedValue = 1;
+
+  return {
+    nodes: [
+      en, rst, clk,
+      pc, pcOut, rom, data,
+      ldHi, ir,
+      cu, rgWeLed, haltLed, jmpLed,
+      rf,
+      alu,
+      ram, memMux, memOutLed,
+      wbMux,
+    ],
+    wires: [
+      // PC + ROM
+      _wire(en.id,  pc.id, 2),
+      _wire(rst.id, pc.id, 3),
+      _wire(clk.id, pc.id, 4, 0, { isClockWire: true }),
+      _wire(pc.id, pcOut.id, 0, 0),
+      _wire(pc.id, rom.id,   0, 0),
+      _wire(rom.id, data.id, 0, 0),
+      // IR
+      _wire(rom.id,  ir.id, 0, 0),
+      _wire(ldHi.id, ir.id, 1, 0),
+      _wire(clk.id,  ir.id, 2, 0, { isClockWire: true }),
+      _wire(ir.id, cu.id, 0, 0),
+      // CU LEDs
+      _wire(cu.id, rgWeLed.id, 0, 1),
+      _wire(cu.id, haltLed.id, 0, 5),
+      _wire(cu.id, jmpLed.id,  0, 4),
+      // RF
+      _wire(ir.id, rf.id, 0, 2),
+      _wire(ir.id, rf.id, 1, 3),
+      _wire(ir.id, rf.id, 2, 1),
+      _wire(cu.id, rf.id, 4, 1),
+      _wire(clk.id, rf.id, 5, 0, { isClockWire: true }),
+      // ALU
+      _wire(rf.id, alu.id, 0, 0),
+      _wire(rf.id, alu.id, 1, 1),
+      _wire(cu.id, alu.id, 2, 0),
+      _wire(alu.id, cu.id, 1, 1),
+      _wire(alu.id, cu.id, 2, 2),
+      // WB MUX
+      _wire(ir.id,  wbMux.id, 1, 3),
+      _wire(cu.id,  wbMux.id, 2, 6),
+      _wire(wbMux.id, rf.id,  3, 0),
+      // RAM
+      _wire(rf.id,  ram.id, 0, 1),
+      _wire(rf.id,  ram.id, 1, 0),
+      _wire(cu.id,  ram.id, 2, 2),
+      _wire(cu.id,  ram.id, 3, 3),
+      _wire(clk.id, ram.id, 4, 0, { isClockWire: true }),
+      _wire(ram.id, memOutLed.id, 0, 0),
+      // MEM_MUX
+      _wire(alu.id,    memMux.id, 0, 0),
+      _wire(ram.id,    memMux.id, 1, 0),
+      _wire(cu.id,     memMux.id, 2, 3),
+      _wire(memMux.id, wbMux.id,  0, 0),
+      // PC feedback loop (c07)
+      _wire(ir.id, pc.id, 0, 1),
+      _wire(cu.id, pc.id, 1, 4),
     ],
   };
 }
@@ -1156,6 +1788,7 @@ function _l20s1() {
   };
 }
 
+
 const REGISTRY = {
   'l01-first-and:0':       _l01s1,
   'l01-first-and:1':       _l01s2,
@@ -1182,8 +1815,12 @@ const REGISTRY = {
   'l20-edge-detector:0':     _l20s1,
   'c01-pc:0':                _c01s1,
   'c02-rom:0':               _c02s1,
-  'c03-regfile:0':           _c03s1,
-  'c04-execute:0':           _c04s1,
+  'c03-ir-cu:0':             _c03s1,
+  'c04-regfile:0':           _c04s1,
+  'c05-alu:0':               _c05s1,
+  'c06-ram:0':               _c06s1,
+  'c07-jmp:0':               _c07s1,
+  'c08-showcase:0':          _c08s1,
 };
 
 export function hasSolution(lessonId, stepIndex) {

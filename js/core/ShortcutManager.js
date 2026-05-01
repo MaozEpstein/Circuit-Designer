@@ -37,6 +37,9 @@ const DEFAULT_SHORTCUTS = {
   'edit-delete2':     { key: 'Backspace',         label: 'Delete Selected',   group: 'Editing' },
   // Pipeline (Phase 13)
   'pipe-panel-toggle':     { key: 'KeyP',             label: 'Toggle Pipeline Panel',  group: 'Pipeline' },
+  // Learn Mode
+  'tutorial-toggle':        { key: 'ctrl+shift+KeyL', label: 'Toggle Learn Mode',     group: 'Tutorial' },
+  'tutorial-show-solution': { key: 'ctrl+shift+KeyS', label: 'Show Lesson Solution',  group: 'Tutorial' },
   'pipe-stageview-toggle': { key: 'shift+KeyP',       label: 'Toggle Stage Overlay',   group: 'Pipeline' },
   'pipe-retime-suggest':   { key: 'ctrl+shift+KeyR',  label: 'Suggest Retiming',       group: 'Pipeline' },
   // System

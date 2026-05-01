@@ -2270,6 +2270,20 @@ window.addEventListener('keydown', (e) => {
     bus.emit('palette:action', 'toggle-pipeline-panel');
     return;
   }
+  if (match === 'tutorial-toggle') {
+    e.preventDefault();
+    document.getElementById('btn-tutorial')?.click();
+    return;
+  }
+  if (match === 'tutorial-show-solution') {
+    e.preventDefault();
+    // Trigger the panel's existing "Show solution" button — only present
+    // when LEARN is open on a lesson view (catalog has no such button).
+    // Falls through silently if the button isn't visible.
+    const btn = document.querySelector('#tutorial-panel [data-act="show-solution"]');
+    if (btn) btn.click();
+    return;
+  }
   if (match === 'pipe-stageview-toggle') {
     e.preventDefault();
     bus.emit('palette:action', 'toggle-stageview');
