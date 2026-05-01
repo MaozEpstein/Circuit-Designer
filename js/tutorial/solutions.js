@@ -2076,6 +2076,294 @@ function _tls4() {
   };
 }
 
+// ── 2-bit ALU (5 staged steps) ──────────────────────────────
+// Pin layouts in use:
+//   FULL_ADDER: inputs A(0), B(1), CIN(2); outputs SUM(0), COUT(1).
+//   MUX (inputCount=4): inputs D0(0), D1(1), D2(2), D3(3),
+//                       S0(4)=LSB, S1(5)=MSB; output Y(0).
+// Coordinates are stable across steps so each successive build is
+// a pure additive diff (step 4 is the exception — the lesson's
+// startsFromCustomize strips the diagnostic OUTPUTs from steps 1–3
+// before alu-s4's own scene draws the MUX/Y outputs).
+
+// Step 1: A0/A1/B0/B1 + 2 ANDs + 2 ORs + 4 diagnostic LEDs.
+function _alus1() {
+  const A0 = _input(120, 140, 'A0');
+  const A1 = _input(120, 220, 'A1');
+  const B0 = _input(120, 300, 'B0');
+  const B1 = _input(120, 380, 'B1');
+  const and0 = _gate('AND', 380, 140);
+  const and1 = _gate('AND', 380, 220);
+  const or0  = _gate('OR',  380, 300);
+  const or1  = _gate('OR',  380, 380);
+  const and0o = _output(560, 140, 'AND0_OUT');
+  const and1o = _output(560, 220, 'AND1_OUT');
+  const or0o  = _output(560, 300, 'OR0_OUT');
+  const or1o  = _output(560, 380, 'OR1_OUT');
+  return {
+    nodes: [A0, A1, B0, B1, and0, and1, or0, or1, and0o, and1o, or0o, or1o],
+    wires: [
+      _wire(A0.id, and0.id, 0),
+      _wire(B0.id, and0.id, 1),
+      _wire(A1.id, and1.id, 0),
+      _wire(B1.id, and1.id, 1),
+      _wire(A0.id, or0.id,  0),
+      _wire(B0.id, or0.id,  1),
+      _wire(A1.id, or1.id,  0),
+      _wire(B1.id, or1.id,  1),
+      _wire(and0.id, and0o.id, 0),
+      _wire(and1.id, and1o.id, 0),
+      _wire(or0.id,  or0o.id,  0),
+      _wire(or1.id,  or1o.id,  0),
+    ],
+  };
+}
+
+// Step 2: + 2 F-ADDs in carry chain (FA0.CIN unwired = 0) + SUM LEDs.
+function _alus2() {
+  const A0 = _input(120, 140, 'A0');
+  const A1 = _input(120, 220, 'A1');
+  const B0 = _input(120, 300, 'B0');
+  const B1 = _input(120, 380, 'B1');
+  const and0 = _gate('AND', 380, 140);
+  const and1 = _gate('AND', 380, 220);
+  const or0  = _gate('OR',  380, 300);
+  const or1  = _gate('OR',  380, 380);
+  const and0o = _output(560, 140, 'AND0_OUT');
+  const and1o = _output(560, 220, 'AND1_OUT');
+  const or0o  = _output(560, 300, 'OR0_OUT');
+  const or1o  = _output(560, 380, 'OR1_OUT');
+  const fa0   = _block(COMPONENT_TYPES.FULL_ADDER, 560, 480);
+  const fa1   = _block(COMPONENT_TYPES.FULL_ADDER, 560, 600);
+  const sum0o = _output(760, 480, 'SUM0_OUT');
+  const sum1o = _output(760, 600, 'SUM1_OUT');
+  return {
+    nodes: [A0, A1, B0, B1, and0, and1, or0, or1, and0o, and1o, or0o, or1o, fa0, fa1, sum0o, sum1o],
+    wires: [
+      // Bitwise gates (unchanged from step 1)
+      _wire(A0.id, and0.id, 0),
+      _wire(B0.id, and0.id, 1),
+      _wire(A1.id, and1.id, 0),
+      _wire(B1.id, and1.id, 1),
+      _wire(A0.id, or0.id,  0),
+      _wire(B0.id, or0.id,  1),
+      _wire(A1.id, or1.id,  0),
+      _wire(B1.id, or1.id,  1),
+      _wire(and0.id, and0o.id, 0),
+      _wire(and1.id, and1o.id, 0),
+      _wire(or0.id,  or0o.id,  0),
+      _wire(or1.id,  or1o.id,  0),
+      // Adder chain
+      _wire(A0.id,  fa0.id, 0),
+      _wire(B0.id,  fa0.id, 1),
+      _wire(A1.id,  fa1.id, 0),
+      _wire(B1.id,  fa1.id, 1),
+      _wire(fa0.id, fa1.id, 2, 1),    // FA0.COUT (out 1) → FA1.CIN (in 2)
+      _wire(fa0.id, sum0o.id, 0, 0),  // FA0.SUM (out 0) → LED
+      _wire(fa1.id, sum1o.id, 0, 0),
+      // FA0.CIN intentionally unwired — defaults to 0 → pure ADD.
+    ],
+  };
+}
+
+// Step 3: + OP0 + 2 XORs (B XOR OP0) + OP0 → FA0.CIN. Adder now does
+// ADD when OP0=0 and SUB when OP0=1.
+function _alus3() {
+  const A0  = _input(120, 140, 'A0');
+  const A1  = _input(120, 220, 'A1');
+  const B0  = _input(120, 300, 'B0');
+  const B1  = _input(120, 380, 'B1');
+  const OP0 = _input(120, 540, 'OP0');
+  const and0 = _gate('AND', 380, 140);
+  const and1 = _gate('AND', 380, 220);
+  const or0  = _gate('OR',  380, 300);
+  const or1  = _gate('OR',  380, 380);
+  const and0o = _output(560, 140, 'AND0_OUT');
+  const and1o = _output(560, 220, 'AND1_OUT');
+  const or0o  = _output(560, 300, 'OR0_OUT');
+  const or1o  = _output(560, 380, 'OR1_OUT');
+  const xor0  = _gate('XOR', 380, 480);   // B0 XOR OP0
+  const xor1  = _gate('XOR', 380, 600);   // B1 XOR OP0
+  const fa0   = _block(COMPONENT_TYPES.FULL_ADDER, 580, 480);
+  const fa1   = _block(COMPONENT_TYPES.FULL_ADDER, 580, 600);
+  const sum0o = _output(780, 480, 'SUM0_OUT');
+  const sum1o = _output(780, 600, 'SUM1_OUT');
+  return {
+    nodes: [A0, A1, B0, B1, OP0, and0, and1, or0, or1, and0o, and1o, or0o, or1o, xor0, xor1, fa0, fa1, sum0o, sum1o],
+    wires: [
+      _wire(A0.id, and0.id, 0),
+      _wire(B0.id, and0.id, 1),
+      _wire(A1.id, and1.id, 0),
+      _wire(B1.id, and1.id, 1),
+      _wire(A0.id, or0.id,  0),
+      _wire(B0.id, or0.id,  1),
+      _wire(A1.id, or1.id,  0),
+      _wire(B1.id, or1.id,  1),
+      _wire(and0.id, and0o.id, 0),
+      _wire(and1.id, and1o.id, 0),
+      _wire(or0.id,  or0o.id,  0),
+      _wire(or1.id,  or1o.id,  0),
+      // XORs: B XOR OP0 → conditional invert
+      _wire(B0.id,  xor0.id, 0),
+      _wire(OP0.id, xor0.id, 1),
+      _wire(B1.id,  xor1.id, 0),
+      _wire(OP0.id, xor1.id, 1),
+      // Adder chain — A from inputs, B from XOR outputs, CIN=OP0
+      _wire(A0.id,   fa0.id, 0),
+      _wire(xor0.id, fa0.id, 1),
+      _wire(OP0.id,  fa0.id, 2),       // FA0.CIN = OP0
+      _wire(A1.id,   fa1.id, 0),
+      _wire(xor1.id, fa1.id, 1),
+      _wire(fa0.id,  fa1.id, 2, 1),    // FA0.COUT → FA1.CIN
+      _wire(fa0.id,  sum0o.id, 0, 0),
+      _wire(fa1.id,  sum1o.id, 0, 0),
+    ],
+  };
+}
+
+// Step 4: + OP1, 2 4:1 MUXes, Y0/Y1. Diagnostic LEDs from steps 1-3
+// are stripped by the lesson's startsFromCustomize — this function
+// builds the canonical clean ALU shape.
+function _alus4() {
+  const A0  = _input(120, 140, 'A0');
+  const A1  = _input(120, 220, 'A1');
+  const B0  = _input(120, 300, 'B0');
+  const B1  = _input(120, 380, 'B1');
+  const OP0 = _input(120, 540, 'OP0');
+  const OP1 = _input(120, 620, 'OP1');
+  const and0 = _gate('AND', 380, 140);
+  const and1 = _gate('AND', 380, 220);
+  const or0  = _gate('OR',  380, 300);
+  const or1  = _gate('OR',  380, 380);
+  const xor0 = _gate('XOR', 380, 480);
+  const xor1 = _gate('XOR', 380, 600);
+  const fa0  = _block(COMPONENT_TYPES.FULL_ADDER, 580, 480);
+  const fa1  = _block(COMPONENT_TYPES.FULL_ADDER, 580, 600);
+  const mux0 = _block(COMPONENT_TYPES.MUX, 880, 320, { inputCount: 4, label: 'MUX0' });
+  const mux1 = _block(COMPONENT_TYPES.MUX, 880, 540, { inputCount: 4, label: 'MUX1' });
+  const Y0   = _output(1100, 320, 'Y0');
+  const Y1   = _output(1100, 540, 'Y1');
+  return {
+    nodes: [A0, A1, B0, B1, OP0, OP1, and0, and1, or0, or1, xor0, xor1, fa0, fa1, mux0, mux1, Y0, Y1],
+    wires: [
+      _wire(A0.id, and0.id, 0),
+      _wire(B0.id, and0.id, 1),
+      _wire(A1.id, and1.id, 0),
+      _wire(B1.id, and1.id, 1),
+      _wire(A0.id, or0.id,  0),
+      _wire(B0.id, or0.id,  1),
+      _wire(A1.id, or1.id,  0),
+      _wire(B1.id, or1.id,  1),
+      _wire(B0.id,  xor0.id, 0),
+      _wire(OP0.id, xor0.id, 1),
+      _wire(B1.id,  xor1.id, 0),
+      _wire(OP0.id, xor1.id, 1),
+      _wire(A0.id,   fa0.id, 0),
+      _wire(xor0.id, fa0.id, 1),
+      _wire(OP0.id,  fa0.id, 2),
+      _wire(A1.id,   fa1.id, 0),
+      _wire(xor1.id, fa1.id, 1),
+      _wire(fa0.id,  fa1.id, 2, 1),
+      // MUX0 — bit 0 selection. D0=ADD, D1=SUB (same wire, adder is dual-mode).
+      _wire(fa0.id,  mux0.id, 0, 0),
+      _wire(fa0.id,  mux0.id, 1, 0),
+      _wire(and0.id, mux0.id, 2),
+      _wire(or0.id,  mux0.id, 3),
+      _wire(OP0.id,  mux0.id, 4),
+      _wire(OP1.id,  mux0.id, 5),
+      _wire(mux0.id, Y0.id,   0),
+      // MUX1 — bit 1 selection.
+      _wire(fa1.id,  mux1.id, 0, 0),
+      _wire(fa1.id,  mux1.id, 1, 0),
+      _wire(and1.id, mux1.id, 2),
+      _wire(or1.id,  mux1.id, 3),
+      _wire(OP0.id,  mux1.id, 4),
+      _wire(OP1.id,  mux1.id, 5),
+      _wire(mux1.id, Y1.id,   0),
+    ],
+  };
+}
+
+// Step 5: X-ray view. Builds on alu-s3 (which still has the 6
+// diagnostic LEDs) and adds OP1 + the two MUXes + Y0/Y1 — without
+// removing the diagnostic outputs. The learner sees all 4 sub-results
+// (AND, OR, ADD/SUB) lighting up on every cycle while Y follows the
+// selected one. The visual punchline of the whole lesson.
+function _alus5() {
+  // Inputs and the entire alu-s3 datapath
+  const A0  = _input(120, 140, 'A0');
+  const A1  = _input(120, 220, 'A1');
+  const B0  = _input(120, 300, 'B0');
+  const B1  = _input(120, 380, 'B1');
+  const OP0 = _input(120, 540, 'OP0');
+  const OP1 = _input(120, 620, 'OP1');
+  const and0 = _gate('AND', 380, 140);
+  const and1 = _gate('AND', 380, 220);
+  const or0  = _gate('OR',  380, 300);
+  const or1  = _gate('OR',  380, 380);
+  const and0o = _output(560, 140, 'AND0_OUT');
+  const and1o = _output(560, 220, 'AND1_OUT');
+  const or0o  = _output(560, 300, 'OR0_OUT');
+  const or1o  = _output(560, 380, 'OR1_OUT');
+  const xor0  = _gate('XOR', 380, 480);
+  const xor1  = _gate('XOR', 380, 600);
+  const fa0   = _block(COMPONENT_TYPES.FULL_ADDER, 580, 480);
+  const fa1   = _block(COMPONENT_TYPES.FULL_ADDER, 580, 600);
+  const sum0o = _output(780, 480, 'SUM0_OUT');
+  const sum1o = _output(780, 600, 'SUM1_OUT');
+  // New in step 5 — MUXes + Y outputs sitting to the right of the
+  // diagnostic column so both are visible side-by-side.
+  const mux0 = _block(COMPONENT_TYPES.MUX, 940, 320, { inputCount: 4, label: 'MUX0' });
+  const mux1 = _block(COMPONENT_TYPES.MUX, 940, 540, { inputCount: 4, label: 'MUX1' });
+  const Y0   = _output(1140, 320, 'Y0');
+  const Y1   = _output(1140, 540, 'Y1');
+  return {
+    nodes: [A0, A1, B0, B1, OP0, OP1, and0, and1, or0, or1, and0o, and1o, or0o, or1o, xor0, xor1, fa0, fa1, sum0o, sum1o, mux0, mux1, Y0, Y1],
+    wires: [
+      _wire(A0.id, and0.id, 0),
+      _wire(B0.id, and0.id, 1),
+      _wire(A1.id, and1.id, 0),
+      _wire(B1.id, and1.id, 1),
+      _wire(A0.id, or0.id,  0),
+      _wire(B0.id, or0.id,  1),
+      _wire(A1.id, or1.id,  0),
+      _wire(B1.id, or1.id,  1),
+      _wire(and0.id, and0o.id, 0),
+      _wire(and1.id, and1o.id, 0),
+      _wire(or0.id,  or0o.id,  0),
+      _wire(or1.id,  or1o.id,  0),
+      _wire(B0.id,  xor0.id, 0),
+      _wire(OP0.id, xor0.id, 1),
+      _wire(B1.id,  xor1.id, 0),
+      _wire(OP0.id, xor1.id, 1),
+      _wire(A0.id,   fa0.id, 0),
+      _wire(xor0.id, fa0.id, 1),
+      _wire(OP0.id,  fa0.id, 2),
+      _wire(A1.id,   fa1.id, 0),
+      _wire(xor1.id, fa1.id, 1),
+      _wire(fa0.id,  fa1.id, 2, 1),
+      _wire(fa0.id,  sum0o.id, 0, 0),
+      _wire(fa1.id,  sum1o.id, 0, 0),
+      // The MUX layer — drinks from the same wires the diagnostic LEDs do.
+      // Every sub-circuit fans out to BOTH its LED AND its MUX input.
+      _wire(fa0.id,  mux0.id, 0, 0),    // D0 = ADD/SUB result, bit 0
+      _wire(fa0.id,  mux0.id, 1, 0),    // D1 = ADD/SUB result, bit 0 (same wire)
+      _wire(and0.id, mux0.id, 2),
+      _wire(or0.id,  mux0.id, 3),
+      _wire(OP0.id,  mux0.id, 4),
+      _wire(OP1.id,  mux0.id, 5),
+      _wire(mux0.id, Y0.id,   0),
+      _wire(fa1.id,  mux1.id, 0, 0),
+      _wire(fa1.id,  mux1.id, 1, 0),
+      _wire(and1.id, mux1.id, 2),
+      _wire(or1.id,  mux1.id, 3),
+      _wire(OP0.id,  mux1.id, 4),
+      _wire(OP1.id,  mux1.id, 5),
+      _wire(mux1.id, Y1.id,   0),
+    ],
+  };
+}
+
 const REGISTRY = {
   'l01-first-and:0':       _l01s1,
   'l01-first-and:1':       _l01s2,
@@ -2118,6 +2406,12 @@ const REGISTRY = {
   'tl-s2:0':                 _tls2,
   'tl-s3:0':                 _tls3,
   'tl-s4:0':                 _tls4,
+  // 2-bit ALU
+  'alu-s1:0':                _alus1,
+  'alu-s2:0':                _alus2,
+  'alu-s3:0':                _alus3,
+  'alu-s4:0':                _alus4,
+  'alu-s5:0':                _alus5,
 };
 
 export function hasSolution(lessonId, stepIndex) {

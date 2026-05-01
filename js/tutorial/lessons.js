@@ -31,6 +31,7 @@ export const TRACKS = [
   // what it builds — not a generic "Build Step-by-Step" bucket.
   { id: 'mux-2to1',      label: 'MUX 2:1' },
   { id: 'traffic-light', label: 'Traffic Light FSM' },
+  { id: 'alu-2bit',      label: '2-bit ALU' },
 ];
 
 export const LESSONS = [
@@ -1368,6 +1369,221 @@ HALT`,
           'This is a SYNCHRONOUS reset — it takes effect on the next clock edge, not instantly. That is the cleanest, most timing-safe form of reset and is how most modern silicon resets its registers.',
           'Asynchronous reset would force Q=0 immediately the moment RST goes high, regardless of the clock. Faster, but harder to get right (race conditions with the clock edge). The FF_SLOT in this simulator does not have a CLR pin, which is why we are using the synchronous form here.',
           'Without RST: if the FSM happens to power up in state 11 (the unused code), no LED lights and the FSM is silently broken until you happen to clock through it. With RST: every reboot starts at RED, guaranteed.',
+        ],
+        validate: { type: 'manual' },
+      },
+    ],
+  },
+
+  // ─── Track: 2-bit ALU ───────────────────────────────────────
+  // Same staged-build pedagogy. The 2-bit ALU layers into:
+  //   1. Bitwise AND/OR (the trivial part — parallel gates)
+  //   2. Adder chain (2 F-ADDs in carry sequence — pure ADD)
+  //   3. Subtractor reuse (XOR + carry-in trick — same adder
+  //      now does both ADD and SUB based on OP0)
+  //   4. 4:1 MUX selection (OP1 chooses ADD/SUB vs AND/OR per bit)
+  //   5. Free run + completion recap (no new components)
+  //
+  // OP encoding: 00=ADD, 01=SUB, 10=AND, 11=OR. The pedagogical
+  // payoff lives in step 3 — discovering that ONE adder + two
+  // XOR gates does both ADD and SUB. That trick is how every
+  // real CPU's ALU avoids a dedicated subtractor.
+  {
+    id: 'alu-s1',
+    track: 'alu-2bit',
+    title: '1 · Bitwise AND / OR — "The easy half"',
+    summary: 'An ALU is just four small computers crammed into one box, with a MUX picking the answer. Start with the easiest two: bitwise AND and bitwise OR. Each one is just parallel gates, one per bit slice. No carry, no order — pure combinational logic.',
+    steps: [
+      {
+        instruction: 'Place INPUTs `A0`, `A1`, `B0`, `B1`. Add 2 ANDs (bit 0 and bit 1) and 2 ORs (bit 0 and bit 1). Wire each AND/OR to the matching A/B bit pair, then to OUTPUTs `AND0_OUT`, `AND1_OUT`, `OR0_OUT`, `OR1_OUT`.',
+        hints: [
+          'Bitwise = "do the gate per bit, no interaction between bit slices". Bit 0 sees A0 and B0; bit 1 sees A1 and B1. They never talk to each other.',
+          'This is the fastest part of any ALU because there is no carry to propagate. All bit slices compute in parallel in one gate-delay.',
+          'Inputs alpha-sorted for the validator: A0, A1, B0, B1. Outputs alpha: AND0_OUT, AND1_OUT, OR0_OUT, OR1_OUT.',
+        ],
+        validate: {
+          type: 'truthTable',
+          // Inputs alpha: A0, A1, B0, B1 → Outputs alpha: AND0_OUT, AND1_OUT, OR0_OUT, OR1_OUT
+          expected: (() => {
+            const rows = [];
+            for (let combo = 0; combo < 16; combo++) {
+              const A0 = (combo >> 3) & 1;
+              const A1 = (combo >> 2) & 1;
+              const B0 = (combo >> 1) & 1;
+              const B1 =  combo       & 1;
+              rows.push([A0, A1, B0, B1, A0 & B0, A1 & B1, A0 | B0, A1 | B1]);
+            }
+            return rows;
+          })(),
+        },
+      },
+    ],
+  },
+  {
+    id: 'alu-s2',
+    track: 'alu-2bit',
+    startsFrom: 'alu-s1',
+    title: '2 · Adder Chain — "Carry rolls left"',
+    summary: 'Add a 2-bit binary adder by chaining two F-ADD blocks. Bit 0\'s carry-out feeds bit 1\'s carry-in. The first stage\'s carry-in is left unwired — defaults to 0, so we get pure ADD. The result wraps mod 4 (any overflow leaves through the unused COUT of bit 1).',
+    steps: [
+      {
+        instruction: 'Add 2 F-ADD blocks (palette → BLOCKS): `FA0` for bit 0, `FA1` for bit 1. Wire `A0,B0 → FA0.A,FA0.B`; `A1,B1 → FA1.A,FA1.B`; `FA0.COUT → FA1.CIN`. Add OUTPUTs `SUM0_OUT`, `SUM1_OUT` from the FA SUM pins. Leave `FA0.CIN` unwired (defaults to 0).',
+        hints: [
+          'F-ADD pin layout: inputs `A`(0), `B`(1), `CIN`(2). Outputs: `SUM`(0), `COUT`(1). Three inputs, two outputs — a building block of every adder ever made.',
+          'Why chain? Because addition is *sequential per bit* — you cannot compute bit 1\'s sum without knowing whether bit 0 produced a carry. The carry chain encodes that dependency directly in the wires.',
+          'Mod-4 wrap: 3+3=6, but bits[1:0] hold only 2+3+3=6 → binary 110, but we keep only the bottom 2 bits (10=2). The unused FA1.COUT is where the high-order overflow goes.',
+        ],
+        validate: {
+          type: 'truthTable',
+          // Inputs alpha: A0, A1, B0, B1 → Outputs alpha: AND0_OUT, AND1_OUT, OR0_OUT, OR1_OUT, SUM0_OUT, SUM1_OUT
+          expected: (() => {
+            const rows = [];
+            for (let combo = 0; combo < 16; combo++) {
+              const A0 = (combo >> 3) & 1;
+              const A1 = (combo >> 2) & 1;
+              const B0 = (combo >> 1) & 1;
+              const B1 =  combo       & 1;
+              const a = (A1 << 1) | A0;
+              const b = (B1 << 1) | B0;
+              const s = (a + b) & 3;
+              rows.push([A0, A1, B0, B1, A0 & B0, A1 & B1, A0 | B0, A1 | B1, s & 1, (s >> 1) & 1]);
+            }
+            return rows;
+          })(),
+        },
+      },
+    ],
+  },
+  {
+    id: 'alu-s3',
+    track: 'alu-2bit',
+    startsFrom: 'alu-s2',
+    title: '3 · Subtractor Reuse — "ONE adder, BOTH operations"',
+    summary: 'The adder you just built can subtract too — without changing a single F-ADD. The trick: add an OP0 control bit, XOR each B input with OP0, and feed OP0 itself as the carry-in. When OP0=0 nothing changes (XOR with 0 = identity, CIN=0 → ADD). When OP0=1 every B bit flips (XOR with 1 = NOT) and CIN=1 → A + NOT(B) + 1 = A − B in two\'s complement. ONE adder. Two operations. No new subtractor.',
+    steps: [
+      {
+        instruction: 'Add INPUT `OP0`. Add 2 XOR gates: `XOR_B0 = B0 XOR OP0`, `XOR_B1 = B1 XOR OP0`. Re-route the FA `B` inputs to come from the XOR outputs (`XOR_B0 → FA0.B`, `XOR_B1 → FA1.B`). Wire `OP0 → FA0.CIN` (replacing the unwired default). Toggle OP0 between 0 and 1 to see SUM switch between A+B and A−B.',
+        hints: [
+          'Two\'s complement primer: −B (mod 4) equals NOT(B) + 1. So A − B = A + NOT(B) + 1. The +1 is exactly what CIN=1 contributes.',
+          'XOR is the canonical "conditional inverter" — XOR with 0 passes through, XOR with 1 inverts. So `B XOR OP0` is "B normally, NOT(B) when OP0=1". One gate per bit, controlled by one signal.',
+          'This trick is universal: every modern CPU\'s ALU does exactly this. There is no separate subtractor in any RISC processor — adder + XOR + control bit = both operations.',
+          'Watch SUM in the truth table: when OP0=0, SUM = (A+B) mod 4. When OP0=1, SUM = (A−B) mod 4 (e.g. 3−1=2; 1−3=−2 mod 4 = 2 also).',
+        ],
+        validate: {
+          type: 'truthTable',
+          // Inputs alpha: A0, A1, B0, B1, OP0 → Outputs alpha: AND0_OUT, AND1_OUT, OR0_OUT, OR1_OUT, SUM0_OUT, SUM1_OUT
+          expected: (() => {
+            const rows = [];
+            for (let combo = 0; combo < 32; combo++) {
+              const A0  = (combo >> 4) & 1;
+              const A1  = (combo >> 3) & 1;
+              const B0  = (combo >> 2) & 1;
+              const B1  = (combo >> 1) & 1;
+              const OP0 =  combo       & 1;
+              const a = (A1 << 1) | A0;
+              const b = (B1 << 1) | B0;
+              const s = OP0 === 0 ? ((a + b) & 3) : ((a - b) & 3);
+              rows.push([A0, A1, B0, B1, OP0, A0 & B0, A1 & B1, A0 | B0, A1 | B1, s & 1, (s >> 1) & 1]);
+            }
+            return rows;
+          })(),
+        },
+      },
+    ],
+  },
+  {
+    id: 'alu-s4',
+    track: 'alu-2bit',
+    startsFrom: 'alu-s3',
+    title: '4 · 4:1 MUX — "Pick the right answer"',
+    summary: 'Now four results travel in parallel through the ALU on every cycle: ADD, SUB, AND, OR. We pick the one we want with a 4:1 MUX per output bit, controlled by OP1:OP0. The diagnostic LEDs from steps 1–3 are removed — only the final Y0/Y1 stay, because that is what a real ALU exposes.',
+    startsFromCustomize: (data) => {
+      // Strip the diagnostic outputs from steps 1-3. The MUX and Y outputs
+      // built in this step are the canonical ALU interface.
+      const drop = new Set(['AND0_OUT', 'AND1_OUT', 'OR0_OUT', 'OR1_OUT', 'SUM0_OUT', 'SUM1_OUT']);
+      const removedIds = new Set();
+      data.nodes = data.nodes.filter(n => {
+        if (n.type === 'OUTPUT' && drop.has(n.label)) { removedIds.add(n.id); return false; }
+        return true;
+      });
+      data.wires = data.wires.filter(w => !removedIds.has(w.targetId) && !removedIds.has(w.sourceId));
+    },
+    steps: [
+      {
+        instruction: 'Add INPUT `OP1`. Add 2 BUS_MUX blocks with `inputCount=4` (one per output bit). For each MUX: `D0 = FA.SUM` (ADD), `D1 = FA.SUM` (SUB — same wire, the adder already inverted via OP0), `D2 = AND.out`, `D3 = OR.out`. Selectors: `S0 = OP0`, `S1 = OP1`. Wire MUX outputs to OUTPUTs `Y0`, `Y1`.',
+        hints: [
+          'BUS_MUX with inputCount=4 pin layout: data inputs `D0`(0), `D1`(1), `D2`(2), `D3`(3); selectors `S0`(4) = LSB, `S1`(5) = MSB. Output `Y`(0). The selector pair (S1,S0) picks Dn where n = (S1<<1) | S0.',
+          'OP encoding maps directly to the MUX selectors. OP=00 → MUX picks D0 (ADD path). OP=01 → D1 (SUB — but D1 is wired to the same FA.SUM as D0, because the adder is already in subtract mode when OP0=1). OP=10 → D2 (AND). OP=11 → D3 (OR).',
+          'Why D0 and D1 share the same wire? Because the SAME adder produces ADD when OP0=0 and SUB when OP0=1. The MUX has two slots for "the adder result" — one selected when OP=00, the other when OP=01.',
+          'Both MUXes get the same OP0 and OP1. They are doing the same selection, just for different bit slices.',
+          'Inputs alpha-sorted: A0, A1, B0, B1, OP0, OP1 (6 inputs → 64 rows). Outputs: Y0, Y1.',
+        ],
+        validate: {
+          type: 'truthTable',
+          // Same 64-row table as l16-alu-2bit
+          expected: (() => {
+            const rows = [];
+            for (let combo = 0; combo < 64; combo++) {
+              const A0  = (combo >> 5) & 1;
+              const A1  = (combo >> 4) & 1;
+              const B0  = (combo >> 3) & 1;
+              const B1  = (combo >> 2) & 1;
+              const OP0 = (combo >> 1) & 1;
+              const OP1 =  combo       & 1;
+              const a  = (A1 << 1) | A0;
+              const b  = (B1 << 1) | B0;
+              const op = (OP1 << 1) | OP0;
+              let r;
+              if      (op === 0) r = (a + b) & 3;
+              else if (op === 1) r = (a - b) & 3;
+              else if (op === 2) r = (a & b) & 3;
+              else               r = (a | b) & 3;
+              rows.push([A0, A1, B0, B1, OP0, OP1, r & 1, (r >> 1) & 1]);
+            }
+            return rows;
+          })(),
+        },
+      },
+    ],
+  },
+  {
+    id: 'alu-s5',
+    track: 'alu-2bit',
+    // Note: builds on alu-s3 (NOT s4). s3 still has the 6 diagnostic LEDs
+    // — we want them visible alongside the MUX + Y outputs so the learner
+    // can see all 4 ALU sub-results computing simultaneously while OP only
+    // changes which one reaches Y. This is the "X-ray" view of a working
+    // datapath.
+    startsFrom: 'alu-s3',
+    title: '5 · X-ray View — "All paths run, MUX picks"',
+    summary: 'Step 4 gave you the clean ALU: 6 inputs, 2 outputs, hidden internals. This step puts back the 6 diagnostic LEDs from steps 1–3 ALONGSIDE the MUX / Y outputs from step 4. Now you can see every sub-result (AND, OR, SUM-as-ADD-or-SUB) lighting up in parallel on every cycle. The MUX is just a selector — change OP and Y switches between the same 4 results that were always there. This is how a real CPU\'s datapath actually works: every functional unit runs every cycle, the opcode just decides whose answer counts.',
+    completion: {
+      title: '🎉 You built a 2-bit ALU',
+      body: `<p><strong>What you put together over the five steps:</strong></p>
+<ul>
+  <li><strong>Step 1 — Bitwise AND/OR.</strong> Parallel gates per bit slice — the trivial part of any ALU.</li>
+  <li><strong>Step 2 — Adder chain.</strong> Two F-ADDs in carry sequence — bit 0\'s COUT feeds bit 1\'s CIN. Pure ADD with CIN=0.</li>
+  <li><strong>Step 3 — Subtractor reuse.</strong> The same adder does SUB too: XOR each B with OP0, feed OP0 as CIN. When OP0=1 the adder computes <code>A + NOT(B) + 1 = A − B</code>. ONE adder, TWO operations.</li>
+  <li><strong>Step 4 — 4:1 MUX.</strong> Two MUXes (one per output bit) pick which of ADD / SUB / AND / OR reaches Y, controlled by <code>OP1:OP0</code>.</li>
+  <li><strong>Step 5 — X-ray view.</strong> All 6 internal LEDs back on the canvas. The big reveal: every sub-result is computed every cycle — the MUX only filters. Change OP and Y switches between answers that were already on the wires.</li>
+</ul>
+<p><strong>Why this matters beyond this lesson:</strong> the ALU you just built is a miniature of <em>every</em> ALU in <em>every</em> RISC CPU. Specifically:</p>
+<ul>
+  <li><strong>The adder-reuse trick</strong> in step 3 is universal: no modern CPU has a separate subtractor. The 8-bit ALU you wired into the cpu-build track uses the exact same trick — it has 8 F-ADDs and 8 XOR gates and one extra control bit, and that is the whole story.</li>
+  <li><strong>The MUX-per-output-bit pattern</strong> in step 4 scales directly: a 32-bit ALU uses 32 MUXes, all sharing the same opcode selectors. The structure is identical, just wider.</li>
+  <li><strong>The "all paths compute, MUX picks" mental model</strong> from step 5 is how every datapath in modern silicon works — and is also why CPUs are fast. They never decide "what to compute" before computing it; they compute everything in parallel and let the opcode filter the result. This is also the WB MUX you wired in cpu-build step 5 and the forwarding MUXes in the MIPS 5-stage demos.</li>
+</ul>
+<p>Whenever the rest of the course says "the ALU does X", this is the gate-level reality.</p>`,
+    },
+    steps: [
+      {
+        instruction: 'Hold A=3, B=1. Cycle OP through 00 → 01 → 10 → 11 and watch ALL 8 LEDs together. SUM_OUT, AND_OUT, OR_OUT stay lit on the same values throughout — the sub-circuits never sleep. Only Y switches between them, following whichever result the MUX is currently picking.',
+        hints: [
+          'OP encoding: 00=ADD, 01=SUB, 10=AND, 11=OR.',
+          'A=3, B=1 case: AND_OUT shows 1 (3&1=01); OR_OUT shows 3 (3|1=11); SUM_OUT shows 0 when OP0=0 (3+1=4 mod 4) or 2 when OP0=1 (3-1=2). All three of those are visible at once. Y picks one.',
+          'Try OP=01 (SUB): SUM_OUT actually changes — it\'s the same adder running A+NOT(B)+1 instead of A+B. AND_OUT and OR_OUT stay rock-steady because OP0 does not gate them.',
+          'The big takeaway: hardware has no "if / else". It does ALL the work ALL the time and uses MUXes to decide which work was relevant. That is why pipelining works — every stage of every instruction runs every cycle.',
+          'A and B each pack two bits: A1 is the high bit, A0 is the low bit. Same for B and Y. Y=2 lights Y1=1, Y0=0; Y=3 lights both.',
         ],
         validate: { type: 'manual' },
       },

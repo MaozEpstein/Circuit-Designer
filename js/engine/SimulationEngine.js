@@ -351,9 +351,15 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
     } else if (node.type === 'HALF_ADDER') {
       // HA: inputs A, B → outputs Sum (out0), Carry (out1)
       const inputSlots = inputs.get(id);
-      const a = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? null) : null;
-      const b = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? null) : null;
-      if (a === null || b === null) {
+      const _readSlot = (slot) => {
+        if (!slot) return null;
+        const outIdx = slot.wire.sourceOutputIndex || 0;
+        const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+        return nodeValues.get(key);
+      };
+      const a = _readSlot(inputSlots[0]);
+      const b = _readSlot(inputSlots[1]);
+      if (a === null || a === undefined || b === null || b === undefined) {
         value = null;
         nodeValues.set(id + '__out0', null);
         nodeValues.set(id + '__out1', null);
@@ -367,11 +373,19 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
 
     } else if (node.type === 'FULL_ADDER') {
       // FA: inputs A, B, Cin → outputs Sum (out0), Cout (out1)
+      // Inputs MUST be read via sourceOutputIndex so a wire from another
+      // FA's COUT (output 1, e.g. carry chain) returns COUT and not SUM.
       const inputSlots = inputs.get(id);
-      const a   = inputSlots[0] ? (nodeValues.get(inputSlots[0].sourceId) ?? null) : null;
-      const b   = inputSlots[1] ? (nodeValues.get(inputSlots[1].sourceId) ?? null) : null;
-      const cin = inputSlots[2] ? (nodeValues.get(inputSlots[2].sourceId) ?? null) : null;
-      if (a === null || b === null || cin === null) {
+      const _readSlot = (slot) => {
+        if (!slot) return null;
+        const outIdx = slot.wire.sourceOutputIndex || 0;
+        const key = outIdx === 0 ? slot.sourceId : (slot.sourceId + '__out' + outIdx);
+        return nodeValues.get(key);
+      };
+      const a   = _readSlot(inputSlots[0]);
+      const b   = _readSlot(inputSlots[1]);
+      const cin = _readSlot(inputSlots[2]);
+      if (a === null || a === undefined || b === null || b === undefined || cin === null || cin === undefined) {
         value = null;
         nodeValues.set(id + '__out0', null);
         nodeValues.set(id + '__out1', null);
