@@ -1903,6 +1903,179 @@ function _muxs4() {
   };
 }
 
+// ── Traffic Light FSM (4 staged steps) ───────────────────────
+// Coordinates are reused across the four steps so each successive
+// build is a pure "add some nodes / wires" diff. The exception is
+// step 3, which removes the manual D inputs (D0_IN, D1_IN); and
+// step 4, which removes the direct AND→FF.D wires from step 3
+// before inserting the RST gating.
+//
+// Pin layout: D-FF (FF_SLOT, ffType=D) inputs D(0), CLK(1);
+// outputs Q(0), Q_BAR(1). No CLR pin → step 4's reset is built
+// from gates (synchronous reset by AND-ing D with NOT(RST)).
+
+// Step 1: 2 D-FFs + manual D inputs + S0/S1 LEDs.
+function _tls1() {
+  const clk    = _clock(140, 720);
+  const d0in   = _input(140, 200, 'D0_IN');
+  const d1in   = _input(140, 600, 'D1_IN');
+  const ff0    = _ffD(620, 280, 'S0');
+  const ff1    = _ffD(620, 480, 'S1');
+  const s0out  = _output(820, 200, 'S0_OUT');
+  const s1out  = _output(820, 580, 'S1_OUT');
+  return {
+    nodes: [clk, d0in, d1in, ff0, ff1, s0out, s1out],
+    wires: [
+      _wire(d0in.id, ff0.id, 0),
+      _wire(d1in.id, ff1.id, 0),
+      _wire(clk.id,  ff0.id, 1, 0, { isClockWire: true }),
+      _wire(clk.id,  ff1.id, 1, 0, { isClockWire: true }),
+      _wire(ff0.id,  s0out.id, 0, 0),
+      _wire(ff1.id,  s1out.id, 0, 0),
+    ],
+  };
+}
+
+// Step 2: + NOT_S0, NOT_S1, 3 decoder ANDs, RED/GREEN/YELLOW LEDs.
+function _tls2() {
+  const clk    = _clock(140, 720);
+  const d0in   = _input(140, 200, 'D0_IN');
+  const d1in   = _input(140, 600, 'D1_IN');
+  const ff0    = _ffD(620, 280, 'S0');
+  const ff1    = _ffD(620, 480, 'S1');
+  const s0out  = _output(820, 200, 'S0_OUT');
+  const s1out  = _output(820, 580, 'S1_OUT');
+  const ns0    = _gate('NOT', 380, 280);
+  const ns1    = _gate('NOT', 380, 480);
+  const aRed   = _gate('AND', 880, 240);
+  const aGrn   = _gate('AND', 880, 380);
+  const aYel   = _gate('AND', 880, 520);
+  const red    = _output(1100, 240, 'RED');
+  const green  = _output(1100, 380, 'GREEN');
+  const yellow = _output(1100, 520, 'YELLOW');
+  return {
+    nodes: [clk, d0in, d1in, ff0, ff1, s0out, s1out, ns0, ns1, aRed, aGrn, aYel, red, green, yellow],
+    wires: [
+      _wire(d0in.id, ff0.id, 0),
+      _wire(d1in.id, ff1.id, 0),
+      _wire(clk.id,  ff0.id, 1, 0, { isClockWire: true }),
+      _wire(clk.id,  ff1.id, 1, 0, { isClockWire: true }),
+      _wire(ff0.id,  s0out.id, 0, 0),
+      _wire(ff1.id,  s1out.id, 0, 0),
+      // Inverters
+      _wire(ff0.id,  ns0.id, 0, 0),
+      _wire(ff1.id,  ns1.id, 0, 0),
+      // RED = NOT_S1 AND NOT_S0
+      _wire(ns1.id,  aRed.id, 0),
+      _wire(ns0.id,  aRed.id, 1),
+      _wire(aRed.id, red.id,  0),
+      // GREEN = NOT_S1 AND S0
+      _wire(ns1.id,  aGrn.id, 0),
+      _wire(ff0.id,  aGrn.id, 1, 0),
+      _wire(aGrn.id, green.id, 0),
+      // YELLOW = S1 AND NOT_S0
+      _wire(ff1.id,  aYel.id, 0, 0),
+      _wire(ns0.id,  aYel.id, 1),
+      _wire(aYel.id, yellow.id, 0),
+    ],
+  };
+}
+
+// Step 3: drop manual D inputs; fan out RED_AND → S0.D, GREEN_AND → S1.D.
+// The decoder ANDs are now also the next-state logic.
+function _tls3() {
+  const clk    = _clock(140, 720);
+  const ff0    = _ffD(620, 280, 'S0');
+  const ff1    = _ffD(620, 480, 'S1');
+  const s0out  = _output(820, 200, 'S0_OUT');
+  const s1out  = _output(820, 580, 'S1_OUT');
+  const ns0    = _gate('NOT', 380, 280);
+  const ns1    = _gate('NOT', 380, 480);
+  const aRed   = _gate('AND', 880, 240);
+  const aGrn   = _gate('AND', 880, 380);
+  const aYel   = _gate('AND', 880, 520);
+  const red    = _output(1100, 240, 'RED');
+  const green  = _output(1100, 380, 'GREEN');
+  const yellow = _output(1100, 520, 'YELLOW');
+  return {
+    nodes: [clk, ff0, ff1, s0out, s1out, ns0, ns1, aRed, aGrn, aYel, red, green, yellow],
+    wires: [
+      _wire(clk.id,  ff0.id, 1, 0, { isClockWire: true }),
+      _wire(clk.id,  ff1.id, 1, 0, { isClockWire: true }),
+      _wire(ff0.id,  s0out.id, 0, 0),
+      _wire(ff1.id,  s1out.id, 0, 0),
+      _wire(ff0.id,  ns0.id, 0, 0),
+      _wire(ff1.id,  ns1.id, 0, 0),
+      _wire(ns1.id,  aRed.id, 0),
+      _wire(ns0.id,  aRed.id, 1),
+      _wire(aRed.id, red.id,  0),
+      _wire(ns1.id,  aGrn.id, 0),
+      _wire(ff0.id,  aGrn.id, 1, 0),
+      _wire(aGrn.id, green.id, 0),
+      _wire(ff1.id,  aYel.id, 0, 0),
+      _wire(ns0.id,  aYel.id, 1),
+      _wire(aYel.id, yellow.id, 0),
+      // The brand-new wires that close the loop:
+      // RED_AND output also feeds FF0.D (next-state S0).
+      // GREEN_AND output also feeds FF1.D (next-state S1).
+      _wire(aRed.id, ff0.id, 0),
+      _wire(aGrn.id, ff1.id, 0),
+    ],
+  };
+}
+
+// Step 4: synchronous RST. Insert AND_RST_0/1 between the decoder
+// outputs and the FF.D inputs; gate them with NOT(RST).
+function _tls4() {
+  const clk    = _clock(140, 720);
+  const rst    = _input(140, 400, 'RST');
+  const ff0    = _ffD(620, 280, 'S0');
+  const ff1    = _ffD(620, 480, 'S1');
+  const s0out  = _output(820, 200, 'S0_OUT');
+  const s1out  = _output(820, 580, 'S1_OUT');
+  const ns0    = _gate('NOT', 380, 280);
+  const ns1    = _gate('NOT', 380, 480);
+  const nrst   = _gate('NOT', 380, 400);
+  const aRed   = _gate('AND', 880, 240);
+  const aGrn   = _gate('AND', 880, 380);
+  const aYel   = _gate('AND', 880, 520);
+  const aRst0  = _gate('AND', 460, 320);
+  const aRst1  = _gate('AND', 460, 440);
+  const red    = _output(1100, 240, 'RED');
+  const green  = _output(1100, 380, 'GREEN');
+  const yellow = _output(1100, 520, 'YELLOW');
+  return {
+    nodes: [clk, rst, ff0, ff1, s0out, s1out, ns0, ns1, nrst, aRed, aGrn, aYel, aRst0, aRst1, red, green, yellow],
+    wires: [
+      _wire(clk.id,  ff0.id, 1, 0, { isClockWire: true }),
+      _wire(clk.id,  ff1.id, 1, 0, { isClockWire: true }),
+      _wire(ff0.id,  s0out.id, 0, 0),
+      _wire(ff1.id,  s1out.id, 0, 0),
+      _wire(ff0.id,  ns0.id, 0, 0),
+      _wire(ff1.id,  ns1.id, 0, 0),
+      // Output decoder + next-state ANDs (unchanged from step 3)
+      _wire(ns1.id,  aRed.id, 0),
+      _wire(ns0.id,  aRed.id, 1),
+      _wire(aRed.id, red.id,  0),
+      _wire(ns1.id,  aGrn.id, 0),
+      _wire(ff0.id,  aGrn.id, 1, 0),
+      _wire(aGrn.id, green.id, 0),
+      _wire(ff1.id,  aYel.id, 0, 0),
+      _wire(ns0.id,  aYel.id, 1),
+      _wire(aYel.id, yellow.id, 0),
+      // RST gating: D = next_state AND NOT(RST). When RST=1, D=0,
+      // so the next clock edge latches 00 (= RED).
+      _wire(rst.id,  nrst.id, 0),
+      _wire(aRed.id, aRst0.id, 0),
+      _wire(nrst.id, aRst0.id, 1),
+      _wire(aRst0.id, ff0.id, 0),
+      _wire(aGrn.id, aRst1.id, 0),
+      _wire(nrst.id, aRst1.id, 1),
+      _wire(aRst1.id, ff1.id, 0),
+    ],
+  };
+}
+
 const REGISTRY = {
   'l01-first-and:0':       _l01s1,
   'l01-first-and:1':       _l01s2,
@@ -1940,6 +2113,11 @@ const REGISTRY = {
   'mux-s2:0':                _muxs2,
   'mux-s3:0':                _muxs3,
   'mux-s4:0':                _muxs4,
+  // Traffic Light FSM
+  'tl-s1:0':                 _tls1,
+  'tl-s2:0':                 _tls2,
+  'tl-s3:0':                 _tls3,
+  'tl-s4:0':                 _tls4,
 };
 
 export function hasSolution(lessonId, stepIndex) {

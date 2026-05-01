@@ -29,7 +29,8 @@ export const TRACKS = [
   // concept per step, each step preloads the previous solution via
   // startsFrom). Each rebuilt classic gets its own tab named after
   // what it builds — not a generic "Build Step-by-Step" bucket.
-  { id: 'mux-2to1', label: 'MUX 2:1' },
+  { id: 'mux-2to1',      label: 'MUX 2:1' },
+  { id: 'traffic-light', label: 'Traffic Light FSM' },
 ];
 
 export const LESSONS = [
@@ -1263,6 +1264,112 @@ HALT`,
             [1, 1, 1,   0, 1, 0, 1],
           ],
         },
+      },
+    ],
+  },
+
+  // ─── Track: Traffic Light FSM ───────────────────────────────
+  // Same staged-build pedagogy as MUX 2:1. The classic 3-state FSM
+  // (RED → GREEN → YELLOW → RED) gets layered into:
+  //   1. State register (2 D-FFs)
+  //   2. Output decoder (state code → which LED is on)
+  //   3. Next-state logic (closes the loop, FSM cycles autonomously)
+  //   4. RST (synchronous reset — deterministic startup)
+  //
+  // State encoding: 00=RED, 01=GREEN, 10=YELLOW, 11=unused.
+  // Pedagogical insight in step 3: the AND gates that decode the
+  // outputs (RED = NOT(S1) AND NOT(S0); GREEN = NOT(S1) AND S0)
+  // are bit-for-bit the same boolean expressions as the next-state
+  // equations (D0 = NOT(S1) AND NOT(S0); D1 = NOT(S1) AND S0).
+  // Step 3 closes the loop with two wires only — no new gates.
+  {
+    id: 'tl-s1',
+    track: 'traffic-light',
+    title: '1 · State Register — "Memory holds the state"',
+    summary: 'A finite state machine is just a register that remembers which state we are in, plus combinational logic that decides where to go next. Start with the memory: two D-FFs sharing a clock, manually driven by INPUT pins so you can prove they latch on the rising edge.',
+    steps: [
+      {
+        instruction: 'Place CLOCK, INPUTs `D0_IN`/`D1_IN`, two D-FFs (`S0`, `S1`), OUTPUTs `S0_OUT`/`S1_OUT`. Wire `D0_IN → S0.D`, `D1_IN → S1.D`, CLOCK to both `.CLK`, FF outputs to LEDs.',
+        hints: [
+          'D-FF pin layout (FF_SLOT with ffType=D): inputs `D`(0), `CLK`(1). Outputs: `Q`(0), `Q_BAR`(1). The FF samples D only on the rising edge of CLK.',
+          'Two FFs sharing one CLOCK is the canonical 2-bit state register. Both transitions happen on the same edge — no skew.',
+          'Try toggling D0_IN while CLOCK is low. S0_OUT does not change. Then STEP (drives one full clock period). Now S0_OUT updates to whatever D0_IN was at the rising edge.',
+        ],
+        validate: { type: 'manual' },
+      },
+    ],
+  },
+  {
+    id: 'tl-s2',
+    track: 'traffic-light',
+    startsFrom: 'tl-s1',
+    title: '2 · Output Decoder — "State code to LED"',
+    summary: 'Two state bits encode 4 possible states; we use only 3 of them. Decode each valid code into exactly one LED: 00 lights RED, 01 lights GREEN, 10 lights YELLOW. The illegal code 11 lights nothing — a clue that the FSM landed in an undefined state.',
+    steps: [
+      {
+        instruction: 'Add 2 NOT gates (`NOT_S0`, `NOT_S1`), 3 AND gates, 3 OUTPUTs (`RED`, `GREEN`, `YELLOW`). Wire `S0 → NOT_S0`, `S1 → NOT_S1`. RED = `NOT_S1 AND NOT_S0`, GREEN = `NOT_S1 AND S0`, YELLOW = `S1 AND NOT_S0`.',
+        hints: [
+          'Toggle D0_IN/D1_IN to walk through the four state codes (00, 01, 10, 11) and STEP. Each valid code lights exactly one LED. Code 11 lights none — that is the "unused" state.',
+          'Why no LED for state 11? Because we only need 3 states and 2 bits give us 4. The 4th code is "spare" — left unhandled here, fixed by RST in step 4.',
+          'Output equations are pure combinational from the FF outputs — no clock involved. The LED reflects the current state instantly.',
+        ],
+        validate: { type: 'manual' },
+      },
+    ],
+  },
+  {
+    id: 'tl-s3',
+    track: 'traffic-light',
+    startsFrom: 'tl-s2',
+    title: '3 · Next-state — "Close the loop, no new gates"',
+    summary: 'The transition rule is 00→01→10→00. Working out the boolean equations: D0 (next S0) = NOT(S1) AND NOT(S0); D1 (next S1) = NOT(S1) AND S0. Look closely — those are exactly the same expressions as the RED and GREEN decoders you just built. So we don\'t add new gates; we just fan out the existing AND outputs back to the FF.D inputs. The FSM becomes autonomous.',
+    steps: [
+      {
+        instruction: 'Delete `D0_IN` and `D1_IN`. Wire `RED_AND.out → S0.D` and `GREEN_AND.out → S1.D` (those AND outputs already compute the next-state equations). Press AUTO CLK and watch RED → GREEN → YELLOW cycle in WAVEFORM.',
+        hints: [
+          'Why no new gates? RED = NOT(S1) AND NOT(S0). D0 (next S0) = NOT(S1) AND NOT(S0). Identical expression. The AND output already exists; we just route it to a second sink.',
+          'Same for GREEN = NOT(S1) AND S0 = D1 (next S1). YELLOW has no next-state role — its output only drives the LED.',
+          'Fan-out is a real hardware win: one gate, two consumers. Smaller chip, less power, faster.',
+          'WAVEFORM panel: add S0, S1, RED, GREEN, YELLOW to the picker. You will see the 3-cycle pattern repeat: 00/RED → 01/GREEN → 10/YELLOW → back to 00.',
+        ],
+        validate: { type: 'manual' },
+      },
+    ],
+  },
+  {
+    id: 'tl-s4',
+    track: 'traffic-light',
+    startsFrom: 'tl-s3',
+    title: '4 · RST — "Deterministic startup"',
+    summary: 'On power-on, the FFs hold whatever they happen to land on — possibly the unused state 11, where no LED lights and the FSM\'s next-state logic produces 00 the next cycle. To guarantee a known starting state, gate the D inputs with a synchronous RST signal: when RST=1, the FFs receive 0 instead of the next-state value, forcing the state to 00 (RED) on the next clock edge. Two extra AND gates and one NOT — and the FSM is production-ready.',
+    completion: {
+      title: '🎉 You built a Traffic Light FSM',
+      body: `<p><strong>What you put together over the four steps:</strong></p>
+<ul>
+  <li><strong>Step 1 — State register.</strong> Two D-FFs sharing a clock. The 2-bit number they hold IS the FSM\'s state.</li>
+  <li><strong>Step 2 — Output decoder.</strong> Three AND gates (plus two NOTs) that turn each valid state code into exactly one lit LED. State <code>11</code> lights nothing — the "spare" code.</li>
+  <li><strong>Step 3 — Next-state logic.</strong> No new gates. The RED and GREEN AND outputs <em>are already</em> the boolean equations for the next-state bits. Two fan-out wires close the loop, and the FSM cycles autonomously on every clock edge.</li>
+  <li><strong>Step 4 — Synchronous reset.</strong> Two AND gates (and one NOT) gate the D inputs with NOT(RST). On the next clock edge after RST=1, the FFs latch 0 — forcing the FSM to RED no matter what state it was in.</li>
+</ul>
+<p><strong>Why this matters beyond this lesson:</strong> the four layers you just built — <em>state register, output decode, next-state logic, reset</em> — are the canonical structure of <strong>every</strong> finite state machine. The same pattern shows up:</p>
+<ul>
+  <li>inside the <code>CU</code> (control unit) of any pipelined CPU,</li>
+  <li>in protocol handlers (USB, PCIe, Ethernet — every one is an FSM with state + decode + next-state),</li>
+  <li>in elevator controllers, vending machines, traffic systems, washing-machine timers,</li>
+  <li>and in software too — every <code>switch (state)</code> loop is the same idea, just executed by a CPU instead of by gates.</li>
+</ul>
+<p>Whenever the rest of the course says "an FSM does X", this is the gate-level reality.</p>`,
+    },
+    steps: [
+      {
+        instruction: 'Add INPUT `RST`, NOT gate, 2 AND gates. Re-route: `RED_AND → AND_RST_0.in0`, `NOT_RST → AND_RST_0.in1`, `AND_RST_0 → S0.D` (replacing the direct wire). Same for `GREEN_AND → AND_RST_1 → S1.D`. Pulse RST=1 → state forces to 00 (RED) on the next clock.',
+        hints: [
+          'How does it work? When RST=0: NOT_RST=1, the AND gate passes the next-state value through unchanged. When RST=1: NOT_RST=0, both AND gates output 0, so D0=D1=0, so the next state is 00 = RED.',
+          'This is a SYNCHRONOUS reset — it takes effect on the next clock edge, not instantly. That is the cleanest, most timing-safe form of reset and is how most modern silicon resets its registers.',
+          'Asynchronous reset would force Q=0 immediately the moment RST goes high, regardless of the clock. Faster, but harder to get right (race conditions with the clock edge). The FF_SLOT in this simulator does not have a CLR pin, which is why we are using the synchronous form here.',
+          'Without RST: if the FSM happens to power up in state 11 (the unused code), no LED lights and the FSM is silently broken until you happen to clock through it. With RST: every reboot starts at RED, guaranteed.',
+        ],
+        validate: { type: 'manual' },
       },
     ],
   },
