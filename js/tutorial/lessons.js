@@ -991,9 +991,9 @@ Wire each Yn to gate its matching DATAn (each AND has 2 inputs):
 
 OR all four gating outputs together → \`READ_OUT\`.
 
-Test:
-  • Set DATA0=1, DATA1=0, DATA2=1, DATA3=1.
-  • Sweep the address (S1, S0). READ_OUT follows DATA[address] exactly: 00→1, 01→0, 10→1, 11→1.
+Test (DATA0..DATA3 are pre-loaded with 1, 0, 1, 1 — the four "memory cells"):
+  • Sweep the address. READ_OUT follows DATA[address] exactly: address 00 → 1, 01 → 0, 10 → 1, 11 → 1.
+  • Then change any DATA bit while the address holds it. READ_OUT updates instantly — the cell was "rewritten" and the read returns the new value. All 6 inputs are togglable; play freely.
 
 ──────────────────────────────────────────────────────
 This circuit is the foundation of:

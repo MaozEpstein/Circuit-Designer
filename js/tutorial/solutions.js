@@ -1392,6 +1392,10 @@ function _decs3() {
 
 // Step 4: + 4 DATA inputs + 4 gating ANDs + OR + READ_OUT.
 // READ_OUT = DATA[(S1<<1) | S0] — a 4-cell × 1-bit memory.
+// DATA defaults to 1,0,1,1 (matching the instruction) so the learner
+// can sweep the address right after "Show solution" and see READ_OUT
+// follow the cell contents without having to set them by hand first.
+// All 6 inputs remain manually togglable — interactive end-to-end.
 function _decs4() {
   const s0   = _input(120, 140, 'S0');
   const s1   = _input(120, 240, 'S1');
@@ -1399,6 +1403,10 @@ function _decs4() {
   const d1   = _input(120, 460, 'DATA1');
   const d2   = _input(120, 540, 'DATA2');
   const d3   = _input(120, 620, 'DATA3');
+  d0.fixedValue = 1;
+  d1.fixedValue = 0;
+  d2.fixedValue = 1;
+  d3.fixedValue = 1;
   const ns0  = _gate('NOT', 320, 140);
   const ns1  = _gate('NOT', 320, 240);
   const ns0o = _output(520, 140, 'NOT_S0');
