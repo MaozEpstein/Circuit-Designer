@@ -3598,8 +3598,8 @@ const EXAMPLES = [
   // it focused. Keep cards in numeric title order (1 → 6).
   {
     id: 'pipeline-demo-retime',
-    title: '1. Pipelined 3-bit Adder — stages, balance & imbalance',
-    desc: 'A real 3-bit ripple-carry adder pipelined into 3 stages, INTENTIONALLY imbalanced: stage 0 = FA0 (150 ps), stage 1 = FA1 → FA2 chained via the carry (300 ps — bottleneck), stage 2 = pure PIPE2 routing (~0 ps). Open the PIP panel: Balance ≈ 33%, bottleneck stage 1, f_max gated by 300 ps. Visually you can see the cure — pulling PIPE2 backward across FA2 would split the chain so every stage holds exactly one FA = 150 ps. (Note: the auto-RETIME button only acts on single-channel PIPE_REGs; this demo uses 6/4-channel pipes to carry the carry chain + pass-through bits, so the suggestion engine skips them — the lesson here is recognising the imbalance, not the auto-fix.) Inputs A=(A2,A1,A0) and B=(B2,B1,B0) step through 6 operand pairs (0+0, 1+1, 3+2, 7+1, 5+3, 4+4); with the 2-cycle pipeline latency, sums land at the OUTPUTs starting cycle 3 with II=1 throughput. Shortcut: P to open the panel.',
+    title: '1. Pipelined 3-bit Adder — stages, balance & retime',
+    desc: 'A real 3-bit ripple-carry adder pipelined into 3 stages, INTENTIONALLY imbalanced: stage 0 = FA0 (150 ps), stage 1 = FA1 → FA2 chained via the carry (300 ps — bottleneck), stage 2 = pure PIPE2 routing (~0 ps). Balance ≈ 33%. Click RETIME in the PIP panel header — the analyzer suggests pulling PIPE2 backward across FA2: the 4-channel pipe absorbs FA2\'s 3 inputs + 2 passthroughs (becoming a 5-channel pipe), splitting the carry chain so every stage holds one FA = 150 ps, Balance 100%, f_max raised by 2×. Inputs A=(A2,A1,A0) and B=(B2,B1,B0) step through 6 operand pairs (0+0, 1+1, 3+2, 7+1, 5+3, 4+4); with the 2-cycle pipeline latency, sums land at the OUTPUTs starting cycle 3 with II=1 throughput. Shortcuts: P to open the panel, Ctrl+Shift+R to retime.',
     tags: ['pipeline', 'stages', 'balance', 'retime', 'adder', 'datapath', 'f_max'],
     file: 'examples/circuits/pipeline-demo-adder.json',
   },

@@ -71,8 +71,13 @@ export class SceneGraph {
   addWire(wire) {
     // Validate
     if (wire.sourceId === wire.targetId) return null;
+    // A target input PIN can only host one wire — you can't drive a single
+    // input from two sources. But two outputs of one source can fan out to
+    // separate inputs of one target (e.g. FULL_ADDER's Sum and Cout both
+    // wired into the same multi-channel PIPE_REG), so identify duplicates
+    // by the (target, inputIndex) pair, not by (source, target) alone.
     const dup = [...this._wires.values()].some(
-      w => w.sourceId === wire.sourceId && w.targetId === wire.targetId
+      w => w.targetId === wire.targetId && w.targetInputIndex === wire.targetInputIndex
     );
     if (dup) return null;
 

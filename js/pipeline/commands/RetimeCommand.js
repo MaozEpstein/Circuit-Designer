@@ -48,10 +48,27 @@ export class RetimeCommand extends Command {
       n.x = e.newX;
       n.y = e.newY;
     }
+    // Apply node-property edits (multi-channel retime resizes PIPE.channels).
+    this._propSnapshots = [];
+    for (const e of (this._proposal.nodePropEdits || [])) {
+      const n = this._scene.getNode(e.nodeId);
+      if (!n) continue;
+      const oldProps = {};
+      for (const k of Object.keys(e.props)) oldProps[k] = n[k];
+      this._propSnapshots.push({ nodeId: e.nodeId, oldProps });
+      Object.assign(n, e.props);
+    }
   }
 
   undo() {
-    // Restore node positions first.
+    // Restore node properties first (channels count, etc.).
+    for (const s of (this._propSnapshots || [])) {
+      const n = this._scene.getNode(s.nodeId);
+      if (!n) continue;
+      Object.assign(n, s.oldProps);
+    }
+    this._propSnapshots = [];
+    // Restore node positions.
     for (const s of (this._positionSnapshots || [])) {
       const n = this._scene.getNode(s.nodeId);
       if (!n) continue;
