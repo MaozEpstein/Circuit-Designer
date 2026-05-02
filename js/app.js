@@ -3598,10 +3598,10 @@ const EXAMPLES = [
   // it focused. Keep cards in numeric title order (1 → 6).
   {
     id: 'pipeline-demo-retime',
-    title: '1. Stages, Balance & Retime (3-stage)',
-    desc: 'Foundational 3-stage pipeline with 6 inverters arranged 3 / 1 / 2 across two PIPE_REGs — stage delays 150 / 50 / 100 ps, Balance 33 %, Bottleneck S0. Click RETIME in the PIPE panel header for a semantics-preserving single-move suggestion (pull PIPE1 backward across INV3) that balances every stage to 100 ps, raising f_max by 50 %. Exercises: stage levelization, delay model, critical-path click-highlight, violations overlay. Shortcuts: P to open the panel, Ctrl+Shift+R to retime.',
-    tags: ['pipeline', 'retime', 'stages', 'balance', 'f_max'],
-    file: 'examples/circuits/pipeline-demo-retime.json',
+    title: '1. Pipelined 3-bit Adder — stages, latency, throughput',
+    desc: 'A real datapath pipelined into 3 stages: each stage handles one bit of a 3-bit add (FA0 → PIPE1 → FA1 → PIPE2 → FA2), with the carry chain crossing the registers. Inputs A=(A2,A1,A0) and B=(B2,B1,B0) step through 6 operand pairs (0+0, 1+1, 3+2, 7+1, 5+3, 4+4). Watch S2,S1,S0,COUT change cycle by cycle: the first valid sum lands after a 1-cycle pipeline fill, then a new sum appears every cycle (II=1, throughput=1 per cycle). Stages are perfectly balanced (1 FULL_ADDER per stage = 150 ps each, Balance 100%). The Pipeline panel will show 3 stages, equal delays, and the Gantt chart of operands flowing through. Shortcuts: P to open the panel.',
+    tags: ['pipeline', 'stages', 'adder', 'datapath', 'latency', 'throughput', 'f_max'],
+    file: 'examples/circuits/pipeline-demo-adder.json',
   },
   {
     id: 'mips-5stage-forwarding-demo',
