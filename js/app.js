@@ -2773,10 +2773,15 @@ document.getElementById('btn-retime-accept')?.addEventListener('click', () => {
   };
   const removed = new Set(proposal.wireEdits.remove);
   const posMap  = new Map((proposal.nodeEdits || []).map(e => [e.nodeId, e]));
+  const propMap = new Map((proposal.nodePropEdits || []).map(e => [e.nodeId, e]));
   const afterSnap = {
     nodes: scene.nodes.map(n => {
-      const e = posMap.get(n.id);
-      return e ? { ...n, x: e.newX, y: e.newY } : { ...n };
+      let next = { ...n };
+      const pos = posMap.get(n.id);
+      if (pos) { next.x = pos.newX; next.y = pos.newY; }
+      const props = propMap.get(n.id);
+      if (props) Object.assign(next, props.props);
+      return next;
     }),
     wires: scene.wires.filter(w => !removed.has(w.id))
       .map(w => ({ ...w }))
