@@ -658,6 +658,15 @@ function tick() {
   // post-reset empty log clears the previous render.
   bus.emit('runtime:branch-flushes', state.ffStates.get('__branch_flushes__') || []);
 
+  // Surface live CACHE stats (one snapshot per cache instance in scene)
+  // for the Pipeline panel's CACHE section. Same shape as the branch-
+  // flush relay: read from ffStates, normalise to an array, emit.
+  const cacheMap = state.ffStates.get('__cache_stats__');
+  const cacheArr = cacheMap
+    ? [...cacheMap.entries()].map(([id, s]) => ({ id, label: s.label, hits: s.hits, misses: s.misses, recent: [...s.recent] }))
+    : [];
+  bus.emit('runtime:cache-stats', cacheArr);
+
   // Lower clock after evaluation
   if (state.clockHigh) {
     state.clockHigh = false;

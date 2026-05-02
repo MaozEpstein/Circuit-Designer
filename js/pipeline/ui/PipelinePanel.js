@@ -96,6 +96,13 @@ export class PipelinePanel {
       if (this._visible) this._render(this._analyzer.analyze());
     });
 
+    // Live CACHE stats (one snapshot per cache instance), same relay.
+    this._liveCacheStats = [];
+    bus.on('runtime:cache-stats', (snap) => {
+      this._liveCacheStats = Array.isArray(snap) ? snap : [];
+      if (this._visible) this._render(this._analyzer.analyze());
+    });
+
     document.getElementById('btn-pipeline-toggle')?.addEventListener('click', () => this.toggle());
     document.getElementById('btn-pipeline-close')?.addEventListener('click', () => this.hide());
     this._wireExportMenu();
@@ -366,6 +373,28 @@ export class PipelinePanel {
     return `<div class="pipe-perf-row"><span class="k">Count</span><span class="v">${log.length} — at ${pcs}${more}</span></div>`;
   }
 
+  // One row per cache instance in the scene. Each row shows total
+  // hits / misses / hit-rate and the tail of the access pattern as a
+  // sequence of H@addr / M@addr tokens so the learner can correlate
+  // the LEDs on the canvas with the panel.
+  _renderLiveCacheStats() {
+    const snaps = this._liveCacheStats || [];
+    if (snaps.length === 0) {
+      return `<div class="pipe-perf-row"><span class="k">Caches</span><span class="v">none in scene — drop a CACHE component to enable</span></div>`;
+    }
+    return snaps.map(s => {
+      const total = s.hits + s.misses;
+      const rate  = total > 0 ? Math.round(100 * s.hits / total) : 0;
+      const recent = (s.recent || []).slice(-8)
+        .map(a => `${a.hit ? 'H' : 'M'}@${a.addr}`).join(' ');
+      const recentStr = recent || 'idle — updates while AUTO CLK runs';
+      return `<div class="pipe-perf-row">
+        <span class="k">${s.label || 'CACHE'}</span>
+        <span class="v">${s.hits} hits · ${s.misses} misses · ${rate}% hit-rate · ${recentStr}</span>
+      </div>`;
+    }).join('');
+  }
+
   _render(r) {
     if (!this._body || !this._summary) return;
     // Always push violations + hazards to the renderer (null when no data).
@@ -594,6 +623,15 @@ export class PipelinePanel {
       `<div class="pipe-runtime-header">BRANCH FLUSHES (LIVE)</div>
        <div class="pipe-perf-grid">
          ${this._renderLiveBranchFlushes()}
+       </div>`);
+
+    // Live CACHE telemetry — one row per cache instance, always
+    // rendered so the section appears even before the first access
+    // (with an explanatory placeholder).
+    this._body.insertAdjacentHTML('beforeend',
+      `<div class="pipe-runtime-header">CACHE (LIVE)</div>
+       <div class="pipe-perf-grid">
+         ${this._renderLiveCacheStats()}
        </div>`);
 
     // Pipeline Diagram (Gantt: instruction × cycle) — renders the static

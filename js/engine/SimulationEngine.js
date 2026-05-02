@@ -1635,6 +1635,21 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       if (hit && we) {
         ms.lines[idx].data = dataInCpu & dMask;
       }
+
+      // Push a snapshot to the global cache-stats map so the Pipeline
+      // panel can render it live. Mirrors the __branch_flushes__
+      // pattern: ffStates owns the data, app.js relays via bus event.
+      let cacheStats = ffStates.get('__cache_stats__');
+      if (!cacheStats) { cacheStats = new Map(); ffStates.set('__cache_stats__', cacheStats); }
+      let snap = cacheStats.get(id);
+      if (!snap) { snap = { label: node.label || 'CACHE', hits: 0, misses: 0, recent: [] }; cacheStats.set(id, snap); }
+      snap.label  = node.label || 'CACHE';
+      snap.hits   = ms.stats.hits;
+      snap.misses = ms.stats.misses;
+      // Record the most recent N=12 accesses so the panel can show the
+      // tail of the workload.
+      snap.recent.push({ addr, hit: hit ? 1 : 0, miss: hit ? 0 : 1 });
+      if (snap.recent.length > 12) snap.recent.shift();
     }
 
     // 4c3: BUS_MUX eval with fresh wire values
