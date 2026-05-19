@@ -3421,6 +3421,441 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
 .dft-mbist-cell.sa0         { background: #2a0a14; color: #ff8060; border-color: #6a2030; }
 .dft-mbist-cell.sa0:hover   { background: #3a1a24; }
 
+/* Memory Tests (Phase 1) — standalone panel-driven RAM test runner.
+   Controls row sits inside a .dft-chain-block, below the standard
+   header. Select + RUN + algorithm label, with the mini-trace strip
+   immediately under the result summary. */
+.dft-memtest-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 4px;
+  flex-wrap: wrap;
+}
+.dft-memtest-select {
+  background: #0d1320;
+  color: #ffb878;
+  border: 1px solid #aa6a2a;
+  border-radius: 3px;
+  padding: 3px 6px;
+  font: 11px 'JetBrains Mono', monospace;
+  cursor: pointer;
+  min-width: 160px;
+}
+.dft-memtest-select:hover { background: #1a1208; }
+.dft-memtest-select:focus { outline: 1px solid #ffb878; outline-offset: 0; }
+.dft-memtest-run {
+  background: #2a1a08;
+  color: #ffb878;
+  border: 1px solid #aa6a2a;
+  border-radius: 3px;
+  padding: 3px 10px;
+  font: bold 11px 'JetBrains Mono', monospace;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+.dft-memtest-run:hover   { background: #3a2a18; box-shadow: 0 0 8px #ffb87844; }
+.dft-memtest-run:active  { transform: translateY(1px); }
+.dft-memtest-desc {
+  color: #876;
+  font: 10px 'JetBrains Mono', monospace;
+  margin-left: auto;
+  font-style: italic;
+}
+.dft-memtest-tracewrap {
+  padding: 4px 12px 10px;
+}
+.dft-memtest-tracetitle {
+  color: #876;
+  font: 10.5px 'JetBrains Mono', monospace;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dft-memtest-failtag {
+  color: #ff8080;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+/* Trace HEATMAP — 2D grid of (addr × step). Each ram address is a
+   row, each algorithm step is a column. The (addr, step) intersection
+   is coloured by op type (write / read pass / read fail), so the
+   structural pattern of every algorithm — diagonal sweeps for
+   sequential ops, dense rectangles for walking-1 cross-reads — is
+   visible at a glance. Horizontally scrollable when traces overflow. */
+.dft-memtest-heatwrap {
+  background: rgba(10,18,28,0.55);
+  border-radius: 3px;
+  padding: 8px 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.dft-memtest-heatmap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Heatmap cells — one absolutely-positioned div per op. Width/height
+   set inline because they're trace-dependent. Empty cells aren't
+   rendered; the dim repeating-gradient backdrop in the parent shows
+   the skeleton grid so active ops stand against an empty lattice. */
+.dft-hm-cell {
+  position: absolute;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+.dft-hm-cell:hover  { transform: scale(1.4); filter: brightness(1.3); z-index: 3; }
+.dft-hm-cell.cell-w {
+  background: linear-gradient(180deg, #5a6878 0%, #3a4858 100%);
+}
+.dft-hm-cell.cell-r {
+  background: linear-gradient(180deg, #50dd6e 0%, #2db050 100%);
+  box-shadow: 0 0 3px rgba(64,204,96,0.45);
+}
+.dft-hm-cell.cell-f {
+  background: linear-gradient(180deg, #ff5050 0%, #cc2828 100%);
+  box-shadow: 0 0 5px rgba(255,64,64,0.7);
+}
+.dft-hm-cell.cell-ff {
+  /* The single first-fail cell: outlined, enlarged, pulsing. */
+  background: linear-gradient(180deg, #ff8080 0%, #ff2020 100%) !important;
+  outline: 2px solid #ffd0d0;
+  outline-offset: 1px;
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(255,80,80,0.9),
+              0 0 22px rgba(255,80,80,0.5);
+  animation: dftHmFailPulse 1.4s ease-in-out infinite;
+  z-index: 2;
+}
+@keyframes dftHmFailPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,80,80,0.9),
+                          0 0 22px rgba(255,80,80,0.5);
+             transform: scale(1); }
+  50%      { box-shadow: 0 0 18px rgba(255,80,80,1),
+                          0 0 32px rgba(255,80,80,0.65);
+             transform: scale(1.18); }
+}
+
+/* Axis labels — small monospace marks on the top (step) and left
+   (addr). Both absolutely positioned and aligned to the grid lines. */
+.dft-hm-step-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font: 8.5px 'JetBrains Mono', monospace;
+  color: #5a6878;
+  white-space: nowrap;
+  line-height: 14px;
+}
+.dft-hm-addr-label {
+  position: absolute;
+  left: 0;
+  width: 22px;
+  transform: translateY(-50%);
+  text-align: right;
+  font: 8.5px 'JetBrains Mono', monospace;
+  color: #5a6878;
+  white-space: nowrap;
+}
+
+/* Fail callout — a thin vertical guide drops from the failing cell to
+   a labelled badge just below the grid. The guide is the visual link
+   that says "this cell, here". The badge gives the addr/step/bit text
+   without the user having to mentally compute axis intersections. */
+.dft-hm-fail-guide {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(255,80,80,0.85), rgba(255,80,80,0.15));
+  pointer-events: none;
+  border-radius: 1px;
+  z-index: 1;
+}
+.dft-hm-fail-marker {
+  position: absolute;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 3;
+}
+.dft-hm-fail-chevron {
+  color: #ff5060;
+  font-size: 11px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(255,64,64,0.6));
+  animation: dftHmChevronPulse 1.4s ease-in-out infinite;
+}
+@keyframes dftHmChevronPulse {
+  0%, 100% { opacity: 0.85; transform: translateY(0); }
+  50%      { opacity: 1; transform: translateY(2px); }
+}
+.dft-hm-fail-label {
+  font: 8.5px 'JetBrains Mono', monospace;
+  color: #ffd0d0;
+  background: rgba(40,8,12,0.95);
+  border: 1px solid rgba(255,64,64,0.5);
+  border-radius: 2px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  margin-top: 1px;
+  line-height: 1.3;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.dft-hm-fail-label small {
+  color: #c89090;
+  font-size: 0.85em;
+}
+
+/* Inline legend chips next to the trace title — match the three cell
+   colours so the user can map the heatmap immediately without hover. */
+.dft-hm-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5a6878;
+  font: 9.5px 'JetBrains Mono', monospace;
+}
+.dft-hm-legend .chip {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin: 0 3px 0 6px;
+  vertical-align: -1px;
+}
+.dft-hm-legend .chip.cell-w { background: linear-gradient(180deg, #5a6878, #3a4858); }
+.dft-hm-legend .chip.cell-r { background: linear-gradient(180deg, #50dd6e, #2db050); box-shadow: 0 0 3px rgba(64,204,96,0.45); }
+.dft-hm-legend .chip.cell-f { background: linear-gradient(180deg, #ff5050, #cc2828); box-shadow: 0 0 4px rgba(255,64,64,0.5); }
+
+/* Memory Tests info-panel algorithm table — shown when the ⓘ button
+   on the MEMORY TESTS section is clicked. Compact reference of every
+   pattern with what it catches and op-count cost. */
+.dft-memtest-algo-table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font: 10.5px 'JetBrains Mono', monospace;
+}
+.dft-memtest-algo-table thead th {
+  text-align: left;
+  color: #cca040;
+  padding: 4px 8px;
+  border-bottom: 1px solid #402a00;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  background: rgba(255,160,40,0.04);
+}
+.dft-memtest-algo-table tbody td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(64,40,0,0.4);
+  vertical-align: top;
+  color: #c8b090;
+}
+.dft-memtest-algo-table tbody tr:hover { background: rgba(255,160,40,0.05); }
+.dft-memtest-algo-table tbody tr:last-child td { border-bottom: none; }
+.dft-memtest-algo-table td:first-child {
+  color: #876;
+  text-align: right;
+  width: 24px;
+}
+.dft-memtest-algo-table td.algo {
+  color: #ffb878;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.dft-memtest-algo-table td:nth-child(3) { color: #c8b090; }
+.dft-memtest-algo-table td:nth-child(4) { color: #f0d0a0; }
+.dft-memtest-algo-table td:nth-child(4) b { color: #ffe080; }
+.dft-memtest-algo-table td:nth-child(4) code,
+.dft-memtest-algo-table td:nth-child(5) code {
+  background: rgba(170,106,42,0.18);
+  border: 1px solid rgba(170,106,42,0.35);
+  border-radius: 2px;
+  padding: 0 3px;
+  color: #ffd0a0;
+}
+.dft-memtest-algo-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* GEN ▾ pattern dropdown — sits in the DFT panel header. Trigger is
+   styled as a normal panel button; popup anchors below-right with a
+   purple accent to match the GEN button. */
+.dft-pattern-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 250;
+  background: #0d0a1a;
+  border: 1px solid #6a4aaa;
+  border-radius: 4px;
+  padding: 4px;
+  min-width: 240px;
+  box-shadow: 0 4px 16px #00000088, 0 0 12px #6a4aaa44;
+  font: 11px 'JetBrains Mono', monospace;
+}
+.dft-pattern-popup.hidden { display: none; }
+.dft-pattern-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: #cc99ff;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: 11px 'JetBrains Mono', monospace;
+  line-height: 1.3;
+  transition: background 0.12s;
+}
+.dft-pattern-item:hover  { background: #1a1030; color: #e0c0ff; }
+.dft-pattern-item.active { background: #2a1a4a; color: #ffffff; }
+.dft-pattern-item:disabled,
+.dft-pattern-item[disabled] {
+  color: #555;
+  cursor: not-allowed;
+}
+.dft-pattern-item:disabled:hover { background: transparent; }
+.dft-pattern-item-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.dft-pattern-item-name { font-weight: bold; }
+.dft-pattern-item-tag  { color: #876; font-size: 9px; }
+.dft-pattern-item-desc { color: #776; font-size: 9.5px; margin-top: 2px; }
+
+/* Fault Diagnosis section (Phase 3). The suspect list mirrors the
+   FAULT COVERAGE bar styling: same 18px height, same tier gradients.
+   Each row is clickable — emits a scene:select-wire event so the
+   canvas highlights the wire under suspicion. */
+.dft-diag-run {
+  background: #082a14;
+  color: #40cc60;
+  border: 1px solid #2aaa6a;
+  border-radius: 3px;
+  padding: 3px 10px;
+  margin-left: auto;
+  font: bold 10px 'JetBrains Mono', monospace;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+.dft-diag-run:hover  { background: #143a24; box-shadow: 0 0 8px #40cc6044; }
+.dft-diag-run:active { transform: translateY(1px); }
+
+.dft-diag-list {
+  padding: 4px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dft-diag-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 220px auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  background: rgba(20,30,40,0.4);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.dft-diag-row:hover {
+  background: rgba(64,204,96,0.06);
+  border-color: rgba(64,204,96,0.2);
+}
+.dft-diag-rank {
+  color: #876;
+  font: bold 11px 'JetBrains Mono', monospace;
+  text-align: right;
+}
+.dft-diag-fid {
+  font: bold 11px 'JetBrains Mono', monospace;
+}
+.dft-diag-bar {
+  position: relative;
+  height: 18px;
+  background: #1a1208;
+  border: 1px solid #401a00;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dft-diag-bar-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  transition: width 0.3s;
+}
+.dft-diag-bar-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: bold 10px 'JetBrains Mono', monospace;
+  color: #fff;
+  text-shadow: 0 0 4px #000, 0 0 2px #000;
+}
+.dft-diag-meta {
+  color: #876;
+  font: 10px 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+/* TRACE cluster (Phase 4) — sits in the DFT panel header right of
+   RUN FAULT SIM. Toggle button + vector stepper with live index
+   label. Red accent because it surfaces fault-diff information. */
+.dft-trace-btn {
+  font-size: 9px;
+  background: #2a081a;
+  border-color: #aa2a4a;
+  color: #ff8ba0;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+.dft-trace-btn:hover    { background: #3a1830; box-shadow: 0 0 6px #ff334466; }
+.dft-trace-btn.active   {
+  background: #4a1a30;
+  border-color: #ff3344;
+  color: #ffffff;
+  box-shadow: 0 0 10px #ff334488;
+}
+.dft-trace-step {
+  font-size: 10px;
+  background: #1a0814;
+  border-color: #6a2a4a;
+  color: #ff8ba0;
+  padding: 2px 6px;
+  min-width: 22px;
+}
+.dft-trace-step:hover   { background: #2a1024; }
+.dft-trace-step:disabled,
+.dft-trace-step[disabled] {
+  color: #555;
+  border-color: #2a1018;
+  background: #100a14;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.dft-trace-label {
+  font: 9px 'JetBrains Mono', monospace;
+  color: #ff8ba0;
+  padding: 0 6px;
+  min-width: 50px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
 /* Pattern Generators (LFSR) — uses the same chain-block frame so the
    panel stays visually consistent. The 4-row inner grid lays out
    key/value pairs (seed, poly, period, drives) in a tidy column. */

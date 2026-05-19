@@ -14,6 +14,11 @@ const DARK = {
   wireNull:     '#2a3a50',
   wireClock:    '#00d4ff',
   wireClockGlow:'rgba(0,212,255,0.5)',
+  // DFT trace-diff overlay — wires whose value differs between the
+  // fault-free (golden) and current (faulty) runs. Used by Phase 4.
+  wireDiff:       '#ff3344',
+  wireDiffGlow:   'rgba(255,51,68,0.6)',
+  wireDiffShadow: 'rgba(255,51,68,0.45)',
 
   nodeInput:       '#0a2a4a',
   nodeInputBorder: '#1e6fa0',
@@ -61,6 +66,9 @@ const LIGHT = {
   wireNull:     '#3a4a60',
   wireClock:    '#40b8d8',
   wireClockGlow:'rgba(64,184,216,0.4)',
+  wireDiff:       '#ff3344',
+  wireDiffGlow:   'rgba(255,51,68,0.55)',
+  wireDiffShadow: 'rgba(255,51,68,0.4)',
   nodeInput:       '#1a2a1a',
   nodeInputBorder: '#40a040',
   nodeGate:        '#182840',

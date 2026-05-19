@@ -18,6 +18,12 @@
 
 import { bus } from '../../core/EventBus.js';
 import { simulateFaults } from '../FaultSimulator.js';
+import { generateATPGVector, generateATPGForUndetected } from '../ATPG.js';
+import { RAM_PATTERNS, getRamPattern, WIRE_PATTERNS, getWirePattern } from '../TestPatterns.js';
+import { runMemoryTest } from '../MemoryTestRunner.js';
+import { diagnoseScene } from '../FaultDictionary.js';
+import { evaluate as evaluateScene } from '../../engine/SimulationEngine.js';
+import { setDftTrace } from '../../rendering/CanvasRenderer.js';
 
 /**
  * Detect scan chains in a scene.
@@ -246,7 +252,15 @@ export class DFTPanel {
     this._visible    = false;
 
     this._runBtn  = document.getElementById('btn-dft-run');
-    this._genBtn  = document.getElementById('btn-dft-gen-random');
+    this._genBtn  = document.getElementById('btn-dft-gen');
+    this._genPopup= document.getElementById('dft-pattern-popup');
+    this._traceToggleBtn = document.getElementById('btn-dft-trace');
+    this._tracePrevBtn   = document.getElementById('btn-dft-trace-prev');
+    this._traceNextBtn   = document.getElementById('btn-dft-trace-next');
+    this._traceLabel     = document.getElementById('dft-trace-label');
+    // Last-selected wire-pattern id — used to render an "active" tick
+    // on the menu so the user remembers what they picked.
+    this._wirePatternId = 'random';
     // Layer 2 — last fault-sim result. null until the user clicks RUN.
     // Cleared when the scene mutates (vectors / topology may have changed).
     this._lastSim = null;
@@ -275,13 +289,63 @@ export class DFTPanel {
     // and per-vector output, so the user can see exactly what stimulus
     // was applied without leaving the panel.
     this._vectorsViewOpen = false;
+    // ATPG memo — fault-ids whose status was proved by a prior ATPG
+    // call. `redundant` means exhaustive sweep found no detecting
+    // vector (true untestable); `exhausted` means random search ran out
+    // (could still be testable, just not found). Both sets are cleared
+    // whenever the scene topology mutates — a new netlist invalidates
+    // any prior redundancy claim.
+    this._atpgRedundant = new Set();
+    this._atpgExhausted = new Set();
+    // Last ATPG run summary (added / redundant / exhausted counts) so
+    // the coverage row can flash a small badge after a click.
+    this._lastATPGSummary = null;
+    // Last RUN FAULT SIM / GEN RANDOM bail reason — rendered as a
+    // visible notice above the COVERAGE bar so the buttons aren't
+    // silent on empty scenes.
+    this._lastDiagnostic = null;
+    // Last DIAGNOSE result (top-K suspects + observed signature). null
+    // until the user clicks DIAGNOSE; cleared on topology mutation.
+    this._lastDiagnosis = null;
+    // TRACE overlay state (Phase 4).
+    //  • _traceActive  — true while the TRACE toggle is on.
+    //  • _traceVectorIdx — index into the active vector set being played.
+    //  • _traceDiff    — Map<wireId, {golden, faulty}> for the current vector.
+    // The canvas renderer reads the diff map via setDftTrace().
+    this._traceActive    = false;
+    this._traceVectorIdx = 0;
+    this._traceDiff      = null;
 
     if (this._closeBtn) this._closeBtn.addEventListener('click', () => this.hide());
     if (this._fsBtn)    this._fsBtn.addEventListener('click', () => this._toggleFullscreen());
     if (this._collapseAllBtn) this._collapseAllBtn.addEventListener('click', () => this._toggleCollapseAll());
     if (this._editAllBtn)     this._editAllBtn.addEventListener('click', () => this._toggleEditAll());
     if (this._runBtn)   this._runBtn.addEventListener('click', () => this._runFaultSim());
-    if (this._genBtn)   this._genBtn.addEventListener('click', () => this._generateRandomVectors(16));
+    if (this._genBtn)   this._genBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._toggleGenPopup();
+    });
+    // Outside-click closes the popup.
+    document.addEventListener('mousedown', (e) => {
+      if (!this._genPopup || this._genPopup.classList.contains('hidden')) return;
+      if (this._genBtn?.contains(e.target)) return;
+      if (this._genPopup.contains(e.target)) return;
+      this._genPopup.classList.add('hidden');
+    });
+    // Click on an item inside the popup → run that pattern.
+    if (this._genPopup) {
+      this._genPopup.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-pattern-id]');
+        if (!btn || btn.disabled) return;
+        const id = btn.dataset.patternId;
+        this._genPopup.classList.add('hidden');
+        this._runWirePattern(id);
+      });
+    }
+    // TRACE cluster — toggle overlay + step vectors.
+    if (this._traceToggleBtn) this._traceToggleBtn.addEventListener('click', () => this._toggleTrace());
+    if (this._tracePrevBtn)   this._tracePrevBtn  .addEventListener('click', () => this._stepTrace(-1));
+    if (this._traceNextBtn)   this._traceNextBtn  .addEventListener('click', () => this._stepTrace(+1));
 
     // Event delegation for clicks inside the body — used by inline
     // toggle widgets like the [source ▸/▾] tag in the FAULT COVERAGE
@@ -394,6 +458,44 @@ export class DFTPanel {
           }
           return;
         }
+        // DIAGNOSE button — rank suspect faults from observed mismatches.
+        const diagRun = e.target.closest('[data-action="diag-run"]');
+        if (diagRun) {
+          e.preventDefault();
+          this._runDiagnosis();
+          return;
+        }
+        // Click a suspect row → select that fault's wire on the canvas.
+        const diagSel = e.target.closest('[data-action="diag-select"]');
+        if (diagSel) {
+          e.preventDefault();
+          this._selectDiagnosisFault(diagSel.dataset.faultId);
+          return;
+        }
+        // Memory test ▶ RUN. Runs the selected pattern against the
+        // RAM and caches the result.
+        const memRun = e.target.closest('[data-action="memtest-run"]');
+        if (memRun) {
+          e.preventDefault();
+          this._runMemoryTest(memRun.dataset.ramId);
+          return;
+        }
+        // ATPG single-fault target. The 🎯 button next to a UND entry
+        // in the FAULT LIST. Runs ATPG synchronously, then appends the
+        // generated vector to the active set and re-runs fault sim.
+        const atpgOne = e.target.closest('[data-action="atpg-target"]');
+        if (atpgOne) {
+          e.preventDefault();
+          this._runATPGForFault(atpgOne.dataset.faultId);
+          return;
+        }
+        // ATPG all undetected. The 🎯 button in the FAULT COVERAGE row.
+        const atpgAll = e.target.closest('[data-action="atpg-all"]');
+        if (atpgAll) {
+          e.preventDefault();
+          this._runATPGAllUndetected();
+          return;
+        }
         // Per-block (chain / lfsr / misr / bist) collapse.
         const blockHeader = e.target.closest('.dft-chain-block[data-block-id] .dft-chain-header');
         if (blockHeader && !e.target.closest('.dft-chain-status[data-action], button, [data-action]')) {
@@ -429,6 +531,15 @@ export class DFTPanel {
         // listener above — click doesn't fire reliably here because
         // the panel re-renders mid-touch.
       });
+      // <select> changes — used by memtest-algo dropdown. Native
+      // change event fires reliably regardless of re-render timing.
+      this._body.addEventListener('change', (e) => {
+        const sel = e.target.closest('select[data-action]');
+        if (!sel) return;
+        if (sel.dataset.action === 'memtest-algo') {
+          this._setMemoryTestAlgo(sel.dataset.ramId, sel.value);
+        }
+      });
       // Keyboard shortcuts inside the LFSR edit input — Enter saves,
       // Escape cancels.
       this._body.addEventListener('keydown', (e) => {
@@ -459,6 +570,21 @@ export class DFTPanel {
     // a stale coverage % over a different netlist would be misleading.
     const refresh = () => {
       this._lastSim = null;
+      // Topology changes invalidate any prior ATPG verdict — the same
+      // fault on a different netlist may have a different answer.
+      this._atpgRedundant.clear();
+      this._atpgExhausted.clear();
+      this._lastATPGSummary = null;
+      this._lastDiagnostic = null;
+      this._lastDiagnosis  = null;
+      // Trace overlay is wire-id-keyed; a topology mutation can leave
+      // stale entries. Clear and turn off — the user can re-engage.
+      if (this._traceActive) {
+        this._traceActive = false;
+        this._traceDiff = null;
+        setDftTrace(null);
+        this._updateTraceButtons();
+      }
       if (this._visible) this._render();
     };
     bus.on('node:added',     refresh);
@@ -474,6 +600,17 @@ export class DFTPanel {
     this._liveData = {};
     bus.on('runtime:dft-data', (payload) => {
       this._liveData = payload || {};
+      // Skip per-tick re-render while the user is interacting with a
+      // form control in the body. innerHTML-replacing the body destroys
+      // the underlying <select>, which in turn forces the browser to
+      // close its native popup — so without this guard a select can
+      // never stay open long enough to pick an option (and any edit
+      // input loses focus mid-type) while the auto-clock is running.
+      const ae = document.activeElement;
+      if (ae && this._body && this._body.contains(ae)) {
+        const tag = ae.tagName;
+        if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+      }
       if (this._visible) this._render();
     });
   }
@@ -491,6 +628,15 @@ export class DFTPanel {
     this._el.classList.add('hidden');
     document.getElementById('btn-dft-toggle')?.classList.remove('active');
     this._visible = false;
+    // Disable trace overlay when panel closes so the canvas isn't left
+    // with a stale diff highlight. Re-toggle by reopening + clicking
+    // TRACE again.
+    if (this._traceActive) {
+      this._traceActive = false;
+      this._traceDiff = null;
+      setDftTrace(null);
+      this._updateTraceButtons();
+    }
   }
 
   toggle() {
@@ -619,8 +765,10 @@ export class DFTPanel {
       this._renderPatternGenerators() +
       this._renderSignatureCompactors() +
       this._renderBistControllers() +
+      this._renderMemoryTests() +
       this._renderMbistControllers() +
       this._renderJtagTaps() +
+      this._renderDiagnosis() +
       this._renderFaultList(wires);
 
     this._applyCollapsibleSections();
@@ -633,9 +781,29 @@ export class DFTPanel {
   // and surfaced via _renderFaultCoverage + the detection column in
   // _renderFaultList.
   _runFaultSim() {
-    if (!this._scene) return;
+    if (!this._scene) {
+      this._setDiagnostic('no scene attached to DFT panel');
+      return;
+    }
+    const inputs  = this._scene.nodes.filter(n => n.type === 'INPUT');
+    const outputs = this._scene.nodes.filter(n => n.type === 'OUTPUT');
+    if (inputs.length === 0) {
+      this._setDiagnostic('No INPUT nodes — drop at least one INPUT to enable test patterns.');
+      return;
+    }
+    if (outputs.length === 0) {
+      this._setDiagnostic('No OUTPUT nodes — coverage cannot be measured without primary outputs.');
+      return;
+    }
+    if ((this._scene.wires || []).length === 0) {
+      this._setDiagnostic('No wires — connect INPUTs through gates to OUTPUTs first.');
+      return;
+    }
     const vectors = this._scene._dft?.vectors || this._defaultVectors();
-    if (!vectors.length) return;
+    if (!vectors.length) {
+      this._setDiagnostic('No vectors and no inputs found — unexpected. Check the scene.');
+      return;
+    }
     this._lastSim = simulateFaults(this._scene.nodes, this._scene.wires, vectors, {
       models: ['stuck-at-0', 'stuck-at-1', 'open'],
     });
@@ -646,6 +814,16 @@ export class DFTPanel {
     this._lastSim._source =
       this._scene._dft?.source ||
       (this._scene._dft?.vectors ? 'manual' : 'default-sweep');
+    this._lastDiagnostic = null;     // success clears any prior notice.
+    // If trace is on, the new vector set might have a different length —
+    // clamp the playback index and recompute the diff for the new v0.
+    if (this._traceActive) {
+      const N = this._scene._dft?.vectors?.length || 0;
+      if (N === 0) this._traceVectorIdx = 0;
+      else this._traceVectorIdx = Math.min(this._traceVectorIdx, N - 1);
+      this._recomputeTraceDiff();
+      this._updateTraceButtons();
+    }
     if (this._visible) this._render();
   }
 
@@ -654,15 +832,266 @@ export class DFTPanel {
   // to target each fault directly. Random testing usually saturates
   // below 100 % because hard-to-sensitise faults need crafted vectors.
   _generateRandomVectors(N = 16) {
-    if (!this._scene) return;
+    if (!this._scene) {
+      this._setDiagnostic('no scene attached to DFT panel');
+      return;
+    }
     const inputs = this._scene.nodes
       .filter(n => n.type === 'INPUT')
       .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
-    if (inputs.length === 0) return;
+    if (inputs.length === 0) {
+      this._setDiagnostic('GEN RANDOM: no INPUT nodes in scene — random vectors need primary inputs to assign 0/1 values to.');
+      return;
+    }
     const vectors = Array.from({ length: N }, () =>
       inputs.map(() => Math.random() < 0.5 ? 0 : 1)
     );
     this._scene._dft = { vectors, source: 'random' };
+    this._runFaultSim();
+  }
+
+  // Set a transient notice rendered above the FAULT COVERAGE bar. Used
+  // when RUN FAULT SIM / GEN RANDOM bail because the scene is missing
+  // INPUT or OUTPUT nodes — without this the buttons would appear dead.
+  _setDiagnostic(msg) {
+    this._lastDiagnostic = msg;
+    console.warn('[DFT]', msg);
+    if (this._visible) this._render();
+  }
+
+  // TRACE — toggle the live wire-diff overlay on the canvas. When on,
+  // pushes a Map<wireId, {golden, faulty}> to the renderer via the
+  // exported setDftTrace(). The map covers wires whose value differs
+  // between the fault-free run (golden) and the current scene run
+  // (faulty), under the currently selected vector.
+  _toggleTrace() {
+    if (!this._traceActive) {
+      // Need vectors to play. Use the active set or default sweep.
+      if (!this._scene) return;
+      const vecs = this._scene._dft?.vectors;
+      if (!vecs || vecs.length === 0) {
+        this._setDiagnostic('TRACE: no vectors active — pick one from GEN ▾ first.');
+        return;
+      }
+      this._traceActive = true;
+      this._traceVectorIdx = Math.min(this._traceVectorIdx, vecs.length - 1);
+      this._recomputeTraceDiff();
+    } else {
+      this._traceActive = false;
+      this._traceDiff = null;
+      setDftTrace(null);
+    }
+    this._updateTraceButtons();
+    if (this._visible) this._render();
+  }
+
+  _stepTrace(delta) {
+    if (!this._traceActive || !this._scene?._dft?.vectors) return;
+    const N = this._scene._dft.vectors.length;
+    if (N === 0) return;
+    this._traceVectorIdx = ((this._traceVectorIdx + delta) % N + N) % N;
+    this._recomputeTraceDiff();
+    this._updateTraceButtons();
+    if (this._visible) this._render();
+  }
+
+  // Compute the per-wire delta map for the current vector. Snapshots
+  // wire injection state, runs evaluate() with NO injection (golden),
+  // restores injection, runs evaluate() again (faulty), and builds the
+  // diff map of wires that disagree. Mirrors how FaultSimulator probes
+  // each fault candidate against the golden run.
+  _recomputeTraceDiff() {
+    if (!this._scene) { this._traceDiff = null; setDftTrace(null); return; }
+    const vecs = this._scene._dft?.vectors;
+    if (!vecs || vecs.length === 0) { this._traceDiff = null; setDftTrace(null); return; }
+    const vec = vecs[this._traceVectorIdx] || vecs[0];
+    const primaryInputs = this._scene.nodes
+      .filter(n => n.type === 'INPUT')
+      .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+
+    const applyVector = () => {
+      const restore = primaryInputs.map(n => ({ n, prev: n.fixedValue }));
+      primaryInputs.forEach((n, i) => { n.fixedValue = vec[i] ?? 0; });
+      return () => restore.forEach(({ n, prev }) => { n.fixedValue = prev; });
+    };
+
+    // Snapshot wire fault state.
+    const wireSnap = this._scene.wires.map(w => ({
+      w, stuckAt: w.stuckAt ?? null, open: !!w.open, bridgedWith: w.bridgedWith || null,
+    }));
+    const clearAll = () => {
+      this._scene.wires.forEach(w => { w.stuckAt = null; w.open = false; w.bridgedWith = null; });
+    };
+    const restoreAll = () => {
+      wireSnap.forEach(s => { s.w.stuckAt = s.stuckAt; s.w.open = s.open; s.w.bridgedWith = s.bridgedWith; });
+    };
+
+    // Golden run — no faults active.
+    let goldenWV = null;
+    let faultyWV = null;
+    try {
+      clearAll();
+      const rPI1 = applyVector();
+      const rG = evaluateScene(this._scene.nodes, this._scene.wires, new Map(), 0);
+      goldenWV = rG.wireValues;
+      rPI1();
+      restoreAll();
+
+      // Faulty run — faults restored.
+      const rPI2 = applyVector();
+      const rF = evaluateScene(this._scene.nodes, this._scene.wires, new Map(), 0);
+      faultyWV = rF.wireValues;
+      rPI2();
+    } catch (e) {
+      restoreAll();
+      console.error('[trace]', e);
+      this._traceDiff = null;
+      setDftTrace(null);
+      return;
+    }
+
+    const diff = new Map();
+    for (const w of this._scene.wires) {
+      const g = goldenWV.get(w.id);
+      const f = faultyWV.get(w.id);
+      if (g !== f) diff.set(w.id, { golden: g, faulty: f });
+    }
+    this._traceDiff = diff;
+    setDftTrace(this._traceActive ? diff : null);
+  }
+
+  // Update the visible state of the TRACE cluster (button on/off,
+  // index label, prev/next disabled state).
+  _updateTraceButtons() {
+    if (this._traceToggleBtn) {
+      this._traceToggleBtn.classList.toggle('active', this._traceActive);
+      this._traceToggleBtn.textContent = this._traceActive ? 'TRACE ●' : 'TRACE';
+    }
+    const N = this._scene?._dft?.vectors?.length || 0;
+    const enabled = this._traceActive && N > 0;
+    if (this._tracePrevBtn) this._tracePrevBtn.disabled = !enabled;
+    if (this._traceNextBtn) this._traceNextBtn.disabled = !enabled;
+    if (this._traceLabel) {
+      this._traceLabel.textContent = enabled
+        ? `v${this._traceVectorIdx} of ${N}`
+        : '—';
+    }
+  }
+
+  // GEN ▾ — populate and toggle the wire-pattern dropdown. Renders
+  // every entry from WIRE_PATTERNS as a button. The pattern that was
+  // last chosen on this panel gets an `.active` tint so the user knows
+  // which one is "live". Disabled patterns (exhaustive past its PI cap)
+  // render as dim non-clickable rows with a tooltip explaining why.
+  _toggleGenPopup() {
+    if (!this._genPopup) return;
+    const isHidden = this._genPopup.classList.contains('hidden');
+    if (!isHidden) { this._genPopup.classList.add('hidden'); return; }
+    // Compute current PI count so we can disable exhaustive when needed.
+    const piCount = (this._scene?.nodes || []).filter(n => n.type === 'INPUT').length;
+    const items = WIRE_PATTERNS.map(p => {
+      const disabled = (p.maxPI && piCount > p.maxPI);
+      const tag = p.maxPI ? `≤${p.maxPI} PIs` : '';
+      const active = (p.id === this._wirePatternId) ? ' active' : '';
+      const tip = disabled
+        ? `Disabled: this scene has ${piCount} primary inputs, exceeds the ${p.maxPI}-PI cap (${1 << p.maxPI} vectors).`
+        : p.description;
+      return `
+        <button class="dft-pattern-item${active}" data-pattern-id="${p.id}"
+                ${disabled ? 'disabled' : ''}
+                title="${tip.replace(/"/g, '&quot;')}">
+          <div class="dft-pattern-item-label">
+            <span class="dft-pattern-item-name">${p.label}</span>
+            <span class="dft-pattern-item-tag">${tag}</span>
+          </div>
+          <div class="dft-pattern-item-desc">${p.description}</div>
+        </button>`;
+    }).join('');
+    this._genPopup.innerHTML = items;
+    this._genPopup.classList.remove('hidden');
+  }
+
+  // Apply one wire pattern: generate vectors via TestPatterns, stash on
+  // scene._dft.vectors, and run fault sim. Reuses the existing source
+  // metadata pipeline — the FAULT COVERAGE row's source chip picks up
+  // the pattern label automatically.
+  _runWirePattern(patternId) {
+    if (!this._scene) {
+      this._setDiagnostic('no scene attached to DFT panel');
+      return;
+    }
+    const inputs = this._scene.nodes
+      .filter(n => n.type === 'INPUT')
+      .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+    if (inputs.length === 0) {
+      this._setDiagnostic('No INPUT nodes — wire patterns need primary inputs to assign 0/1 to.');
+      return;
+    }
+    const result = getWirePattern(patternId, inputs.length);
+    if (!result) {
+      this._setDiagnostic(`Pattern "${patternId}" unavailable for ${inputs.length} primary inputs (likely past its PI cap).`);
+      return;
+    }
+    this._wirePatternId = patternId;
+    this._scene._dft = { vectors: result.vectors, source: patternId };
+    this._runFaultSim();
+  }
+
+  // ATPG for a single fault. Targets the fault from a FAULT LIST row
+  // (e.g. "wire-7/sa0"), appends the generated vector to the active
+  // set, and re-runs fault sim so the row turns green next render.
+  // On miss, records the verdict (redundant / exhausted) so the UI
+  // shows it instead of the [🎯] button on subsequent renders.
+  _runATPGForFault(faultId) {
+    if (!this._scene) return;
+    const r = generateATPGVector(this._scene.nodes, this._scene.wires, faultId);
+    if (r.success) {
+      const existing = this._scene._dft?.vectors || [];
+      this._scene._dft = {
+        vectors: [...existing, r.vector],
+        source: 'atpg',
+      };
+      this._atpgRedundant.delete(faultId);
+      this._atpgExhausted.delete(faultId);
+      this._lastATPGSummary = { added: 1, redundant: 0, exhausted: 0, bad: 0 };
+      this._runFaultSim();
+    } else {
+      if (r.reason === 'redundant')         this._atpgRedundant.add(faultId);
+      else if (r.reason === 'search-exhausted') this._atpgExhausted.add(faultId);
+      console.warn('[ATPG]', faultId, '→', r.reason);
+      this._lastATPGSummary = {
+        added: 0,
+        redundant: r.reason === 'redundant' ? 1 : 0,
+        exhausted: r.reason === 'search-exhausted' ? 1 : 0,
+        bad: (r.reason !== 'redundant' && r.reason !== 'search-exhausted') ? 1 : 0,
+      };
+      if (this._visible) this._render();
+    }
+  }
+
+  // ATPG for every undetected fault in the most recent sim. Appends
+  // one vector per success, then re-runs fault sim — typically lifts
+  // coverage to 100 % minus the redundant set.
+  _runATPGAllUndetected() {
+    if (!this._scene || !this._lastSim) return;
+    const r = generateATPGForUndetected(this._scene.nodes, this._scene.wires, this._lastSim);
+    r.redundant.forEach(id => this._atpgRedundant.add(id));
+    r.exhausted.forEach(id => this._atpgExhausted.add(id));
+    this._lastATPGSummary = {
+      added: r.added.length,
+      redundant: r.redundant.length,
+      exhausted: r.exhausted.length,
+      bad: r.bad.length,
+    };
+    if (r.added.length === 0) {
+      if (this._visible) this._render();
+      return;
+    }
+    const existing = this._scene._dft?.vectors || [];
+    this._scene._dft = {
+      vectors: [...existing, ...r.added.map(a => a.vector)],
+      source: 'atpg',
+    };
     this._runFaultSim();
   }
 
@@ -692,9 +1121,17 @@ export class DFTPanel {
       <div class="dft-info-panel">
         <div class="dft-info-lead">Fraction of the scene's possible faults that the active test vectors actually flag — the headline metric of any DFT flow. The bar is coloured by industry tiers: &lt;70 % red, 70–90 % amber, ≥90 % green.</div>
       </div>` : '';
+    // Diagnostic banner — surfaces why a click on RUN FAULT SIM / GEN
+    // RANDOM didn't change anything (empty scene, no inputs, etc.).
+    // Without this the buttons appear dead and the user has no idea
+    // why nothing happens.
+    const diag = this._lastDiagnostic
+      ? `<div class="dft-empty" style="background:rgba(204,64,64,0.08);border:1px solid #cc404044;border-radius:4px;color:#ffb0b0;padding:8px 12px;margin:8px 12px 0">⚠ ${this._lastDiagnostic}</div>`
+      : '';
     if (!this._lastSim) {
       return `
         <div class="dft-coverage-header dft-section-header">${cvHeader}</div>${cvInfo}
+        ${diag}
         <div class="dft-empty">Click <b style="color:#ffb878">RUN FAULT SIM</b> in the header to score the test vectors against every wire fault. Coverage and per-fault detection rows will populate the table below.</div>
       `;
     }
@@ -709,10 +1146,32 @@ export class DFTPanel {
     // crafted set, random testing, or a fallback sweep.
     const sourceMeta = {
       'manual':         { label: 'manual',         color: '#ffb878', tip: 'Vectors crafted by hand for this scene (or shipped with the demo). In production this is an early starting point — ATPG quickly takes over.' },
-      'random':         { label: 'random N=' + _vectors.length, color: '#cc99ff', tip: 'Random testing — honest baseline. Production flow uses ATPG (Synopsys TetraMAX, Cadence Modus) which targets each fault directly with crafted vectors. Random tends to plateau before 100 % because hard-to-sensitise faults need carefully constructed test conditions.' },
-      'default-sweep':  { label: 'default sweep',  color: '#876',    tip: 'Default fallback set: all-zero, all-one, walking-1 per primary input. Click GEN RANDOM for a wider sample, or ship vectors via the demo JSON for a curated set.' },
+      'random':         { label: 'random N=' + _vectors.length, color: '#cc99ff', tip: 'Random testing — honest baseline. Production flow uses ATPG which targets each fault directly. Random tends to plateau before 100 %.' },
+      'walkingOne':     { label: 'walking-1 N=' + _vectors.length, color: '#cc99ff', tip: 'Walking-1 over primary inputs: all-zero baseline + one PI=1 at a time. Isolates per-input observability — useful for diagnosis.' },
+      'walkingZero':    { label: 'walking-0 N=' + _vectors.length, color: '#cc99ff', tip: 'Walking-0 over primary inputs: all-one baseline + one PI=0 at a time. Mirror of walking-1.' },
+      'exhaustive':     { label: 'exhaustive N=' + _vectors.length, color: '#40cc60', tip: 'Every 2^N input combination. Complete combinational coverage — any combinational fault that has a detecting vector will be caught.' },
+      'toggleAll':      { label: 'toggle-all N=' + _vectors.length, color: '#cc99ff', tip: 'All-zero + all-one. Minimum stimulus that drives every PI through both polarities.' },
+      'defaultSweep':   { label: 'default sweep',  color: '#876',    tip: 'Default fallback set: all-zero, all-one, walking-1 per primary input.' },
+      'default-sweep':  { label: 'default sweep',  color: '#876',    tip: 'Default fallback set: all-zero, all-one, walking-1 per primary input. Click GEN ▾ for a wider catalogue.' },
+      'atpg':           { label: 'atpg N=' + _vectors.length, color: '#40cc60', tip: 'Vectors generated by the built-in ATPG (exhaustive ≤ 16 PIs, random sampling above). Each appended vector targets one previously-undetected fault — coverage climbs monotonically as you click 🎯 on UND rows.' },
     };
     const sm = sourceMeta[_source] || sourceMeta['default-sweep'];
+
+    // Count undetected faults; render the [🎯 ATPG N UND] chip if any.
+    const undCount = this._lastSim.perFault.filter(f => !f.detected).length;
+    const atpgChip = undCount > 0
+      ? `<span data-action="atpg-all" style="color:#40cc60;margin-left:6px;cursor:pointer;border:1px solid #40cc6066;border-radius:10px;padding:1px 8px;font-size:0.88em;user-select:none" title="Run ATPG on every undetected fault.\nExhaustive sweep when ≤16 primary inputs (proves redundancy); bounded random above.">🎯 ATPG ${undCount} UND</span>`
+      : '';
+
+    // ATPG run summary chip (last click outcome).
+    const sum = this._lastATPGSummary;
+    const summaryChip = sum && (sum.added + sum.redundant + sum.exhausted + sum.bad) > 0
+      ? `<span style="color:#876;margin-left:6px;font-size:0.88em">
+          ${sum.added ? `<span style="color:#40cc60">+${sum.added} vec</span>` : ''}
+          ${sum.redundant ? ` <span style="color:#cc4040" title="Exhaustive ATPG proved no vector exists.">${sum.redundant} redundant</span>` : ''}
+          ${sum.exhausted ? ` <span style="color:#cca040" title="Random search ran out — could still be testable.">${sum.exhausted} exhausted</span>` : ''}
+        </span>`
+      : '';
     // Test-compaction talking point: zero-code UI hint that production
     // ATPG output (50K+ vectors) is compressed before tester delivery.
     return `
@@ -728,6 +1187,8 @@ export class DFTPanel {
           <span style="color:#876;font-size:0.92em">
             ${_vectors.length} vector${_vectors.length === 1 ? '' : 's'}
             <span data-action="toggle-vectors" style="color:${sm.color};margin-left:6px;cursor:pointer;border-bottom:1px dotted ${sm.color}66;user-select:none" title="${sm.tip}\n\nClick to ${this._vectorsViewOpen ? 'hide' : 'view'} the vectors used.">[${sm.label}${this._vectorsViewOpen ? ' ▾' : ' ▸'}]</span>
+            ${atpgChip}
+            ${summaryChip}
             <span style="color:#666;margin-left:6px;cursor:help;border-bottom:1px dotted #66666666" title="In silicon, ATPG produces 50 000+ vectors which are then compressed via EDT (Mentor) / OPMISR (Cadence) before being shipped to the tester — sending raw vectors over 50× more tester time would be uneconomic.">[compaction?]</span>
           </span>
         </div>
@@ -1554,6 +2015,343 @@ export class DFTPanel {
   // One block per MBIST_CONTROLLER node: live FSM state (March C−),
   // marchStep / addr / sub-phase counters, pass/fail/idle pill, and a
   // per-cell fault-injection grid for the auto-detected RAM-under-test.
+  // ── MEMORY TESTS (Phase 1 — standalone runner) ─────────────
+  // One block per RAM in the scene. Independent of MBIST_CONTROLLER —
+  // the panel drives the RAM directly through MemoryTestRunner.js, so
+  // a student can drop a RAM, pick a pattern, click RUN, and see
+  // pass/fail without ever wiring a controller. Cell-fault grid stays
+  // in the MEMORY BIST section below and is shared.
+  _renderMemoryTests() {
+    const allNodes = this._scene?.nodes || [];
+    const rams = allNodes.filter(n => n.type === 'RAM');
+
+    const headerHtml = `<span class="dft-section-title">MEMORY TESTS` +
+      `<button class="dft-info-btn" data-action="toggle-info" data-section="memtests" title="What does this section show?">i</button>` +
+      `</span>`;
+    const infoPanel = this._infoOpen.has('memtests') ? `
+      <div class="dft-info-panel">
+        <div class="dft-info-lead">Panel-driven RAM test runner. No MBIST_CONTROLLER needed — pick a pattern, click RUN, see pass/fail. Patterns apply <code>cellFaults</code> exactly as the engine does, so an injected cell fault yields the same observable here as it would under a March C− run.</div>
+        <table class="dft-memtest-algo-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Algorithm</th><th>What it does</th><th>Catches</th><th>ops</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td><td class="algo">All-zero</td>
+              <td>Write 0 to every cell → read 0 back.</td>
+              <td>only <code>stuck-at-1</code></td>
+              <td><code>2N</code></td>
+            </tr>
+            <tr>
+              <td>2</td><td class="algo">All-one</td>
+              <td>Write all-ones to every cell → read back.</td>
+              <td>only <code>stuck-at-0</code></td>
+              <td><code>2N</code></td>
+            </tr>
+            <tr>
+              <td>3</td><td class="algo">Checkerboard</td>
+              <td>Even cells = <code>1010…</code>, odd = <code>0101…</code></td>
+              <td>stuck-at both polarities + <b>bit-line shorts</b></td>
+              <td><code>2N</code></td>
+            </tr>
+            <tr>
+              <td>4</td><td class="algo">Inverse Checkerboard</td>
+              <td>Polarity flipped (run as a pair with #3).</td>
+              <td>asymmetric faults #3 misses</td>
+              <td><code>2N</code></td>
+            </tr>
+            <tr>
+              <td>5</td><td class="algo">Address-as-data</td>
+              <td>Cell A stores the value A.</td>
+              <td><b>address-decoder bugs</b></td>
+              <td><code>2N</code></td>
+            </tr>
+            <tr>
+              <td>6</td><td class="algo">Walking-1</td>
+              <td>One cell = all-ones, others = 0 — walks through cells with cross-reads.</td>
+              <td><b>coupling faults</b> + decoder bugs</td>
+              <td><code>N²+2N</code></td>
+            </tr>
+            <tr>
+              <td>7</td><td class="algo">Walking-0</td>
+              <td>One cell = 0, others = all-ones — mirror of #6.</td>
+              <td>coupling faults (opposite polarity)</td>
+              <td><code>N²+2N</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="dft-info-text" style="margin-top:8px">
+          <b>Recommended run order:</b> #1 + #2 (smoke) → #3 + #4 (stuck-at + shorts) → #5 (decoder) → #6 + #7 (comprehensive, small RAM only).
+          <br><b>Trace strip below the result:</b>
+          <span style="color:#506070">▮</span> write ·
+          <span style="color:#40cc60">▮</span> read pass ·
+          <span style="color:#ff4040">▮</span> read fail.
+        </div>
+      </div>` : '';
+
+    if (rams.length === 0) {
+      return `
+        <div class="dft-memtests-header dft-section-header">${headerHtml}</div>${infoPanel}
+        <div class="dft-empty">No RAM in scene — drop a RAM node to run standalone memory tests (no controller required).</div>
+      `;
+    }
+
+    const blocks = rams.map(ram => {
+      const aBits = Math.max(1, (ram.addrBits | 0) || 4);
+      const dBits = Math.max(1, (ram.dataBits | 0) || 8);
+      const cells = 1 << aBits;
+      const cfCount = ram.cellFaults ? Object.keys(ram.cellFaults).length : 0;
+
+      const cfg = this._scene?._dft?.ramTests?.[ram.id] || null;
+      const algoId = cfg?.algorithm || 'checkerboard';
+      const result = cfg?.lastResult || null;
+
+      // Verdict pill — idle / pass / FAIL — same styling as other sections.
+      let verdict;
+      if (!result) {
+        verdict = `<span class="dft-chain-status warn">idle</span>`;
+      } else if (result.passed) {
+        verdict = `<span class="dft-chain-status ok">pass</span>`;
+      } else {
+        verdict = `<span class="dft-chain-status bad">FAIL</span>`;
+      }
+
+      const algoOptions = RAM_PATTERNS.map(p =>
+        `<option value="${p.id}"${p.id === algoId ? ' selected' : ''}>${p.label}</option>`
+      ).join('');
+
+      // Result block. Renders pass / fail summary + mini-trace strip.
+      let resultBlock = '';
+      if (result) {
+        const tier = result.passed ? '#40cc60' : '#ff4040';
+        const summary = result.passed
+          ? `<span style="color:#40cc60;font-weight:bold">PASS</span> · <span style="color:#876">${result.steps} ops</span> <small>(${result.writes}w + ${result.reads}r)</small>`
+          : `<span style="color:#ff4040;font-weight:bold">FAIL</span> at <code style="color:#ffb0b0">addr ${result.firstFail.addr}</code> ${result.firstFail.bit === null ? '<small>(whole word)</small>' : `<small>(bit ${result.firstFail.bit})</small>`} — expected <code style="color:#40cc60">${result.firstFail.expected.toString(2).padStart(dBits, '0')}</code> got <code style="color:#ff4040">${result.firstFail.observed.toString(2).padStart(dBits, '0')}</code>`;
+
+        // Trace HEATMAP — each cell of the RAM gets a row, each step
+        // gets a column. Every op lights up the (addr, step) cell with
+        // a colour by type (write / read-pass / read-fail). This makes
+        // visible at a glance:
+        //   - which address was touched, and when
+        //   - the structural pattern of the algorithm (diagonal sweeps
+        //     for sequential writes; complex grids for walking-1)
+        //   - the single FAIL cell, which becomes the only bright red
+        //     dot in the grid + chevron pointer
+        const MAX_STEPS = 256;
+        const trace = result.trace.slice(0, MAX_STEPS);
+        const more = result.trace.length > MAX_STEPS ? result.trace.length - MAX_STEPS : 0;
+        const numSteps = trace.length;
+        const renderedCells = Math.min(cells, 64);  // mirrors cell-fault grid cap
+        const ff = result.firstFail;
+
+        // Smart title — include first-fail step + addr + bit.
+        const traceTitle = ff
+          ? `trace · ${result.trace.length} ops · <span class="dft-memtest-failtag">⚠ FAIL at step ${ff.stepIdx} — addr ${ff.addr} ${ff.bit === null ? '(whole word)' : 'bit ' + ff.bit}</span>${more ? ` <small style="color:#876">(first ${MAX_STEPS} shown)</small>` : ''}`
+          : `trace · ${result.trace.length} op${result.trace.length === 1 ? '' : 's'} · <span style="color:#40cc60">all reads matched</span>${more ? ` <small style="color:#876">(first ${MAX_STEPS} shown)</small>` : ''}`;
+
+        // Adaptive cell sizing. Wide cells for short traces (12px) all
+        // the way down to dense (5px) for traces approaching MAX_STEPS.
+        // Heights are addr-count-driven so a 16-cell RAM stays compact.
+        const cellW = numSteps <=  32 ? 14
+                    : numSteps <=  64 ? 11
+                    : numSteps <= 128 ? 8
+                    :                    6;
+        const cellH = renderedCells <=  8 ? 16
+                    : renderedCells <= 16 ? 12
+                    : renderedCells <= 32 ?  9
+                    :                        7;
+        const labelW = 28;    // addr label column width
+        const axisH  = 16;    // step axis row height
+        const FAIL_PANEL_H = 40;
+        const gridW = numSteps * cellW;
+        const gridH = renderedCells * cellH;
+        const totalW = labelW + gridW + 6;
+        const totalH = axisH + gridH + FAIL_PANEL_H + 6;
+
+        // Step axis labels at the top — every Nth label, plus the last.
+        const stepInterval = numSteps <=  16 ? 1
+                           : numSteps <=  48 ? 4
+                           : numSteps <= 128 ? 8
+                           :                   16;
+        let stepAxisHtml = '';
+        for (let s = 0; s < numSteps; s++) {
+          if (s % stepInterval !== 0 && s !== numSteps - 1) continue;
+          const leftPx = labelW + s * cellW + cellW / 2;
+          stepAxisHtml += `<span class="dft-hm-step-label" style="left:${leftPx}px">${s}</span>`;
+        }
+
+        // Addr axis labels on the left — interval matches cell density.
+        const addrInterval = renderedCells <=  8 ? 1
+                           : renderedCells <= 16 ? 2
+                           : renderedCells <= 32 ? 4
+                           :                       8;
+        let addrAxisHtml = '';
+        for (let a = 0; a < renderedCells; a++) {
+          if (a % addrInterval !== 0 && a !== renderedCells - 1) continue;
+          const topPx = axisH + a * cellH + cellH / 2;
+          addrAxisHtml += `<span class="dft-hm-addr-label" style="top:${topPx}px">${a}</span>`;
+        }
+
+        // Faint grid backdrop — one square per (addr, step). Gives the
+        // eye a structure even where no op landed, so the active cells
+        // visually pop against an empty grid rather than floating in
+        // void. Rendered as a CSS repeating-gradient for perf — no DOM.
+        const bgGrid = `
+          background-image:
+            repeating-linear-gradient(to right,
+              rgba(60,80,100,0.07) 0 1px,
+              transparent 1px ${cellW}px),
+            repeating-linear-gradient(to bottom,
+              rgba(60,80,100,0.07) 0 1px,
+              transparent 1px ${cellH}px);
+          background-position: ${labelW}px ${axisH}px;
+          background-size: ${gridW}px ${gridH}px;
+          background-repeat: no-repeat;
+        `;
+
+        // Heat cells — one DOM node per op (the empty squares between
+        // are pure background, so DOM count is bounded by trace length).
+        const heatCells = trace.map((t, step) => {
+          if (t.addr >= renderedCells) return '';
+          let cls = 'cell-w';
+          if (t.op === 'read') cls = t.isFail ? 'cell-f' : 'cell-r';
+          const isFF = ff && step === ff.stepIdx;
+          if (isFF) cls += ' cell-ff';
+          const leftPx = labelW + step * cellW;
+          const topPx  = axisH + t.addr * cellH;
+          const titleStr = t.op === 'write'
+            ? `step ${step} · addr ${t.addr} · write ${(t.data ?? 0).toString(2).padStart(dBits, '0')}`
+            : `step ${step} · addr ${t.addr} · read exp ${(t.expected ?? 0).toString(2).padStart(dBits, '0')} got ${(t.observed ?? 0).toString(2).padStart(dBits, '0')}`;
+          return `<div class="dft-hm-cell ${cls}"
+                       style="left:${leftPx}px;top:${topPx}px;width:${cellW - 1}px;height:${cellH - 1}px"
+                       title="${titleStr}"
+                       data-action="memtest-tick" data-ram-id="${ram.id}" data-step="${step}"></div>`;
+        }).join('');
+
+        // Fail callout — vertical guide line from the failing cell down
+        // to a labelled badge below the grid. Always rendered below the
+        // grid so a fail on any addr/step gets the same anchor point.
+        let failMarker = '';
+        if (ff && ff.addr < renderedCells) {
+          const cellCenterX = labelW + ff.stepIdx * cellW + cellW / 2;
+          const cellBotY    = axisH + (ff.addr + 1) * cellH;
+          const guideTop    = cellBotY;
+          const guideHeight = (axisH + gridH) - cellBotY + 4;
+          const bitTxt = ff.bit === null ? 'whole word' : `bit ${ff.bit}`;
+          failMarker = `
+            <div class="dft-hm-fail-guide"
+                 style="left:${cellCenterX - 1}px;top:${guideTop}px;height:${guideHeight}px"></div>
+            <div class="dft-hm-fail-marker"
+                 style="left:${cellCenterX}px;top:${axisH + gridH + 4}px">
+              <div class="dft-hm-fail-chevron">▲</div>
+              <div class="dft-hm-fail-label">addr ${ff.addr} · step ${ff.stepIdx}<br><small>${bitTxt}</small></div>
+            </div>`;
+        }
+
+        // Legend — three chips inline with the title.
+        const legend = `
+          <span class="dft-hm-legend">
+            <span class="chip cell-w"></span>write
+            <span class="chip cell-r"></span>read pass
+            <span class="chip cell-f"></span>read fail
+          </span>`;
+
+        resultBlock = `
+          <div class="dft-lfsr-grid">
+            <span class="dft-lfsr-k">result</span>
+            <span class="dft-lfsr-v">${summary}</span>
+            <span class="dft-lfsr-k">pattern</span>
+            <span class="dft-lfsr-v"><code>${result.patternName}</code></span>
+          </div>
+          <div class="dft-memtest-tracewrap">
+            <div class="dft-memtest-tracetitle">
+              <div>${traceTitle}</div>
+              ${legend}
+            </div>
+            <div class="dft-memtest-heatwrap" style="border-left:3px solid ${tier}">
+              <div class="dft-memtest-heatmap" style="width:${totalW}px;height:${totalH}px;${bgGrid}">
+                ${stepAxisHtml}
+                ${addrAxisHtml}
+                ${heatCells}
+                ${failMarker}
+              </div>
+            </div>
+          </div>`;
+      } else {
+        resultBlock = `<div class="dft-empty" style="margin:6px 12px;padding:6px 10px">No run yet — pick a pattern and click <b style="color:#ffb878">▶ RUN</b>.</div>`;
+      }
+
+      const blockId = `memtest_${ram.id}`;
+      const collapsed = this._collapsedBlocks.has(blockId);
+      return `
+        <div class="dft-chain-block${collapsed ? ' collapsed' : ''}" data-block-id="${blockId}">
+          <div class="dft-chain-header" title="Click to collapse / expand">
+            <span class="dft-chain-toggle">${collapsed ? '▸' : '▾'}</span>
+            <span class="dft-chain-title">${ram.label || ram.id}</span>
+            <span class="dft-chain-len">${cells}×${dBits} · ${cfCount} cell fault${cfCount === 1 ? '' : 's'}</span>
+            ${verdict}
+          </div>
+          <div class="dft-memtest-controls">
+            <select class="dft-memtest-select" data-action="memtest-algo" data-ram-id="${ram.id}" title="Select test algorithm">
+              ${algoOptions}
+            </select>
+            <button class="dft-memtest-run" data-action="memtest-run" data-ram-id="${ram.id}" title="Run the selected pattern against this RAM">▶ RUN</button>
+            <span class="dft-memtest-desc">${(RAM_PATTERNS.find(p => p.id === algoId)?.label) || ''}</span>
+          </div>
+          ${resultBlock}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="dft-memtests-header dft-section-header">${headerHtml}</div>${infoPanel}
+      <div class="dft-perf-row">
+        <span class="k">RAMs in scene</span><span class="v">${rams.length}</span>
+      </div>
+      ${blocks}
+    `;
+  }
+
+  // Execute a memory test pattern against a RAM and cache the result on
+  // scene._dft.ramTests[ramId]. Triggered by the ▶ RUN button click.
+  _runMemoryTest(ramId) {
+    if (!this._scene) return;
+    const ram = this._scene.nodes.find(n => n.id === ramId);
+    if (!ram || ram.type !== 'RAM') return;
+    const cfg = this._scene._dft?.ramTests?.[ramId] || {};
+    const algoId = cfg.algorithm || 'checkerboard';
+    const aBits = Math.max(1, (ram.addrBits | 0) || 4);
+    const dBits = Math.max(1, (ram.dataBits | 0) || 8);
+    const pattern = getRamPattern(algoId, aBits, dBits);
+    if (!pattern) return;
+    let result;
+    try {
+      result = runMemoryTest(ram, pattern);
+    } catch (e) {
+      console.error('[memtest]', e);
+      return;
+    }
+    // Stash result on scene config.
+    if (!this._scene._dft) this._scene._dft = {};
+    if (!this._scene._dft.ramTests) this._scene._dft.ramTests = {};
+    this._scene._dft.ramTests[ramId] = { algorithm: algoId, lastResult: result };
+    if (this._visible) this._render();
+  }
+
+  // Switch the selected algorithm for one RAM. Pure metadata update —
+  // does not run the test (user clicks ▶ RUN to actually execute).
+  _setMemoryTestAlgo(ramId, algoId) {
+    if (!this._scene) return;
+    if (!RAM_PATTERNS.some(p => p.id === algoId)) return;
+    if (!this._scene._dft) this._scene._dft = {};
+    if (!this._scene._dft.ramTests) this._scene._dft.ramTests = {};
+    const prev = this._scene._dft.ramTests[ramId] || {};
+    // Algo change invalidates prior result — the labels would be wrong.
+    this._scene._dft.ramTests[ramId] = { algorithm: algoId, lastResult: null };
+    if (this._visible) this._render();
+  }
+
   _renderMbistControllers() {
     const allNodes = this._scene?.nodes || [];
     const wires    = this._scene?.wires || [];
@@ -1837,6 +2635,137 @@ export class DFTPanel {
   }
 
   // ── FAULT LIST ──────────────────────────────────────────────
+  // ── FAULT DIAGNOSIS (Phase 3) ──────────────────────────────
+  // Single-fault diagnosis: rank the wire-level faults by how well
+  // their detection signature matches the current scene's observed
+  // mismatch pattern. Only meaningful after RUN FAULT SIM (builds the
+  // dictionary) and with at least one wire fault currently injected.
+  _renderDiagnosis() {
+    const wires = this._scene?.wires || [];
+    const injected = wires.filter(w => w.stuckAt === 0 || w.stuckAt === 1 || w.open || w.bridgedWith);
+
+    const headerHtml = `<span class="dft-section-title">FAULT DIAGNOSIS` +
+      `<button class="dft-info-btn" data-action="toggle-info" data-section="diagnosis" title="What does this section show?">i</button>` +
+      `</span>`;
+    const infoPanel = this._infoOpen.has('diagnosis') ? `
+      <div class="dft-info-panel">
+        <div class="dft-info-lead">Single-fault diagnosis. Given an observed output mismatch, rank wire-level faults by how well their detection signature matches the observation. Top-1 with score 1.0 = exact match. Equivalent faults (e.g. an AND's input stuck-at-0 vs its output stuck-at-0) tie at the same score — the diagnoser cannot distinguish them from the boundary alone.</div>
+        <div class="dft-info-row">
+          <span class="dft-chain-status warn">no sim</span>
+          <span class="dft-info-text">Run RUN FAULT SIM first to build the dictionary that diagnosis matches against.</span>
+        </div>
+        <div class="dft-info-row">
+          <span class="dft-chain-status warn">no inj</span>
+          <span class="dft-info-text">No injected faults on any wire — nothing to diagnose. Right-click a wire on the canvas to inject s-a-0/s-a-1/open/bridge, then come back.</span>
+        </div>
+        <div class="dft-info-row">
+          <span class="dft-chain-status ok">match</span>
+          <span class="dft-info-text">Top suspects with score 1.0 + ✓ exact tag. The diagnoser narrowed it down (modulo equivalent-fault classes).</span>
+        </div>
+      </div>` : '';
+
+    // Empty-state paths — clear messages instead of a silent dead button.
+    if (!this._lastSim) {
+      return `
+        <div class="dft-diagnosis-header dft-section-header">${headerHtml}</div>${infoPanel}
+        <div class="dft-empty">Click <b style="color:#ffb878">RUN FAULT SIM</b> first to build the diagnostic dictionary.</div>
+      `;
+    }
+    if (injected.length === 0) {
+      return `
+        <div class="dft-diagnosis-header dft-section-header">${headerHtml}</div>${infoPanel}
+        <div class="dft-empty">No wire faults injected — diagnosis is undefined. Right-click a wire on the canvas (or use the FAULT LIST below) to inject a fault, then click <b style="color:#40cc60">DIAGNOSE</b>.</div>
+      `;
+    }
+
+    // Inject summary chips.
+    const injChips = injected.slice(0, 5).map(w => {
+      const kind = (w.stuckAt === 0) ? 'sa0' : (w.stuckAt === 1) ? 'sa1' : (w.open ? 'open' : 'bridge');
+      const color = (kind === 'sa0' || kind === 'sa1') ? '#ff9933' : (kind === 'open' ? '#ff4040' : '#cc66ff');
+      return `<code style="color:${color};margin-right:6px">${w.id}/${kind}</code>`;
+    }).join('');
+    const moreInj = injected.length > 5 ? `<small style="color:#876">+${injected.length - 5} more</small>` : '';
+
+    // Suspect list (if a diagnose has been run).
+    let suspectsBlock = '';
+    if (this._lastDiagnosis) {
+      const { suspects, observed, mismatchCount, totalVectors } = this._lastDiagnosis;
+      const obsBits = observed
+        ? observed.split('').map(b => b === '1'
+            ? '<span style="color:#ff4040">1</span>'
+            : '<span style="color:#666">0</span>').join('')
+        : '<span style="color:#666">none</span>';
+
+      const rows = suspects.length === 0
+        ? `<div class="dft-empty">no candidates ranked.</div>`
+        : suspects.map((s, i) => {
+            const pct = Math.round(s.score * 100);
+            const tier = pct >= 80 ? '#40cc60' : pct >= 50 ? '#cca040' : '#cc4040';
+            const exactTag = s.exact ? '<span style="color:#40cc60;margin-left:6px;font-size:0.9em" title="Signature matches exactly — this fault perfectly explains the observation.">✓ exact</span>' : '';
+            const barW = Math.max(2, pct);
+            return `
+              <div class="dft-diag-row" data-action="diag-select" data-fault-id="${s.faultId}" title="Click to highlight ${s.faultId} on the canvas">
+                <span class="dft-diag-rank">#${i + 1}</span>
+                <code class="dft-diag-fid" style="color:${tier}">${s.faultId}</code>
+                <div class="dft-diag-bar">
+                  <div class="dft-diag-bar-fill" style="width:${barW}%;background:linear-gradient(90deg,${tier}88,${tier});box-shadow:0 0 8px ${tier}66"></div>
+                  <div class="dft-diag-bar-text">${pct}%</div>
+                </div>
+                <span class="dft-diag-meta"><small>${s.matches1} / ${observed.split('').filter(c => c === '1').length} mismatches matched</small>${exactTag}</span>
+              </div>`;
+          }).join('');
+
+      suspectsBlock = `
+        <div class="dft-perf-row" style="grid-template-columns:1fr">
+          <div style="font-size:0.92em">
+            <span style="color:#876">Observed signature:</span>
+            <code style="margin-left:6px;letter-spacing:2px;font-size:1.05em">${obsBits}</code>
+            <span style="color:#876;margin-left:8px">${mismatchCount} of ${totalVectors} vectors mismatched</span>
+          </div>
+        </div>
+        <div class="dft-diag-list">${rows}</div>`;
+    }
+
+    return `
+      <div class="dft-diagnosis-header dft-section-header">${headerHtml}</div>${infoPanel}
+      <div class="dft-perf-row" style="grid-template-columns:1fr">
+        <div style="display:flex;align-items:center;gap:1em;flex-wrap:wrap">
+          <span style="color:#876">Active injections (${injected.length}):</span>
+          ${injChips} ${moreInj}
+          <button class="dft-diag-run" data-action="diag-run" title="Run the diagnostic: apply each vector against the current scene, compute the mismatch signature, and rank wire-fault candidates by Hamming similarity.">🔍 DIAGNOSE</button>
+        </div>
+      </div>
+      ${suspectsBlock}
+    `;
+  }
+
+  // Run diagnosis: build dictionary from _lastSim, observe signature
+  // against the current scene, rank suspects. Result cached on
+  // this._lastDiagnosis until topology mutates or DIAGNOSE re-clicked.
+  _runDiagnosis() {
+    if (!this._scene || !this._lastSim) return;
+    try {
+      this._lastDiagnosis = diagnoseScene(
+        this._scene.nodes, this._scene.wires, this._lastSim,
+        { topK: 5 },
+      );
+    } catch (e) {
+      console.error('[diagnose]', e);
+      this._lastDiagnosis = null;
+    }
+    if (this._visible) this._render();
+  }
+
+  // Click a suspect row → emit a scene selection event so the canvas
+  // highlights the wire. Tolerant — if the bus doesn't have listeners
+  // (no canvas focus) the click simply does nothing.
+  _selectDiagnosisFault(faultId) {
+    const slash = faultId.lastIndexOf('/');
+    if (slash < 0) return;
+    const wireId = faultId.slice(0, slash);
+    bus.emit('scene:select-wire', { wireId });
+  }
+
   _renderFaultList(wires) {
     // Section header + ⓘ legend for the fault model abbreviations.
     // Same shape as Pattern Generators / Scan Chains; reuses the
@@ -1890,9 +2819,25 @@ export class DFTPanel {
         det.get(f.wireId)[f.kind] = f.detectedBy;
       });
     }
-    const fmtDetect = (arr) => {
+    // Per-fault detection cell. When undetected, surfaces an ATPG
+    // verdict — either a 🎯 [generate] button (default), a dim
+    // [redundant] tag (prior exhaustive ATPG proved no vector exists),
+    // or an amber [exhausted] tag (random ATPG ran out — could still
+    // be testable, just not found).
+    const fmtDetect = (arr, faultId) => {
       if (!arr) return '';
-      if (arr.length === 0) return '<span style="color:#cc4040">UND</span>';
+      if (arr.length === 0) {
+        if (faultId && this._atpgRedundant.has(faultId)) {
+          return '<span style="color:#cc4040" title="ATPG proved untestable — no input vector exists that propagates this fault to a primary output. Common when the wire feeds redundant logic.">UND</span> <span style="color:#666;font-size:0.85em;border:1px dotted #44444466;border-radius:8px;padding:0 6px">redundant</span>';
+        }
+        if (faultId && this._atpgExhausted.has(faultId)) {
+          return `<span style="color:#cc4040">UND</span> <span data-action="atpg-target" data-fault-id="${faultId}" title="Random ATPG ran out — could still be testable. Click to retry." style="color:#cca040;font-size:0.85em;border:1px dotted #cca04066;border-radius:8px;padding:0 6px;cursor:pointer;user-select:none">exhausted ↻</span>`;
+        }
+        if (faultId) {
+          return `<span style="color:#cc4040">UND</span> <span data-action="atpg-target" data-fault-id="${faultId}" title="Run ATPG: generate one vector that detects this fault. Exhaustive sweep when ≤16 PIs (proves redundancy on miss); random sampling above." style="color:#40cc60;font-size:0.85em;border:1px solid #40cc6066;border-radius:8px;padding:0 6px;cursor:pointer;user-select:none">🎯</span>`;
+        }
+        return '<span style="color:#cc4040">UND</span>';
+      }
       if (arr.length <= 3)  return '<span style="color:#40cc60">v' + arr.join(',v') + '</span>';
       return `<span style="color:#40cc60">v${arr.slice(0,2).join(',v')} +${arr.length-2}</span>`;
     };
@@ -1930,9 +2875,9 @@ export class DFTPanel {
       let detectedHtml = '<span style="color:#444">—</span>';
       if (d) {
         const parts = [];
-        if (d.sa0)  parts.push(`<span style="color:#876">sa0</span> ${fmtDetect(d.sa0)}`);
-        if (d.sa1)  parts.push(`<span style="color:#876">sa1</span> ${fmtDetect(d.sa1)}`);
-        if (d.open) parts.push(`<span style="color:#876">op</span> ${fmtDetect(d.open)}`);
+        if (d.sa0)  parts.push(`<span style="color:#876">sa0</span> ${fmtDetect(d.sa0,  `${w.id}/sa0`)}`);
+        if (d.sa1)  parts.push(`<span style="color:#876">sa1</span> ${fmtDetect(d.sa1,  `${w.id}/sa1`)}`);
+        if (d.open) parts.push(`<span style="color:#876">op</span> ${fmtDetect(d.open, `${w.id}/open`)}`);
         detectedHtml = parts.join(' · ');
       }
 

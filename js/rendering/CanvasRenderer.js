@@ -29,6 +29,12 @@ export function setValueFormat(fmt) { _valueFmt = fmt; }
 // matching wire so the user can see which one is bound to the props panel.
 let _selectedWireId = null;
 export function setSelectedWire(wireId) { _selectedWireId = wireId; }
+
+// DFT trace-diff overlay (Phase 4). Set by DFTPanel when the user
+// toggles TRACE on; a Map<wireId, {golden, faulty}>. Each diff wire
+// gets a red glow + pill label `g→f`. Set to `null` to disable.
+let _dftTraceDiff = null;
+export function setDftTrace(diffMap) { _dftTraceDiff = diffMap; }
 function _fmt(val, bits) {
   const v = (val >>> 0);
   if (_valueFmt === 'hex') return '0x' + v.toString(16).toUpperCase().padStart(Math.ceil((bits || 16) / 4), '0');
@@ -723,6 +729,79 @@ function _drawWires(nodes, wires, wireValues) {
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
         ctx.setLineDash([]);
+      }
+    }
+
+    // DFT trace-diff overlay (Phase 4). When the panel pushes a diff
+    // map, every wire whose value differs between the fault-free and
+    // current run gets a bright red halo + a small "g→f" pill. The
+    // base stroke and fault badges are intentionally preserved
+    // underneath — the halo signals "this is one of the wires that
+    // explains the mismatch", on top of whatever else is drawn.
+    if (_dftTraceDiff && _dftTraceDiff.has(wire.id)) {
+      const diff = _dftTraceDiff.get(wire.id);
+      // Bright red halo over the wire path.
+      ctx.save();
+      ctx.strokeStyle = C.wireDiff || '#ff3344';
+      ctx.lineWidth   = width + 4;
+      ctx.lineCap     = 'round';
+      ctx.shadowColor = C.wireDiffGlow || 'rgba(255,51,68,0.6)';
+      ctx.shadowBlur  = 14;
+      ctx.globalAlpha = 0.55;
+      _drawManhattanPath(path);
+      ctx.stroke();
+      ctx.restore();
+
+      // Delta pill at 1/3-along to avoid collision with fault badge at midpoint.
+      if (_scale >= 0.5 && path.length >= 2) {
+        let total = 0;
+        for (let i = 1; i < path.length; i++)
+          total += Math.abs(path[i].x - path[i-1].x) + Math.abs(path[i].y - path[i-1].y);
+        let target = total / 3, walked = 0, pillPt = path[0];
+        for (let i = 1; i < path.length; i++) {
+          const segLen = Math.abs(path[i].x - path[i-1].x) + Math.abs(path[i].y - path[i-1].y);
+          if (walked + segLen >= target) {
+            const t = (target - walked) / (segLen || 1);
+            pillPt = {
+              x: path[i-1].x + (path[i].x - path[i-1].x) * t,
+              y: path[i-1].y + (path[i].y - path[i-1].y) * t,
+            };
+            break;
+          }
+          walked += segLen;
+        }
+        const fmt = (v) => v === null || v === undefined ? '∅'
+                        : (typeof v === 'number' ? (v & 1).toString() : String(v));
+        const text = `${fmt(diff.golden)}→${fmt(diff.faulty)}`;
+        ctx.save();
+        ctx.font         = 'bold 9px JetBrains Mono, monospace';
+        const pad = 4;
+        const w = ctx.measureText(text).width + pad * 2;
+        const h = 13;
+        // Pill body
+        ctx.fillStyle   = 'rgba(40,8,12,0.92)';
+        ctx.strokeStyle = C.wireDiff || '#ff3344';
+        ctx.lineWidth   = 1;
+        ctx.shadowColor = C.wireDiffShadow || 'rgba(255,51,68,0.45)';
+        ctx.shadowBlur  = 6;
+        ctx.beginPath();
+        const px = pillPt.x - w / 2, py = pillPt.y - h / 2 - 10;
+        const r = h / 2;
+        ctx.moveTo(px + r, py);
+        ctx.lineTo(px + w - r, py);
+        ctx.arc(px + w - r, py + r, r, -Math.PI/2, Math.PI/2);
+        ctx.lineTo(px + r, py + h);
+        ctx.arc(px + r, py + r, r, Math.PI/2, -Math.PI/2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+        // Text
+        ctx.fillStyle    = '#ffd0d0';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, pillPt.x, py + r);
+        ctx.restore();
       }
     }
 
