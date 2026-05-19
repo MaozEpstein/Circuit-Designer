@@ -268,8 +268,12 @@ export class DFTPanel {
     // `chain_0` (positional, stable per scene) or `lfsr_<nodeId>` (by
     // node id, also stable). The set survives a re-render so the
     // user's fold choices aren't undone by a fault-sim refresh.
-    this._collapsedBlocks   = new Set();
-    this._collapsedSections = new Set();
+    this._collapsedBlocks     = new Set();
+    this._collapsedSections   = new Set();
+    // Top-level category collapse (OVERVIEW / STIMULUS / MEMORY /
+    // BOUNDARY / DIAGNOSE). Survives re-render so the user's fold
+    // choices aren't undone by a fault-sim tick.
+    this._collapsedCategories = new Set();
     // Per-field LFSR edit state. Key shape: `<lfsrId>:<field>`. A
     // field is in view mode (read-only text + pencil) until the user
     // clicks the pencil; then it enters edit mode (input + save/
@@ -332,13 +336,37 @@ export class DFTPanel {
       if (this._genPopup.contains(e.target)) return;
       this._genPopup.classList.add('hidden');
     });
-    // Click on an item inside the popup → run that pattern.
+    // Click on an item inside the popup → run that pattern, OR (if the
+    // pattern is disabled) close the popup and surface the disabled
+    // reason as a diagnostic banner. Never silently ignore the click.
     if (this._genPopup) {
       this._genPopup.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-pattern-id]');
-        if (!btn || btn.disabled) return;
+        if (!btn) return;
         const id = btn.dataset.patternId;
         this._genPopup.classList.add('hidden');
+        if (btn.classList.contains('is-disabled')) {
+          // Recompute reason at click-time — keeps the message in sync
+          // with whatever the current scene looks like (e.g. user
+          // deleted a wire between popup-open and click).
+          const piCount = (this._scene?.nodes || []).filter(n => n.type === 'INPUT').length;
+          const wireCount = this._scene?.wires?.length || 0;
+          const patternEntry = WIRE_PATTERNS.find(p => p.id === id);
+          const est = this._estimateRunCost(patternEntry, piCount);
+          const overPI = patternEntry?.maxPI && piCount > patternEntry.maxPI;
+          let msg;
+          if (overPI) {
+            msg = `Pattern "${patternEntry.label}" is disabled — this scene has ${piCount} primary inputs, ` +
+                  `which exceeds the ${patternEntry.maxPI}-PI cap (would generate ${(1 << patternEntry.maxPI).toLocaleString()} vectors). ` +
+                  `Pick Random N=16, Walking-1, or Toggle-all-wires instead.`;
+          } else {
+            msg = `Pattern "${patternEntry?.label || id}" is disabled — running it would issue ` +
+                  `~${est.cost.toLocaleString()} evaluations (${est.vectors.toLocaleString()} vectors × ${wireCount} wires × 3 fault models), ` +
+                  `which would freeze the browser tab for minutes. Pick Random N=16, Walking-1, or Toggle-all-wires instead.`;
+          }
+          this._setDiagnostic(msg);
+          return;
+        }
         this._runWirePattern(id);
       });
     }
@@ -356,6 +384,19 @@ export class DFTPanel {
       // edit on a tick-rendered card, etc. Click never fires when
       // mouseup lands on a different DOM node than mousedown.
       this._body.addEventListener('mousedown', (e) => {
+        // Category header click (OVERVIEW / STIMULUS / …) — top-level
+        // collapse of an entire category and all sections within it.
+        const catTrg = e.target.closest('[data-action="cat-toggle"]');
+        if (catTrg) {
+          e.preventDefault();
+          const id = catTrg.dataset.catId;
+          if (id) {
+            if (this._collapsedCategories.has(id)) this._collapsedCategories.delete(id);
+            else                                    this._collapsedCategories.add(id);
+            if (this._visible) this._render();
+          }
+          return;
+        }
         // Radix toggle.
         const radixTrg = e.target.closest('[data-action="misr-radix"]');
         if (radixTrg) {
@@ -758,18 +799,45 @@ export class DFTPanel {
       <span class="k">Injected (stuck / open / bridge)</span><span class="v">${injStuck} / ${injOpen} / ${injBrdg}</span>
     `;
 
-    this._body.innerHTML =
-      this._renderTestabilityOverview(wires, { injStuck, injOpen, injBrdg, injTotal }) +
-      this._renderFaultCoverage() +
-      this._renderScanChains() +
-      this._renderPatternGenerators() +
-      this._renderSignatureCompactors() +
-      this._renderBistControllers() +
-      this._renderMemoryTests() +
-      this._renderMbistControllers() +
-      this._renderJtagTaps() +
-      this._renderDiagnosis() +
-      this._renderFaultList(wires);
+    // Compose by 5 top-level categories. Each section renders ''
+    // when empty (e.g. no SCAN_FFs in scene), and an empty category
+    // is dropped entirely — so the panel only shows what's relevant
+    // to the current scene plus the always-on Overview & Diagnose
+    // catalogue rows.
+    const sections = {
+      overview:  this._renderTestabilityOverview(wires, { injStuck, injOpen, injBrdg, injTotal }),
+      coverage:  this._renderFaultCoverage(),
+      scan:      this._renderScanChains(),
+      lfsr:      this._renderPatternGenerators(),
+      misr:      this._renderSignatureCompactors(),
+      bist:      this._renderBistControllers(),
+      memtest:   this._renderMemoryTests(),
+      mbist:     this._renderMbistControllers(),
+      jtag:      this._renderJtagTaps(),
+      diagnosis: this._renderDiagnosis(),
+      faultlist: this._renderFaultList(wires),
+    };
+    const CATEGORIES = [
+      { id: 'overview', label: 'OVERVIEW',  ids: ['overview', 'coverage']            },
+      { id: 'stimulus', label: 'STIMULUS',  ids: ['scan', 'lfsr', 'misr', 'bist']    },
+      { id: 'memory',   label: 'MEMORY',    ids: ['memtest', 'mbist']                },
+      { id: 'boundary', label: 'BOUNDARY',  ids: ['jtag']                            },
+      { id: 'diagnose', label: 'DIAGNOSE',  ids: ['diagnosis', 'faultlist']          },
+    ];
+    this._body.innerHTML = CATEGORIES.map(cat => {
+      const inner = cat.ids.map(id => sections[id]).filter(h => h && h.trim()).join('');
+      if (!inner) return '';
+      const collapsed = this._collapsedCategories?.has(cat.id);
+      return `
+        <div class="dft-category${collapsed ? ' dft-category-collapsed' : ''}" data-category="${cat.id}">
+          <div class="dft-category-header" data-action="cat-toggle" data-cat-id="${cat.id}">
+            <span class="dft-category-toggle">${collapsed ? '▸' : '▾'}</span>
+            <span class="dft-category-label">${cat.label}</span>
+            <span class="dft-category-rule"></span>
+          </div>
+          <div class="dft-category-body">${inner}</div>
+        </div>`;
+    }).join('');
 
     this._applyCollapsibleSections();
   }
@@ -978,33 +1046,80 @@ export class DFTPanel {
     }
   }
 
+  // Rough cost of running fault-sim with a given pattern against the
+  // current scene. Each pattern produces V vectors; the simulator then
+  // runs ≈ V × wires × models evaluate() calls. On a fast machine each
+  // eval is ~0.1 ms; under 100K evals = under ~10 s in browser (still
+  // blocking, but completes). 500K+ evals practically hangs the tab.
+  _estimateRunCost(patternEntry, piCount) {
+    if (!patternEntry) return { cost: 0, vectors: 0, wires: 0 };
+    if (patternEntry.maxPI && piCount > patternEntry.maxPI) return { cost: Infinity, vectors: 0, wires: 0 };
+    let V = 0;
+    switch (patternEntry.id) {
+      case 'random':       V = 16; break;
+      case 'toggleAll':    V = 2; break;
+      case 'walkingOne':   V = piCount + 1; break;
+      case 'walkingZero':  V = piCount + 1; break;
+      case 'defaultSweep': V = piCount + 2; break;
+      case 'exhaustive':   V = 1 << piCount; break;
+      default:             V = 16;
+    }
+    const wires = this._scene?.wires?.length || 0;
+    const models = 3;     // sa0 + sa1 + open
+    return { cost: V * wires * models, vectors: V, wires };
+  }
+
+  // Threshold for refusing to run on UI thread. 200_000 ≈ 30 s in
+  // browser — acceptable. Above this, refuse and ask the user to pick
+  // a cheaper pattern.
+  static get RUN_COST_LIMIT() { return 200_000; }
+
   // GEN ▾ — populate and toggle the wire-pattern dropdown. Renders
   // every entry from WIRE_PATTERNS as a button. The pattern that was
   // last chosen on this panel gets an `.active` tint so the user knows
-  // which one is "live". Disabled patterns (exhaustive past its PI cap)
-  // render as dim non-clickable rows with a tooltip explaining why.
+  // which one is "live". Patterns that would freeze the browser tab
+  // (exhaustive past its PI cap OR projected run-cost beyond the safe
+  // limit) render as visibly-disabled rows with a red badge + the
+  // reason inline. They REMAIN clickable so that a click surfaces the
+  // same explanation in the panel's diagnostic banner — the rule of
+  // thumb here is "never silently ignore a user action".
   _toggleGenPopup() {
     if (!this._genPopup) return;
     const isHidden = this._genPopup.classList.contains('hidden');
     if (!isHidden) { this._genPopup.classList.add('hidden'); return; }
     // Compute current PI count so we can disable exhaustive when needed.
     const piCount = (this._scene?.nodes || []).filter(n => n.type === 'INPUT').length;
+    const wireCount = this._scene?.wires?.length || 0;
+    const LIMIT = DFTPanel.RUN_COST_LIMIT;
     const items = WIRE_PATTERNS.map(p => {
-      const disabled = (p.maxPI && piCount > p.maxPI);
+      const est = this._estimateRunCost(p, piCount);
+      const overPI   = p.maxPI && piCount > p.maxPI;
+      const overCost = est.cost > LIMIT;
+      const disabled = overPI || overCost;
       const tag = p.maxPI ? `≤${p.maxPI} PIs` : '';
       const active = (p.id === this._wirePatternId) ? ' active' : '';
-      const tip = disabled
-        ? `Disabled: this scene has ${piCount} primary inputs, exceeds the ${p.maxPI}-PI cap (${1 << p.maxPI} vectors).`
-        : p.description;
+      // Reason string surfaces in two places:
+      //   1. Inline below the pattern name in the popup (replaces description).
+      //   2. The diagnostic banner if the user actually clicks the disabled row.
+      const reason = overPI
+        ? `${piCount} PIs > ${p.maxPI}-PI cap (would generate ${(1 << p.maxPI).toLocaleString()} vectors)`
+        : overCost
+        ? `would run ~${est.cost.toLocaleString()} evaluations (${est.vectors.toLocaleString()} vectors × ${wireCount} wires × 3 models) — tab would freeze`
+        : null;
+      const inlineText = disabled
+        ? `<span class="dft-pattern-disabled-reason">${reason}</span>`
+        : `<span class="dft-pattern-item-desc">${p.description}</span>`;
+      const tip = disabled ? `Disabled — ${reason}.\n\nClick for full explanation.` : p.description;
       return `
-        <button class="dft-pattern-item${active}" data-pattern-id="${p.id}"
-                ${disabled ? 'disabled' : ''}
+        <button class="dft-pattern-item${active}${disabled ? ' is-disabled' : ''}"
+                data-pattern-id="${p.id}"
                 title="${tip.replace(/"/g, '&quot;')}">
           <div class="dft-pattern-item-label">
             <span class="dft-pattern-item-name">${p.label}</span>
+            ${disabled ? '<span class="dft-pattern-disabled-badge">disabled</span>' : ''}
             <span class="dft-pattern-item-tag">${tag}</span>
           </div>
-          <div class="dft-pattern-item-desc">${p.description}</div>
+          ${inlineText}
         </button>`;
     }).join('');
     this._genPopup.innerHTML = items;
@@ -1025,6 +1140,17 @@ export class DFTPanel {
       .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
     if (inputs.length === 0) {
       this._setDiagnostic('No INPUT nodes — wire patterns need primary inputs to assign 0/1 to.');
+      return;
+    }
+    const patternEntry = WIRE_PATTERNS.find(p => p.id === patternId);
+    const est = this._estimateRunCost(patternEntry, inputs.length);
+    if (est.cost > DFTPanel.RUN_COST_LIMIT) {
+      this._setDiagnostic(
+        `Pattern "${patternEntry?.label || patternId}" would run ~${est.cost.toLocaleString()} evaluations ` +
+        `(${est.vectors} vectors × ${est.wires} wires × 3 fault models). ` +
+        `That would freeze the browser for minutes — refusing. Pick Random N=16, Toggle-all-wires, ` +
+        `or Walking-1 instead.`,
+      );
       return;
     }
     const result = getWirePattern(patternId, inputs.length);
@@ -1326,12 +1452,10 @@ export class DFTPanel {
       </div>
     ` : '';
 
-    if (scanFFs.length === 0) {
-      return `
-        <div class="dft-scan-header dft-section-header">${chainHeaderHtml}</div>${chainInfoPanel}
-        <div class="dft-empty">No SCAN-FF in scene — drop a SCAN-FF chip (LOGIC tab) to enable scan-based testing.</div>
-      `;
-    }
+    // Hide entire section when no SCAN_FFs — the panel's category
+    // structure (STIMULUS group) already signals that scan-chain UI
+    // would live here. An empty stub adds noise without information.
+    if (scanFFs.length === 0) return '';
     const chains = detectScanChains(scanFFs, wires);
     const scanInserted = scanFFs.length;
     const scanability = totalFFs > 0 ? Math.round((scanInserted / totalFFs) * 100) : 100;
@@ -1650,12 +1774,7 @@ export class DFTPanel {
       `<button class="dft-info-btn" data-action="toggle-info" data-section="patterns" title="What do the status pills mean?">i</button>` +
       `</span>`;
 
-    if (lfsrs.length === 0) {
-      return `
-        <div class="dft-patterns-header dft-section-header">${headerHtml}</div>${infoPanel}
-        <div class="dft-empty">No LFSR in scene — drop one (LOGIC tab) to enable BIST-style pseudo-random testing.</div>
-      `;
-    }
+    if (lfsrs.length === 0) return '';
     const blocks = lfsrs.map((lfsr) => {
       const width = Math.max(1, lfsr.bitWidth | 0);
       const seed  = (lfsr.seed ?? 1) & ((1 << width) - 1);
@@ -1779,12 +1898,7 @@ export class DFTPanel {
       return (v >>> 0).toString(2).padStart(W, '0');
     };
 
-    if (misrs.length === 0) {
-      return `
-        <div class="dft-misrs-header dft-section-header">${headerHtml}</div>${infoPanel}
-        <div class="dft-empty">No MISR in scene — drop one (TEST tab) to compress scan-chain responses into a signature.</div>
-      `;
-    }
+    if (misrs.length === 0) return '';
 
     // Engine-side state — ms.reg holds the live signature, populated
     // each tick by the SimulationEngine. Read from the global state
@@ -1934,12 +2048,7 @@ export class DFTPanel {
         </div>
       </div>` : '';
 
-    if (ctls.length === 0) {
-      return `
-        <div class="dft-bist-header dft-section-header">${headerHtml}</div>${infoPanel}
-        <div class="dft-empty">No BIST_CONTROLLER in scene — drop one (TEST tab) to sequence a self-test run end-to-end.</div>
-      `;
-    }
+    if (ctls.length === 0) return '';
 
     const ffStates = window.state?.ffStates;
     const STATE_NAMES = ['IDLE', 'SETUP', 'RUN', 'COMPARE', 'DONE', 'FAIL'];
@@ -2091,12 +2200,7 @@ export class DFTPanel {
         </div>
       </div>` : '';
 
-    if (rams.length === 0) {
-      return `
-        <div class="dft-memtests-header dft-section-header">${headerHtml}</div>${infoPanel}
-        <div class="dft-empty">No RAM in scene — drop a RAM node to run standalone memory tests (no controller required).</div>
-      `;
-    }
+    if (rams.length === 0) return '';
 
     const blocks = rams.map(ram => {
       const aBits = Math.max(1, (ram.addrBits | 0) || 4);
@@ -2384,12 +2488,7 @@ export class DFTPanel {
         </div>
       </div>` : '';
 
-    if (ctls.length === 0) {
-      return `
-        <div class="dft-bist-header dft-section-header">${headerHtml}</div>${infoPanel}
-        <div class="dft-empty">No MBIST_CONTROLLER in scene — drop one (TEST tab) to run a March C− test on a connected RAM.</div>
-      `;
-    }
+    if (ctls.length === 0) return '';
 
     const ffStates = window.state?.ffStates;
     const STATE_NAMES = ['IDLE', 'SETUP', 'W0_UP', 'RW1_UP', 'RW0_UP', 'RW1_DN', 'RW0_DN', 'READ_FINAL', 'DONE', 'FAIL'];
@@ -2549,12 +2648,7 @@ export class DFTPanel {
         </div>
       </div>` : '';
 
-    if (taps.length === 0) {
-      return `
-        <div class="dft-jtag-header dft-section-header">${headerHtml}</div>${infoPanel}
-        <div class="dft-empty">No JTAG_TAP in scene — drop one (TEST tab) to drive boundary-scan / debug-test pins (TCK / TMS / TDI / TRST → TDO).</div>
-      `;
-    }
+    if (taps.length === 0) return '';
 
     const STATE_NAMES = [
       'Test-Logic-Reset', 'Run-Test/Idle',
@@ -2664,13 +2758,9 @@ export class DFTPanel {
         </div>
       </div>` : '';
 
-    // Empty-state paths — clear messages instead of a silent dead button.
-    if (!this._lastSim) {
-      return `
-        <div class="dft-diagnosis-header dft-section-header">${headerHtml}</div>${infoPanel}
-        <div class="dft-empty">Click <b style="color:#ffb878">RUN FAULT SIM</b> first to build the diagnostic dictionary.</div>
-      `;
-    }
+    // Hide entirely until the user has clicked RUN FAULT SIM —
+    // diagnosis is undefined without a dictionary to match against.
+    if (!this._lastSim) return '';
     if (injected.length === 0) {
       return `
         <div class="dft-diagnosis-header dft-section-header">${headerHtml}</div>${infoPanel}

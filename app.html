@@ -513,23 +513,27 @@
   <div id="dft-panel" class="hidden">
     <div id="dft-resize-grip" title="Drag to resize"></div>
     <div id="dft-panel-header">
-      <span>DFT</span>
-      <div>
-        <div class="dft-pattern-menu" style="position:relative;display:inline-block">
-          <button id="btn-dft-gen" class="btn-secondary" style="font-size:9px;background:#1a0d2a;border-color:#6a4aaa;color:#cc99ff" title="Pick a wire-pattern algorithm: walking-1, walking-0, exhaustive, etc.">GEN ▾</button>
-          <div id="dft-pattern-popup" class="dft-pattern-popup hidden"></div>
+      <span class="dft-panel-title">DFT</span>
+      <div class="dft-header-tiers">
+        <div class="dft-header-actions">
+          <div class="dft-pattern-menu" style="position:relative;display:inline-block">
+            <button id="btn-dft-gen" class="btn-secondary dft-action-gen" title="Pick a wire-pattern algorithm: walking-1, walking-0, exhaustive, etc.">GEN ▾</button>
+            <div id="dft-pattern-popup" class="dft-pattern-popup hidden"></div>
+          </div>
+          <button id="btn-dft-run" class="btn-secondary dft-action-run" title="Run combinational fault simulation against the scene's current test vectors">RUN FAULT SIM</button>
+          <span class="dft-trace-cluster">
+            <button id="btn-dft-trace" class="btn-secondary dft-trace-btn" title="Toggle live wire-diff overlay. Highlights wires whose value differs between the fault-free (golden) run and the current run, for the selected vector.">TRACE</button>
+            <button id="btn-dft-trace-prev" class="btn-secondary dft-trace-step" title="Previous vector" disabled>◀</button>
+            <span id="dft-trace-label" class="dft-trace-label" title="Vector index currently playing">—</span>
+            <button id="btn-dft-trace-next" class="btn-secondary dft-trace-step" title="Next vector" disabled>▶</button>
+          </span>
         </div>
-        <button id="btn-dft-run" class="btn-secondary" style="font-size:9px;background:#2a1a08;border-color:#aa6a2a;color:#ffb878" title="Run combinational fault simulation against the scene's current test vectors">RUN FAULT SIM</button>
-        <span class="dft-trace-cluster" style="display:inline-flex;gap:2px;align-items:center;margin-left:6px;padding-left:6px;border-left:1px solid #2a4060">
-          <button id="btn-dft-trace" class="btn-secondary dft-trace-btn" title="Toggle live wire-diff overlay. Highlights wires whose value differs between the fault-free (golden) run and the current run, for the selected vector.">TRACE</button>
-          <button id="btn-dft-trace-prev" class="btn-secondary dft-trace-step" title="Previous vector" disabled>◀</button>
-          <span id="dft-trace-label" class="dft-trace-label" title="Vector index currently playing">—</span>
-          <button id="btn-dft-trace-next" class="btn-secondary dft-trace-step" title="Next vector" disabled>▶</button>
-        </span>
-        <button id="btn-dft-collapse-all" class="btn-secondary dft-fs-only" style="font-size:9px;display:none" title="Collapse / expand every section and per-block item at once">▾ COLLAPSE ALL</button>
-        <button id="btn-dft-edit-all" class="btn-secondary dft-fs-only" style="font-size:9px;display:none" title="Open every editable field across the panel for parallel editing. Click again to save them all.">✎ EDIT ALL</button>
-        <button id="btn-dft-fullscreen" class="btn-secondary" style="font-size:9px" title="Toggle fullscreen (Esc to exit)">FULLSCREEN</button>
-        <button id="btn-dft-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
+        <div class="dft-header-meta">
+          <button id="btn-dft-collapse-all" class="btn-secondary dft-meta-btn dft-fs-only" style="display:none" title="Collapse / expand every section and per-block item at once">▾ COLLAPSE ALL</button>
+          <button id="btn-dft-edit-all" class="btn-secondary dft-meta-btn dft-fs-only" style="display:none" title="Open every editable field across the panel for parallel editing. Click again to save them all.">✎ EDIT ALL</button>
+          <button id="btn-dft-fullscreen" class="btn-secondary dft-meta-btn" title="Toggle fullscreen (Esc to exit)">FULLSCREEN</button>
+          <button id="btn-dft-close" class="btn-secondary dft-meta-btn" title="Close panel">CLOSE</button>
+        </div>
       </div>
     </div>
     <div id="dft-panel-summary"></div>
