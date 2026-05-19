@@ -1012,21 +1012,6 @@ function _hexBits(hex, width = 32) {
   const v = parseInt(hex, 16) >>> 0;
   return Array.from({ length: width }, (_, i) => (v >>> (width - 1 - i)) & 1);
 }
-// Generate the swap pairs for D&C step `s` (1..log2(width)) on a width-N
-// register. Step 1 swaps halves; step 2 swaps quarters within each half;
-// etc.  Returns all (a, b) pairs (both directions) so the SVG can pick
-// a representative subset.
-function _dcSwaps(width, step) {
-  const group = width >>> step;          // 16,8,4,2,1 for width=32
-  const swaps = [];
-  for (let i = 0; i < width; i += group * 2) {
-    for (let k = 0; k < group; k++) {
-      swaps.push([i + k, i + group + k]);
-      swaps.push([i + group + k, i + k]);
-    }
-  }
-  return swaps;
-}
 
 // ─── Binary-string-min SVG (8021) — input row + stack ───────────────
 function _binStrMinSvg({ s, idx, stack, action, done }) {
@@ -1907,6 +1892,209 @@ function _maxProfitSvg({ prices, day, minSoFar, minIdx, best, bestBuy, bestSell,
   </svg>`;
 }
 
+// ─── Loop-reverse SVG (#8012 א) — one iteration of the bit-by-bit
+// reverse loop. Across consecutive frames the bits visibly "shift":
+// the original drains out of b's LSB while result fills in from its
+// LSB. The active bit is shown traveling down via a glowing arrow.
+//
+//   original : full bit array, MSB-first (length = 16 or 32)
+//   iter     : 0..n — number of iterations completed at the START of
+//              this frame (frame shows the transfer that's happening
+//              *inside* iter `iter`; iter=0 is the pre-loop snapshot)
+//   done     : final-frame flag → gold theming on result row
+//   stepLabel: short banner text
+function _reverseLoopSvg({ original, iter, done, stepLabel }) {
+  const uid = _traceUid();
+  const D = _traceDefIds(uid);
+  const n = original.length;
+  const CELL = n > 16 ? 24 : 38;
+  const CELL_H = CELL + 8;
+  const labelW = 96;
+  const padX = 36;
+  const totalW = n * CELL;
+  const W = Math.max(760, padX * 2 + labelW + totalW);
+  const left = (W - totalW + labelW) / 2;
+
+  const topB = 100;
+  const bottomR = 240;
+  const rowH = CELL_H;
+
+  // b state at the START of iter k = after (k-1) right-shifts.
+  // Screen position s (0 = MSB on the left, n-1 = LSB on the right):
+  //   bit = original[s - (iter-1)] if that index is in range, else null (faded).
+  const shift = Math.max(0, iter - 1);
+  const bBits = Array.from({ length: n }, (_, s) => {
+    const oi = s - shift;
+    return oi >= 0 && oi < n ? original[oi] : null;
+  });
+
+  // result state at the END of iter k: `iter` bits placed at the LSB side.
+  //   bit at screen pos s = original[2n - iter - 1 - s] for s >= n - iter, else null.
+  const resultBits = Array.from({ length: n }, (_, s) => {
+    if (s < n - iter) return null;
+    return original[2 * n - iter - 1 - s];
+  });
+
+  // Highlight: the LSB cell of both rows (= the bit being moved this iter).
+  const hlS = iter >= 1 ? n - 1 : -1;
+  const movingBit = iter >= 1 ? original[n - iter] : null;
+
+  const renderRow = (bits, y, role) => bits.map((bit, s) => {
+    const isEmpty = bit === null;
+    const isHl = s === hlS && !isEmpty;
+    const isDoneCell = done && role === 'result' && !isEmpty;
+
+    let stroke, fill, filter, bitColor;
+    if (isEmpty) {
+      stroke = '#26344a';
+      fill = '#0a1320';
+      filter = '';
+      bitColor = '#34465e';
+    } else if (isDoneCell) {
+      stroke = '#ffd060';
+      fill = D.matchGrad;
+      filter = `filter="${D.glowGold}"`;
+      bitColor = bit ? '#fff0c0' : '#a08050';
+    } else if (isHl) {
+      if (role === 'b') {
+        stroke = '#39ff80';
+        fill = D.curGrad;
+        filter = `filter="${D.glowCyan}"`;
+        bitColor = bit ? '#bcffd6' : '#80a0c0';
+      } else {
+        stroke = '#ffd060';
+        fill = D.matchGrad;
+        filter = `filter="${D.glowGold}"`;
+        bitColor = bit ? '#fff0c0' : '#a08050';
+      }
+    } else {
+      stroke = '#3a5575';
+      fill = D.idleGrad;
+      filter = '';
+      bitColor = bit ? '#80f0a0' : '#7090b0';
+    }
+
+    const char = isEmpty ? '·' : String(bit);
+    const idxLabel = n - 1 - s;
+    return `
+      <g style="animation: ${D.animPop} 240ms ${s * 12}ms both;">
+        <text x="${left + s * CELL + CELL/2}" y="${y - 8}" text-anchor="middle"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 8 : 9}"
+              fill="#5a7090">${idxLabel}</text>
+        <rect x="${left + s * CELL + 2}" y="${y}" width="${CELL - 4}" height="${rowH}" rx="5"
+              fill="${fill}" stroke="${stroke}" stroke-width="${isHl || isDoneCell ? 2.4 : 1.2}" ${filter}/>
+        <text x="${left + s * CELL + CELL/2}" y="${y + rowH * 0.72}" text-anchor="middle"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 15 : 22}" font-weight="bold"
+              fill="${bitColor}">${char}</text>
+      </g>`;
+  }).join('');
+
+  // Row labels (b, result)
+  const rowLabels = `
+    <text x="${left - 18}" y="${topB + rowH * 0.7}" text-anchor="end"
+          font-family="'JetBrains Mono', monospace" font-size="17"
+          fill="#80c0f0" font-weight="bold">b</text>
+    <text x="${left - 18}" y="${bottomR + rowH * 0.7}" text-anchor="end"
+          font-family="'JetBrains Mono', monospace" font-size="15"
+          fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">result</text>`;
+
+  // MSB / LSB ticks above b row
+  const sideTicks = `
+    <text x="${left + CELL/2}" y="${topB - 26}" text-anchor="middle"
+          font-family="'JetBrains Mono', monospace" font-size="10" fill="#7090b0">MSB</text>
+    <text x="${left + (n-1)*CELL + CELL/2}" y="${topB - 26}" text-anchor="middle"
+          font-family="'JetBrains Mono', monospace" font-size="10" fill="#7090b0">LSB</text>`;
+
+  // Shift-right indicator above b: a dashed arrow showing the
+  // direction the bits drift between frames.
+  const shiftArrow = iter >= 1 ? `
+    <g style="animation: ${D.animFade} 360ms 220ms both;">
+      <text x="${left - 18}" y="${topB - 22}" text-anchor="end"
+            font-family="'JetBrains Mono', monospace" font-size="10" fill="#5a7090">b &gt;&gt;= 1</text>
+      <path d="M ${left} ${topB - 18} L ${left + totalW - 12} ${topB - 18}"
+            stroke="#3a5575" stroke-width="1.4" fill="none" stroke-dasharray="3 4"
+            marker-end="${D.arrowCyan}" opacity="0.55"/>
+    </g>` : '';
+
+  // Transfer arrow: b[LSB] → result[LSB] with a glowing bit-puck
+  // halfway down.
+  let transferArrow = '';
+  if (iter >= 1) {
+    const ax = left + (n - 1) * CELL + CELL/2;
+    const y1 = topB + rowH + 4;
+    const y2 = bottomR - 6;
+    const midY = (y1 + y2) / 2;
+    const accent = done ? '#ffd060' : '#80d4ff';
+    const glow = done ? D.glowGold : D.glowCyan;
+    const grad = done ? D.matchGrad : D.curGrad;
+    transferArrow = `
+      <g style="animation: ${D.animFade} 420ms 180ms both;">
+        <path d="M ${ax} ${y1} L ${ax} ${y2 - 6}"
+              stroke="${accent}" stroke-width="2.6" fill="none"
+              stroke-dasharray="5 4"
+              style="animation: ${D.animDash} 1100ms linear infinite;"
+              marker-end="${done ? D.arrowGold : D.arrowCyan}"/>
+        <circle cx="${ax + 26}" cy="${midY}" r="13"
+                fill="${grad}" stroke="${accent}" stroke-width="1.8"
+                filter="${glow}"/>
+        <text x="${ax + 26}" y="${midY + 5}" text-anchor="middle"
+              font-family="'JetBrains Mono', monospace" font-size="13" font-weight="bold"
+              fill="#fff0c0">${movingBit}</text>
+        <text x="${ax + 26}" y="${midY - 18}" text-anchor="middle"
+              font-family="'JetBrains Mono', monospace" font-size="9"
+              fill="${accent}">b &amp; 1</text>
+      </g>`;
+  }
+
+  // Banner / title
+  const banner = `
+    <g style="animation: ${D.animFade} 300ms both;">
+      <rect x="${W/2 - 260}" y="14" width="520" height="40" rx="20"
+            fill="${done ? D.bannerGold : D.bannerCyan}"
+            stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
+            filter="${done ? D.glowGold : D.glowCyan}"/>
+      <text x="${W/2}" y="40" text-anchor="middle"
+            font-family="'JetBrains Mono', monospace" font-size="16"
+            fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
+        ${done ? '✓ ' + stepLabel : stepLabel}
+      </text>
+    </g>`;
+
+  // Iter counter + hex readout strip
+  const stripY = bottomR + rowH + 26;
+  const bHex   = bBits.reduce((acc, b) => acc * 2 + (b || 0), 0).toString(16).toUpperCase().padStart(Math.ceil(n/4), '0');
+  const resHex = resultBits.reduce((acc, b) => acc * 2 + (b || 0), 0).toString(16).toUpperCase().padStart(Math.ceil(n/4), '0');
+  const strip = `
+    <g style="animation: ${D.animFade} 320ms 80ms both;">
+      <rect x="${W/2 - 230}" y="${stripY}" width="460" height="38" rx="19"
+            fill="${D.idleGrad}" stroke="#3a5575" stroke-width="1.4"/>
+      <text x="${W/2 - 200}" y="${stripY + 24}" text-anchor="start"
+            font-family="'JetBrains Mono', monospace" font-size="13"
+            fill="${done ? '#ffd060' : '#c8d8f0'}" font-weight="bold">
+        iter ${iter}/${n}
+      </text>
+      <text x="${W/2 - 60}" y="${stripY + 24}" text-anchor="start"
+            font-family="'JetBrains Mono', monospace" font-size="13"
+            fill="#80c0f0">b = 0x${bHex}</text>
+      <text x="${W/2 + 80}" y="${stripY + 24}" text-anchor="start"
+            font-family="'JetBrains Mono', monospace" font-size="13"
+            fill="${done ? '#ffd060' : '#80f0a0'}">result = 0x${resHex}</text>
+    </g>`;
+
+  const H = stripY + 70;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px">
+    ${_traceDefs(uid)}
+    ${banner}
+    ${sideTicks}
+    ${shiftArrow}
+    ${rowLabels}
+    ${renderRow(bBits, topB, 'b')}
+    ${transferArrow}
+    ${renderRow(resultBits, bottomR, 'result')}
+    ${strip}
+  </svg>`;
+}
+
 // ─── Bit-reverse SVG — 1 or 2 rows of bit cells with swap arrows ────
 // Used by the three parts of 8012 (byte naive / byte D&C / register).
 //   bitsBefore : array of 8 (or N) ints (0 or 1) — pre-step state
@@ -1999,6 +2187,186 @@ function _bitsReverseSvg({ bitsBefore, bitsAfter, swaps = [], stepLabel, done })
     ${renderRow(bitsBefore, top, 'before')}
     ${arrows}
     ${bitsAfter ? renderRow(bitsAfter, bottomY, 'after') : ''}
+  </svg>`;
+}
+
+// ─── Bit-reverse D&C SVG — block-level visualization for one step of
+// the divide-and-conquer reverse (#8012 ב and ג). Replaces the
+// spaghetti of N bit-by-bit arrows with one colored arc per *block
+// pair*, plus brackets that show the block boundaries. Two-color
+// scheme — left-of-pair = cyan, right-of-pair = amber — so colors
+// visually swap positions between the BEFORE and AFTER rows.
+//
+//   bitsBefore, bitsAfter : n-element 0/1 arrays
+//   groupSize             : block size of THIS step (n/2, n/4, …, 1)
+//   stepLabel             : banner text
+//   done                  : final-frame gold theming
+function _bitsReverseDcSvg({ bitsBefore, bitsAfter, groupSize, stepLabel, done }) {
+  const uid = _traceUid();
+  const D = _traceDefIds(uid);
+  const n = (bitsBefore || bitsAfter).length;
+  const CELL = n > 16 ? 26 : 44;
+  const CELL_H = CELL + 8;
+  const W = Math.max(720, n * CELL + 160);
+  const top = 110;
+  const rowGap = 140;
+  const totalW = n * CELL;
+  const left = (W - totalW) / 2;
+  const bottomY = top + rowGap;
+
+  const blocks = n / groupSize;
+  const pairs = blocks / 2;
+
+  // Two-color palette. CYAN = left of its pair (in BEFORE).
+  const C = {
+    cy: { stroke: '#39c0ff', fill: D.curGrad,   glow: D.glowCyan, on: '#b0e8ff', off: '#5a8aa8', label: '#80d4ff' },
+    am: { stroke: '#ffc060', fill: D.matchGrad, glow: D.glowGold, on: '#ffe0a0', off: '#a08050', label: '#ffd060' },
+  };
+
+  // In BEFORE: block b is cyan if b is even (left of its pair), amber if odd.
+  // In AFTER:  swap — block b is amber if b is even (it received the right-of-pair data), cyan if odd.
+  const paletteFor = (side, blockIdx) => {
+    const isLeftInPair = blockIdx % 2 === 0;
+    if (side === 'before') return isLeftInPair ? C.cy : C.am;
+    return isLeftInPair ? C.am : C.cy;
+  };
+
+  const renderRow = (bits, y, side) => bits.map((bit, i) => {
+    const blockIdx = Math.floor(i / groupSize);
+    const p = paletteFor(side, blockIdx);
+    const bitColor = bit ? p.on : p.off;
+    const isDone = done && side === 'after';
+    return `
+      <g style="animation: ${D.animPop} 240ms ${i * 14}ms both;">
+        <text x="${left + i * CELL + CELL/2}" y="${y - 6}" text-anchor="middle"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 8 : 10}"
+              fill="#5a7090">${i}</text>
+        <rect x="${left + i * CELL + 2}" y="${y}" width="${CELL - 4}" height="${CELL_H}"
+              rx="${n > 16 ? 4 : 6}"
+              fill="${p.fill}" stroke="${p.stroke}" stroke-width="${isDone ? 2.4 : 1.8}"
+              filter="${isDone ? D.glowGold : p.glow}" opacity="0.95"/>
+        <text x="${left + i * CELL + CELL/2}" y="${y + CELL_H * 0.72}" text-anchor="middle"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 17 : 26}" font-weight="bold"
+              fill="${bitColor}">${bit}</text>
+      </g>`;
+  }).join('');
+
+  // Block brackets — only when blocks are wider than a single cell
+  // (otherwise the cell border IS the block).
+  let brackets = '';
+  if (groupSize >= 2) {
+    // Above BEFORE row
+    brackets += Array.from({ length: blocks }, (_, b) => {
+      const x0 = left + b * groupSize * CELL + 3;
+      const x1 = x0 + groupSize * CELL - 6;
+      const yT = top - 22;
+      const yB = top - 6;
+      const p = paletteFor('before', b);
+      return `
+        <path d="M ${x0} ${yT} L ${x0} ${yB} L ${x1} ${yB} L ${x1} ${yT}"
+              stroke="${p.label}" stroke-width="1.7" fill="none" opacity="0.85"
+              style="animation: ${D.animFade} 320ms ${b * 35}ms both;"/>
+        ${groupSize >= 4 ? `
+        <text x="${(x0 + x1) / 2}" y="${yT - 4}" text-anchor="middle"
+              font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold"
+              fill="${p.label}" opacity="0.9"
+              style="animation: ${D.animFade} 320ms ${b * 35 + 60}ms both;">
+          ${groupSize} bits</text>` : ''}
+      `;
+    }).join('');
+    // Below AFTER row
+    brackets += Array.from({ length: blocks }, (_, b) => {
+      const x0 = left + b * groupSize * CELL + 3;
+      const x1 = x0 + groupSize * CELL - 6;
+      const yT = bottomY + CELL_H + 6;
+      const yB = bottomY + CELL_H + 22;
+      const p = paletteFor('after', b);
+      return `
+        <path d="M ${x0} ${yB} L ${x0} ${yT} L ${x1} ${yT} L ${x1} ${yB}"
+              stroke="${p.label}" stroke-width="1.7" fill="none" opacity="0.85"
+              style="animation: ${D.animFade} 320ms ${b * 35}ms both;"/>
+      `;
+    }).join('');
+  }
+
+  // Swap arcs — one per direction per pair. They cross in the middle,
+  // visualizing the swap as a literal X between the two blocks. Color
+  // matches the SOURCE block's color (so the user sees "cyan went here,
+  // amber went there"). Stroke gets thinner as pair count grows.
+  const sw = pairs > 8 ? 1.2 : pairs > 4 ? 1.6 : 2.2;
+  const op = pairs > 8 ? 0.7 : 0.9;
+  let arrows = '';
+  for (let p = 0; p < pairs; p++) {
+    const leftBlock = 2 * p;
+    const rightBlock = 2 * p + 1;
+    const xL = left + leftBlock * groupSize * CELL + (groupSize * CELL) / 2;
+    const xR = left + rightBlock * groupSize * CELL + (groupSize * CELL) / 2;
+    const y1 = top + CELL_H + 4;
+    const y2 = bottomY - 6;
+    const midY = (y1 + y2) / 2;
+    // Cyan arc: BEFORE-left → AFTER-right (the cyan block moves rightward within its pair)
+    arrows += `
+      <path d="M ${xL} ${y1} C ${xL} ${midY}, ${xR} ${midY}, ${xR} ${y2 - 4}"
+            stroke="${C.cy.label}" stroke-width="${sw}" fill="none" opacity="${op}"
+            marker-end="${D.arrowCyan}"
+            style="animation: ${D.animFade} 380ms ${260 + p * 28}ms both;"/>`;
+    // Amber arc: BEFORE-right → AFTER-left
+    arrows += `
+      <path d="M ${xR} ${y1} C ${xR} ${midY}, ${xL} ${midY}, ${xL} ${y2 - 4}"
+            stroke="${C.am.label}" stroke-width="${sw}" fill="none" opacity="${op}"
+            marker-end="${D.arrowGold}"
+            style="animation: ${D.animFade} 380ms ${280 + p * 28}ms both;"/>`;
+  }
+
+  // Row labels
+  const labels = `
+    <text x="${left - 18}" y="${top + CELL_H * 0.7}" text-anchor="end"
+          font-family="'JetBrains Mono', monospace" font-size="14"
+          fill="#80a0c0" font-weight="bold">לפני</text>
+    <text x="${left - 18}" y="${bottomY + CELL_H * 0.7}" text-anchor="end"
+          font-family="'JetBrains Mono', monospace" font-size="14"
+          fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">${done ? 'מוכן' : 'אחרי'}</text>`;
+
+  // Banner
+  const banner = `
+    <g style="animation: ${D.animFade} 300ms both;">
+      <rect x="${W/2 - 300}" y="14" width="600" height="42" rx="21"
+            fill="${done ? D.bannerGold : D.bannerCyan}"
+            stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
+            filter="${done ? D.glowGold : D.glowCyan}"/>
+      <text x="${W/2}" y="42" text-anchor="middle"
+            font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 14 : 16}"
+            fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
+        ${done ? '✓ ' + stepLabel : stepLabel}
+      </text>
+    </g>`;
+
+  // Info chip under the AFTER row
+  const chipY = bottomY + CELL_H + (groupSize >= 2 ? 38 : 16);
+  const chip = `
+    <g style="animation: ${D.animFade} 320ms 100ms both;">
+      <rect x="${W/2 - 200}" y="${chipY}" width="400" height="34" rx="17"
+            fill="${D.idleGrad}" stroke="#3a5575" stroke-width="1.3"/>
+      <text x="${W/2}" y="${chipY + 22}" text-anchor="middle"
+            font-family="'JetBrains Mono', monospace" font-size="12"
+            fill="#c8d8f0">
+        block size = <tspan fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold">${groupSize}</tspan>
+        &#160;·&#160; ${blocks} blocks &#160;·&#160;
+        <tspan fill="${C.cy.label}" font-weight="bold">${pairs}</tspan> swap${pairs === 1 ? '' : 's'}
+        (<tspan fill="${C.cy.label}">cyan</tspan> ⇄ <tspan fill="${C.am.label}">amber</tspan>)
+      </text>
+    </g>`;
+
+  const H = chipY + 60;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px">
+    ${_traceDefs(uid)}
+    ${banner}
+    ${brackets}
+    ${labels}
+    ${renderRow(bitsBefore, top, 'before')}
+    ${arrows}
+    ${renderRow(bitsAfter, bottomY, 'after')}
+    ${chip}
   </svg>`;
 }
 
@@ -5122,6 +5490,51 @@ byte 0b1011 0100  →  0b0010 1101    (MSB↔LSB, b6↔b1, b5↔b2, b4↔b3)
 
 # print(bin(reverse_byte_naive(0b10110100)))   # 0b101101
 `,
+        trace: (() => {
+          // 16-bit illustration: 0xB4D2 = 0b1011_0100_1101_0010 → 0x4B2D.
+          // The byte-version is too short to feel like a "shift register"
+          // — 16 frames give a satisfying conveyor-belt of bits flowing
+          // from b's LSB into result's LSB while b drains from the right.
+          const HEX = 'B4D2';
+          const BITS = _hexBits(HEX, 16);
+          const lsbAt = (k) => BITS[16 - k]; // bit extracted at iter k
+          const ordinal = (k) =>
+            k === 1 ? 'הראשונה' : k === 16 ? 'האחרונה' : `ה-${k}`;
+          const steps = [
+            {
+              code: 'init: b = 0xB4D2 = 0b1011_0100_1101_0010,  result = 0x0000',
+              explain:
+                'נקודת ההתחלה — \\\`b\\\` מלא, \\\`result\\\` ריק. ' +
+                'בכל אחת מ-16 האיטרציות הבאות **ביט אחד יעבור** מ-LSB של \\\`b\\\` אל LSB של \\\`result\\\`, ו-\\\`b\\\` יזוז ימינה. ' +
+                'שימו לב איך \\\`b\\\` יתרוקן מימין-לשמאל ו-\\\`result\\\` יתמלא מימין-לשמאל — וזה בדיוק מה שעושה את ההיפוך.',
+              viz: _reverseLoopSvg({ original: BITS, iter: 0, stepLabel: 'init — b = 0xB4D2 (16-bit)' }),
+            },
+          ];
+          for (let k = 1; k <= 16; k++) {
+            const bit = lsbAt(k);
+            const isLast = k === 16;
+            steps.push({
+              code: `iter ${k}/16:  bit = b & 1 = ${bit};  result = (result << 1) | ${bit};  b >>= 1`,
+              explain: isLast
+                ? `**האיטרציה ${ordinal(k)}.** הביט שיוצא הוא ה-MSB המקורי של \\\`b\\\` (\\\`${bit}\\\`). ` +
+                  `הוא מגיע ל-LSB של \\\`result\\\` — וזה מה שהופך אותו לקצה השני בייצוג ההפוך. **\\\`result = 0x4B2D\\\`** ✓`
+                : `\\\`b & 1 = ${bit}\\\`. דוחפים ל-LSB של \\\`result\\\`, מזיזים את \\\`b\\\` ימינה. ` +
+                  `שימו לב שהקצה הימני של \\\`b\\\` "נעלם" ויחד עם זה כל הביטים גולשים תא אחד ימינה — בדיוק כמו shift-register בחומרה.`,
+              viz: _reverseLoopSvg({
+                original: BITS,
+                iter: k,
+                done: isLast,
+                stepLabel: isLast
+                  ? `iter 16/16 — result = 0x4B2D`
+                  : `iter ${k}/16 — bit = ${bit}`,
+              }),
+            });
+          }
+          return {
+            title: 'Loop reverse — 16 ביטים זורמים מ-b ל-result, ביט-ביט',
+            steps,
+          };
+        })(),
         question:
 `ממשו פונקציה שמקבלת byte (\`0..255\`) ומחזירה אותו עם סדר ביטים הפוך. **גישה לולאתית**.`,
         hints: [
@@ -5194,32 +5607,32 @@ def reverse_byte_naive(b):
             },
             {
               code: 'b = ((b & 0xF0) >> 4) | ((b & 0x0F) << 4)',
-              explain: '**שלב 1: החלף חצאים.** ה-4 הביטים העליונים (\\\`1011\\\`) ↔ ה-4 התחתונים (\\\`0100\\\`). פעולה ביטוויז אחת.',
-              viz: _bitsReverseSvg({
+              explain: '**שלב 1: החלף חצאים.** ה-4 הביטים העליונים (\\\`1011\\\`) ↔ ה-4 התחתונים (\\\`0100\\\`). שני בלוקים של 4 ביטים — החץ הכחול מראה איך החצי השמאלי "טס" לימין, והזהוב הפוך.',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: [1,0,1,1,0,1,0,0],
                 bitsAfter:  [0,1,0,0,1,0,1,1],
-                swaps: [[0,4],[1,5],[2,6],[3,7],[4,0],[5,1],[6,2],[7,3]],
-                stepLabel: 'STEP 1 — swap halves (mask 0xF0/0x0F)',
+                groupSize: 4,
+                stepLabel: 'STEP 1 — swap halves (mask 0xF0 / 0x0F)',
               }),
             },
             {
               code: 'b = ((b & 0xCC) >> 2) | ((b & 0x33) << 2)',
-              explain: '**שלב 2: החלף זוגות 2-ביט בתוך כל חצי.** \\\`01 / 00\\\` הופך ל-\\\`00 / 01\\\`, וכך גם בחצי השני.',
-              viz: _bitsReverseSvg({
+              explain: '**שלב 2: החלף זוגות 2-ביט בתוך כל חצי.** עכשיו 4 בלוקים בני 2 ביטים → **2 החלפות** (אחת בכל חצי). שימו לב שהצבעים בשורה התחתונה הפוכים בכל זוג.',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: [0,1,0,0,1,0,1,1],
                 bitsAfter:  [0,0,0,1,1,1,1,0],
-                swaps: [[0,2],[1,3],[2,0],[3,1],[4,6],[5,7],[6,4],[7,5]],
-                stepLabel: 'STEP 2 — swap pairs (mask 0xCC/0x33)',
+                groupSize: 2,
+                stepLabel: 'STEP 2 — swap pairs (mask 0xCC / 0x33)',
               }),
             },
             {
               code: 'b = ((b & 0xAA) >> 1) | ((b & 0x55) << 1)',
-              explain: '**שלב 3: החלף ביטים בודדים בתוך כל זוג.** התוצאה: \\\`0010 1101\\\` = \\\`0x2D = 45\\\` — בדיוק ההיפוך של \\\`0xB4 = 180\\\`. שלוש פעולות = O(1) קבוע.',
-              viz: _bitsReverseSvg({
+              explain: '**שלב 3: החלף ביטים בודדים בתוך כל זוג.** 8 בלוקים של ביט אחד → **4 החלפות קטנות** = 4 X-ים קטנים. התוצאה: \\\`0010 1101\\\` = \\\`0x2D\\\` — בדיוק ההיפוך של \\\`0xB4\\\`. שלוש פעולות = O(1) קבוע.',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: [0,0,0,1,1,1,1,0],
                 bitsAfter:  [0,0,1,0,1,1,0,1],
-                swaps: [[0,1],[1,0],[2,3],[3,2],[4,5],[5,4],[6,7],[7,6]],
-                stepLabel: 'STEP 3 — swap bits (mask 0xAA/0x55)   →   0x2D ✓',
+                groupSize: 1,
+                stepLabel: 'STEP 3 — swap bits (mask 0xAA / 0x55)   →   0x2D ✓',
                 done: true,
               }),
             },
@@ -5304,52 +5717,52 @@ def reverse_byte_const(b):
             },
             {
               code: 'step 1: 16 ↔ 16   (mask 0xFFFF0000 / 0x0000FFFF)',
-              explain: 'מחליפים שני חצאי-מילה. \\\`0x12345678\\\` → \\\`0x56781234\\\`.',
-              viz: _bitsReverseSvg({
+              explain: '2 בלוקים של 16 ביט — **החלפה אחת ענקית**. שני חצאי-המילה מתחלפים: \\\`0x12345678\\\` → \\\`0x56781234\\\`. X גדול אחד באמצע.',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: _hexBits('12345678'),
                 bitsAfter:  _hexBits('56781234'),
-                swaps: _dcSwaps(32, 1),
-                stepLabel: 'STEP 1 — 16 ↔ 16',
+                groupSize: 16,
+                stepLabel: 'STEP 1 — 16 ↔ 16 (1 swap)',
               }),
             },
             {
               code: 'step 2: 8 ↔ 8   (mask 0xFF00FF00 / 0x00FF00FF)',
-              explain: 'בתוך כל מחצית-מילה, מחליפים את שני הבייטים. \\\`0x56781234\\\` → \\\`0x78563412\\\`.',
-              viz: _bitsReverseSvg({
+              explain: '4 בלוקים של 8 ביט → **2 החלפות** של בייטים בתוך כל חצי-מילה. \\\`0x56781234\\\` → \\\`0x78563412\\\`.',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: _hexBits('56781234'),
                 bitsAfter:  _hexBits('78563412'),
-                swaps: _dcSwaps(32, 2),
-                stepLabel: 'STEP 2 — 8 ↔ 8',
+                groupSize: 8,
+                stepLabel: 'STEP 2 — 8 ↔ 8 (2 swaps)',
               }),
             },
             {
               code: 'step 3: 4 ↔ 4   (mask 0xF0F0F0F0 / 0x0F0F0F0F)',
-              explain: 'מחליפים nibbles בתוך כל בייט. \\\`0x78563412\\\` → \\\`0x87654321\\\`.',
-              viz: _bitsReverseSvg({
+              explain: '8 בלוקים של 4 ביט (nibbles) → **4 החלפות** בתוך כל בייט. \\\`0x78563412\\\` → \\\`0x87654321\\\`.',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: _hexBits('78563412'),
                 bitsAfter:  _hexBits('87654321'),
-                swaps: _dcSwaps(32, 3),
-                stepLabel: 'STEP 3 — 4 ↔ 4',
+                groupSize: 4,
+                stepLabel: 'STEP 3 — 4 ↔ 4 (4 swaps)',
               }),
             },
             {
               code: 'step 4: 2 ↔ 2   (mask 0xCCCCCCCC / 0x33333333)',
-              explain: 'מחליפים זוגות 2-ביט בתוך כל nibble.',
-              viz: _bitsReverseSvg({
+              explain: '16 בלוקים של 2 ביט → **8 X-ים קטנים** של זוגות בתוך כל nibble.',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: _hexBits('87654321'),
                 bitsAfter:  _hexBits('2D951C84'),
-                swaps: _dcSwaps(32, 4),
-                stepLabel: 'STEP 4 — 2 ↔ 2',
+                groupSize: 2,
+                stepLabel: 'STEP 4 — 2 ↔ 2 (8 swaps)',
               }),
             },
             {
               code: 'step 5: 1 ↔ 1   (mask 0xAAAAAAAA / 0x55555555)',
-              explain: 'הצעד האחרון — מחליפים ביטים בודדים. **התוצאה: \\\`0x1E6A2C48\\\` = ההיפוך של \\\`0x12345678\\\`** ✓',
-              viz: _bitsReverseSvg({
+              explain: 'הצעד האחרון — 32 בלוקים של ביט אחד → **16 X-ים זעירים** של ביטים בודדים. **התוצאה: \\\`0x1E6A2C48\\\` = ההיפוך של \\\`0x12345678\\\`** ✓',
+              viz: _bitsReverseDcSvg({
                 bitsBefore: _hexBits('2D951C84'),
                 bitsAfter:  _hexBits('1E6A2C48'),
-                swaps: _dcSwaps(32, 5),
-                stepLabel: 'STEP 5 — 1 ↔ 1   →   0x1E6A2C48 ✓',
+                groupSize: 1,
+                stepLabel: 'STEP 5 — 1 ↔ 1 (16 swaps)   →   0x1E6A2C48 ✓',
                 done: true,
               }),
             },
@@ -6235,16 +6648,76 @@ v & (v+1) = 1010 1000   ← ביטים גבוהים שורדים → != 0 → Fa
     intro:
 `נתון רכיב שמקבל שני זרמי-ביטים כל **1ms**: \`clk\` (שעון) ו-\`indicator\`
 (האם הייתה שגיאה הרגע — \`1\` = שגיאה, \`0\` = תקין). המערכת **נחשבת
-תקולה** ברגע שמתקבלות **10 שגיאות בשנייה**. עליכם לבנות לוגיקה שמזהה
-מצב תקלה ויוצאת מ-idle.
-
-\`\`\`
-clk         _|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_
-indicator    0   0   0   1   0   1   0   0   0   1   ...
-                          ↑       ↑               ↑
-\`\`\`
+תקולה** ברגע שמתקבלות **10 שגיאות בשנייה** — עליכם לבנות לוגיקה
+שמזהה את המצב ויוצאת מ-idle.
 
 איך תזהו ש**יותר מ-10 שגיאות הצטברו בחלון של 1 שנייה האחרונה**?`,
+    schematic: `
+<svg viewBox="0 0 760 230" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="12" role="img"
+     aria-label="clk and indicator waveforms over 10 samples; errors at samples 4, 6 and 10">
+  <defs>
+    <linearGradient id="emTitleBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e2238"/><stop offset="1" stop-color="#0a1825"/>
+    </linearGradient>
+    <filter id="emGlowRed" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Title strip -->
+  <rect x="0" y="0" width="760" height="36" fill="url(#emTitleBg)"/>
+  <text direction="ltr" x="380" y="23" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">
+    sampled every 1 ms — clk + indicator (1 = error, 0 = OK)
+  </text>
+
+  <!-- Sample-tick dividers + ms labels -->
+  ${Array.from({ length: 11 }, (_, i) => {
+    const x = 80 + i * 60;
+    return `
+      <line x1="${x}" y1="52" x2="${x}" y2="200" stroke="#2a3a55" stroke-width="0.7" stroke-dasharray="2 4"/>
+      ${i < 10 ? `<text direction="ltr" x="${x + 30}" y="62" text-anchor="middle" fill="#5a7090" font-size="10">${i + 1} ms</text>` : ''}
+    `;
+  }).join('')}
+
+  <!-- clk waveform (10 cycles, low→high→low per cycle) -->
+  <text direction="ltr" x="68" y="100" text-anchor="end" fill="#c8d8f0" font-weight="bold" font-size="13">clk</text>
+  <path d="M 80 108 ${Array.from({ length: 10 }, () => 'v -26 h 30 v 26 h 30').join(' ')}"
+        stroke="#f0d080" stroke-width="2" fill="none" stroke-linejoin="miter"/>
+
+  <!-- indicator bit labels (0 0 0 1 0 1 0 0 0 1) -->
+  ${[0, 0, 0, 1, 0, 1, 0, 0, 0, 1].map((b, i) => {
+    const x = 80 + i * 60 + 30;
+    return `<text direction="ltr" x="${x}" y="142" text-anchor="middle"
+                  fill="${b ? '#ff7060' : '#5a7090'}" font-weight="bold" font-size="14">${b}</text>`;
+  }).join('')}
+
+  <!-- indicator waveform (rectangular, hi on the three 1-samples) -->
+  <text direction="ltr" x="68" y="170" text-anchor="end" fill="#c8d8f0" font-weight="bold" font-size="13">indicator</text>
+  ${(() => {
+    const bits = [0, 0, 0, 1, 0, 1, 0, 0, 0, 1];
+    const loY = 178, hiY = 152;
+    let d = `M 80 ${bits[0] ? hiY : loY}`;
+    let cur = bits[0];
+    for (let i = 0; i < bits.length; i++) {
+      const x1 = 80 + (i + 1) * 60;
+      if (bits[i] !== cur) { d += ` V ${bits[i] ? hiY : loY}`; cur = bits[i]; }
+      d += ` H ${x1}`;
+    }
+    return `<path d="${d}" stroke="#80f0a0" stroke-width="2" fill="none" stroke-linejoin="miter"/>`;
+  })()}
+
+  <!-- Error arrows + "error" labels at the three 1-samples -->
+  ${[3, 5, 9].map(i => {
+    const x = 80 + i * 60 + 30;
+    return `
+      <line x1="${x}" y1="200" x2="${x}" y2="186" stroke="#ff7060" stroke-width="1.8" filter="url(#emGlowRed)"/>
+      <polygon points="${x},184 ${x - 5},192 ${x + 5},192" fill="#ff7060" filter="url(#emGlowRed)"/>
+      <text direction="ltr" x="${x}" y="218" text-anchor="middle" fill="#ff7060" font-size="11" font-weight="bold">error</text>
+    `;
+  }).join('')}
+</svg>`,
     parts: [
       {
         label: 'א',

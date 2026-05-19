@@ -4823,6 +4823,29 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   font-family: 'JetBrains Mono', monospace;
   font-size: 18px;
 }
+/* Inline source panel inside the trace player (mirrors fullscreen). */
+.iv-trace-source {
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #1a4060;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+.iv-trace-source .iv-trace-fs-code-head {
+  font-size: 12px;
+  padding: 6px 12px;
+  letter-spacing: 1.5px;
+}
+.iv-trace-source .iv-trace-fs-code-body {
+  padding: 8px 0;
+  max-height: 320px;
+  overflow: auto;
+}
+.iv-trace-source .iv-tfs-line { font-size: 15px; line-height: 1.5; }
+.iv-trace-source .iv-tfs-line pre { padding: 0 10px; }
+.iv-trace-source .iv-tfs-num { font-size: 12px; width: 28px; padding-right: 8px; }
+
 .iv-trace-viz {
   background: #0a1828;
   border: 1px solid #1a4060;

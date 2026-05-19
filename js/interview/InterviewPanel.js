@@ -1417,12 +1417,43 @@ function _renderTrace(trace, step) {
   const idx = Math.max(0, Math.min(total - 1, step || 0));
   const cur = trace.steps[idx];
   const pct = total > 1 ? ((idx / (total - 1)) * 100) : 100;
+
+  // Inline source panel: when the trace ships a `source:` body we render
+  // it INSIDE the trace player (with the same per-line highlighting the
+  // fullscreen modal uses) so the code is visible by default — not only
+  // when the user clicks 🖥. Reuses the `.iv-tfs-*` classes for styling
+  // consistency between the inline and fullscreen views.
+  let sourceHtml = '';
+  if (trace.source) {
+    const executed = Array.isArray(cur.executed)
+      ? new Set(cur.executed)
+      : (cur.lineRange ? new Set(_range(cur.lineRange[0], cur.lineRange[1])) : new Set());
+    const focusLine = cur.focusLine;
+    const lines = trace.source.split('\n');
+    const codeLinesHtml = lines.map((line, i) => {
+      const n = i + 1;
+      const inRange = executed.has(n);
+      const isFocus = n === focusLine;
+      const cls = isFocus ? 'iv-tfs-line iv-tfs-focus'
+                : inRange ? 'iv-tfs-line iv-tfs-range'
+                : 'iv-tfs-line';
+      const arrow = isFocus ? '<span class="iv-tfs-arrow">▶</span>' : '<span class="iv-tfs-arrow"> </span>';
+      return `<div class="${cls}">${arrow}<span class="iv-tfs-num">${n}</span><pre>${_esc(line) || ' '}</pre></div>`;
+    }).join('');
+    sourceHtml = `
+      <div class="iv-trace-source iv-trace-fs-code" dir="ltr">
+        <div class="iv-trace-fs-code-head">${_esc(trace.sourceLang || 'code')}</div>
+        <div class="iv-trace-fs-code-body">${codeLinesHtml}</div>
+      </div>`;
+  }
+
   return `
     <div class="iv-trace" dir="rtl">
       <div class="iv-trace-head">
         <div class="iv-trace-title">▶ ${_esc(trace.title || 'מעקב הרצה')}</div>
         <div class="iv-trace-step-num" dir="ltr">${idx + 1} / ${total}</div>
       </div>
+      ${sourceHtml}
       <div class="iv-trace-viz" dir="ltr">${cur.viz || ''}</div>
       ${cur.code    ? `<div class="iv-trace-line">${_esc(cur.code)}</div>` : ''}
       ${cur.explain ? `<div class="iv-trace-explain">${_renderInline(cur.explain)}</div>` : ''}
@@ -1505,12 +1536,22 @@ function _lineDiff(a, b) {
 // + steps-of-thinking) is returned as `restAnswer` to be rendered
 // AFTER the trace. When the question already uses `approaches[]`
 // (multi-solution case), the approach cards carry the code → we
-// skip hoisting and let the markdown answer flow as-is.
+// skip hoisting and let the markdown answer flow as-is. Same when the
+// FIRST answer block is verbatim identical to `trace.source` — that
+// source is already shown side-by-side with the viz in the trace's
+// fullscreen mode, so the hoisted copy would just repeat it
+// sequentially above the trace (the "code shown twice" problem).
+// Cases where the first answer block is a longer / annotated variant
+// keep the hoist — those are intentional teaching-vs-tracing pairs.
 function _hoistFirstCode(part, hasApproaches) {
   const answer = part.answer || '';
   if (hasApproaches) return { codeFirstHtml: '', restAnswer: answer };
   const m = answer.match(/```(\w*)\n([\s\S]*?)\n```/);
   if (!m) return { codeFirstHtml: '', restAnswer: answer };
+  if (part.trace?.source && m[2].trim() === part.trace.source.trim()) {
+    const rest = answer.replace(m[0], '').trim();
+    return { codeFirstHtml: '', restAnswer: rest };
+  }
   const lang = m[1] || '';
   const code = m[2];
   const langAttr = lang ? ` data-lang="${_esc(lang)}"` : '';
