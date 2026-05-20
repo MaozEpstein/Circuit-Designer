@@ -103,10 +103,10 @@ function buildRam(addrBits, dataBits) {
 
 // ── 6. Catalogue sanity ──────────────────────────────────────
 {
-  check('RAM_PATTERNS exposes 7 entries', RAM_PATTERNS.length === 7);
+  check('RAM_PATTERNS exposes 8 entries', RAM_PATTERNS.length === 8);
   const ids = RAM_PATTERNS.map(p => p.id);
   const expected = ['allZero','allOne','checkerboard','inverseCheckerboard',
-                    'addressAsData','walkingOne','walkingZero'];
+                    'addressAsData','walkingOne','walkingZero','marchC'];
   check('Catalogue ids in expected order',
         ids.join(',') === expected.join(','),
         `got: ${ids.join(',')}`);

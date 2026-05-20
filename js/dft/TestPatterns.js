@@ -159,6 +159,60 @@ function addressAsData(addrBits, dataBits) {
   };
 }
 
+// March C-: the canonical O(N) memory test (van de Goor). 6 elements,
+// ~10N ops. Detects all single-cell stuck-at, all address-decoder
+// faults, all simple coupling faults, and most transition faults —
+// at a fraction of the O(N²) cost of Walking-1 / Walking-0. The
+// production standard for memory BIST on chips with >1k cells.
+//
+//   M0: ⇕(w0)         — init all to 0 (direction doesn't matter)
+//   M1: ⇑(r0, w1)     — ascending: read 0, write 1
+//   M2: ⇑(r1, w0)     — ascending: read 1, write 0
+//   M3: ⇓(r0, w1)     — descending: read 0, write 1
+//   M4: ⇓(r1, w0)     — descending: read 1, write 0
+//   M5: ⇕(r0)         — final pass: read 0
+//
+// The two-direction passes (M1/M2 vs M3/M4) are what catch the
+// asymmetric coupling faults that one-pass tests miss.
+function marchCminus(addrBits, dataBits) {
+  const cells = 1 << addrBits;
+  const allOnes = _mask(dataBits);
+  const ops = [];
+
+  // M0 — ⇕(w0): init all cells to 0
+  for (let a = 0; a < cells; a++) ops.push({ op: 'write', addr: a, data: 0 });
+
+  // M1 — ⇑(r0, w1)
+  for (let a = 0; a < cells; a++) {
+    ops.push({ op: 'read',  addr: a, expected: 0 });
+    ops.push({ op: 'write', addr: a, data: allOnes });
+  }
+  // M2 — ⇑(r1, w0)
+  for (let a = 0; a < cells; a++) {
+    ops.push({ op: 'read',  addr: a, expected: allOnes });
+    ops.push({ op: 'write', addr: a, data: 0 });
+  }
+  // M3 — ⇓(r0, w1)
+  for (let a = cells - 1; a >= 0; a--) {
+    ops.push({ op: 'read',  addr: a, expected: 0 });
+    ops.push({ op: 'write', addr: a, data: allOnes });
+  }
+  // M4 — ⇓(r1, w0)
+  for (let a = cells - 1; a >= 0; a--) {
+    ops.push({ op: 'read',  addr: a, expected: allOnes });
+    ops.push({ op: 'write', addr: a, data: 0 });
+  }
+
+  // M5 — ⇕(r0): final verify all cells back at 0
+  for (let a = 0; a < cells; a++) ops.push({ op: 'read', addr: a, expected: 0 });
+
+  return {
+    id: 'marchC', name: 'March C-',
+    description: 'Production-grade O(N) memory test. Six march elements with both ascending and descending passes — 10N ops vs O(N²) for Walking. Catches stuck-at + coupling + most decoder faults.',
+    ops,
+  };
+}
+
 // Ordered catalogue, used by the panel dropdown. Order = recommended
 // run order from quickest baseline to most exhaustive.
 export const RAM_PATTERNS = [
@@ -169,6 +223,7 @@ export const RAM_PATTERNS = [
   { id: 'addressAsData',       label: 'Address-as-data',       generate: addressAsData },
   { id: 'walkingOne',          label: 'Walking-1',             generate: walkingOne },
   { id: 'walkingZero',         label: 'Walking-0',             generate: walkingZero },
+  { id: 'marchC',              label: 'March C-',              generate: marchCminus },
 ];
 
 export function getRamPattern(id, addrBits, dataBits) {

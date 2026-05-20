@@ -2012,4 +2012,2776 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
     tags: ['memory', 'ram', 'stuck-at', 'coupling', 'walking-1', 'walking-0', 'cfin', 'cfid', 'cfst', 'march', 'dft'],
     circuitRevealsAnswer: true,
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6007 — Scan-FF structure: how a D-FF is extended to a Scan-FF
+  //   Single part. Live circuit decomposes the Scan-FF into its
+  //   parts (MUX 2:1 + D-FF) so the student can play with SE and
+  //   observe which input (D vs SI) propagates.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'scan-ff-structure-mux',
+    difficulty: 'easy',
+    title: 'Scan-FF — איך מרחיבים D-FF ל-Scan-FF?',
+    intro:
+`נתון \`D-FF\` רגיל (כניסת \`D\`, שעון \`CLK\`, יציאה \`Q\`). במעגלים סדרתיים גדולים מוסיפים תכונת **scan** ל-FF, כך שיוכל לעבוד גם כ-**shift-register** לטעינה ישירה וקריאה ישירה של ערכי בדיקה.
+
+איזה רכיב נוסף הופך \`D-FF\` ל-\`Scan-FF\`? מה תפקידו של כל אחד מהאותות החדשים, ומה המחיר הביצועי?`,
+    schematic: `
+<svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="D-FF compared with a Scan-FF black box. Internals of the Scan-FF are hidden.">
+
+  <text x="450" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    D-FF רגיל לעומת Scan-FF
+  </text>
+  <text x="450" y="66" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    מה צריך להוסיף בפנים כדי לתמוך ב-scan?
+  </text>
+
+  <!-- LEFT: regular D-FF -->
+  <rect x="20" y="90" width="400" height="380" rx="12"
+        fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
+  <text x="220" y="128" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+    D-FF רגיל
+  </text>
+
+  <!-- D-FF body -->
+  <rect x="180" y="220" width="120" height="120" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="240" y="284" text-anchor="middle" fill="#c8d8f0" font-size="22" font-weight="bold">FF</text>
+
+  <!-- D input -->
+  <line x1="80" y1="252" x2="180" y2="252" stroke="#cca040" stroke-width="2"/>
+  <text x="120" y="244" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">D</text>
+  <!-- CLK input -->
+  <line x1="80" y1="308" x2="180" y2="308" stroke="#80f0a0" stroke-width="2"/>
+  <text x="120" y="300" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">CLK</text>
+  <polyline points="180,300 192,308 180,316" fill="none" stroke="#80f0a0" stroke-width="2"/>
+  <!-- Q output -->
+  <line x1="300" y1="280" x2="380" y2="280" stroke="#ff9933" stroke-width="2"/>
+  <text x="365" y="272" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">Q</text>
+
+  <text x="220" y="380" text-anchor="middle" fill="#a0c0d0" font-size="16">
+    2 כניסות: <tspan fill="#cca040" font-weight="bold">D</tspan>, <tspan fill="#80f0a0" font-weight="bold">CLK</tspan>
+  </text>
+  <text x="220" y="404" text-anchor="middle" fill="#a0c0d0" font-size="16">
+    1 יציאה: <tspan fill="#ff9933" font-weight="bold">Q</tspan>
+  </text>
+  <text x="220" y="432" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">
+    כל clock: Q ← D
+  </text>
+
+  <!-- RIGHT: Scan-FF (BLACK BOX — internals hidden) -->
+  <rect x="480" y="90" width="400" height="380" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="680" y="128" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+    Scan-FF
+  </text>
+
+  <!-- Black box body with "?" inside -->
+  <rect x="620" y="200" width="140" height="140" rx="6" fill="#0a1825" stroke="#ffc080" stroke-width="2.4" stroke-dasharray="5,4"/>
+  <text x="690" y="280" text-anchor="middle" fill="#ffc080" font-size="48" font-weight="bold" opacity="0.85">?</text>
+
+  <!-- D input -->
+  <line x1="520" y1="222" x2="620" y2="222" stroke="#cca040" stroke-width="2"/>
+  <text x="555" y="214" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">D</text>
+  <!-- SI input -->
+  <line x1="520" y1="256" x2="620" y2="256" stroke="#cc66ff" stroke-width="2"/>
+  <text x="555" y="248" text-anchor="middle" fill="#cc66ff" font-size="20" font-weight="bold">SI</text>
+  <!-- SE input -->
+  <line x1="520" y1="290" x2="620" y2="290" stroke="#80f0a0" stroke-width="2"/>
+  <text x="555" y="282" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">SE</text>
+  <!-- CLK input -->
+  <line x1="520" y1="324" x2="620" y2="324" stroke="#80f0a0" stroke-width="2"/>
+  <text x="555" y="316" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">CLK</text>
+  <polyline points="620,316 632,324 620,332" fill="none" stroke="#80f0a0" stroke-width="2"/>
+  <!-- Q output -->
+  <line x1="760" y1="270" x2="850" y2="270" stroke="#ff9933" stroke-width="2"/>
+  <text x="835" y="262" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">Q</text>
+
+  <text x="680" y="380" text-anchor="middle" fill="#a0c0d0" font-size="16">
+    4 כניסות, 1 יציאה — <tspan fill="#ffc080" font-weight="bold">איך זה בנוי בפנים?</tspan>
+  </text>
+  <text x="680" y="406" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">
+    SE=0: התנהג כמו D-FF רגיל
+  </text>
+  <text x="680" y="428" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">
+    SE=1: טען מ-SI במקום מ-D
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'כיצד מרחיבים D-FF רגיל ל-Scan-FF? ציין את הרכיב הנוסף, את האותות החדשים, ואת מחיר הביצועים.',
+        hints: [
+          'צריך לבחור בין שתי כניסות אפשריות ל-D של ה-FF: \\\`D\\\` הפונקציונלי לבין \\\`SI\\\` הסריקה.',
+          'הבחירה נשלטת ע"י אות יחיד שמופץ לכל ה-FFs במעגל.',
+          'במצב פונקציונלי רגיל, ה-FF צריך לנהוג בדיוק כמו D-FF רגיל — כלומר הרכיב הנוסף שקוף ל-D.',
+          'במצב scan, ה-FFs יוצרים שרשרת shift: \\\`SI\\\` של אחד מחובר ל-\\\`Q\\\` של הקודם.',
+          'המחיר התזמוני: כל נתיב פונקציונלי אל ה-D של ה-FF חוצה עכשיו רכיב נוסף.',
+        ],
+        answer:
+`**מוסיפים MUX 2:1 לפני ה-D של ה-FF.**
+
+| אות | תפקיד |
+|---|---|
+| \`D\` | קלט פונקציונלי רגיל (מהלוגיקה הקומבינטורית) |
+| \`SI\` | Scan-In — מחובר ל-\`Q\` של ה-FF הקודם בשרשרת |
+| \`SE\` | Scan-Enable — סלקטור ה-MUX. \`SE=0\` → \`D\` · \`SE=1\` → \`SI\` |
+| \`CLK\` | שעון רגיל, משותף לכל ה-FFs |
+| \`Q\` | היציאה. גם משמשת כ-\`SO\` (Scan-Out) ל-FF הבא בשרשרת |
+
+### מחיר ביצועים
+- **Critical path**: כל path פונקציונלי שמגיע ל-\`D\` חוצה עכשיו MUX → תוספת ~5-10% delay → Fmax יורד.
+- **Area**: ~10-15% תוספת לכל flop (גם MUX, גם routing נוסף ל-\`SE\` ו-\`SI\`).
+- **Power**: בזמן scan-shift כל ה-FFs מתחלפים בכל clock — בדרך-כלל test רץ ב-clock איטי כדי לא להעלות חום.
+
+### בקנבס — Scan-FF פתוח לרכיבים שלו
+
+המעגל בנוי מ-\`MUX\` ו-\`D-FF\` בנפרד (לא בלוק \`SCAN-FF\` סגור), כדי שתראה את המנגנון. שחק:
+- **\`SE=0\`**: כל clock, ה-FF טוען את \`D\`. שנה את \`D\` ופעם ב-CLK — \`Q\` עוקב אחרי \`D\` בעיכוב cycle אחד.
+- **\`SE=1\`**: ה-FF טוען את \`SI\` במקום. שנה את \`SI\` — עכשיו \`Q\` עוקב אחר \`SI\`.
+
+זהו הסוד היחיד מאחורי scan: MUX קטן ואות־בחירה גלובלי.`,
+        interviewerMindset:
+`**שאלת פתיחה ל-DFT.** המראיין מחפש:
+1. **שתזהה MUX 2:1** כרכיב הנוסף — לא XOR, לא FF נוסף, לא latch. MUX.
+2. **שתסביר את \`SE\`** ולמה הוא חייב להיות broadcast לכל ה-FFs.
+3. **שתזכור את עלות התזמון** — MUX על נתיב פונקציונלי = Fmax יורד 5-10%.
+
+**שאלת המשך**: "האם אפשר לחסוך את ה-MUX?" → תיאורטית כן (טכנולוגיית **LSSD** של IBM משתמשת בשני clocks ושני latches במקום MUX), אבל זה מסבך עוד יותר ופחות נפוץ בהדגמות מודרניות.
+
+**שאלת bonus**: "מה עושים ב-FFs שהם החלק האחרון בנתיב לפני יציאה?" → \`Q\` שלהם בלאו הכי מתחבר ל-PI/SO, אז ה-MUX לפעמים נחסך באמצעות boundary-scan ייעודי או שילוב עם output-pad. עיצוב מתקדם.`,
+        expectedAnswers: [
+          'mux', 'mux 2:1', '2:1 mux', 'multiplexer', 'מוקסר', 'מוקס',
+          'SE', 'scan enable', 'scan-enable',
+          'SI', 'scan in', 'scan-in',
+          'SO', 'scan out', 'scan-out',
+          'critical path', 'fmax', 'delay', 'תזמון',
+          'overhead', 'area', 'D-FF', 'flip-flop',
+        ],
+        circuit: () => build(() => {
+          // Decomposed Scan-FF: explicit MUX + D-FF so the student
+          // can see how it's built. Inputs: D, SI, SE, CLK. Output: Q.
+          const dIn  = h.input(80, 200, 'D');
+          const siIn = h.input(80, 320, 'SI');
+          const seIn = h.input(80, 440, 'SE');
+          const clk  = h.clock(80, 560);
+          const mux  = h.mux(280, 320, 'MUX 2:1');
+          const ff   = h.ffD(500, 280, 'D-FF');
+          const qOut = h.output(720, 280, 'Q');
+          return {
+            nodes: [dIn, siIn, seIn, clk, mux, ff, qOut],
+            wires: [
+              h.wire(dIn.id,  mux.id, 0),                 // D → mux.d0
+              h.wire(siIn.id, mux.id, 1),                 // SI → mux.d1
+              h.wire(seIn.id, mux.id, 2),                 // SE → mux.sel
+              h.wire(mux.id,  ff.id,  0),                 // mux.out → FF.D
+              h.wire(clk.id,  ff.id,  1, 0, { isClockWire: true }),
+              h.wire(ff.id,   qOut.id, 0),                // FF.Q → output
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — מבנה Scan-FF',
+    tags: ['scan', 'scan-ff', 'mux', 'structure', 'dft', 'fmax'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6008 — Scan chain test flow: load / capture / unload
+  //   Two-part: (a) cycle counting, (b) live demo of the 3-phase
+  //   flow on a 4-FF scan chain with simple combinational logic.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'scan-chain-load-capture-unload',
+    difficulty: 'medium',
+    title: 'Scan chain — flow של load / capture / unload',
+    intro:
+`שרשרת scan של \`N=4\` Scan-FFs מחוברים יחד: \`SI → FF1 → FF2 → FF3 → FF4 → SO\`. \`SE\` משותף, \`CLK\` משותף.
+
+תהליך הבדיקה הקלאסי **בן 3 שלבים**:
+
+1. **Load** (\`SE=1\`): מעבירים וקטור-בדיקה דרך \`SI\` ב-\`N\` מחזורי שעון → ה-FFs מקבלים את הערכים הרצויים.
+2. **Capture** (\`SE=0\`): מחזור אחד של שעון → ה-FFs לוכדים את התוצאה של הלוגיקה הפונקציונלית.
+3. **Unload** (\`SE=1\`): מעבירים את התוצאה החוצה דרך \`SO\` ב-\`N\` מחזורים → משווים לצפוי.`,
+    schematic: `
+<svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="4-FF scan chain showing SE, SI, SO common signals plus the 3-phase test flow.">
+
+  <text x="500" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    Scan chain — 4 FFs בשרשרת
+  </text>
+
+  <!-- 4 FF blocks -->
+  <g stroke="#ffc080" stroke-width="2.2" fill="#0a1825">
+    <rect x="120" y="120" width="120" height="120" rx="8"/>
+    <rect x="320" y="120" width="120" height="120" rx="8"/>
+    <rect x="520" y="120" width="120" height="120" rx="8"/>
+    <rect x="720" y="120" width="120" height="120" rx="8"/>
+  </g>
+  <g fill="#ffc080" font-size="20" font-weight="bold" text-anchor="middle">
+    <text x="180" y="190">FF1</text>
+    <text x="380" y="190">FF2</text>
+    <text x="580" y="190">FF3</text>
+    <text x="780" y="190">FF4</text>
+  </g>
+  <g fill="#a0a0c0" font-size="13" text-anchor="middle" font-style="italic">
+    <text x="180" y="215">Scan-FF</text>
+    <text x="380" y="215">Scan-FF</text>
+    <text x="580" y="215">Scan-FF</text>
+    <text x="780" y="215">Scan-FF</text>
+  </g>
+
+  <!-- Scan chain arrows (Q → next.SI) -->
+  <g stroke="#cc66ff" stroke-width="2.4" fill="none" marker-end="url(#arrSI)">
+    <line x1="240" y1="170" x2="320" y2="170"/>
+    <line x1="440" y1="170" x2="520" y2="170"/>
+    <line x1="640" y1="170" x2="720" y2="170"/>
+  </g>
+  <defs>
+    <marker id="arrSI" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#cc66ff"/>
+    </marker>
+  </defs>
+
+  <!-- SI input from left -->
+  <line x1="40" y1="170" x2="120" y2="170" stroke="#cc66ff" stroke-width="2.4" marker-end="url(#arrSI)"/>
+  <text x="50" y="158" fill="#cc66ff" font-size="20" font-weight="bold">SI</text>
+
+  <!-- SO output to right -->
+  <line x1="840" y1="170" x2="960" y2="170" stroke="#cc66ff" stroke-width="2.4" marker-end="url(#arrSI)"/>
+  <text x="940" y="158" fill="#cc66ff" font-size="20" font-weight="bold" text-anchor="end">SO</text>
+
+  <!-- SE broadcast line below all FFs -->
+  <line x1="40" y1="290" x2="960" y2="290" stroke="#80f0a0" stroke-width="2.2" stroke-dasharray="6,4"/>
+  <text x="50" y="282" fill="#80f0a0" font-size="20" font-weight="bold">SE</text>
+  <g stroke="#80f0a0" stroke-width="2" fill="none">
+    <line x1="180" y1="290" x2="180" y2="240"/>
+    <line x1="380" y1="290" x2="380" y2="240"/>
+    <line x1="580" y1="290" x2="580" y2="240"/>
+    <line x1="780" y1="290" x2="780" y2="240"/>
+  </g>
+
+  <!-- CLK broadcast line -->
+  <line x1="40" y1="340" x2="960" y2="340" stroke="#cca040" stroke-width="2.2"/>
+  <text x="50" y="332" fill="#cca040" font-size="20" font-weight="bold">CLK</text>
+
+  <!-- 3-phase legend (each step on its own row, generous spacing) -->
+  <rect x="60" y="380" width="880" height="300" rx="10"
+        fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
+  <text x="500" y="416" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+    flow של 3 שלבים
+  </text>
+
+  <!-- Step 1: LOAD -->
+  <text x="90" y="466" fill="#80f0a0" font-weight="bold" font-size="22">1. LOAD</text>
+  <text x="90" y="496" fill="#c8b090" font-size="19">
+    SE=1, N מחזורי clock — וקטור נכנס דרך SI ל-FF1 ומתפזר ל-FF2,3,4
+  </text>
+
+  <!-- Step 2: CAPTURE -->
+  <text x="90" y="546" fill="#ff9933" font-weight="bold" font-size="22">2. CAPTURE</text>
+  <text x="90" y="576" fill="#c8b090" font-size="19">
+    SE=0, מחזור clock יחיד — ה-FFs לוכדים את תוצאת הלוגיקה הפונקציונלית
+  </text>
+
+  <!-- Step 3: UNLOAD -->
+  <text x="90" y="626" fill="#cc99ff" font-weight="bold" font-size="22">3. UNLOAD</text>
+  <text x="90" y="656" fill="#c8b090" font-size="19">
+    SE=1, N מחזורי clock — התוצאה יוצאת דרך SO להשוואה
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'נתון \\\`N=4\\\` FFs בשרשרת אחת. כמה מחזורי clock נדרשים כדי להריץ **וקטור-בדיקה אחד** (load + capture + unload)? כמה מחזורים נדרשים עבור \\\`M=5\\\` וקטורי-בדיקה ברצף (עם חפיפה בין unload של אחד ל-load של הבא)?',
+        hints: [
+          'Load: צריך להעביר N ביטים דרך SI אל ה-FF הראשון, וכל ביט מתקדם בכל clock אחד הלאה.',
+          'Capture: רק מחזור אחד, כי כל ה-FFs לוכדים במקביל.',
+          'Unload: צריך להוציא N ביטים דרך SO. גם כן N clocks.',
+          'חפיפה: בזמן unload של וקטור i, אפשר להעביר ב-SI את הביטים של וקטור i+1. בכל clock נכנס ביט חדש ויוצא ביט ישן.',
+          'נוסחת חפיפה לכל M וקטורים: M·(N+1) + N. הביטוי "N+1" = N של shift + 1 של capture.',
+        ],
+        answer:
+`### עבור וקטור אחד
+\`N + 1 + N = 2N + 1\` מחזורים. ל-\`N=4\`: \`9\` מחזורים.
+
+### עבור M=5 וקטורים בחפיפה
+| שלב | מחזורים |
+|---|---:|
+| Load של הוקטור הראשון | N = 4 |
+| לכל וקטור i (1..M): capture + load של הבא | N+1 = 5 |
+| Unload של הוקטור האחרון | N = 4 |
+| **סה"כ** | **\`M·(N+1) + N\`** |
+
+ל-\`M=5, N=4\`: \`5·5 + 4 = 29\` מחזורים.
+
+### למה זה חשוב?
+ב-ASIC עם 100K FFs ושרשרת אחת: וקטור אחד = ~200K cycles. רק 50 וקטורים = 10M cycles → 100ms ב-100MHz test clock. **הפתרון: שרשראות מקבילות.**
+
+עם \`K\` שרשראות מקבילות, כל אחת באורך \`N/K\`, סך המחזורים יורד ל-\`M·(N/K + 1) + N/K\`. לדוגמה: 10 שרשראות מקבילות → \`5·11 + 10 = 65\` במקום 29 לוקטורים על שרשרת אחת... רגע, זה נראה גרוע יותר! זה כי הדוגמה הקטנה (N=4) לא משקפת. ב-N=10000, K=100 → לכל שרשרת רק 100 FFs, וזה כן חיסכון של פי 100.
+
+**כלל אצבע**: ASIC מודרני מחולק ל-\`8-64\` chains מקבילים, כל אחד באורך 1K-10K FFs.`,
+        interviewerMindset:
+`**שאלת ספירה** קלאסית. המראיין מחפש:
+1. **שאתה לא שוכח את ה-capture** — לא \`2N\`, אלא \`2N+1\`.
+2. **שאתה מבין את החפיפה** — load של הבא בזמן unload של הקודם → \`N+1\` לכל וקטור באמצע, לא \`2N+1\`.
+3. **שאתה מציע פתרון לתעשייתי** — chains מקבילים, לא רק "להריץ יותר זמן".
+
+**שאלת המשך**: "מה מגביל את מספר ה-chains?" → pin count על ה-package (כל chain דורש pin של \`SI\` ו-\`SO\` ייעודי, או שמשתמשים ב-test access port \`TAP\` של JTAG עם MUX).
+
+**שאלת bonus**: "במציאות, האם מריצים את ה-capture ב-clock פונקציונלי או ב-test clock?" → ב-clock פונקציונלי (כדי לבדוק at-speed). זה נקרא **launch-on-shift** או **launch-on-capture**, ויש לזה השלכות תזמוניות עדינות.`,
+        expectedAnswers: [
+          '2N+1', '2n+1', '9',
+          'M*(N+1)+N', 'M(N+1)+N', '29',
+          'load', 'capture', 'unload', 'shift',
+          'parallel chains', 'multiple chains', 'parallel scan',
+          'overlap', 'pipeline',
+        ],
+      },
+      {
+        label: 'ב',
+        question: 'בקנבס יש שרשרת של 4 Scan-FFs (\\\`FF1..FF4\\\`) עם \\\`SE\\\`, \\\`SI\\\`, \\\`SO\\\` משותפים ו-\\\`CLK\\\`. אין לוגיקה פונקציונלית מורכבת — \\\`D\\\` של כל FF קבוע ב-\\\`0\\\` לצורך הדגמה נקייה. הרץ את ה-flow: load של \\\`SI=1,0,1,1\\\` (4 clocks ב-\\\`SE=1\\\`), ואז capture (\\\`SE=0\\\`, 1 clock). מה תהיה תכולת ה-FFs לאחר כל שלב? מה יהיה \\\`SO\\\` במהלך ה-unload הבא?',
+        hints: [
+          'אחרי clock אחד ב-load (SE=1): SI הראשון נכנס ל-FF1; שאר ה-FFs עוברים shift אחד קדימה.',
+          'אחרי N=4 clocks ב-load: וקטור ה-SI מילא את כל השרשרת. הביט הראשון שנכנס נמצא ב-FF הכי רחוק.',
+          'Capture (SE=0, 1 clock): כל FF טוען את D שלו. במעגל הזה D=0, אז כל ה-FFs מתאפסים.',
+          'Unload (SE=1): בכל clock, FF1 מקבל את ה-SI הבא (= 0), ושאר ה-FFs מקבלים את ה-Q של הקודם. ה-Q של FF4 יוצא ל-SO.',
+        ],
+        answer:
+`### שלב 1: Load (SE=1, 4 clocks, SI = 1, 0, 1, 1)
+
+| Clock | SI נכנס | FF1 | FF2 | FF3 | FF4 |
+|---:|:---:|:---:|:---:|:---:|:---:|
+| לפני | — | 0 | 0 | 0 | 0 |
+| 1 | \`1\` | \`1\` | 0 | 0 | 0 |
+| 2 | \`0\` | \`0\` | \`1\` | 0 | 0 |
+| 3 | \`1\` | \`1\` | \`0\` | \`1\` | 0 |
+| 4 | \`1\` | \`1\` | \`1\` | \`0\` | \`1\` |
+
+**אחרי load**: השרשרת = \`[FF1=1, FF2=1, FF3=0, FF4=1]\`. שים לב: הביט הראשון שנכנס (1) הגיע הכי רחוק (FF4).
+
+### שלב 2: Capture (SE=0, 1 clock)
+
+כל FF.D = 0 (במעגל הדגמה), אז:
+- כולם נטענים ב-0.
+- **אחרי capture**: \`[0, 0, 0, 0]\`.
+
+(במעגל אמיתי, ה-capture משקף את תוצאת הלוגיקה הקומבינטורית בין ה-FFs ל-PIs. כאן המעגל נקי לצורך הדגמה.)
+
+### שלב 3: Unload (SE=1, SI=0, 4 clocks)
+
+| Clock | SI נכנס | FF1 | FF2 | FF3 | FF4 | SO יוצא |
+|---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| לפני | — | 0 | 0 | 0 | 0 | — |
+| 1 | 0 | 0 | 0 | 0 | 0 | \`0\` |
+| 2 | 0 | 0 | 0 | 0 | 0 | \`0\` |
+| 3 | 0 | 0 | 0 | 0 | 0 | \`0\` |
+| 4 | 0 | 0 | 0 | 0 | 0 | \`0\` |
+
+**SO sequence = \`0, 0, 0, 0\`** (כי capture איפס הכל). אם היה fault בנתיב הקומבינטורי שגרם ל-FF3 ללכוד 1 במקום 0, SO היה מחזיר \`0, 0, 1, 0\` והפגם היה נתפס.
+
+### בקנבס
+
+נסה בעצמך:
+1. הצב את \`SE\` על \`1\`. הצב \`SI\` על \`1\` ופעם ב-\`CLK\` — תראה \`FF1=1\`.
+2. הצב \`SI\` על \`0\` ופעם — \`FF1=0, FF2=1\`. וכן הלאה.
+3. אחרי 4 פעימות, כל ה-FFs מלאים בערכים שטענת.
+4. הצב \`SE=0\` ופעם פעם אחת — \`capture\`. כל FF טוען מ-D שלו (כאן \`0\`).
+5. הצב \`SE=1\` שוב והוצא \`4\` פעימות — תראה ב-\`SO\` את הביטים שהיו ב-FFs.`,
+        interviewerMindset:
+`**שאלה חצי-מעשית** — מתרגלת את ה-flow על דוגמה קונקרטית. המראיין מחפש:
+1. **שאתה זוכר את הסדר** — הביט הראשון ש-shift-in נכנס מגיע הכי **רחוק** (FF4), לא קרוב (FF1). זו טעות נפוצה.
+2. **שאתה מבחין בין load ל-capture** — שני מצבים שונים, נשלטים ע"י SE.
+3. **שאתה מבין את התפקיד של D של ה-FF בזמן load** — לא משנה! ב-load (SE=1) ה-MUX בוחר SI ומתעלם מ-D.
+
+**שאלת המשך**: "מה אם עושים capture ב-SE=1 בטעות?" → ה-FFs לא לוכדים את ה-comb logic; ממשיכים shift. הבדיקה כושלת לחלוטין — כל ה-coverage הולך לאיבוד.
+
+**שאלת bonus**: "האם אפשר לעשות capture של יותר ממחזור אחד?" → כן, **launch-on-shift** או **launch-on-capture** דורשים 2 capture cycles לבדיקה at-speed של נתיב transition. שונה מ-stuck-at שמספיק לו capture יחיד.`,
+        expectedAnswers: [
+          'load', 'capture', 'unload', 'shift',
+          'SI', 'SO', 'SE', 'scan-in', 'scan-out', 'scan-enable',
+          '1101', '1011', '1, 0, 1, 1', '0, 0, 0, 0',
+          'first bit', 'last',
+          'four', '4',
+        ],
+        circuit: () => build(() => {
+          // 4 Scan-FFs in a chain. SE common, CLK common, SI from
+          // INPUT pad, SO out via OUTPUT pad. Functional D of each
+          // FF tied to a dedicated INPUT pad (default 0) so the
+          // capture phase has predictable behaviour and the student
+          // can experiment freely.
+          const clk  = h.clock(80, 600);
+          const seIn = h.input(80, 480, 'SE');
+          const siIn = h.input(80, 120, 'SI');
+
+          const d1 = h.input(220, 320, 'D1');
+          const d2 = h.input(420, 320, 'D2');
+          const d3 = h.input(620, 320, 'D3');
+          const d4 = h.input(820, 320, 'D4');
+
+          const ff1 = h.block('SCAN_FF', 280, 180, { label: 'FF1', initialQ: 0 });
+          const ff2 = h.block('SCAN_FF', 480, 180, { label: 'FF2', initialQ: 0 });
+          const ff3 = h.block('SCAN_FF', 680, 180, { label: 'FF3', initialQ: 0 });
+          const ff4 = h.block('SCAN_FF', 880, 180, { label: 'FF4', initialQ: 0 });
+
+          const soOut = h.output(1060, 180, 'SO');
+
+          // Per-FF Q observation pads (so the student sees state)
+          const q1 = h.output(280, 60, 'Q1');
+          const q2 = h.output(480, 60, 'Q2');
+          const q3 = h.output(680, 60, 'Q3');
+          const q4 = h.output(880, 60, 'Q4');
+
+          return {
+            nodes: [clk, seIn, siIn, d1, d2, d3, d4, ff1, ff2, ff3, ff4, soOut, q1, q2, q3, q4],
+            wires: [
+              // Functional D of each FF (pin 0)
+              h.wire(d1.id, ff1.id, 0),
+              h.wire(d2.id, ff2.id, 0),
+              h.wire(d3.id, ff3.id, 0),
+              h.wire(d4.id, ff4.id, 0),
+              // Scan chain via TI (pin 1)
+              h.wire(siIn.id, ff1.id, 1),
+              h.wire(ff1.id,  ff2.id, 1),
+              h.wire(ff2.id,  ff3.id, 1),
+              h.wire(ff3.id,  ff4.id, 1),
+              // SE common to all (pin 2)
+              h.wire(seIn.id, ff1.id, 2),
+              h.wire(seIn.id, ff2.id, 2),
+              h.wire(seIn.id, ff3.id, 2),
+              h.wire(seIn.id, ff4.id, 2),
+              // CLK common (pin 3)
+              h.wire(clk.id, ff1.id, 3, 0, { isClockWire: true }),
+              h.wire(clk.id, ff2.id, 3, 0, { isClockWire: true }),
+              h.wire(clk.id, ff3.id, 3, 0, { isClockWire: true }),
+              h.wire(clk.id, ff4.id, 3, 0, { isClockWire: true }),
+              // Scan-out
+              h.wire(ff4.id, soOut.id, 0),
+              // Q observation pads
+              h.wire(ff1.id, q1.id, 0),
+              h.wire(ff2.id, q2.id, 0),
+              h.wire(ff3.id, q3.id, 0),
+              h.wire(ff4.id, q4.id, 0),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — flow של scan test',
+    tags: ['scan', 'scan-ff', 'scan-chain', 'load-capture-unload', 'cycle-counting', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6009 — Coverage: scan vs no-scan on a deep sequential chain
+  //   3 FFs in series (FF1 → FF2 → FF3), with a stuck-at fault on
+  //   the AND gate driving FF3.D. Without scan: need 3+ cycles of
+  //   PI to reach FF3. With scan: load directly in 3 shift cycles.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'scan-vs-no-scan-coverage',
+    difficulty: 'medium',
+    title: 'Scan לעומת ללא-scan — coverage מול עלות מחזורים',
+    intro:
+`נתון מעגל סדרתי קצר — 3 FFs בטור (\`FF1 → FF2 → FF3\`), עם שער \`AND\` שמזין את \`FF3.D\`. תקלת \`stuck-at-0\` ביציאת ה-AND.
+
+השוואה בין שתי גישות לבדיקה:
+- **ללא scan**: ה-FFs רגילים. ניתן לגרום ל-\`FF3\` ללכוד את ה-AND רק אחרי שמוגדרים \`FF2\` ו-PI מתאימים, מה שדורש רצף clock דרך כל ה-FFs מ-PI.
+- **עם scan**: ה-FFs הם Scan-FFs. אפשר לטעון ישירות כל state ל-\`FF1, FF2\` דרך scan-chain, ואז מחזור capture יחיד חושף את התקלה.
+
+מה ההפרש ב-**מספר המחזורים** וב-**coverage**?`,
+    schematic: `
+<svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="3-FF sequential chain with stuck-at-0 fault on AND gate driving FF3.D.">
+
+  <text x="500" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    תקלת stuck-at-0 ב-AND שמזין את FF3
+  </text>
+  <text x="500" y="62" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+    כדי להגיע ל-FF3 מ-PI נדרשים מחזורי clock רצופים
+  </text>
+
+  <!-- PI inputs on the left -->
+  <circle cx="60" cy="170" r="14" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+  <text x="60" y="174" text-anchor="middle" fill="#cca040" font-size="14" font-weight="bold">PI</text>
+
+  <!-- FF1 -->
+  <rect x="140" y="130" width="100" height="80" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="190" y="178" text-anchor="middle" fill="#80c8ff" font-size="20" font-weight="bold">FF1</text>
+
+  <!-- FF2 -->
+  <rect x="340" y="130" width="100" height="80" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="390" y="178" text-anchor="middle" fill="#80c8ff" font-size="20" font-weight="bold">FF2</text>
+
+  <!-- AND gate -->
+  <path d="M 520 145 L 540 145 A 30 30 0 0 1 540 205 L 520 205 Z" fill="#1a1428" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="540" y="178" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">AND</text>
+
+  <!-- Second AND input (from PI2) -->
+  <circle cx="480" cy="240" r="14" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+  <text x="480" y="244" text-anchor="middle" fill="#cca040" font-size="12" font-weight="bold">PI2</text>
+  <path d="M 480 226 L 480 195 L 525 195" fill="none" stroke="#cca040" stroke-width="2"/>
+
+  <!-- FF3 -->
+  <rect x="660" y="130" width="100" height="80" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="710" y="178" text-anchor="middle" fill="#80c8ff" font-size="20" font-weight="bold">FF3</text>
+
+  <!-- Output -->
+  <circle cx="860" cy="170" r="14" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
+  <text x="860" y="174" text-anchor="middle" fill="#ff9933" font-size="13" font-weight="bold">PO</text>
+
+  <!-- Wires -->
+  <g stroke="#a0a0c0" stroke-width="2" fill="none">
+    <line x1="74" y1="170" x2="140" y2="170"/>
+    <line x1="240" y1="170" x2="340" y2="170"/>
+    <line x1="440" y1="170" x2="525" y2="155"/>
+    <line x1="570" y1="175" x2="660" y2="170"/>
+    <line x1="760" y1="170" x2="846" y2="170"/>
+  </g>
+
+  <!-- Fault marker on AND output -->
+  <circle cx="610" cy="172" r="14" fill="#3a0a14" stroke="#ff6060" stroke-width="2.4"/>
+  <text x="610" y="178" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">×</text>
+  <text x="610" y="124" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">s-a-0</text>
+
+  <!-- Comparison box -->
+  <rect x="60" y="290" width="880" height="380" rx="12" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
+  <text x="500" y="328" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+    שתי גישות לחשיפת התקלה
+  </text>
+
+  <!-- No-scan side -->
+  <text x="240" y="378" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">
+    ללא scan
+  </text>
+  <text x="240" y="416" text-anchor="middle" fill="#c8b090" font-size="19">
+    PI → FF1 (cycle 1)
+  </text>
+  <text x="240" y="450" text-anchor="middle" fill="#c8b090" font-size="19">
+    FF1 → FF2 (cycle 2)
+  </text>
+  <text x="240" y="484" text-anchor="middle" fill="#c8b090" font-size="19">
+    FF2+PI2 → AND → FF3 (cycle 3)
+  </text>
+  <text x="240" y="518" text-anchor="middle" fill="#c8b090" font-size="19">
+    FF3 → PO (cycle 4)
+  </text>
+  <text x="240" y="560" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
+    סך-הכל: 4 cycles לוקטור
+  </text>
+
+  <!-- Vertical separator -->
+  <line x1="500" y1="350" x2="500" y2="640" stroke="#3a4a5a" stroke-width="1.2" stroke-dasharray="4,4"/>
+
+  <!-- Scan side -->
+  <text x="740" y="378" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">
+    עם scan
+  </text>
+  <text x="740" y="416" text-anchor="middle" fill="#c8b090" font-size="19">
+    SE=1: shift-in ב-3 cycles → טוען
+  </text>
+  <text x="740" y="450" text-anchor="middle" fill="#c8b090" font-size="19">
+    \`FF1, FF2, FF3\` בערכים שרירותיים
+  </text>
+  <text x="740" y="484" text-anchor="middle" fill="#c8b090" font-size="19">
+    SE=0: capture cycle יחיד
+  </text>
+  <text x="740" y="518" text-anchor="middle" fill="#c8b090" font-size="19">
+    SE=1: shift-out ב-3 cycles
+  </text>
+  <text x="740" y="560" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">
+    סך-הכל: 7 cycles לוקטור
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'השווה את שתי הגישות (עם / בלי scan) על המעגל הנתון: כמה מחזורי clock נדרשים לוקטור-בדיקה אחד? באיזו גישה ה-coverage בעצם **טוב יותר**, ולמה? באיזה מצב הגישה "ללא scan" עדיפה?',
+        hints: [
+          'ללא scan, ה-FFs נטענים רק דרך PI דרך מחזורי shift פונקציונליים. כל FF "עמוק" יותר דורש cycle נוסף להגיע אליו.',
+          'עם scan, ניתן לטעון ערכים שרירותיים ל-FF1, FF2, ו-FF3 ישירות דרך scan-chain ב-N cycles, ללא תלות בנתיב הפונקציונלי.',
+          'מספר ה-cycles לוקטור: ללא scan ~ עומק המעגל; עם scan = 2N+1 (= 2·3+1 = 7).',
+          'Coverage: לתקלה שדורשת state ספציפי של FF3, ייתכן שאין רצף PIs קצר שמייצר אותו. עם scan: state חופשי לחלוטין.',
+          'אבל scan דורש את ה-MUX ב-FF (overhead תזמוני) ושטח נוסף. לא תמיד שווה.',
+        ],
+        answer:
+`### השוואת מחזורים — לוקטור אחד
+
+| גישה | Cycles | הסבר |
+|---|---:|---|
+| ללא scan | \`4\` | אחד לכל "עומק" של FF + cycle אחרון לתצפית |
+| עם scan | \`2N+1 = 7\` | \`N=3\` shift-in + 1 capture + \`N\` shift-out |
+
+לוקטור בודד, **ללא-scan דווקא מהיר יותר** במעגל קטן. ה-overhead של scan משתלם רק כש-\`N\` קטן יחסית לעומק או כש-coverage הוא הצוואר.
+
+### השוואת coverage — הבדל המהותי
+
+הבעיה ב-no-scan: כדי להגיע ל-\`FF3\` עם state ספציפי, צריך **רצף PIs** שיוצר אותו דרך \`FF1\` ו-\`FF2\`. ייתכן ש-state מסוים **לא יכול להיווצר** משום רצף PIs קצר — זה נקרא **state unreachable**. אז התקלה שדורשת את ה-state לא ניתנת לבדיקה כלל.
+
+**עם scan**: כל state ניתן לטעינה ישירה. אין state unreachable. כל תקלה במודל single-stuck-at שמתפזרת לפלט ניתנת לזיהוי. \`coverage > 99%\` הפך לסטנדרט תעשייתי.
+
+### מתי no-scan עדיף?
+- **מעגלים קטנים מאוד** (פחות מ-100 FFs) שבהם reachability מלא — חבל על ה-MUX overhead.
+- **חלקים sensitive לתזמון** (אנלוג / RF / clock generators) שאסור להוסיף בהם delay על D.
+- **debug** — לפעמים נוח לראות state פונקציונלי "טבעי" בלי לשבש אותו ע"י scan.
+
+### למה scan ניצחה בשוק?
+ASIC מודרני: 100K-10M FFs. בלי scan: ATPG לא יוכל למצוא vectors קצרים שמייצרים את כל ה-states. **coverage קורסת ל-60-80%**. עם scan: \`>99%\`. ה-area/timing overhead של 5-15% הוא מחיר זול ל-coverage כזה.
+
+### בקנבס
+המעגל הוא 3 Scan-FFs בטור עם תקלת \`stuck-at-0\` ב-AND. שחק:
+- **מצב פונקציונלי** (\`SE=0\`): טען PI ופעם — תראה מצב FF1 משתנה, FF2 משתנה (cycle 2), FF3 משתנה (cycle 3 או יותר אם ה-AND תקול).
+- **מצב scan** (\`SE=1\`): טען ישירות וקטור ל-FF3, capture, observe. התקלה נחשפת מיידית.`,
+        interviewerMindset:
+`**שאלה השוואתית קלאסית.** המראיין מחפש:
+1. **שאתה לא טוען ש-scan תמיד מהיר יותר** — לוקטור בודד במעגל קטן הוא דווקא איטי יותר. ה-overhead משתלם בקנה-מידה.
+2. **שאתה זוכר את הקונספט state unreachable** — לא רק "מהר יותר", אלא **כיסוי טוב יותר** של תקלות שאחרת לא ניתנות לבדיקה.
+3. **שאתה מודע ל-cases שבהם no-scan עדיף** — RF, אנלוג, מעגלים זעירים. לא הכל ASIC.
+
+**שאלת המשך**: "אם scan נותן 99% coverage, איך משיגים 100%?" → צריך טכניקות נוספות: **logic BIST** למעגלים אקראיים, **memory BIST** לזיכרון (ראה #6006), ולפעמים **functional patterns** ידניים לחלקים יחודיים.
+
+**שאלת bonus**: "מה הקשר בין scan לבין at-speed testing?" → scan-shift רץ ב-clock איטי (כדי לחסוך הספק), אבל ה-capture חייב להיות ב-clock פונקציונלי כדי לתפוס \`transition\` ו-\`path-delay\` faults. דורש שני clocks מסונכרנים — אתגר תזמון.`,
+        expectedAnswers: [
+          'state unreachable', 'unreachable', 'reachability',
+          'coverage', '99%',
+          '2N+1', '2n+1', '7', '4',
+          'overhead', 'MUX', 'critical path', 'fmax',
+          'large designs', 'large asic',
+          'rf', 'analog', 'small',
+          'capture', 'shift', 'parallel',
+        ],
+        circuit: () => build(() => {
+          // 3-stage scan-FF chain. Functional D path:
+          //   FF1.D = PI1
+          //   FF2.D = FF1.Q
+          //   FF3.D = FF2.Q AND PI2   ← AND-gate output has stuck-at-0
+          //
+          // Scan chain: SI → FF1.TI, FF1.Q → FF2.TI, FF2.Q → FF3.TI,
+          // FF3.Q → SO. SE + CLK common.
+          //
+          // The student can compare two modes:
+          //  • SE=0 functional: walk a value through FF1→FF2→FF3
+          //  • SE=1 scan: shift-in any state to FF1/FF2/FF3 directly
+          // The AND output is stuck-at-0 — so FF3 functionally never
+          // captures '1' from the AND path, but scan-load can still
+          // place '1' into FF3 from SI.
+          const clk  = h.clock(80, 600);
+          const seIn = h.input(80, 480, 'SE');
+          const siIn = h.input(80, 360, 'SI');
+          const pi1  = h.input(80, 180, 'PI1');
+          const pi2  = h.input(500, 360, 'PI2');
+
+          const ff1 = h.block('SCAN_FF', 240, 180, { label: 'FF1', initialQ: 0 });
+          const ff2 = h.block('SCAN_FF', 440, 180, { label: 'FF2', initialQ: 0 });
+          const andG = h.gate('AND', 640, 240);
+          const ff3 = h.block('SCAN_FF', 820, 180, { label: 'FF3', initialQ: 0 });
+
+          const po   = h.output(1020, 180, 'PO');
+          const soOut = h.output(1020, 80,  'SO');
+          const q1 = h.output(240, 60, 'Q1');
+          const q2 = h.output(440, 60, 'Q2');
+
+          // Inject the stuck-at fault on the AND output wire so the
+          // student can see the functional vs scan-load distinction.
+          const andToFF3 = h.wire(andG.id, ff3.id, 0);
+          andToFF3.stuckAt = 0;
+
+          return {
+            nodes: [clk, seIn, siIn, pi1, pi2, ff1, ff2, andG, ff3, po, soOut, q1, q2],
+            wires: [
+              // Functional D wiring
+              h.wire(pi1.id,  ff1.id, 0),
+              h.wire(ff1.id,  ff2.id, 0),
+              h.wire(ff2.id,  andG.id, 0),
+              h.wire(pi2.id,  andG.id, 1),
+              andToFF3,
+              // Scan chain via TI
+              h.wire(siIn.id, ff1.id, 1),
+              h.wire(ff1.id,  ff2.id, 1),
+              h.wire(ff2.id,  ff3.id, 1),
+              // SE common
+              h.wire(seIn.id, ff1.id, 2),
+              h.wire(seIn.id, ff2.id, 2),
+              h.wire(seIn.id, ff3.id, 2),
+              // CLK common
+              h.wire(clk.id, ff1.id, 3, 0, { isClockWire: true }),
+              h.wire(clk.id, ff2.id, 3, 0, { isClockWire: true }),
+              h.wire(clk.id, ff3.id, 3, 0, { isClockWire: true }),
+              // Observation pads
+              h.wire(ff1.id, q1.id, 0),
+              h.wire(ff2.id, q2.id, 0),
+              h.wire(ff3.id, po.id, 0),
+              h.wire(ff3.id, soOut.id, 0),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — scan vs no-scan trade-offs',
+    tags: ['scan', 'scan-ff', 'coverage', 'reachability', 'asic', 'overhead', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6010 — JTAG / Boundary Scan (IEEE 1149.1)
+  //   Two-part: (a) TAP FSM navigation given a TMS sequence,
+  //   (b) Boundary scan cell modes (shift / capture / update / normal).
+  //   Live circuit uses the JTAG_TAP + BOUNDARY_SCAN_CELL components
+  //   already in the engine — the student drives TCK, TMS, TDI, MODE,
+  //   SHIFT manually and watches the state + chain shift in real time.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'jtag-tap-boundary-scan',
+    difficulty: 'medium',
+    title: 'JTAG / Boundary Scan — TAP FSM + תאי boundary',
+    intro:
+`**JTAG** (תקן IEEE 1149.1) הוא הגישה הסטנדרטית לבדיקת chips מבחוץ דרך 4 פינים בלבד: \`TCK, TMS, TDI, TDO\` (+\`TRST\` אופציונלי).
+
+הלב של ה-JTAG הוא ה-**TAP controller** — מכונת מצבים בעלת **16 מצבים** שמתקדמת בכל \`posedge\` של \`TCK\` לפי \`TMS\`. סביב כל pad של ה-chip יושב **boundary-scan cell** — תא קטן שבמצב test יודע גם להזריק וגם לקרוא את הערך של ה-pad.
+
+יחד הם מאפשרים לבדוק את כל ה-I/O של ה-chip בלי לפתוח אותו פיזית, ומאפשרים flash של firmware, debug, ו-board-level continuity testing.`,
+    schematic: `
+<svg viewBox="0 0 1100 1320" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="JTAG TAP 16-state FSM at top, boundary-scan cell black box at bottom.">
+
+  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    JTAG TAP — מכונת מצבים בת 16 מצבים
+  </text>
+  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+    כל מעבר נשלט ע"י TMS על posedge של TCK
+  </text>
+
+  <!-- ========== TOP PANEL: TAP FSM ========== -->
+  <rect x="20" y="90" width="1060" height="780" rx="12"
+        fill="rgba(96,192,255,0.04)" stroke="rgba(128,212,255,0.5)" stroke-width="2"/>
+
+  <!-- Define arrow markers for FSM transitions -->
+  <defs>
+    <marker id="tapArr0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#80f0a0"/>
+    </marker>
+    <marker id="tapArr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#ff6080"/>
+    </marker>
+  </defs>
+
+  <!-- TLR (Test-Logic-Reset) at top center -->
+  <circle cx="550" cy="150" r="42" fill="#3a0a14" stroke="#ff6060" stroke-width="2.4"/>
+  <text x="550" y="148" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">TLR</text>
+  <text x="550" y="166" text-anchor="middle" fill="#c8b090" font-size="11">state 0</text>
+
+  <!-- RTI (Run-Test/Idle) -->
+  <circle cx="550" cy="270" r="42" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
+  <text x="550" y="268" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">RTI</text>
+  <text x="550" y="286" text-anchor="middle" fill="#c8b090" font-size="11">state 1</text>
+
+  <!-- TLR ↔ RTI (TMS=0 down, TMS=1 self-loop on TLR) -->
+  <path d="M 550 192 L 550 228" stroke="#80f0a0" stroke-width="2" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="538" y="214" text-anchor="end" fill="#80f0a0" font-size="14" font-weight="bold">0</text>
+  <path d="M 596 130 Q 660 100, 660 150 Q 660 200, 596 170" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="680" y="150" text-anchor="start" fill="#ff6080" font-size="14" font-weight="bold">1 (self)</text>
+
+  <!-- DR branch (LEFT side) -->
+  <g font-size="13" font-weight="bold">
+    <!-- Select-DR -->
+    <circle cx="270" cy="360" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="270" y="358" text-anchor="middle" fill="#80c8ff" font-size="13">Sel-DR</text>
+    <text x="270" y="374" text-anchor="middle" fill="#c8b090" font-size="11">state 2</text>
+    <!-- Capture-DR -->
+    <circle cx="270" cy="460" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="270" y="458" text-anchor="middle" fill="#80c8ff" font-size="13">Cap-DR</text>
+    <text x="270" y="474" text-anchor="middle" fill="#c8b090" font-size="11">state 3</text>
+    <!-- Shift-DR -->
+    <circle cx="270" cy="560" r="40" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.6"/>
+    <text x="270" y="558" text-anchor="middle" fill="#80f0a0" font-size="13">Shift-DR</text>
+    <text x="270" y="574" text-anchor="middle" fill="#c8b090" font-size="11">state 4</text>
+    <!-- Exit1-DR -->
+    <circle cx="160" cy="640" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="160" y="638" text-anchor="middle" fill="#80c8ff" font-size="12">Exit1-DR</text>
+    <text x="160" y="654" text-anchor="middle" fill="#c8b090" font-size="10">5</text>
+    <!-- Pause-DR -->
+    <circle cx="80" cy="720" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="80" y="718" text-anchor="middle" fill="#80c8ff" font-size="12">Pause-DR</text>
+    <text x="80" y="734" text-anchor="middle" fill="#c8b090" font-size="10">6</text>
+    <!-- Exit2-DR -->
+    <circle cx="180" cy="800" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="180" y="798" text-anchor="middle" fill="#80c8ff" font-size="12">Exit2-DR</text>
+    <text x="180" y="814" text-anchor="middle" fill="#c8b090" font-size="10">7</text>
+    <!-- Update-DR -->
+    <circle cx="360" cy="720" r="40" fill="#3a2a14" stroke="#ffc080" stroke-width="2.4"/>
+    <text x="360" y="718" text-anchor="middle" fill="#ffc080" font-size="13">Upd-DR</text>
+    <text x="360" y="734" text-anchor="middle" fill="#c8b090" font-size="11">state 8</text>
+  </g>
+
+  <!-- IR branch (RIGHT side) -->
+  <g font-size="13" font-weight="bold">
+    <circle cx="830" cy="360" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="830" y="358" text-anchor="middle" fill="#80c8ff" font-size="13">Sel-IR</text>
+    <text x="830" y="374" text-anchor="middle" fill="#c8b090" font-size="11">state 9</text>
+    <circle cx="830" cy="460" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="830" y="458" text-anchor="middle" fill="#80c8ff" font-size="13">Cap-IR</text>
+    <text x="830" y="474" text-anchor="middle" fill="#c8b090" font-size="11">state 10</text>
+    <circle cx="830" cy="560" r="40" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.6"/>
+    <text x="830" y="558" text-anchor="middle" fill="#80f0a0" font-size="13">Shift-IR</text>
+    <text x="830" y="574" text-anchor="middle" fill="#c8b090" font-size="11">state 11</text>
+    <circle cx="940" cy="640" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="940" y="638" text-anchor="middle" fill="#80c8ff" font-size="12">Exit1-IR</text>
+    <text x="940" y="654" text-anchor="middle" fill="#c8b090" font-size="10">12</text>
+    <circle cx="1020" cy="720" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="1020" y="718" text-anchor="middle" fill="#80c8ff" font-size="12">Pause-IR</text>
+    <text x="1020" y="734" text-anchor="middle" fill="#c8b090" font-size="10">13</text>
+    <circle cx="920" cy="800" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
+    <text x="920" y="798" text-anchor="middle" fill="#80c8ff" font-size="12">Exit2-IR</text>
+    <text x="920" y="814" text-anchor="middle" fill="#c8b090" font-size="10">14</text>
+    <circle cx="740" cy="720" r="40" fill="#3a2a14" stroke="#ffc080" stroke-width="2.4"/>
+    <text x="740" y="718" text-anchor="middle" fill="#ffc080" font-size="13">Upd-IR</text>
+    <text x="740" y="734" text-anchor="middle" fill="#c8b090" font-size="11">state 15</text>
+  </g>
+
+  <!-- DR transitions -->
+  <g stroke="#80f0a0" stroke-width="1.8" fill="none">
+    <path d="M 308 360 Q 400 320, 510 280" marker-end="url(#tapArr0)"/>     <!-- RTI ← Sel-DR (TMS=0 from RTI to Sel-DR) — actually RTI(1) →TMS=1→Sel-DR(2): use red -->
+  </g>
+  <g stroke="#ff6080" stroke-width="1.8" fill="none">
+    <path d="M 512 282 Q 400 320, 308 360" marker-end="url(#tapArr1)"/>
+  </g>
+  <text x="370" y="320" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+
+  <!-- Sel-DR → Cap-DR (0), Sel-DR → Sel-IR (1) -->
+  <path d="M 270 400 L 270 420" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="280" y="416" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <path d="M 310 360 L 790 360" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="540" y="354" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+
+  <!-- Cap-DR → Shift-DR (0), Cap-DR → Exit1-DR (1) -->
+  <path d="M 270 500 L 270 520" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="280" y="516" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <path d="M 240 490 Q 180 540, 160 604" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="180" y="570" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+
+  <!-- Shift-DR → Shift-DR (0 self) and Shift-DR → Exit1-DR (1) -->
+  <path d="M 230 540 Q 200 540, 200 560 Q 200 580, 230 580" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="180" y="560" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <path d="M 240 590 Q 180 615, 160 604" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="180" y="640" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+
+  <!-- Exit1-DR → Update-DR (1) -->
+  <path d="M 196 640 Q 290 690, 320 720" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="280" y="666" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <!-- Exit1-DR → Pause-DR (0) -->
+  <path d="M 140 670 L 100 700" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="100" y="676" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+
+  <!-- Update-DR → RTI (0) — go back up -->
+  <path d="M 360 680 Q 430 540, 510 290" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="430" y="450" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+
+  <!-- IR side: mirrored transitions (kept concise) -->
+  <path d="M 830 400 L 830 420" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="840" y="416" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <path d="M 830 500 L 830 520" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="840" y="516" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <path d="M 870 540 Q 900 540, 900 560 Q 900 580, 870 580" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="908" y="560" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <path d="M 860 590 Q 920 615, 940 604" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="920" y="640" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <path d="M 904 640 Q 810 690, 780 720" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="820" y="666" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <path d="M 740 680 Q 670 540, 590 290" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="670" y="450" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+
+  <!-- Legend -->
+  <g transform="translate(40, 110)">
+    <line x1="0" y1="0" x2="34" y2="0" stroke="#80f0a0" stroke-width="2.4"/>
+    <text x="40" y="5" fill="#80f0a0" font-size="14" font-weight="bold">TMS = 0</text>
+    <line x1="0" y1="22" x2="34" y2="22" stroke="#ff6080" stroke-width="2.4"/>
+    <text x="40" y="27" fill="#ff6080" font-size="14" font-weight="bold">TMS = 1</text>
+  </g>
+  <text x="550" y="850" text-anchor="middle" fill="#ffc080" font-size="16" font-style="italic">
+    הערה: מ-TLR ניתן להגיע ל-Shift-DR ב-4 מעברים בלבד
+  </text>
+
+  <!-- ========== BOTTOM PANEL: Boundary-Scan Cell ========== -->
+  <rect x="20" y="900" width="1060" height="400" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="550" y="940" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
+    Boundary-Scan Cell — תא ה-pad
+  </text>
+
+  <!-- BSC black box -->
+  <rect x="380" y="990" width="340" height="200" rx="8" fill="#0a1825" stroke="#ffc080" stroke-width="2.4" stroke-dasharray="6,4"/>
+  <text x="550" y="1080" text-anchor="middle" fill="#ffc080" font-size="36" font-weight="bold" opacity="0.85">BSC</text>
+
+  <!-- Inputs (left) -->
+  <g font-size="18" font-weight="bold">
+    <line x1="280" y1="1020" x2="380" y2="1020" stroke="#cca040" stroke-width="2"/>
+    <text x="320" y="1012" text-anchor="middle" fill="#cca040">PI</text>
+    <text x="232" y="1024" fill="#a0a0c0" font-size="13" font-style="italic">primary input</text>
+
+    <line x1="280" y1="1066" x2="380" y2="1066" stroke="#cc66ff" stroke-width="2"/>
+    <text x="320" y="1058" text-anchor="middle" fill="#cc66ff">SI</text>
+    <text x="232" y="1070" fill="#a0a0c0" font-size="13" font-style="italic">scan input</text>
+
+    <line x1="280" y1="1112" x2="380" y2="1112" stroke="#80f0a0" stroke-width="2"/>
+    <text x="320" y="1104" text-anchor="middle" fill="#80f0a0">MODE</text>
+    <text x="232" y="1116" fill="#a0a0c0" font-size="13" font-style="italic">test/normal</text>
+
+    <line x1="280" y1="1158" x2="380" y2="1158" stroke="#80f0a0" stroke-width="2"/>
+    <text x="320" y="1150" text-anchor="middle" fill="#80f0a0">SHIFT</text>
+    <text x="232" y="1162" fill="#a0a0c0" font-size="13" font-style="italic">shift/capture</text>
+  </g>
+
+  <!-- Outputs (right) -->
+  <g font-size="18" font-weight="bold">
+    <line x1="720" y1="1044" x2="820" y2="1044" stroke="#ff9933" stroke-width="2"/>
+    <text x="770" y="1036" text-anchor="middle" fill="#ff9933">PO</text>
+    <text x="830" y="1048" fill="#a0a0c0" font-size="13" font-style="italic">primary output</text>
+
+    <line x1="720" y1="1130" x2="820" y2="1130" stroke="#cc66ff" stroke-width="2"/>
+    <text x="770" y="1122" text-anchor="middle" fill="#cc66ff">SO</text>
+    <text x="830" y="1134" fill="#a0a0c0" font-size="13" font-style="italic">scan output</text>
+  </g>
+
+  <text x="550" y="1230" text-anchor="middle" fill="#c8b090" font-size="16">
+    שני latches בפנים: <tspan fill="#cc66ff" font-weight="bold">shift latch</tspan> ו-<tspan fill="#ffc080" font-weight="bold">update latch</tspan>
+  </text>
+  <text x="550" y="1260" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">
+    איך פועלים PO ו-SO ב-4 השילובים של MODE × SHIFT?
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'אתה נמצא במצב **Test-Logic-Reset** (state 0). מהי **רצף ה-TMS** המינימלית שתביא אותך ל-**Shift-DR** (state 4)? איזה רצף יחזיר אותך מ-Shift-DR ל-Run-Test/Idle (state 1) **תוך כדי שמירה** על הנתונים שטענת ל-DR?',
+        hints: [
+          'מ-TLR צריך לעבור ל-RTI → Sel-DR → Cap-DR → Shift-DR. ספור את ה-TMS עבור כל מעבר.',
+          'מעבר \\\`TLR → RTI\\\` הוא TMS=0 (יציאה מ-self-loop \\\`TMS=1\\\` של TLR).',
+          'מעבר \\\`RTI → Sel-DR\\\` הוא TMS=1.',
+          'מ-Shift-DR, כדי לשמור על הנתונים שטענת, צריך לעבור דרך Exit1-DR → Update-DR → RTI. שלושה מעברים: 1, 1, 0.',
+          'יצירת Update הכרחית — אחרת הנתונים שב-shift register יישארו רק שם ולא יועברו ל-update latch של ה-BSCs המחוברים.',
+        ],
+        answer:
+`### TLR → Shift-DR: **TMS = 0, 1, 0, 0** (4 מעברים)
+
+| צעד | TMS | מצב נוכחי | מצב הבא |
+|---:|:---:|---|---|
+| 1 | \`0\` | TLR (0) | RTI (1) |
+| 2 | \`1\` | RTI (1) | Sel-DR (2) |
+| 3 | \`0\` | Sel-DR (2) | Cap-DR (3) |
+| 4 | \`0\` | Cap-DR (3) | Shift-DR (4) |
+
+ב-Capture-DR ה-DR נטען עם ערך פנימי (למשל IDCODE אם זה ה-instruction). ב-Shift-DR מעבירים TDI פנימה ומקבלים TDO החוצה בכל clock נוסף.
+
+### Shift-DR → RTI עם שמירת נתונים: **TMS = 1, 1, 0**
+
+| צעד | TMS | מצב נוכחי | מצב הבא |
+|---:|:---:|---|---|
+| 1 | \`1\` | Shift-DR (4) | Exit1-DR (5) |
+| 2 | \`1\` | Exit1-DR (5) | Update-DR (8) |
+| 3 | \`0\` | Update-DR (8) | RTI (1) |
+
+**Update-DR** הוא הרגע הקריטי: ערך ה-shift register נטען ל-**update latches** של כל ה-BSCs ⇒ הערכים שטענתי מ-TDI מופיעים על ה-pads של ה-chip.
+
+### דרך חלופית **בלי שמירה** (לאחזרה בלבד)
+Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update, הנתונים לא נטענים. דרך זו נדרשת רק לבחירת instruction אחרת או למתן הפסקה.
+
+### בקנבס
+ה-JTAG_TAP מחובר עם 4 קלטים: \`TCK\` (clock), \`TMS\`, \`TDI\`, \`TRST\`. הוצא מ-Reset (\`TRST=0\`), הצב \`TMS=0\` ופעם → המצב הופך ל-1 (RTI). פעם נוספת עם \`TMS=1\` → 2 (Sel-DR). וכן הלאה. ה-OUTPUT "state" מציג את ערך ה-state כ-4-bit.`,
+        interviewerMindset:
+`**שאלה קלאסית** בכל ראיון JTAG/DFT. המראיין מחפש:
+1. **שאתה מבחין בין Capture-DR ל-Shift-DR** — שני מצבים שונים. Capture-DR טוען ל-DR; Shift-DR מזיז את הביטים.
+2. **שאתה זוכר את Update-DR** — בלי Update, הערך שטענת לא יופיע בפלט. טעות יקרה ביישומים אמיתיים.
+3. **שאתה יודע ש-5×TMS=1 תמיד מחזיר ל-TLR** — תכונת safety של ה-FSM (מאפסת מ-כל מצב).
+
+**שאלת המשך נפוצה**: "מה אם אני רוצה להעביר את אותו command דרך IR ולא DR?" → אותו תהליך, רק עם Sel-IR → Cap-IR → Shift-IR → Exit1-IR → Upd-IR.
+
+**שאלת bonus**: "מה התפקיד של TRST?" → reset אסינכרוני שמכריח state=0 בלי תלות ב-TCK. שימושי לבדיקה ראשונית אם השעון לא עובד.`,
+        expectedAnswers: [
+          'TMS=0,1,0,0', '0,1,0,0', '0 1 0 0', '0100',
+          'TMS=1,1,0', '1,1,0', '1 1 0', '110',
+          'TLR', 'RTI', 'Sel-DR', 'Select-DR', 'Cap-DR', 'Capture-DR',
+          'Shift-DR', 'Exit1-DR', 'Update-DR',
+          'four', '4', 'three', '3',
+        ],
+      },
+      {
+        label: 'ב',
+        question: 'תאר את התנהגות ה-**boundary-scan cell** ב-4 השילובים של \\\`MODE × SHIFT\\\`. במיוחד: באיזה שילוב הוא **שקוף** למצב הפונקציונלי הרגיל (\\\`PO = PI\\\`)? באיזה שילוב הוא **לוכד** את ה-pin הפיזי, ובאיזה הוא **כופה** ערך חיצוני על ה-pin?',
+        hints: [
+          'יש בתוך התא **שני latches**: shift latch (מקבל SI כל clock כש-SHIFT=1, אחרת מקבל PI), ו-update latch (מעודכן מ-shift latch כש-MODE עולה 0→1).',
+          'PO נקבע ע"י MODE: כש-MODE=0 → PO = PI ישיר (שקוף); כש-MODE=1 → PO = update latch (test).',
+          'SO תמיד יוצא מה-shift latch.',
+          'מצב normal: MODE=0, SHIFT=0. מצב load+capture: SHIFT=1 (אוסף ערכים מ-SI לתוך השרשרת). מצב drive: MODE=1 (אחרי Update מ-TAP).',
+        ],
+        answer:
+`### טבלת התנהגות לפי \`MODE × SHIFT\`
+
+| MODE | SHIFT | מה קורה ב-shift latch | PO | SO | משמעות |
+|:---:|:---:|---|:---:|:---:|---|
+| \`0\` | \`0\` | טוען PI (capture) | **PI** | shift latch | **Normal** — שקוף, ה-pad פועל רגיל |
+| \`0\` | \`1\` | טוען SI (shift) | PI | shift latch | **Shift** — חוליה בשרשרת, ה-pad עוד רגיל |
+| \`1\` | \`0\` | טוען PI (capture) | **update latch** | shift latch | **Test-drive** — ה-pin כפוי מבחוץ |
+| \`1\` | \`1\` | טוען SI (shift) | update latch | shift latch | shift תוך drive חיצוני |
+
+### תהליך טיפוסי של boundary-scan test
+
+1. **Capture** (MODE=0, SHIFT=0, clock אחד): כל BSC לוכד את ה-PI שלו → ערך ה-pad הנוכחי שמור ב-shift latch.
+2. **Shift** (SHIFT=1, אחרי TAP Shift-DR): שרשור הערכים יוצאים דרך TDO והערכים החדשים נכנסים דרך TDI.
+3. **Update** (אחרי TAP Update-DR — MODE עולה 0→1): ה-shift latch מועתק ל-update latch.
+4. **Drive** (MODE=1): כל BSC כופה את ה-update latch על ה-pin → ערכי בדיקה חיצוניים מופיעים על ה-pad.
+
+### בקנבס
+
+ב-canvas יש 3 BSCs מקושרים בשרשרת. ל-MODE / SHIFT שני קלטים נפרדים שאתה שולט בידנית.
+
+- הצב \`MODE=0, SHIFT=0\` ושנה את \`PI1, PI2, PI3\` — \`PO1, PO2, PO3\` יעקבו בדיוק (Normal mode).
+- הצב \`SHIFT=1\` והעבר ערכי \`SI\` ב-clock אחר clock — תראה את ה-shift latches מתעדכנים, וה-SO של כל אחד הופך ל-SI של הבא.
+- הצב \`MODE=1\` — עכשיו \`PO\` מציג את ה-update latch (לא PI). אם MODE עלה 0→1 בדיוק לפני, נלכד ערך ה-shift latch ב-update latch.`,
+        interviewerMindset:
+`**שאלת רכיב** קלאסית. המראיין מחפש:
+1. **שאתה מבחין בין shift latch ל-update latch** — שני elements נפרדים, ולא רק "FF אחד".
+2. **שאתה זוכר את ההפרדה PO vs SO** — PO הוא הפלט שמגיע ל-pad הפיזי (בתחתית ה-chip); SO הוא חוליית השרשרת הפנימית ל-TDO. שתי דרכים שונות.
+3. **שאתה מבין את ה-flow המלא** — Capture → Shift → Update → Drive זה ה-pipeline שמייצר board-level testing.
+
+**שאלת המשך נפוצה**: "מה אם MODE=1 והשרשרת לא הספיקה לעבור Update-DR?" → ה-update latch מחזיק את הערך הקודם, שיתפרסם על ה-pin. לכן זמן הפעלת MODE קריטי.
+
+**שאלת bonus**: "האם אפשר לבדוק short בין שני pads דרך BSCs?" → כן! זה ה-classic boundary scan use case: מציבים ערכים שונים על שני pads דרך update latches, וקוראים את ה-PI של pads אחרים. אם short → אחד הפינים מאמץ את ערכו של האחר.`,
+        expectedAnswers: [
+          'MODE=0', 'MODE=1', 'SHIFT=0', 'SHIFT=1',
+          'normal', 'shift', 'capture', 'update', 'drive', 'test',
+          'shift latch', 'update latch',
+          'PI', 'PO', 'SI', 'SO',
+          'transparent', 'שקוף',
+          'pad',
+        ],
+        circuit: () => build(() => {
+          // Live JTAG demo: a JTAG_TAP block + 3 BOUNDARY_SCAN_CELL
+          // in a daisy chain. The student drives TCK, TMS, TDI, TRST
+          // manually to navigate the TAP FSM; and separately drives
+          // SHIFT and MODE to exercise the boundary-scan cells. TDI
+          // doubles as the scan-in for the first BSC, TDO of the last
+          // BSC is shown.
+          //
+          // Layout: TAP block on left, 3 BSCs in a horizontal chain
+          // below. Each BSC has its own PI input pad so the student
+          // can drive distinct pad values. SHIFT and MODE are common
+          // across all three BSCs (one INPUT each).
+          const tck  = h.clock(80, 600);
+          const tms  = h.input(80, 200, 'TMS');
+          const tdi  = h.input(80, 320, 'TDI');
+          const trst = h.input(80, 440, 'TRST');
+
+          const tap  = h.block('JTAG_TAP', 300, 320, {
+            label: 'TAP',
+            irBits: 4,
+            idcode: 0x149511A1,
+          });
+
+          const tdoOut    = h.output(540, 240, 'TDO');
+          const stateOut  = h.output(540, 320, 'state');
+
+          // 3 boundary-scan cells in chain (left → right).
+          // SI of BSC1 ← TDI (so the student can drive scan-in
+          // independently of the TAP — simpler for learning).
+          // SO of BSC1 → SI of BSC2 → SO of BSC2 → SI of BSC3.
+          // SHIFT and MODE are shared.
+          const pi1 = h.input(120, 820, 'PI1');
+          const pi2 = h.input(360, 820, 'PI2');
+          const pi3 = h.input(600, 820, 'PI3');
+
+          const shIn   = h.input(120, 940, 'SHIFT');
+          const modeIn = h.input(360, 940, 'MODE');
+
+          const bsc1 = h.block('BOUNDARY_SCAN_CELL', 280, 720, { label: 'BSC1' });
+          const bsc2 = h.block('BOUNDARY_SCAN_CELL', 520, 720, { label: 'BSC2' });
+          const bsc3 = h.block('BOUNDARY_SCAN_CELL', 760, 720, { label: 'BSC3' });
+
+          const po1 = h.output(280, 600, 'PO1');
+          const po2 = h.output(520, 600, 'PO2');
+          const po3 = h.output(760, 600, 'PO3');
+          const soOut = h.output(960, 720, 'chain-out');
+
+          return {
+            nodes: [
+              tck, tms, tdi, trst, tap, tdoOut, stateOut,
+              pi1, pi2, pi3, shIn, modeIn,
+              bsc1, bsc2, bsc3,
+              po1, po2, po3, soOut,
+            ],
+            wires: [
+              // JTAG_TAP: TCK(0)*, TMS(1), TDI(2), TRST(3)
+              h.wire(tck.id,  tap.id, 0, 0, { isClockWire: true }),
+              h.wire(tms.id,  tap.id, 1),
+              h.wire(tdi.id,  tap.id, 2),
+              h.wire(trst.id, tap.id, 3),
+
+              // TAP outputs
+              h.wire(tap.id, tdoOut.id,   0, 0),    // TDO
+              h.wire(tap.id, stateOut.id, 0, 1),    // state bus
+
+              // BSC chain: SI of bsc1 ← TDI (so user controls scan-in
+              // independently of TAP for learning purposes)
+              h.wire(tdi.id, bsc1.id, 1),
+
+              // PI inputs
+              h.wire(pi1.id, bsc1.id, 0),
+              h.wire(pi2.id, bsc2.id, 0),
+              h.wire(pi3.id, bsc3.id, 0),
+
+              // MODE common (pin 2)
+              h.wire(modeIn.id, bsc1.id, 2),
+              h.wire(modeIn.id, bsc2.id, 2),
+              h.wire(modeIn.id, bsc3.id, 2),
+
+              // SHIFT common (pin 3)
+              h.wire(shIn.id, bsc1.id, 3),
+              h.wire(shIn.id, bsc2.id, 3),
+              h.wire(shIn.id, bsc3.id, 3),
+
+              // CLK common (pin 4) — same TCK
+              h.wire(tck.id, bsc1.id, 4, 0, { isClockWire: true }),
+              h.wire(tck.id, bsc2.id, 4, 0, { isClockWire: true }),
+              h.wire(tck.id, bsc3.id, 4, 0, { isClockWire: true }),
+
+              // Scan chain: bsc1.SO → bsc2.SI → bsc2.SO → bsc3.SI
+              h.wire(bsc1.id, bsc2.id, 1, 1),
+              h.wire(bsc2.id, bsc3.id, 1, 1),
+
+              // PO observation
+              h.wire(bsc1.id, po1.id, 0, 0),
+              h.wire(bsc2.id, po2.id, 0, 0),
+              h.wire(bsc3.id, po3.id, 0, 0),
+
+              // Chain-out from last BSC
+              h.wire(bsc3.id, soOut.id, 0, 1),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — IEEE 1149.1 JTAG / Boundary Scan',
+    tags: ['jtag', 'tap', 'boundary-scan', 'ieee-1149.1', 'fsm', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6011 — Transition / Delay Faults (at-speed testing)
+  //   Single part. Explains the two-vector requirement that
+  //   distinguishes transition faults from stuck-at faults, and
+  //   the LOS vs LOC test methodology. Live circuit uses a
+  //   stuck-at-0 on a buffer output as a proxy for "slow-to-rise
+  //   that never finishes" — the engine has no timing model.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'transition-faults-at-speed',
+    difficulty: 'hard',
+    title: 'תקלות מעבר — Slow-to-Rise / Slow-to-Fall ובדיקת at-speed',
+    intro:
+`**תקלת מעבר** (transition fault) היא שער או חוט **איטיים מדי** — הם עוברים בין \`0\` ל-\`1\` (או הפוך), אבל לא מספיקים להתייצב לפני קצה השעון הבא. **stuck-at fault testing** (וקטור יחיד) **לא יתפוס תקלה כזו** כי הוא בודק רק את הערך הסופי בלי תלות בקצב המעבר.
+
+שני סוגים:
+- \`slow-to-rise (STR)\`: מעבר \`0→1\` איטי
+- \`slow-to-fall (STF)\`: מעבר \`1→0\` איטי
+
+מה מבנה ה-test pattern שכן יתפוס את התקלה? כמה וקטורים נדרשים? מה ההבדל בין **launch-on-shift** ל-**launch-on-capture**?`,
+    schematic: `
+<svg viewBox="0 0 1000 1100" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="Transition fault waveforms (normal vs slow-to-rise) and 2-vector test sequence.">
+
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    תקלת מעבר — מה stuck-at לא תופס
+  </text>
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    התקלה תלויה ב-**זמן** המעבר, לא רק בערך הסופי
+  </text>
+
+  <!-- ============= TOP: WAVEFORM PANEL ============= -->
+  <rect x="20" y="90" width="960" height="500" rx="12"
+        fill="rgba(96,192,255,0.04)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
+  <text x="500" y="128" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+    Waveform — נקי לעומת slow-to-rise
+  </text>
+
+  <!-- Clock waveform -->
+  <text x="60" y="180" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
+  <path d="M 120 180 L 200 180 L 200 160 L 280 160 L 280 180 L 360 180 L 360 160 L 440 160 L 440 180 L 520 180 L 520 160 L 600 160 L 600 180 L 680 180 L 680 160 L 760 160 L 760 180 L 840 180 L 840 160 L 920 160"
+        stroke="#cca040" stroke-width="2.2" fill="none"/>
+  <!-- Clock edge markers (rising edges) -->
+  <g fill="#cca040" font-size="13" text-anchor="middle">
+    <text x="280" y="206">↑ t1</text>
+    <text x="440" y="206">↑ t2 (V1)</text>
+    <text x="600" y="206">↑ t3 (V2)</text>
+    <text x="760" y="206">↑ t4 (capture)</text>
+  </g>
+
+  <!-- Input D waveform (V1: 0 stable, V2: rises to 1 at t3) -->
+  <text x="60" y="280" fill="#cc66ff" font-size="18" font-weight="bold">D</text>
+  <path d="M 120 290 L 600 290 L 600 250 L 920 250" stroke="#cc66ff" stroke-width="2.4" fill="none"/>
+  <text x="350" y="284" fill="#a0a0c0" font-size="14" font-style="italic">stable LOW (V1)</text>
+  <text x="730" y="244" fill="#a0a0c0" font-size="14" font-style="italic">HIGH (V2)</text>
+
+  <!-- Normal output waveform -->
+  <text x="60" y="380" fill="#80f0a0" font-size="18" font-weight="bold">OUT (clean)</text>
+  <path d="M 120 390 L 600 390 L 615 350 L 920 350" stroke="#80f0a0" stroke-width="2.4" fill="none"/>
+  <text x="730" y="344" fill="#80f0a0" font-size="14" font-style="italic">rises promptly</text>
+  <!-- Capture sample marker -->
+  <circle cx="760" cy="350" r="8" fill="#80f0a0" opacity="0.85"/>
+  <text x="760" y="338" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">FF captures 1 ✓</text>
+
+  <!-- Slow-to-rise output waveform -->
+  <text x="60" y="480" fill="#ff6080" font-size="18" font-weight="bold">OUT (STR)</text>
+  <path d="M 120 490 L 600 490 L 850 490 L 920 450" stroke="#ff6080" stroke-width="2.4" fill="none"/>
+  <text x="730" y="484" fill="#ff8080" font-size="14" font-style="italic">slow — finishes too late</text>
+  <!-- Capture sample marker on faulty -->
+  <circle cx="760" cy="490" r="8" fill="#ff6080" opacity="0.85"/>
+  <text x="760" y="478" text-anchor="middle" fill="#ff6080" font-size="14" font-weight="bold">FF captures 0 ✗</text>
+  <!-- Slow rise shown as gentle slope after capture -->
+  <line x1="600" y1="490" x2="850" y2="490" stroke="#ff6080" stroke-width="2.4" stroke-dasharray="3,3" opacity="0.6"/>
+
+  <text x="500" y="560" text-anchor="middle" fill="#ffe080" font-size="17" font-weight="bold">
+    אותו וקטור-כתיבה, אותו ערך סופי — אבל ה-FF לוכד **ערך שגוי** בגלל delay
+  </text>
+
+  <!-- ============= BOTTOM: TWO-VECTOR TEST PANEL ============= -->
+  <rect x="20" y="610" width="960" height="470" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="500" y="648" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+    מבנה ה-test pattern — דרושים שני וקטורים רצופים
+  </text>
+
+  <!-- V1 box -->
+  <rect x="60" y="680" width="270" height="100" rx="8" fill="rgba(96,192,255,0.06)" stroke="#80c8ff" stroke-width="2"/>
+  <text x="195" y="710" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">V1 — Stabilize</text>
+  <text x="195" y="738" text-anchor="middle" fill="#c8b090" font-size="15">מציב את המעגל במצב התחלתי</text>
+  <text x="195" y="762" text-anchor="middle" fill="#c8b090" font-size="15">(הקצה האחר של המעבר)</text>
+
+  <!-- Arrow -->
+  <path d="M 340 730 L 380 730" stroke="#cca040" stroke-width="2.4" fill="none" marker-end="url(#tArrow)"/>
+  <defs>
+    <marker id="tArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#cca040"/>
+    </marker>
+  </defs>
+
+  <!-- V2 box -->
+  <rect x="400" y="680" width="270" height="100" rx="8" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="2"/>
+  <text x="535" y="710" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">V2 — Launch</text>
+  <text x="535" y="738" text-anchor="middle" fill="#c8b090" font-size="15">מפעיל את המעבר על המעגל</text>
+  <text x="535" y="762" text-anchor="middle" fill="#c8b090" font-size="15">(הופך את הקצה — STR / STF)</text>
+
+  <!-- Arrow -->
+  <path d="M 680 730 L 720 730" stroke="#cca040" stroke-width="2.4" fill="none" marker-end="url(#tArrow)"/>
+
+  <!-- Capture box -->
+  <rect x="740" y="680" width="220" height="100" rx="8" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="2"/>
+  <text x="850" y="710" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">Capture</text>
+  <text x="850" y="738" text-anchor="middle" fill="#c8b090" font-size="15">clock אחד — לוכד</text>
+  <text x="850" y="762" text-anchor="middle" fill="#c8b090" font-size="15">את התוצאה ב-FF הבא</text>
+
+  <!-- LOS vs LOC -->
+  <text x="500" y="830" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="19">
+    שתי סכימות להפקת V2:
+  </text>
+
+  <rect x="60" y="855" width="430" height="180" rx="8" fill="rgba(96,192,255,0.04)" stroke="rgba(128,212,255,0.4)" stroke-width="1.6"/>
+  <text x="275" y="884" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">Launch-on-Shift (LOS)</text>
+  <text x="275" y="912" text-anchor="middle" fill="#c8b090" font-size="15">V2 מגיע מ-shift אחרון של scan</text>
+  <text x="275" y="938" text-anchor="middle" fill="#c8b090" font-size="15">SE=1 → ביט אחרון נכנס</text>
+  <text x="275" y="964" text-anchor="middle" fill="#c8b090" font-size="15">SE=0 → capture cycle</text>
+  <text x="275" y="998" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">פשוט יותר, כיסוי טוב</text>
+
+  <rect x="510" y="855" width="430" height="180" rx="8" fill="rgba(255,176,96,0.04)" stroke="rgba(255,176,96,0.4)" stroke-width="1.6"/>
+  <text x="725" y="884" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="18">Launch-on-Capture (LOC)</text>
+  <text x="725" y="912" text-anchor="middle" fill="#c8b090" font-size="15">V2 נוצר ע"י clock פונקציונלי</text>
+  <text x="725" y="938" text-anchor="middle" fill="#c8b090" font-size="15">SE=0 לאורך שני ה-clocks</text>
+  <text x="725" y="964" text-anchor="middle" fill="#c8b090" font-size="15">המעבר בא מלוגיקה אמיתית</text>
+  <text x="725" y="998" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">at-speed אמיתי, ATPG קשה יותר</text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'מהי תקלת מעבר ולמה stuck-at testing **לא תופס** אותה? כמה וקטורי בדיקה דרושים לתפיסת תקלת \\\`slow-to-rise\\\`? תאר את ההבדל בין **launch-on-shift (LOS)** ל-**launch-on-capture (LOC)**.',
+        hints: [
+          'תקלת stuck-at היא מודל "תמיד תקוע בערך \\\`0\\\` או \\\`1\\\`". וקטור יחיד שמציב את הערך ההפוך חושף אותה.',
+          'תקלת מעבר היא **delay**, לא ערך — השער/החוט מצליחים להגיע ליעד **אבל מאוחר מדי**.',
+          'כדי לראות איך מעבר התרחש, צריך לראות גם את ה-**לפני** וגם את ה-**אחרי** — שני וקטורים רצופים.',
+          'LOS: ה-vector השני מגיע מ-shift נוסף של scan (SE=1 בזמן ה-launch). פשוט לטעון, אבל ה-launch אינו at-speed אמיתי.',
+          'LOC: ה-vector השני נוצר ע"י clock cycle פונקציונלי (SE=0). יותר נאמן ל-at-speed, אבל ATPG צריך למצוא וקטור שמייצר את ה-state הנדרש דרך הלוגיקה הפונקציונלית.',
+        ],
+        answer:
+`### למה stuck-at לא תופס
+
+**Stuck-at** בודק רק את ה-**ערך הסופי**: וקטור יחיד מציב inputs, capture cycle לוכד outputs, השוואה לצפי. אם השער איטי אבל בסופו של דבר מגיע ליעד **לפני** ה-capture, stuck-at לא רואה בעיה. בעיצוב at-speed מודרני, מעבר שאיחר ב-100ps מבדל בין chip שעובד ב-1GHz לבין chip שלא — ועדיין stuck-at ייתן PASS.
+
+### תקלת מעבר דורשת **2 וקטורים רצופים**
+
+| וקטור | תפקיד | מצב SE | מה קורה |
+|---|---|:---:|---|
+| **V1** (initialization) | מציב את הקצה ההפוך של המעבר | תלוי בסכימה | scan chain טוען state ש-\`A=0\` (לדוגמה) |
+| **V2** (launch) | מפעיל את המעבר | תלוי | משהו גורם ל-\`A\` לעבור ל-\`1\` |
+| Capture | clock יחיד לאחר V2 | \`SE=0\` | FF במרחק כמה שערים מ-\`A\` לוכד את הערך החדש |
+
+בלי V1 אין transition מוגדר. בלי V2 הוא לא יוצא לפועל. רק **שניהם יחד** חושפים את התקלה.
+
+### LOS לעומת LOC
+
+**Launch-on-Shift (LOS)**:
+- \`SE=1\` בזמן launch — ה-vector השני מגיע מ-shift בודד של ה-scan chain.
+- היתרון: ATPG פשוט יותר (השליטה ב-V2 מלאה).
+- החיסרון: ה-launch מתבצע ב-clock של scan (איטי יותר), והערך מגיע דרך MUX של ה-scan ולא דרך הלוגיקה הפונקציונלית — לא בדיוק at-speed.
+
+**Launch-on-Capture (LOC)**:
+- \`SE=0\` לאורך שני ה-clocks — ה-vector השני נוצר על-ידי clock cycle פונקציונלי שמפעיל את הלוגיקה האמיתית.
+- היתרון: at-speed אמיתי, תופס תקלות שתלויות בלוגיקה אמיתית.
+- החיסרון: ATPG חייב למצוא state V1 שגורם דרך הלוגיקה ל-V2 הרצוי. לפעמים בלתי-אפשרי → unreachable.
+
+### בקנבס
+
+המעגל הוא 2-FF chain עם buffer ביניהם. ה-buffer-output מוזרק עם \`stuckAt = 0\` שמדמה את הקיצוניות של slow-to-rise (לא מצליח לעולם להגיע). הרץ:
+
+1. הצב \`A=0\`, פעם ב-CLK פעם או שתיים → \`FF_A.Q=0\`, ולאחר עוד clock גם \`FF_B.Q=0\`. הכל בסדר.
+2. הצב \`A=1\` → ב-clock הבא \`FF_A.Q=1\`. אבל \`buffer.out\` תקוע ב-\`0\` → \`FF_B.Q\` נשאר \`0\`. **התקלה נתפסה**.
+
+המנוע אינו מדמה delay אמיתי, אז התקלה כאן מוצגת כ-**stuck-at ביציאת השער** כפרוקסי לקיצוניות של slow-to-rise. במציאות, התקלה מתרחשת רק בזמן המעבר ולא בשגרה.`,
+        interviewerMindset:
+`**שאלה מתקדמת** בראיון DFT/ATE. המראיין מחפש:
+1. **שאתה מבחין בין מודל ערך (stuck-at) למודל זמן (transition)** — שני קטגוריות שונות לחלוטין.
+2. **שאתה זוכר 2-vector requirement** — וקטור יחיד לעולם לא יתפוס transition fault.
+3. **שאתה מכיר LOS ו-LOC** — שני ה-schemes הסטנדרטיים בתעשייה.
+
+**שאלת המשך נפוצה**: "באיזו תדירות (Hz) צריך להריץ את ה-capture clock לבדיקת transition?" → ב-**clock פונקציונלי** המלא של ה-chip (לדוגמה 1GHz). זה ה"at-speed" — בודקים אם הלוגיקה מספיקה ב-1ns של clock period. \`shift\` יכול להישאר ב-50MHz כדי לחסוך הספק.
+
+**שאלת bonus**: "מה ההבדל בין transition fault ל-path-delay fault?" → transition fault מתייחס ל**שער/חוט יחיד**; path-delay מתייחס ל-**נתיב שלם** מ-FF ל-FF. Path-delay מודל מדויק יותר אבל יקר ב-ATPG (מספר הנתיבים הקריטיים יכול להגיע למיליונים).
+
+**שאלת bonus 2**: "מה הקשר ל-process variation?" → ככל ש-process קרוב למרגין (5nm, 3nm), הסטיות בין transistors עולות. transition faults נפוצות יותר; chip לא נופל אבל לא רץ ב-Fmax המתוכנן — "מהיר אבל לא מספיק". בדיקה at-speed היא מי שתופס את זה.`,
+        expectedAnswers: [
+          'transition fault', 'slow-to-rise', 'slow-to-fall', 'STR', 'STF',
+          'two vectors', '2 vectors', 'V1', 'V2',
+          'stable', 'launch', 'capture', 'at-speed',
+          'LOS', 'launch-on-shift', 'LOC', 'launch-on-capture',
+          'delay', 'timing',
+          'stuck-at', 'value',
+        ],
+        circuit: () => build(() => {
+          // Two-FF chain with a buffer (NOT-NOT) between them, used
+          // to demonstrate a transition fault via stuck-at-0 proxy
+          // on the buffer output wire. The student loads FF_A with
+          // different values and observes whether FF_B captures the
+          // transitioned value or stays stuck.
+          //
+          // Why a buffer (NOT-NOT)? In a real CMOS gate the slow-to-
+          // rise fault sits on a transistor; the closest analogue we
+          // have is a wire with stuck-at-0 between two combinational
+          // gates. The two NOT gates act as a buffer (net inversion 0)
+          // so the functional path passes A → FF_A.Q → buffer-out →
+          // FF_B.D, with the proxy fault on the wire feeding FF_B.D.
+          const clk  = h.clock(80, 480);
+          const aIn  = h.input(80, 220, 'A');
+
+          const ffA = h.ffD(280, 220, 'FF_A');
+          const inv1 = h.gate('NOT', 460, 220);
+          const inv2 = h.gate('NOT', 620, 220);
+          const ffB = h.ffD(800, 220, 'FF_B');
+
+          const qaOut = h.output(280, 80, 'Q_A');
+          const qbOut = h.output(800, 80, 'Q_B');
+
+          // Stuck-at-0 on the wire feeding FF_B.D — proxy for
+          // an extreme slow-to-rise fault.
+          const buggyWire = h.wire(inv2.id, ffB.id, 0);
+          buggyWire.stuckAt = 0;
+
+          return {
+            nodes: [clk, aIn, ffA, inv1, inv2, ffB, qaOut, qbOut],
+            wires: [
+              h.wire(aIn.id, ffA.id, 0),                  // A → FF_A.D
+              h.wire(clk.id, ffA.id, 1, 0, { isClockWire: true }),
+              h.wire(ffA.id, inv1.id, 0),                 // FF_A.Q → NOT
+              h.wire(inv1.id, inv2.id, 0),                // NOT → NOT (net buffer)
+              buggyWire,                                  // NOT → FF_B.D (FAULTY)
+              h.wire(clk.id, ffB.id, 1, 0, { isClockWire: true }),
+              h.wire(ffA.id, qaOut.id, 0),
+              h.wire(ffB.id, qbOut.id, 0),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — Transition Fault Model + at-speed testing',
+    tags: ['transition-fault', 'delay-fault', 'slow-to-rise', 'slow-to-fall', 'at-speed', 'los', 'loc', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6012 — March C- RAM test (uses the marchCminus pattern just
+  //   added to TestPatterns.js). Live circuit pre-injects a CFin
+  //   coupling fault — student picks March C- from MEMORY TESTS
+  //   and sees it caught in 10N ops vs Walking's N²+2N.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'march-c-ram-linear',
+    difficulty: 'medium',
+    title: 'March C- — בדיקת RAM ב-O(N) במקום O(N²)',
+    intro:
+`Walking-1 / Walking-0 (שאלה #6006) תופסים coupling faults אבל עולים \`O(N²)\` אופרציות. לעיצובים גדולים (\`N=1024\`+) זה הופך לבלתי-מעשי: 1M+ ops לבדיקה אחת.
+
+**March C-** הוא ה-standard התעשייתי שמקבל **\`coverage דומה ב-O(N)\` בלבד** — 10N ops. הסוד: שני passes הפוכים בכיוון (\`↑\` ascending ו-\`↓\` descending) שמכסים שני הקטבים של כל coupling fault.
+
+נתון \`RAM 8x8\` (\`N=8\`). תאר את ששת ה-march elements של March C-. למה שני הכיוונים הכרחיים? כמה ops זה לעומת Walking?`,
+    schematic: `
+<svg viewBox="0 0 1000 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="March C- as six march elements, vertically stacked with arrows showing direction.">
+
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    March C- — שישה march elements
+  </text>
+  <text x="500" y="70" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+    init + 4 passes (2× ascending + 2× descending) + final read
+  </text>
+
+  <!-- ====== ELEMENT BOX BUILDER (6 stacked) ====== -->
+  <!-- M0 — init -->
+  <rect x="60" y="110" width="880" height="120" rx="10"
+        fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
+  <text x="100" y="155" fill="#80c8ff" font-weight="bold" font-size="22">M0</text>
+  <text x="240" y="155" fill="#ffe080" font-weight="bold" font-size="32">⇕</text>
+  <text x="320" y="155" fill="#c8d8f0" font-size="22" font-family="monospace">(w0)</text>
+  <text x="500" y="155" fill="#c8b090" font-size="17">— initialize all cells to 0</text>
+  <text x="100" y="200" fill="#a0a0c0" font-size="15">כיוון לא קריטי — רק init</text>
+  <text x="780" y="200" text-anchor="end" fill="#80f0a0" font-size="16" font-weight="bold">N ops</text>
+
+  <!-- M1 — ascending r0,w1 -->
+  <rect x="60" y="245" width="880" height="120" rx="10"
+        fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
+  <text x="100" y="290" fill="#80f0a0" font-weight="bold" font-size="22">M1</text>
+  <text x="240" y="290" fill="#80f0a0" font-weight="bold" font-size="32">⇑</text>
+  <text x="320" y="290" fill="#c8d8f0" font-size="22" font-family="monospace">(r0, w1)</text>
+  <text x="500" y="290" fill="#c8b090" font-size="17">— ascending: read 0, write 1</text>
+  <text x="100" y="335" fill="#a0a0c0" font-size="15">בודק כתיבה 0→1 בכיוון עולה</text>
+  <text x="780" y="335" text-anchor="end" fill="#80f0a0" font-size="16" font-weight="bold">2N ops</text>
+
+  <!-- M2 — ascending r1,w0 -->
+  <rect x="60" y="380" width="880" height="120" rx="10"
+        fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
+  <text x="100" y="425" fill="#80f0a0" font-weight="bold" font-size="22">M2</text>
+  <text x="240" y="425" fill="#80f0a0" font-weight="bold" font-size="32">⇑</text>
+  <text x="320" y="425" fill="#c8d8f0" font-size="22" font-family="monospace">(r1, w0)</text>
+  <text x="500" y="425" fill="#c8b090" font-size="17">— ascending: read 1, write 0</text>
+  <text x="100" y="470" fill="#a0a0c0" font-size="15">בודק כתיבה 1→0 בכיוון עולה</text>
+  <text x="780" y="470" text-anchor="end" fill="#80f0a0" font-size="16" font-weight="bold">2N ops</text>
+
+  <!-- M3 — descending r0,w1 -->
+  <rect x="60" y="515" width="880" height="120" rx="10"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="100" y="560" fill="#ffc080" font-weight="bold" font-size="22">M3</text>
+  <text x="240" y="560" fill="#ffc080" font-weight="bold" font-size="32">⇓</text>
+  <text x="320" y="560" fill="#c8d8f0" font-size="22" font-family="monospace">(r0, w1)</text>
+  <text x="500" y="560" fill="#c8b090" font-size="17">— descending: read 0, write 1</text>
+  <text x="100" y="605" fill="#a0a0c0" font-size="15">בודק 0→1 בכיוון יורד — תופס תקלות אסימטריות</text>
+  <text x="780" y="605" text-anchor="end" fill="#ffc080" font-size="16" font-weight="bold">2N ops</text>
+
+  <!-- M4 — descending r1,w0 -->
+  <rect x="60" y="650" width="880" height="120" rx="10"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="100" y="695" fill="#ffc080" font-weight="bold" font-size="22">M4</text>
+  <text x="240" y="695" fill="#ffc080" font-weight="bold" font-size="32">⇓</text>
+  <text x="320" y="695" fill="#c8d8f0" font-size="22" font-family="monospace">(r1, w0)</text>
+  <text x="500" y="695" fill="#c8b090" font-size="17">— descending: read 1, write 0</text>
+  <text x="100" y="740" fill="#a0a0c0" font-size="15">בודק 1→0 בכיוון יורד</text>
+  <text x="780" y="740" text-anchor="end" fill="#ffc080" font-size="16" font-weight="bold">2N ops</text>
+
+  <!-- M5 — final read -->
+  <rect x="60" y="785" width="880" height="120" rx="10"
+        fill="rgba(204,102,255,0.05)" stroke="rgba(204,102,255,0.55)" stroke-width="2"/>
+  <text x="100" y="830" fill="#cc99ff" font-weight="bold" font-size="22">M5</text>
+  <text x="240" y="830" fill="#ffe080" font-weight="bold" font-size="32">⇕</text>
+  <text x="320" y="830" fill="#c8d8f0" font-size="22" font-family="monospace">(r0)</text>
+  <text x="500" y="830" fill="#c8b090" font-size="17">— final: read 0 from all cells</text>
+  <text x="100" y="875" fill="#a0a0c0" font-size="15">verification — כל התאים אמורים להיות 0</text>
+  <text x="780" y="875" text-anchor="end" fill="#cc99ff" font-size="16" font-weight="bold">N ops</text>
+
+  <!-- Total + comparison -->
+  <rect x="60" y="930" width="880" height="220" rx="10"
+        fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.6"/>
+  <text x="500" y="966" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+    סה"כ = N + 2N + 2N + 2N + 2N + N = 10N ops
+  </text>
+
+  <!-- Comparison table inline -->
+  <text x="220" y="1010" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">N=8</text>
+  <text x="500" y="1010" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="18">N=64</text>
+  <text x="780" y="1010" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">N=1024</text>
+
+  <text x="120" y="1050" fill="#cc99ff" font-size="18">Walking-1 (N²+2N):</text>
+  <text x="220" y="1080" text-anchor="middle" fill="#c8b090" font-size="17">80</text>
+  <text x="500" y="1080" text-anchor="middle" fill="#c8b090" font-size="17">4,224</text>
+  <text x="780" y="1080" text-anchor="middle" fill="#ff8080" font-size="17" font-weight="bold">1,050,624</text>
+
+  <text x="120" y="1118" fill="#80f0a0" font-size="18">March C- (10N):</text>
+  <text x="220" y="1145" text-anchor="middle" fill="#c8b090" font-size="17">80</text>
+  <text x="500" y="1145" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">640</text>
+  <text x="780" y="1145" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">10,240</text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'תאר את ששת ה-march elements של March C-. למה צריך **שני כיוונים** של passes (ascending + descending) ולא רק אחד? כמה ops לעומת Walking-1?',
+        hints: [
+          'March element הוא סדרה של reads + writes שמוחלים על כל התאים בסדר כלשהו (\\\`↑\\\` עולה או \\\`↓\\\` יורד).',
+          'M0 הוא init של כל התאים ל-0. M5 הוא final verification של 0.',
+          'M1, M2 הם passes עולים: M1 \\\`(r0, w1)\\\` ו-M2 \\\`(r1, w0)\\\` — שני המעברים.',
+          'M3, M4 הם passes יורדים: \\\`(r0, w1)\\\` ו-\\\`(r1, w0)\\\` — אותה תוכן אבל בכיוון הפוך.',
+          'תחשוב על coupling fault שתלוי בשכן \\\`previous\\\` — בכיוון ↑ השכן הוא \\\`addr-1\\\`, בכיוון ↓ הוא \\\`addr+1\\\`. כל coupling tilt-symmetric ייפלט רק על אחד מהכיוונים.',
+          'סה"כ ops: \\\`N + 2N + 2N + 2N + 2N + N = 10N\\\`. ל-N=1024 זה ~10K, לעומת Walking-1 שעולה ~1M.',
+        ],
+        answer:
+`### ששת ה-march elements
+
+| Element | סוג | פעולות לכל תא | מטרה |
+|---|:---:|---|---|
+| M0 | ⇕ | \`w0\` | init הכל ל-0 |
+| M1 | ⇑ | \`r0\`, \`w1\` | ascending: בדוק 0, כתוב 1 |
+| M2 | ⇑ | \`r1\`, \`w0\` | ascending: בדוק 1, כתוב 0 |
+| M3 | ⇓ | \`r0\`, \`w1\` | **descending**: בדוק 0, כתוב 1 |
+| M4 | ⇓ | \`r1\`, \`w0\` | **descending**: בדוק 1, כתוב 0 |
+| M5 | ⇕ | \`r0\` | verify all 0 |
+
+### למה צריך שני כיוונים
+
+Coupling faults נעות. דוגמה: \`CFin(aggressor=5, victim=3, trigger='01')\` — כתיבה \`0→1\` ל-addr 5 משנה את addr 3.
+
+- בכיוון **↑** (ascending): כותבים ל-addr 3 לפני addr 5. כש-addr 5 משתנה ל-1, addr 3 כבר היה 1 — ה-flip מ-1 משאיר אותו ב-0. הוא נראה נכון בקריאה הבאה. **התקלה לא נתפסת בכיוון ↑.**
+- בכיוון **↓** (descending): כותבים ל-addr 5 לפני addr 3. כש-addr 5 משתנה ל-1, addr 3 (שאמור להיות 0 כעת) נהפך ל-1. הקריאה הבאה ב-addr 3 מצפה ל-0 ומקבלת 1 → **FAIL**.
+
+לכן המבחן חייב להפעיל את שני הסדרים: כל coupling fault אסימטרי לפחות באחד מהם.
+
+### Walking-1 לעומת March C-
+
+| N | Walking-1 (N²+2N) | March C- (10N) | יחס |
+|---:|---:|---:|:---:|
+| 8 | 80 | 80 | 1× |
+| 64 | 4,224 | 640 | 6.6× |
+| 1024 | 1,050,624 | 10,240 | **103×** |
+| 65536 (64K) | 4.3 × 10⁹ | 655,360 | **6560×** |
+
+זה למה תעשייה חוזרת לבחור March: ה-coverage כמעט זהה, אבל הזמן והעלות בקטן בסדר-גודל.
+
+### בקנבס — תקלה מוזרקת
+
+ה-RAM הוא \`8×8\` עם תקלת \`CFin(aggressor=2, victim=5, trigger='01')\` מוזרקת מראש. ב-\`MEMORY TESTS\` בחר:
+
+- **March C-** → ▶ RUN → **FAIL** בכתובת 5 ✓ (התקלה נחשפת ב-M3 או M4 ב-pass היורד).
+- **All-zero** → PASS (לא כותב 1 ל-addr 2; ה-coupling שקוף).
+- **Walking-1** → FAIL בכתובת 5 (אבל ב-80 ops, אותו cost כמו March עבור N=8 — היתרון יוצא ב-N גדול).`,
+        interviewerMindset:
+`**שאלה תעשייתית מובהקת.** המראיין מחפש:
+1. **שאתה זוכר את 6 ה-elements** — לא רק "10N ops" אלא איזה passes ולמה.
+2. **שאתה מבין למה שני כיוונים** — coupling אסימטרי דורש שני סדרים. זו התובנה המרכזית.
+3. **שאתה מציין את ה-O(N) win** — מי שלא מדגיש את הצמיחה הליניארית מפספס למה זה הסטנדרט.
+
+**שאלת המשך נפוצה**: "מה ההבדל בין March C- ל-March C (הגרסה המקורית)?" → March C המקורי כלל element ביניים נוסף. C- (minus) הוא אופטימיזציה שדילגה עליו עם coverage כמעט זהה.
+
+**שאלת bonus**: "מה ה-coverage של March C-?" → 100% של \`stuck-at\`, 100% של אדדרס-decoder, ~100% של coupling פשוטים. **לא תופס**: CFdyn (dynamic coupling שדורש 3+ vectors) ו-retention faults (דורש pause). לאלה צריך March SR, March RAW, וכו'.
+
+**שאלת bonus 2**: "מי המציא?" → A.J. van de Goor (TU Delft, שנות ה-80). הספר שלו "Testing Semiconductor Memories" הוא הביבליה של memory test.`,
+        expectedAnswers: [
+          '10N', '10n', 'march', 'march c-', 'march c minus',
+          '6 elements', 'six elements',
+          'ascending', 'descending', 'both directions',
+          'M0', 'M1', 'M2', 'M3', 'M4', 'M5',
+          'w0', 'w1', 'r0', 'r1',
+          'O(N)', 'linear',
+          'coupling', 'asymmetric',
+          'walking', 'comparison',
+        ],
+        circuit: () => build(() => {
+          // 8×8 RAM with a CFin coupling fault pre-injected so the
+          // student can pick March C- in MEMORY TESTS and see it
+          // catch the fault that All-zero/All-one would miss.
+          const ram = h.block('RAM', 480, 280, {
+            addrBits: 3,
+            dataBits: 8,
+            label: 'RAM 8×8 — CFin: addr 2 → addr 5',
+          });
+          ram.couplingFaults = [
+            { aggressor: 2, victim: 5, type: 'CFin', trigger: '01' },
+          ];
+          return { nodes: [ram], wires: [] };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — March memory test algorithms',
+    tags: ['march', 'march-c', 'memory', 'ram', 'coupling', 'linear', 'production', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6013 — Fault Collapsing on a 3-input NAND
+  //   Single part. Enumerates the 8 stuck-at faults on the gate,
+  //   identifies equivalent ones (collapse to 5), and discusses
+  //   dominance as a bonus. Live circuit lets the student
+  //   manually inject any wire stuck-at and verify equivalence
+  //   experimentally.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'fault-collapsing-nand3',
+    difficulty: 'medium',
+    title: 'Fault Collapsing — צמצום רשימת התקלות לפני ATPG',
+    intro:
+`לפני שמריצים **ATPG** (Automatic Test Pattern Generation) על מעגל, נהוג לבצע **fault collapsing** — צמצום רשימת התקלות עפ"י תקלות שמייצרות **אותה התנהגות בפלט**. שתי תקלות שכאלה הן **equivalent** ואחת מהן מספיקה.
+
+נתון שער \`NAND\` עם 3 כניסות \`A, B, C\` ויציאה \`Y\`:
+\`\`\`
+   Y = ¬(A · B · C)
+\`\`\`
+
+לכל קו (3 כניסות + 1 יציאה) יש 2 תקלות stuck-at אפשריות (\`s-a-0\` ו-\`s-a-1\`) → סך-הכל **8 תקלות**.
+
+מהן הקבוצות של תקלות שקולות (equivalent), ומה הרשימה ה-**collapsed** המינימלית? כמה תקלות חוסכים?`,
+    schematic: `
+<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="3-input NAND with all 8 stuck-at fault sites and a behavior table.">
+
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    NAND עם 3 כניסות — 8 תקלות stuck-at
+  </text>
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+    Y = ¬(A · B · C)
+  </text>
+
+  <!-- ===== TOP PANEL: gate diagram ===== -->
+  <rect x="20" y="90" width="960" height="380" rx="12"
+        fill="rgba(96,192,255,0.04)" stroke="rgba(128,212,255,0.5)" stroke-width="2"/>
+
+  <!-- NAND gate body (rounded D shape with bubble) -->
+  <path d="M 380 200 L 480 200 A 90 90 0 0 1 480 380 L 380 380 Z" fill="#0a1825" stroke="#80c8ff" stroke-width="2.6"/>
+  <circle cx="595" cy="290" r="10" fill="#0a1825" stroke="#80c8ff" stroke-width="2.6"/>
+  <text x="430" y="296" text-anchor="middle" fill="#80c8ff" font-size="22" font-weight="bold">NAND</text>
+
+  <!-- Inputs A, B, C -->
+  <line x1="160" y1="230" x2="380" y2="230" stroke="#cca040" stroke-width="2.2"/>
+  <text x="130" y="236" text-anchor="middle" fill="#cca040" font-size="22" font-weight="bold">A</text>
+  <circle cx="270" cy="230" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
+  <text x="270" y="200" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f1, f2</text>
+
+  <line x1="160" y1="290" x2="380" y2="290" stroke="#cca040" stroke-width="2.2"/>
+  <text x="130" y="296" text-anchor="middle" fill="#cca040" font-size="22" font-weight="bold">B</text>
+  <circle cx="270" cy="290" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
+  <text x="270" y="320" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f3, f4</text>
+
+  <line x1="160" y1="350" x2="380" y2="350" stroke="#cca040" stroke-width="2.2"/>
+  <text x="130" y="356" text-anchor="middle" fill="#cca040" font-size="22" font-weight="bold">C</text>
+  <circle cx="270" cy="350" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
+  <text x="270" y="380" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f5, f6</text>
+
+  <!-- Output Y -->
+  <line x1="605" y1="290" x2="850" y2="290" stroke="#ff9933" stroke-width="2.2"/>
+  <text x="880" y="296" text-anchor="middle" fill="#ff9933" font-size="22" font-weight="bold">Y</text>
+  <circle cx="730" cy="290" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
+  <text x="730" y="260" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f7, f8</text>
+
+  <!-- Fault legend -->
+  <text x="500" y="438" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">
+    8 fault sites: A_sa0/sa1 · B_sa0/sa1 · C_sa0/sa1 · Y_sa0/sa1
+  </text>
+
+  <!-- ===== BOTTOM PANEL: behavior table ===== -->
+  <rect x="20" y="490" width="960" height="490" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="500" y="528" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+    התנהגות ה-Y בכל קומבינציה של ABC
+  </text>
+
+  <!-- Table header -->
+  <g font-size="16" font-weight="bold">
+    <text x="80" y="582" text-anchor="middle" fill="#cca040">ABC</text>
+    <text x="180" y="582" text-anchor="middle" fill="#80c8ff">Y free</text>
+    <text x="290" y="582" text-anchor="middle" fill="#ff6080">A_sa0</text>
+    <text x="370" y="582" text-anchor="middle" fill="#ff6080">A_sa1</text>
+    <text x="450" y="582" text-anchor="middle" fill="#ff6080">B_sa0</text>
+    <text x="530" y="582" text-anchor="middle" fill="#ff6080">B_sa1</text>
+    <text x="610" y="582" text-anchor="middle" fill="#ff6080">C_sa0</text>
+    <text x="690" y="582" text-anchor="middle" fill="#ff6080">C_sa1</text>
+    <text x="800" y="582" text-anchor="middle" fill="#cc66ff">Y_sa0</text>
+    <text x="900" y="582" text-anchor="middle" fill="#cc66ff">Y_sa1</text>
+  </g>
+
+  <!-- Table separator -->
+  <line x1="40" y1="595" x2="960" y2="595" stroke="#3a4a5a" stroke-width="1.4"/>
+
+  <!-- Table rows for 8 input combinations -->
+  ${[
+    { abc: '000', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '001', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '010', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '011', yFree: 1, vals: [1,0,1,1,1,1,0,1] },  // A_sa1 → ¬(1·1·1)=0
+    { abc: '100', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '101', yFree: 1, vals: [1,1,1,0,1,1,0,1] },  // B_sa1 → ¬(1·1·1)=0
+    { abc: '110', yFree: 1, vals: [1,1,1,1,1,0,0,1] },  // C_sa1 → ¬(1·1·1)=0
+    { abc: '111', yFree: 0, vals: [1,0,1,0,1,0,0,1] },
+  ].map((r, i) => {
+    const y = 620 + i * 42;
+    const fills = ['#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#cc66ff','#cc66ff'];
+    let html = `<text x="80" y="${y}" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">${r.abc}</text>`;
+    html += `<text x="180" y="${y}" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">${r.yFree}</text>`;
+    const xs = [290, 370, 450, 530, 610, 690, 800, 900];
+    r.vals.forEach((v, j) => {
+      const fill = (v === r.yFree) ? '#c8b090' : fills[j];
+      const weight = (v === r.yFree) ? 'normal' : 'bold';
+      html += `<text x="${xs[j]}" y="${y}" text-anchor="middle" fill="${fill}" font-size="16" font-weight="${weight}">${v}</text>`;
+    });
+    return html;
+  }).join('')}
+
+  <text x="500" y="970" text-anchor="middle" fill="#ffe080" font-size="17" font-style="italic">
+    תאים מודגשים = הפלט שונה מ-Y free — וקטור שמזהה את התקלה
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'זהה את **קבוצות התקלות השקולות (equivalent fault classes)** ב-NAND עם 3 כניסות. מה ה-**collapsed list** המינימלית (לפי equivalence בלבד)? כמה תקלות חוסכים, וכמה חיסכון אחוזי ב-ATPG?',
+        hints: [
+          'תקלת \\\`A_sa0\\\` משמעותה \\\`A\\\` תמיד \\\`0\\\` → \\\`Y = ¬(0·B·C) = ¬0 = 1\\\` תמיד.',
+          'אז \\\`A_sa0\\\` מתנהג בדיוק כמו \\\`Y_sa1\\\` — שניהם מאלצים \\\`Y = 1\\\` בכל קומבינציה. זוהי שקילות.',
+          'תקלות \\\`B_sa0\\\` ו-\\\`C_sa0\\\` באותה צורה: כל אחת מאלצת \\\`Y = 1\\\` תמיד. ארבעתן שקולות.',
+          'תקלת \\\`A_sa1\\\` משאירה את הפלט תלוי ב-B, C: \\\`Y = ¬(1·B·C) = ¬(B·C)\\\`. שונה משאר התקלות.',
+          'תקלת \\\`Y_sa0\\\` מאלצת \\\`Y = 0\\\` תמיד — אין תקלה אחרת על קלט שמשיגה את זה (ב-NAND אין דרך להפוך פלט מ-1 ל-0 דרך input).',
+          'ספור את ה-equivalence classes: {A_sa0, B_sa0, C_sa0, Y_sa1} + {A_sa1} + {B_sa1} + {C_sa1} + {Y_sa0} = 5 classes.',
+        ],
+        answer:
+`### זיהוי קבוצות שקילות
+
+לכל תקלה, מה היה \`Y_faulty\` בכל 8 הקומבינציות (התשובה בטבלה למעלה)?
+
+**Class 1 — מאלצים Y=1 תמיד:**
+\`{A_sa0, B_sa0, C_sa0, Y_sa1}\`
+
+כל ארבעתן מאלצות \`Y = 1\` בכל קומבינציה. למה? \`s-a-0\` על כניסה של NAND → אותו אפקט כמו אם הקלט הזה היה 0 → \`Y = ¬(...·0·...) = ¬0 = 1\` תמיד. וזה זהה ל-\`Y_sa1\`. ⇒ **תקלה אחת מייצגת את כל הארבע.**
+
+**Singletons (לא שקולים לאף אחד):**
+- \`A_sa1\`: \`Y = ¬(B·C)\` — שונה מ-Y free כש-(A,B,C) = (0,1,1). תקלה ייחודית.
+- \`B_sa1\`: \`Y = ¬(A·C)\` — שונה כש-(1,0,1). ייחודית.
+- \`C_sa1\`: \`Y = ¬(A·B)\` — שונה כש-(1,1,0). ייחודית.
+- \`Y_sa0\`: \`Y = 0\` תמיד — ייחודי (אין input s-a שמשיגה את זה).
+
+### Collapsed list (5 תקלות במקום 8)
+
+| # | מייצג | מקור equivalence | תופס ע"י וקטור |
+|---:|---|---|---|
+| 1 | \`Y_sa1\` | {A_sa0, B_sa0, C_sa0, Y_sa1} | (1,1,1) — Y free = 0, faulty = 1 |
+| 2 | \`A_sa1\` | unique | (0,1,1) |
+| 3 | \`B_sa1\` | unique | (1,0,1) |
+| 4 | \`C_sa1\` | unique | (1,1,0) |
+| 5 | \`Y_sa0\` | unique | any except (1,1,1) — Y free = 1, faulty = 0 |
+
+### חיסכון
+
+- **לפני collapsing**: 8 תקלות
+- **אחרי**: 5 תקלות
+- **חיסכון**: 37.5% פחות תקלות שצריך לפתור ב-ATPG
+
+עבור chip של 100M שערים → 100M × 0.375 = **37.5M תקלות פחות לעבד**. ATPG עוצר חיים — collapsing יכול לחסוך שעות של compute time.
+
+### עוד צמצום אפשרי — Dominance
+
+\`Y_sa0\` נתפסת ע"י כל וקטור שבו \`Y_free = 1\` (7 מתוך 8). זה כולל את הוקטורים שתופסים \`A_sa1, B_sa1, C_sa1\` (שהם בעצמם תת-קבוצה של ה-7). אומרים ש-\`Y_sa0\` **נשלטת ע"י (dominated by)** התקלות הספציפיות יותר — ATPG מתקדם יכול לדלג עליה אם הוקטור לתקלה ספציפית בלאו-הכי תופס אותה. צמצום dominance מוריד ל-4 או אפילו 3 תקלות, אבל הוא מקובל פחות כי הוא תלוי-וקטור.
+
+### בקנבס
+
+NAND עם 3 כניסות. שנה את \`A, B, C\` ב-\`(0,0,0)\` עד \`(1,1,1)\` ותראה \`Y\`. עכשיו לחץ-ימני על קו A, בחר \`Inject stuck-at-0\`. תראה: \`Y = 1\` בכל קומבינציה. הזרק במקום זה stuck-at-1 ב-Y → אותה התוצאה. **זוהי הדגמת ה-equivalence.**`,
+        interviewerMindset:
+`**שאלת יסוד** ב-DFT/ATPG. המראיין מחפש:
+1. **שאתה זוכר את הכלל הפשוט** — \`s-a-0\` ב-input של NAND ≡ \`s-a-1\` ב-output. תקלה ב-input שמאלצת controlling value (0 ל-NAND/AND, 1 ל-NOR/OR) → שקולה ל-output sa עם הערך ההפוך.
+2. **שאתה לא מפרט את כל ה-8 בנפרד** — מקבל את הזיהוי הגנרי של כלל "controlling value".
+3. **שאתה מציין אחוז החיסכון** — 37.5% במקרה הזה.
+
+**שאלת המשך**: "מה הכלל המקביל ל-NOR / OR?" → \`s-a-1\` ב-input של NOR (controlling value=1) ≡ \`s-a-0\` ב-output. אותו רעיון, פוליאריות הפוכה.
+
+**שאלת bonus**: "האם המתודה מתפשטת ל-XOR?" → לא! XOR אין לו controlling value (שום ערך input מאלץ output). לכן אין שקילות פשוטה ב-XOR; כל תקלה ייחודית.
+
+**שאלת bonus 2**: "מה האפקט בקנה-מידה של chip שלם?" → במקום \`5 × G\` תקלות (G=מספר שערים), כל equivalent collapsing מצמצם את התקלות ל-\`~3-4 × G\` בממוצע. עוד dominance מוריד ל-\`~2 × G\`. ASIC עם 100M שערים → 200M תקלות אחרי collapsing מלא, במקום 500M. קריטי לזמן ATPG.`,
+        expectedAnswers: [
+          'equivalent', 'equivalence', 'שקילות', 'שקולות',
+          'A_sa0', 'B_sa0', 'C_sa0', 'Y_sa1',
+          'A_sa1', 'B_sa1', 'C_sa1', 'Y_sa0',
+          'controlling value', 'controlling',
+          '5', 'five', '8', 'eight',
+          '37.5%', '3/8',
+          'collapsing', 'collapse', 'collapsed',
+          'dominance', 'dominated',
+        ],
+        circuit: () => build(() => {
+          // 3-input NAND with PIs and Y output. The student can
+          // right-click any wire and inject stuck-at faults via
+          // the wire context menu, then change A/B/C to verify
+          // that equivalent faults produce identical Y values.
+          const inpA = h.input(120, 180, 'A');
+          const inpB = h.input(120, 280, 'B');
+          const inpC = h.input(120, 380, 'C');
+          const nandG = h.block('GATE_SLOT', 380, 280, {
+            gate: 'NAND',
+            label: 'NAND',
+          });
+          // GATE_SLOT defaults to 2 inputs; widen to 3.
+          nandG.inputCount = 3;
+          const outY = h.output(600, 280, 'Y');
+          return {
+            nodes: [inpA, inpB, inpC, nandG, outY],
+            wires: [
+              h.wire(inpA.id, nandG.id, 0),
+              h.wire(inpB.id, nandG.id, 1),
+              h.wire(inpC.id, nandG.id, 2),
+              h.wire(nandG.id, outY.id, 0),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — Fault collapsing for ATPG efficiency',
+    tags: ['fault-collapsing', 'equivalent-faults', 'dominance', 'atpg', 'stuck-at', 'nand', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6014 — Scan Compression (EDT — Embedded Deterministic Test)
+  //   Two-part: (a) Decompressor XOR network — how few external
+  //   pins drive many internal scan chains, (b) Compactor XOR
+  //   tree — how many internal outputs collapse to few external
+  //   pins, with aliasing + X-state problems.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'scan-compression-edt',
+    difficulty: 'hard',
+    title: 'Scan Compression (EDT) — מנגנון 100:1 ב-ASIC מודרני',
+    intro:
+`ASIC מודרני כולל **מיליוני** flip-flops, אבל ל-package יש רק \`~10\` פינים פיזיים ל-scan I/O. כדי לגשר על הפער, מוסיפים שני רכיבים זעירים:
+
+- **Decompressor**: רשת XOR שמרחיבה \`k\` ביטים חיצוניים ל-\`N\` כניסות פנימיות של scan chains, כך ש-\`N = 100k\` עד \`1000k\`.
+- **Compactor**: עץ XOR שמכווץ \`N\` יציאות של ה-chains בחזרה ל-\`k\` פינים חיצוניים.
+
+יחד הם משיגים **compression ratio 100:1** עד 1000:1 — סטנדרט תעשייתי.
+
+נתון 2 פינים חיצוניים ו-3 chains פנימיים. תכנן את ה-XOR לשני הכיוונים. מה ההגבלות?`,
+    schematic: `
+<svg viewBox="0 0 1000 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="Scan compression: decompressor XOR network (top) and compactor XOR tree (bottom).">
+
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    EDT — מ-2 פינים ל-3 chains וחזרה
+  </text>
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+    decompressor (XOR network) → 3 scan chains → compactor (XOR tree)
+  </text>
+
+  <!-- ========== DECOMPRESSOR PANEL ========== -->
+  <rect x="20" y="90" width="960" height="490" rx="12"
+        fill="rgba(204,102,255,0.05)" stroke="rgba(204,102,255,0.55)" stroke-width="2"/>
+  <text x="500" y="128" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="22">
+    DECOMPRESSOR — 2 פינים → 3 chains
+  </text>
+
+  <!-- External inputs e0, e1 (top) -->
+  <circle cx="100" cy="200" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="100" y="206" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">e0</text>
+  <circle cx="100" cy="320" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="100" y="326" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">e1</text>
+  <text x="58" y="160" fill="#a0a0c0" font-size="14" font-style="italic">external</text>
+
+  <!-- XOR gate -->
+  <polygon points="450,250 500,232 540,250 540,290 500,308 450,290" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
+  <text x="495" y="276" text-anchor="middle" fill="#80f0a0" font-size="22" font-weight="bold">⊕</text>
+
+  <!-- Wires from e0 to chain0 (s0) and to XOR -->
+  <line x1="122" y1="200" x2="300" y2="200" stroke="#cca040" stroke-width="2.2"/>
+  <line x1="300" y1="200" x2="300" y2="258" stroke="#cca040" stroke-width="2.2"/>
+  <line x1="300" y1="258" x2="450" y2="258" stroke="#cca040" stroke-width="2.2"/>
+  <circle cx="300" cy="200" r="5" fill="#cca040"/>
+  <line x1="300" y1="200" x2="780" y2="200" stroke="#cca040" stroke-width="2.2"/>
+
+  <!-- Wires from e1 -->
+  <line x1="122" y1="320" x2="300" y2="320" stroke="#cca040" stroke-width="2.2"/>
+  <line x1="300" y1="320" x2="300" y2="282" stroke="#cca040" stroke-width="2.2"/>
+  <line x1="300" y1="282" x2="450" y2="282" stroke="#cca040" stroke-width="2.2"/>
+  <circle cx="300" cy="320" r="5" fill="#cca040"/>
+  <line x1="300" y1="320" x2="780" y2="320" stroke="#cca040" stroke-width="2.2"/>
+
+  <!-- XOR output goes down to chain2 -->
+  <line x1="540" y1="270" x2="600" y2="270" stroke="#80f0a0" stroke-width="2.2"/>
+  <line x1="600" y1="270" x2="600" y2="440" stroke="#80f0a0" stroke-width="2.2"/>
+  <line x1="600" y1="440" x2="780" y2="440" stroke="#80f0a0" stroke-width="2.2"/>
+
+  <!-- Chain SCAN_FF blocks (right side) -->
+  <g>
+    <rect x="780" y="170" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="840" y="196" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 0</text>
+    <text x="840" y="215" text-anchor="middle" fill="#c8b090" font-size="13">SI = e0</text>
+  </g>
+  <g>
+    <rect x="780" y="290" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="840" y="316" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 1</text>
+    <text x="840" y="335" text-anchor="middle" fill="#c8b090" font-size="13">SI = e1</text>
+  </g>
+  <g>
+    <rect x="780" y="410" width="120" height="60" rx="6" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.6"/>
+    <text x="840" y="436" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">chain 2</text>
+    <text x="840" y="455" text-anchor="middle" fill="#c8b090" font-size="13">SI = e0 ⊕ e1</text>
+  </g>
+
+  <text x="500" y="530" text-anchor="middle" fill="#ffe080" font-size="16" font-style="italic">
+    יתרון: 1.5× חיסכון. הגבלה: chain 2 לא עצמאי — תלוי לינארית ב-chain 0 ו-1.
+  </text>
+  <text x="500" y="558" text-anchor="middle" fill="#a0a0c0" font-size="14">
+    ב-EDT אמיתי: LFSR + phase shifter במקום XOR שטוח, מאפשר עד 1000:1
+  </text>
+
+  <!-- ========== COMPACTOR PANEL ========== -->
+  <rect x="20" y="600" width="960" height="560" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="500" y="638" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+    COMPACTOR — 3 chains → 2 פינים
+  </text>
+
+  <!-- Chain outputs Q0, Q1, Q2 (left) -->
+  <g>
+    <rect x="100" y="710" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="160" y="736" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 0</text>
+    <text x="160" y="755" text-anchor="middle" fill="#c8b090" font-size="13">Q0</text>
+  </g>
+  <g>
+    <rect x="100" y="840" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="160" y="866" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 1</text>
+    <text x="160" y="885" text-anchor="middle" fill="#c8b090" font-size="13">Q1</text>
+  </g>
+  <g>
+    <rect x="100" y="970" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="160" y="996" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 2</text>
+    <text x="160" y="1015" text-anchor="middle" fill="#c8b090" font-size="13">Q2</text>
+  </g>
+
+  <!-- XOR gates for compactor -->
+  <!-- o0 = Q0 ⊕ Q1 -->
+  <polygon points="500,760 550,742 590,760 590,800 550,818 500,800" fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
+  <text x="545" y="786" text-anchor="middle" fill="#ffc080" font-size="22" font-weight="bold">⊕</text>
+  <!-- o1 = Q1 ⊕ Q2 -->
+  <polygon points="500,910 550,892 590,910 590,950 550,968 500,950" fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
+  <text x="545" y="936" text-anchor="middle" fill="#ffc080" font-size="22" font-weight="bold">⊕</text>
+
+  <!-- Wires Q0 → o0 XOR -->
+  <line x1="220" y1="740" x2="500" y2="768" stroke="#80c8ff" stroke-width="2.2"/>
+  <!-- Q1 → both XORs -->
+  <line x1="220" y1="870" x2="400" y2="870" stroke="#80c8ff" stroke-width="2.2"/>
+  <line x1="400" y1="870" x2="400" y2="790" stroke="#80c8ff" stroke-width="2.2"/>
+  <line x1="400" y1="790" x2="500" y2="790" stroke="#80c8ff" stroke-width="2.2"/>
+  <circle cx="400" cy="870" r="5" fill="#80c8ff"/>
+  <line x1="400" y1="870" x2="400" y2="918" stroke="#80c8ff" stroke-width="2.2"/>
+  <line x1="400" y1="918" x2="500" y2="918" stroke="#80c8ff" stroke-width="2.2"/>
+  <!-- Q2 → o1 XOR -->
+  <line x1="220" y1="1000" x2="450" y2="1000" stroke="#80c8ff" stroke-width="2.2"/>
+  <line x1="450" y1="1000" x2="450" y2="940" stroke="#80c8ff" stroke-width="2.2"/>
+  <line x1="450" y1="940" x2="500" y2="940" stroke="#80c8ff" stroke-width="2.2"/>
+
+  <!-- Compactor outputs -->
+  <line x1="590" y1="780" x2="800" y2="780" stroke="#ff9933" stroke-width="2.4"/>
+  <circle cx="830" cy="780" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="830" y="786" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">o0</text>
+  <text x="694" y="770" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">Q0 ⊕ Q1</text>
+
+  <line x1="590" y1="930" x2="800" y2="930" stroke="#ff9933" stroke-width="2.4"/>
+  <circle cx="830" cy="930" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="830" y="936" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">o1</text>
+  <text x="694" y="920" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">Q1 ⊕ Q2</text>
+
+  <text x="500" y="1080" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">
+    בעיה: aliasing — שתי תקלות שונות יכולות לתת אותו וקטור (o0,o1)
+  </text>
+  <text x="500" y="1108" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">
+    בעיה: X-states — chain אחד עם X מזהם את כל ה-compactor output
+  </text>
+  <text x="500" y="1140" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+    הפתרון התעשייתי: X-masking + פתרונות EDT מתקדמים יותר
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: '**Decompressor** — תכנן רשת XOR מינימלית שמרחיבה 2 פינים חיצוניים \\\`e0, e1\\\` ל-3 כניסות \\\`SI\\\` של scan chains פנימיים. מה ההגבלה ה-לינארית? כמה chains באמת **בלתי-תלויים** ניתן לטעון מ-2 פינים? למה לא 4?',
+        hints: [
+          'Decompressor הוא רשת XOR שטוחה (combinational): לכל קלט חיצוני, מחשב מספר combinations שונים שמועברים ל-chains.',
+          's0 = e0 ישיר. s1 = e1 ישיר. s2 = e0 XOR e1 (שילוב לינארי שני).',
+          'מה לגבי s3? כל פונקציה לינארית של 2 משתנים מעל GF(2) היא אחד מ-\\\`{0, e0, e1, e0⊕e1, 1, ¬e0, ¬e1, ¬(e0⊕e1)}\\\`. סה"כ 8 פונקציות, אבל רק 3 בלתי-תלויות (במובן רישא XOR-תלות).',
+          'אז 2 פינים → מקסימום 3 chains בלתי-תלויים (במשמעות linear independence). chain 4 חייב להיות שילוב של הקודמים.',
+          'בפועל EDT מודרני מוסיף phase shifter (LFSR) שמרחיב את החלל הליניארי לאורך זמן — chain 4 יכול לקבל "linear-independent over many cycles".',
+        ],
+        answer:
+`### תכנון רשת ה-decompressor
+
+\`\`\`
+e0 ───┬───────────────────────────► s0  (chain 0)
+      │
+      └─┐
+        │
+        ▼
+       XOR ─────────────────────► s2  (chain 2 = e0 ⊕ e1)
+        ▲
+        │
+      ┌─┘
+      │
+e1 ───┴───────────────────────────► s1  (chain 1)
+\`\`\`
+
+### הסבר
+
+- **s0 = e0** — wire ישיר. Chain 0 מקבל בדיוק את ערך \`e0\` בכל clock.
+- **s1 = e1** — wire ישיר. Chain 1 מקבל \`e1\`.
+- **s2 = e0 ⊕ e1** — שער XOR יחיד. Chain 2 מקבל את הסכום הלינארי.
+
+ב-3 ה-chains עכשיו טוענים ערכים שונים בו-זמנית עם 2 פינים בלבד. **חיסכון של 1.5×** בפינים.
+
+### למה לא 4 chains?
+
+מ-2 משתנים בינאריים \`e0, e1\` ניתן לבנות בדיוק **\`2² = 4\`** combinations מובחנות: \`(00, 01, 10, 11)\`. אבל **שילובים לינאריים מעל GF(2)** של 2 משתנים הם רק 4: \`{0, e0, e1, e0⊕e1}\`. אם נדרשים בלתי-תלויים לינארית — רק **3 מהם בלתי-תלויים** (כי 4-ה-XOR-של-שני-הקודמים = 0, שילוב טריוויאלי).
+
+לכן: **dim של החלל הליניארי = 2 (מספר הקלטים). מספר outputs בלתי-תלויים ≤ 2.** ה-3 שלנו (s0, s1, s2) כולל אחד תלוי (\`s2 = s0 ⊕ s1\`).
+
+### לאן זה הולך ב-EDT אמיתי
+
+ב-EDT מסחרי (Mentor, Synopsys), במקום XOR שטוח משתמשים ב-**phase shifter** מבוסס LFSR. ה-LFSR יוצר רצף pseudo-random ארוך מ-k bits של seed, וכל chain מקבל פונקציה (לינארית) של ה-state של ה-LFSR. כי ה-LFSR מספק יותר ביטים פנימיים מהקלט, ניתן לקבל \`N >> k\` chains בלתי-תלויים פרקטית. ASIC מודרני: \`k=10\` פינים → \`N=1000\` chains. **compression 100×.**
+
+### בקנבס
+
+ניתן רשת decompressor 2:3 מלאה. שנה \`e0, e1\` ב-(0,0), (0,1), (1,0), (1,1). תראה ש-\`s0=e0, s1=e1, s2=e0⊕e1\`. הצב \`SE=1\` כדי לטעון את ה-FFs דרך ה-chains. \`Q0, Q1, Q2\` יציגו את ה-state של כל chain.`,
+        interviewerMindset:
+`**שאלת compression** קלאסית בראיון DFT מתקדם. המראיין מחפש:
+1. **שאתה רואה את ה-XOR network כ-linear function** — לא סתם "כמה XORs".
+2. **שאתה מציין את ה-linear-independence limit** — \`max(N independent) = k\`. זה ההגבלה היסודית.
+3. **שאתה מכיר את ה-phase shifter** — הפתרון האמיתי שעוקף את ההגבלה דרך ה-state של ה-LFSR.
+
+**שאלת המשך**: "מה הגודל של ה-LFSR ב-EDT אמיתי?" → לרוב \`L = 24-32\`. הוא מספק \`2^L\` states פוטנציאליים → מספיק entropy ל-\`~thousands\` of independent chains.
+
+**שאלת bonus**: "האם ה-decompressor משפיע על ATPG?" → כן! ATPG עכשיו צריך לפתור עבור ה-\`k\` ביטים החיצוניים כך שייצרו את ה-N ביטים פנימיים הרצויים. זה לעיתים בלתי-אפשרי (אם הוקטור הפנימי לא בתת-מרחב של ה-LFSR). אז ATPG מתקדם בודק את ה-coverage actually achievable ב-EDT שלך — לא רק את ה-fault list.`,
+        expectedAnswers: [
+          'XOR network', 'XOR',
+          'e0', 'e1', 's0', 's1', 's2',
+          'linear', 'independent', 'GF(2)', 'linearly independent',
+          'phase shifter', 'LFSR',
+          '3', 'three',
+          'compression', '1.5×', '1.5x',
+          'decompressor',
+        ],
+      },
+      {
+        label: 'ב',
+        question: '**Compactor** — תכנן עץ XOR מינימלי שמכווץ 3 יציאות \\\`Q0, Q1, Q2\\\` (סוף ה-chains) ל-2 פינים חיצוניים \\\`o0, o1\\\`. מה ה-**aliasing problem** ומה ה-**X-state problem**? איך פותרים אותם בתעשייה?',
+        hints: [
+          'Compactor הוא עץ XOR שטוח שלוקח N ערכים ומחשב מספר combinations לינאריים מהם.',
+          'בחירה אפשרית: o0 = Q0 ⊕ Q1, o1 = Q1 ⊕ Q2. כל Q משתתף לפחות באחד מהפלטים.',
+          'Aliasing: שתי תקלות שונות יכולות לייצר את **אותו ערך** ב-(o0, o1) → המנתח לא מסוגל להבחין ביניהן. במיוחד אם תקלה משנה \\\`Q0\\\` ו-\\\`Q1\\\` באותה דרך, ה-XOR משאיר o0 ללא שינוי.',
+          'X-state: אם chain אחד מייצר ערך לא-מוגדר \\\`X\\\` (לא 0 ולא 1, למשל בגלל initialization issues), ה-XOR ה-output הופך גם הוא ל-X. ה-X "מתפשט" בכל ה-compactor.',
+          'פתרונות: X-masking, multiple-input signature register (MISR), אורח-וקטור (vector-by-vector observation) במקום signature.',
+        ],
+        answer:
+`### תכנון ה-compactor
+
+\`\`\`
+Q0 ──┐
+     ⊕──► o0  (Q0 ⊕ Q1)
+Q1 ──┴┐
+      │
+Q1 ──┐│
+     ⊕──► o1  (Q1 ⊕ Q2)
+Q2 ──┘
+\`\`\`
+
+(\`Q1\` משתתף בשני הפלטים — כל אחד מ-\`Q0, Q1, Q2\` משפיע על לפחות אחד מהפלטים, כך ש-aliasing מינימלי בשילובים פשוטים).
+
+### Aliasing — שתי תקלות → אותה signature
+
+נניח תקלה A מהפכת \`Q0\` מ-0 ל-1. תקלה B מהפכת \`Q1\` מ-0 ל-1. שתיהן מייצרות \`o0 = 0⊕1 = 1\` (במקום 0 ⊕ 0 = 0). **הוקטור החיצוני זהה**, ובלי ה-Q הפנימיים אי-אפשר להבחין בין A ל-B.
+
+**אבל**: o1 שונה. תקלה A: o1 = 0⊕Q2 = 0. תקלה B: o1 = 1⊕Q2 = 1. אז במקרה הזה ה-compactor מבחין. בכלל, מבנה ה-XOR צריך להבטיח **diversity** — לא תהיינה שתי תקלות שונות שמכוונות לאותו \`(o0, o1)\`.
+
+ההסתברות ל-aliasing ב-XOR tree יורדת באופן אקספוננציאלי במספר ה-outputs: \`P(aliasing) ≈ 2^(-k)\` עבור \`k\` outputs.
+
+### X-state — שדה מוקש
+
+מה אם \`chain 1\` לא הספיק להתאתחל ויש בו \`X\` (unknown)? אז \`o0 = Q0 ⊕ X = X\` — הפלט מזוהם. ובגלל ש-\`Q1\` משפיע גם על \`o1\`, גם \`o1 = X\`. **X אחד משחית את כל ה-compactor output**.
+
+ב-ASIC מודרני יש הרבה מקורות ל-X: zero-state בלוקים, latch lost שלא אותחל, asynchronous logic. **X-state יכול להוריד את ה-effective coverage ל-0**.
+
+### פתרונות תעשייתיים
+
+1. **X-masking**: לפני ה-XOR tree, MUX-ים שיכולים "להחביא" chain ספציפי. אם ATPG יודע שמ-chain 1 צפוי X בוקטור הזה, הוא מוודא ש-MUX יחסום אותו → \`Q1 → 0\` ב-XOR.
+2. **MISR-based compactor**: עץ XOR נטען לתוך LFSR שאוסף signature לאורך זמן. signature קטן (16-32 bits) ב-end-of-test מספיק. כי MISR ממשיך לרוץ, X יחיד לא הורס את כל ה-signature לטווח ארוך.
+3. **X-bounding**: ATPG מסמן את ה-Xs מראש ועוקף אותם בדפוסי הבדיקה.
+
+### בקנבס
+
+ה-compactor מקבל \`Q0, Q1, Q2\` משלוש ה-chains. שנה את ערכי ה-\`e0, e1\` ב-\`SE=1\`, פעם, ותראה את ה-Q-ים מתעדכנים. אחר-כך תראה את \`o0, o1\` מציגים את ה-XOR. ניסוי aliasing: נסה שני שילובים שונים של \`(e0, e1)\` שמייצרים אותו \`(o0, o1)\` — תגלה שזה לא קל אם המבנה מתוכנן היטב.`,
+        interviewerMindset:
+`**שאלה תעשייתית מתקדמת.** המראיין מחפש:
+1. **שאתה מזהה את ה-aliasing problem** — XOR compactor הוא lossy בהגדרה.
+2. **שאתה מזכיר X-states** — בעיה ש-95% מהמועמדים שוכחים. זה ההבדל בין junior ל-senior.
+3. **שאתה מכיר MISR / X-masking** — פתרון מציאותי, לא רק תיאוריה.
+
+**שאלת המשך**: "אם אני נוסיף chain רביעי, איך משתנה ה-XOR tree?" → צריך עוד שילובים. למשל \`o0 = Q0 ⊕ Q1 ⊕ Q3\`. ה-design קריטי — צריך להבטיח שכל זוג תקלות יוצר signature שונה.
+
+**שאלת bonus**: "מה היחס המקסימלי של compression שמושג בתעשייה?" → 100-200× בפועל. מעבר לזה ה-X-state ratio גובה מחיר ב-coverage. גבולות תיאורטיים יותר (1000×) דורשים X-bounding מאוד מהוקרא ATPG.
+
+**שאלת bonus 2**: "מה ההבדל בין EDT לבין ה-LBIST שראינו ב-#6001/#6002 (LFSR+MISR)?" → LBIST הוא random + signature; EDT הוא deterministic. ATPG בוחר seed → known good vectors. LBIST פסיבי, EDT אקטיבי. רוב ה-chips מודרניים משתמשים בשניהם.`,
+        expectedAnswers: [
+          'aliasing', 'X-state', 'X states', 'unknown',
+          'XOR tree', 'compactor',
+          'o0', 'o1', 'Q0', 'Q1', 'Q2',
+          'masking', 'X-masking', 'MISR',
+          'signature',
+          '2^-k', '2^(-k)',
+          'compression',
+        ],
+        circuit: () => build(() => {
+          // EDT decompressor + 3 scan chains + compactor.
+          //   - 2 external INPUTs e0, e1
+          //   - XOR(e0, e1) feeds chain 2's SI
+          //   - 3 SCAN_FFs as the 3 chains (each 1-bit)
+          //   - 2 XOR compactor producing o0 = Q0^Q1, o1 = Q1^Q2
+          //   - SE + CLK common
+          //   - Q observation pads + compactor output pads
+          const clk  = h.clock(80, 700);
+          const seIn = h.input(80, 600, 'SE');
+          const e0   = h.input(80, 200, 'e0');
+          const e1   = h.input(80, 380, 'e1');
+
+          // Decompressor XOR
+          const decXor = h.gate('XOR', 280, 290);
+
+          const ff0 = h.block('SCAN_FF', 500, 200, { label: 'chain0', initialQ: 0 });
+          const ff1 = h.block('SCAN_FF', 500, 380, { label: 'chain1', initialQ: 0 });
+          const ff2 = h.block('SCAN_FF', 500, 560, { label: 'chain2', initialQ: 0 });
+
+          // Compactor XOR tree: o0 = Q0 ⊕ Q1, o1 = Q1 ⊕ Q2
+          const compXor0 = h.gate('XOR', 720, 280);
+          const compXor1 = h.gate('XOR', 720, 470);
+
+          // Outputs
+          const o0Out = h.output(900, 280, 'o0');
+          const o1Out = h.output(900, 470, 'o1');
+          const q0Out = h.output(680, 110, 'Q0');
+          const q1Out = h.output(500, 110, 'Q1');
+          const q2Out = h.output(720, 650, 'Q2');
+
+          return {
+            nodes: [
+              clk, seIn, e0, e1, decXor,
+              ff0, ff1, ff2,
+              compXor0, compXor1,
+              o0Out, o1Out, q0Out, q1Out, q2Out,
+            ],
+            wires: [
+              // Decompressor: e0 → XOR.in0, e1 → XOR.in1
+              h.wire(e0.id, decXor.id, 0),
+              h.wire(e1.id, decXor.id, 1),
+
+              // Chain TI inputs: ff0.TI = e0, ff1.TI = e1, ff2.TI = e0⊕e1
+              h.wire(e0.id, ff0.id, 1),
+              h.wire(e1.id, ff1.id, 1),
+              h.wire(decXor.id, ff2.id, 1),
+
+              // Functional D inputs tied to 0 (we don't drive D in this demo).
+              // Leave them unconnected — SCAN_FF reads D as 0 by default.
+
+              // SE common (pin 2)
+              h.wire(seIn.id, ff0.id, 2),
+              h.wire(seIn.id, ff1.id, 2),
+              h.wire(seIn.id, ff2.id, 2),
+
+              // CLK common (pin 3)
+              h.wire(clk.id, ff0.id, 3, 0, { isClockWire: true }),
+              h.wire(clk.id, ff1.id, 3, 0, { isClockWire: true }),
+              h.wire(clk.id, ff2.id, 3, 0, { isClockWire: true }),
+
+              // Compactor: o0 = Q0 ⊕ Q1
+              h.wire(ff0.id, compXor0.id, 0),
+              h.wire(ff1.id, compXor0.id, 1),
+
+              // o1 = Q1 ⊕ Q2
+              h.wire(ff1.id, compXor1.id, 0),
+              h.wire(ff2.id, compXor1.id, 1),
+
+              // Outputs
+              h.wire(compXor0.id, o0Out.id, 0),
+              h.wire(compXor1.id, o1Out.id, 0),
+              h.wire(ff0.id, q0Out.id, 0),
+              h.wire(ff1.id, q1Out.id, 0),
+              h.wire(ff2.id, q2Out.id, 0),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — Scan Compression (EDT / X-tolerance)',
+    tags: ['scan-compression', 'edt', 'decompressor', 'compactor', 'xor-tree', 'aliasing', 'x-state', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6015 — Decoder / Retention RAM Faults
+  //   Two-part. Decoder faults (AFcell, AFmult, AFwrong) and
+  //   retention faults are fault models beyond the engine's
+  //   cellFaults/couplingFaults. Live circuit uses a whole-word
+  //   cellFault as a proxy for AFcell, demonstrating that
+  //   Address-as-data catches what All-zero/All-one don't.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'decoder-retention-ram-faults',
+    difficulty: 'medium',
+    title: 'תקלות מקודד-כתובות ותקלות retention ב-RAM',
+    intro:
+`Walking, Checkerboard, ו-March C- מטפלים בעיקר ב-**stuck-at** ו-**coupling**. אבל ב-RAM אמיתי קיימים סוגי תקלות נוספים שדורשים דפוסים שונים:
+
+- **תקלות מקודד-כתובות** (Address Decoder Faults — AF): ה-decoder שמתרגם addr ל-row/column line הוא עצמו תקול. דוגמאות: כתובת לא מגיעה לאף תא; כתובת מגיעה למספר תאים; כתובת מגיעה לתא שגוי.
+- **תקלות retention**: התא **שומר** ערך בכתיבה אבל **מאבד** אותו אחרי זמן (קיבול דולף ב-DRAM, או leakage ב-SRAM צפוף).
+
+איך מזהים כל אחד, ומה הדפוסים המתאימים?`,
+    schematic: `
+<svg viewBox="0 0 1000 1080" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="Three address-decoder fault models plus retention fault timeline.">
+
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    מודלים של תקלות RAM מעבר ל-stuck-at
+  </text>
+
+  <!-- ============ DECODER FAULTS PANEL ============ -->
+  <rect x="20" y="80" width="960" height="540" rx="12"
+        fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
+  <text x="500" y="118" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="22">
+    Address Decoder Faults — 3 סוגים
+  </text>
+
+  <!-- AFcell -->
+  <rect x="50" y="150" width="290" height="430" rx="10"
+        fill="rgba(255,80,80,0.06)" stroke="rgba(255,96,96,0.55)" stroke-width="1.8"/>
+  <text x="195" y="186" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">AFcell</text>
+  <text x="195" y="210" text-anchor="middle" fill="#c8b090" font-size="15">תא בלתי-נגיש</text>
+  <!-- Cell array sketch -->
+  <g>
+    ${Array.from({ length: 4 }, (_, a) => Array.from({ length: 4 }, (_, b) => {
+      const x = 70 + b * 60;
+      const y = 240 + a * 50;
+      const dead = (a === 2 && b === 2);
+      const fill = dead ? '#3a0a14' : '#0a1825';
+      const stroke = dead ? '#ff6060' : '#3a4a60';
+      return `<rect x="${x}" y="${y}" width="50" height="40" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${dead ? 2.4 : 1.4}"/>${dead ? `<text x="${x+25}" y="${y+27}" text-anchor="middle" fill="#ff6060" font-size="20" font-weight="bold">×</text>` : ''}`;
+    }).join('')).join('')}
+  </g>
+  <text x="195" y="490" text-anchor="middle" fill="#c8b090" font-size="14">decoder מגיע ל-X</text>
+  <text x="195" y="513" text-anchor="middle" fill="#c8b090" font-size="14">תאים — אף תא לא נכתב</text>
+  <text x="195" y="555" text-anchor="middle" fill="#ffe080" font-size="15" font-weight="bold">תופס: read-after-write</text>
+
+  <!-- AFmult -->
+  <rect x="355" y="150" width="290" height="430" rx="10"
+        fill="rgba(255,176,96,0.06)" stroke="rgba(255,176,96,0.55)" stroke-width="1.8"/>
+  <text x="500" y="186" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="20">AFmult</text>
+  <text x="500" y="210" text-anchor="middle" fill="#c8b090" font-size="15">כתובת אחת → מספר תאים</text>
+  <!-- Cell array with two cells highlighted -->
+  <g>
+    ${Array.from({ length: 4 }, (_, a) => Array.from({ length: 4 }, (_, b) => {
+      const x = 375 + b * 60;
+      const y = 240 + a * 50;
+      const highlighted = (a === 2 && b === 1) || (a === 2 && b === 2);
+      const fill = highlighted ? '#3a2a14' : '#0a1825';
+      const stroke = highlighted ? '#ffc080' : '#3a4a60';
+      return `<rect x="${x}" y="${y}" width="50" height="40" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${highlighted ? 2.4 : 1.4}"/>${highlighted ? `<text x="${x+25}" y="${y+27}" text-anchor="middle" fill="#ffc080" font-size="14" font-weight="bold">A</text>` : ''}`;
+    }).join('')).join('')}
+  </g>
+  <text x="500" y="490" text-anchor="middle" fill="#c8b090" font-size="14">decoder מגיע לשני תאים</text>
+  <text x="500" y="513" text-anchor="middle" fill="#c8b090" font-size="14">בו-זמנית — write conflict</text>
+  <text x="500" y="555" text-anchor="middle" fill="#ffe080" font-size="15" font-weight="bold">תופס: March C-</text>
+
+  <!-- AFwrong -->
+  <rect x="660" y="150" width="290" height="430" rx="10"
+        fill="rgba(204,102,255,0.06)" stroke="rgba(204,102,255,0.55)" stroke-width="1.8"/>
+  <text x="805" y="186" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">AFwrong</text>
+  <text x="805" y="210" text-anchor="middle" fill="#c8b090" font-size="15">כתובת → תא שגוי</text>
+  <!-- Cell array with arrow from one cell to wrong one -->
+  <g>
+    ${Array.from({ length: 4 }, (_, a) => Array.from({ length: 4 }, (_, b) => {
+      const x = 680 + b * 60;
+      const y = 240 + a * 50;
+      const fill = '#0a1825';
+      const stroke = '#3a4a60';
+      return `<rect x="${x}" y="${y}" width="50" height="40" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.4"/>`;
+    }).join('')).join('')}
+    <!-- Arrow from (row 2, col 1) to (row 2, col 3) showing wrong addressing -->
+    <text x="765" y="367" text-anchor="middle" fill="#cc66ff" font-size="14" font-weight="bold">addr</text>
+    <text x="885" y="367" text-anchor="middle" fill="#cc66ff" font-size="14" font-weight="bold">actual</text>
+    <path d="M 765 380 Q 825 410, 885 380" stroke="#cc66ff" stroke-width="2" fill="none" marker-end="url(#decArr)"/>
+    <defs>
+      <marker id="decArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 Z" fill="#cc66ff"/>
+      </marker>
+    </defs>
+  </g>
+  <text x="805" y="490" text-anchor="middle" fill="#c8b090" font-size="14">כתיבה ל-A מגיעה ל-B</text>
+  <text x="805" y="513" text-anchor="middle" fill="#c8b090" font-size="14">— כתובת מבולגנת</text>
+  <text x="805" y="555" text-anchor="middle" fill="#ffe080" font-size="15" font-weight="bold">תופס: Address-as-data</text>
+
+  <!-- ============ RETENTION PANEL ============ -->
+  <rect x="20" y="640" width="960" height="420" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="500" y="678" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+    Retention Fault — הזיכרון "דולף"
+  </text>
+
+  <!-- Timeline -->
+  <line x1="80" y1="800" x2="920" y2="800" stroke="#a0a0c0" stroke-width="2.4"/>
+  <text x="60" y="806" text-anchor="end" fill="#a0a0c0" font-size="14">t</text>
+
+  <!-- Write event -->
+  <circle cx="160" cy="800" r="8" fill="#80f0a0"/>
+  <text x="160" y="828" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">Write 1</text>
+  <text x="160" y="848" text-anchor="middle" fill="#a0a0c0" font-size="13">cell stores 1</text>
+
+  <!-- Pause -->
+  <line x1="180" y1="800" x2="640" y2="800" stroke="#cca040" stroke-width="2.4" stroke-dasharray="6,4"/>
+  <text x="410" y="772" text-anchor="middle" fill="#cca040" font-size="15" font-style="italic">pause T₁ (ms) — תא לבד</text>
+
+  <!-- Read event with fault -->
+  <circle cx="700" cy="800" r="8" fill="#ff6080"/>
+  <text x="700" y="828" text-anchor="middle" fill="#ff6080" font-size="15" font-weight="bold">Read</text>
+  <text x="700" y="848" text-anchor="middle" fill="#ff8080" font-size="13" font-weight="bold">→ קוראים 0!</text>
+  <text x="700" y="868" text-anchor="middle" fill="#a0a0c0" font-size="13">קיבול דולף</text>
+
+  <!-- Annotation -->
+  <text x="500" y="940" text-anchor="middle" fill="#ffe080" font-size="17" font-weight="bold">
+    הדפוס לזיהוי: pause-based pattern
+  </text>
+  <text x="500" y="970" text-anchor="middle" fill="#c8b090" font-size="15">
+    write all 1s → wait T (ms) → read all → השוואה
+  </text>
+  <text x="500" y="998" text-anchor="middle" fill="#c8b090" font-size="15">
+    תאים שאיבדו → קוראים 0 במקום 1
+  </text>
+  <text x="500" y="1030" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+    בתעשייה: T נקבע ע"י refresh-period של ה-DRAM (typically 64ms / row)
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'תאר את 3 הסוגים של תקלות **address decoder** (AFcell, AFmult, AFwrong). איזה דפוס בדיקה תופס כל אחד? **למה All-zero / All-one לא תופסים את AFwrong**, ולמה דווקא Address-as-data כן?',
+        hints: [
+          'AFcell: כתובת מסוימת לא מגיעה לאף תא — כל write לכתובת זו פשוט "נופל". התא הזה תמיד מחזיר את ערך ההתחלה (לרוב 0). תופס: read-after-write עם ערכים שונים.',
+          'AFmult: כתובת מגיעה לשני תאים בו-זמנית. כתיבה לכתובת A משנה גם תא B ⇒ דומה לתקלת coupling. תופס: March C- (שני כיווני pass).',
+          'AFwrong: write לכתובת A מגיע בפועל לתא B (שונה). הקריאה מ-A מחזירה את ערך B במקום A.',
+          'All-zero/All-one כותבים את **אותו ערך** לכל הכתובות. אז גם אם כתיבה ל-A מגיעה ל-B, B כבר היה אמור לקבל את אותו ערך. הקריאה מחזירה את הערך הנכון → התקלה שקופה.',
+          'Address-as-data כותב ערך **שונה** לכל כתובת (cell A ← A). אז כתיבה ל-A שמגיעה ל-B מותירה את B עם ערך A במקום B. הקריאה מ-B מחזירה A — מיד נראית התקלה.',
+        ],
+        answer:
+`### שלושת המודלים
+
+| סוג | תיאור | תופעה ב-cell | דפוס שתופס |
+|---|---|---|---|
+| **AFcell** | כתובת לא מגיעה לאף תא | write נופל; read מחזיר ערך התחלה | read-after-write עם ערך לא-טריוויאלי |
+| **AFmult** | כתובת → מספר תאים | write לכתובת A משנה גם תא נוסף | March C- (שני כיוונים) |
+| **AFwrong** | כתובת → תא שגוי | write לכתובת A נכתב לתא B | **Address-as-data** |
+
+### למה All-zero/All-one עיוורים ל-AFwrong
+
+\`All-zero\` כותב \`0\` לכל הכתובות. נניח write לכתובת 3 מגיע בטעות לתא 7. אבל גם תא 7 אמור היה לקבל \`0\` (כי הוא לכאורה הכתובת הבאה ב-loop). אז שני התאים מקבלים \`0\`. כשקוראים אחר-כך \`addr=3\`, הקריאה מגיעה (נניח שבקריאה הכתובת עובדת נכון, או לפחות מובילה למקום שגוי באותה צורה כמו כתיבה) ומחזירה \`0\` — בדיוק כצפוי.
+
+**הבעיה היסודית**: כשכל התאים נושאים את אותו ערך, ההבחנה בין "write הגיע לתא הנכון" לבין "write הגיע לתא לא נכון" נמחקת.
+
+### למה Address-as-data **כן** עובד
+
+ב-\`Address-as-data\`, \`mem[A] = A\` — כל תא נושא ערך **ייחודי**:
+- כתיבה לכתובת 3 (ערך 3) שמגיעה בטעות לתא 7 → תא 7 נושא 3.
+- קריאה מכתובת 7 → מחזירה 3 (במקום 7 כצפוי).
+- mismatch → התקלה נחשפת.
+
+עלות: \`2N\` ops (זול במיוחד). תפיסה: AFwrong + stuck-at + חלק מ-AFcell.
+
+### בקנבס
+
+ה-RAM הוא \`8×8\` עם **AFcell מוזרק** על תא \`addr=5\` (whole-word stuck-at-0 כ-proxy). הרץ \`MEMORY TESTS\`:
+- **All-zero** → **PASS** (\`addr=5\` מחזיר \`0\` והערך הצפוי הוא \`0\` — לא רואים בעיה).
+- **All-one** → **FAIL** ב-\`addr=5\` (כותבים \`0xFF\`, קוראים \`0x00\`).
+- **Address-as-data** → **FAIL** ב-\`addr=5\` (כותבים \`5\`, קוראים \`0\`).
+- **March C-** → **FAIL** ב-\`addr=5\` (תופס בכל פעם שמצפים ל-\`1\`).
+
+זוהי הוכחה: AFcell נראה כמו stuck-at-0 — שני סוגי תקלות שונים אבל אותם דפוסים תופסים. **AFwrong אמיתי דורש שינוי במנוע** (החלפת כתובת), אבל ה-Address-as-data היה תופס אותו באותה צורה.`,
+        interviewerMindset:
+`**שאלת fault model** מתקדמת. המראיין מחפש:
+1. **שאתה זוכר את 3 סוגי ה-AF** — מועמדים זוכרים בדרך-כלל רק "decoder fault" כללי.
+2. **שאתה מסביר *למה* All-zero לא עובד** — זה הקסם של אותה תובנה שראינו ב-coupling (#6006): same-value patterns שקופים לתקלות שדורשות contrast.
+3. **שאתה רואה את Address-as-data כ-2N שעושה הרבה יותר** — לא רק stuck-at אלא גם decoder.
+
+**שאלת המשך נפוצה**: "האם March C- תופס AFwrong?" → לרוב כן, כי המבחנים בו מערבים \`r0/w1\` ו-\`r1/w0\` בכיוונים שונים. אם \`addr=3\` מגיע לתא 7 בכתיבה, אחר כך קריאה מ-3 לא מצפה לערך — תוקרא תוצאה לא נכונה. אבל לא כל גרסה של AFwrong נתפסת — תלוי בכיוון ובכמות ה-shift.
+
+**שאלת bonus**: "בייצור, איפה ה-decoder fault פוגע יותר?" → ב-decoders של DRAM הגדולים יש hundreds של word-lines. fault על word-line קצר יכול לגרום ל-multiple selection או no-selection בכל row של ה-RAM. בלי decoder testing מקיף, chip יוצא מ-fab עם פגיעה ב-1000s של cells בלי שיודעים.`,
+        expectedAnswers: [
+          'AFcell', 'AFmult', 'AFwrong', 'address fault',
+          'decoder', 'מקודד',
+          'Address-as-data', 'address as data',
+          'March C-', 'march',
+          'unique value', 'same value',
+          'no contrast', 'contrast', 'קונטרסט',
+        ],
+      },
+      {
+        label: 'ב',
+        question: 'מהי תקלת **retention** ולמה היא חמקמקה? איזה דפוס תופס אותה, ולמה \\\`All-zero / All-one / March C-\\\` רגילים **לא מספיקים**?',
+        hints: [
+          'Retention fault: התא מצליח לכתוב ולקרוא **מיד**, אבל אחרי זמן (ms) — מאבד את הערך בגלל leakage / קיבול חלש.',
+          'ב-DRAM: כל cell הוא קונדנסטור זעיר. אם הוא לא רענן ב-refresh cycle (~64ms), הוא יאבד. retention fault הוא קונדנסטור עם דליפה גדולה במיוחד.',
+          'דפוס רגיל (March, Walking) כותב וקורא ב-ns. אין pause → ה-leakage לא הספיק להתפרץ.',
+          'דפוס לזיהוי: **pause pattern** — \\\`write\\\` → \\\`pause N ms\\\` → \\\`read\\\`. ה-pause קריטי כדי לתת ל-leakage זמן.',
+          'בתעשייה: pause של 100-200ms (מעבר ל-DRAM refresh interval), על כל cell בנפרד או על RAM שלם.',
+        ],
+        answer:
+`### תקלת retention — הגדרה
+
+תא מצליח בכל אחד מהפעולות הבסיסיות:
+- write 1 → cell holds 1 (immediate)
+- read → returns 1 (immediate)
+
+**אבל** אחרי **pause של T millisecond**, הקונדנסטור (DRAM) או ה-feedback loop (SRAM) דולף, והערך הופך ל-0 בלי שאיש כתב. הקריאה לאחר ה-pause מחזירה \`0\` (או ערך בלתי-מוגדר).
+
+### למה דפוסים רגילים לא תופסים
+
+| דפוס | זמן בין write ל-read | תופס retention? |
+|---|---|:---:|
+| All-zero | nanoseconds | ✗ |
+| All-one | ns | ✗ |
+| March C- | ns בין כל op | ✗ |
+| Walking-1/0 | ns | ✗ |
+| **Pause-based** | **ms** (T sets) | ✓ |
+
+הסוד: כל הדפוסים הרגילים רצים **מהר מדי**. ה-leakage לא הספיק לעשות נזק. רק כשמשהים את ה-read בכוונה, התקלה מתגלה.
+
+### דפוס לזיהוי retention
+
+\`\`\`
+1. write 0xFF לכל ה-N תאים          (~N ns)
+2. pause T milliseconds              (T ≈ 64-100 ms — refresh window)
+3. read all expecting 0xFF           (קוראים — תאים פגומים מחזירים < 0xFF)
+4. write 0x00 לכל ה-N תאים           (~N ns)
+5. pause T milliseconds
+6. read all expecting 0x00           (תאים שדולפים ל-1 ייתפסו כאן)
+\`\`\`
+
+עלות: \`2 × (2N + T·clock_freq)\`. ל-N=8 ו-T=64ms ב-100MHz clock: \`2 × (16 + 6.4M) ≈ 12.8M\` clock cycles. **שלוש מסדר-גודל יקר יותר** מ-March C-, ולכן רץ פחות פעמים בבדיקה.
+
+### במציאות
+
+DRAM testing במפעל מריץ retention test עם pause מתאם ל-spec של ה-chip (typically 64ms per row). ה-test מחיר כי הוא דורש זמן ממשי — אפשר לבצע אותו במקביל על אלפי chips. ATE מודרני (Teradyne UltraFlex, Advantest V93000) מתאים אסטרטגיות wait/check מתוחכמות.
+
+### בקנבס
+
+המנוע **אינו מדמה time-domain decay** — אין דרך לזרוק תקלת retention אמיתית. הדגמה כאן מסתפקת ב-RAM נקי, ובאנשי הסביבה צריך לסמוך על האלגוריתם המוצג. לטריגר אמיתי תזדקקו ל-ATE.`,
+        interviewerMindset:
+`**שאלה תעשייתית נישתית.** המראיין (במיוחד בראיון memory test, DRAM design, או mobile SoC) מחפש:
+1. **שאתה מבחין retention מ-stuck-at** — לא "הזיכרון נשבר", אלא "הזיכרון מאבד עם הזמן".
+2. **שאתה זוכר ש-pause הוא ה-trick** — שום דפוס בלי השהיה לא יתפוס.
+3. **שאתה מציין את ה-cost** — זה למה retention test רץ rarely, ולא בכל wafer-sort.
+
+**שאלת המשך**: "ההבדל בין DRAM ל-SRAM ב-retention?" → DRAM: cell הוא קונדנסטור active → דורש refresh כל ~64ms. SRAM: cell הוא flip-flop active → לא צריך refresh, אבל ב-process קצה (5nm) leakage גובהה ויש "retention-like" בעיות במצב standby.
+
+**שאלת bonus**: "באיזה temperature ה-test רץ?" → לרוב \`hot\` (105-125°C) — temperature מאיץ leakage exponentially. test ב-room temp עלול לפספס defects שיופיעו ב-server-room.`,
+        expectedAnswers: [
+          'retention', 'leakage', 'דליפה',
+          'pause', 'wait', 'sleep', 'השהיה',
+          'time', 'milliseconds', 'ms',
+          'refresh', 'DRAM',
+          'capacitor', 'קיבול', 'קונדנסטור',
+        ],
+        circuit: () => build(() => {
+          // 8×8 RAM with a whole-word stuck-at-0 on cell 5 as a
+          // proxy for AFcell (cell becomes "unaddressable" in the
+          // sense that writes don't stick — reads always return 0).
+          // The student runs MEMORY TESTS to see which patterns
+          // catch it:
+          //   - All-zero → PASS  (stuck-0 happens to match)
+          //   - All-one  → FAIL  (write 0xFF, read 0x00)
+          //   - Address-as-data → FAIL  (write 5, read 0)
+          //   - March C- → FAIL  (catches at multiple M-elements)
+          //
+          // Retention faults can't be modeled — the engine has no
+          // time-domain decay. The question's text explains.
+          const ram = h.block('RAM', 480, 280, {
+            addrBits: 3,
+            dataBits: 8,
+            label: 'RAM 8×8 — AFcell proxy on addr 5',
+          });
+          ram.cellFaults = {
+            5: { stuckAt: 0, bit: null },  // whole-word "unaddressable"
+          };
+          return { nodes: [ram], wires: [] };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — Address decoder + retention fault models',
+    tags: ['decoder-fault', 'retention', 'AFcell', 'AFmult', 'AFwrong', 'address-as-data', 'DRAM', 'pause', 'dft'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  // #6016 — Stuck-Open (CMOS-specific transistor fault)
+  //   Single part. Explains why stuck-open requires 2 consecutive
+  //   vectors (V1 charges capacitance, V2 fails to discharge), and
+  //   the textbook test strategy. Live circuit uses wire.open as
+  //   a proxy — engine treats null as 0, so it demonstrates the
+  //   structure but not the capacitive memory of real CMOS.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'stuck-open-cmos-2vector',
+    difficulty: 'hard',
+    title: 'תקלת Stuck-Open ב-CMOS — דורש 2 וקטורים',
+    intro:
+`ב-CMOS, כל שער בנוי משני סוגי transistors: **pMOS** (pull-up ל-Vdd) ו-**nMOS** (pull-down ל-GND). תקלת **stuck-open** היא transistor שנשבר ו**אינו מוליך** גם כשגייטו מאופשר.
+
+ההשלכה ייחודית ל-CMOS:
+- אם pMOS פגום במצב open: כש-input=0 (וצריך לפתוח את pMOS) → ה-pMOS לא מוליך → output **floating**.
+- ה-output שומר על הערך הקודם בזכות הקיבול הטפיל של חוט output.
+- כלומר: התא הופך זמנית ל-**latch** עם זיכרון מסתורי, **לא** stuck-at קבוע.
+
+לכן **בדיקת stuck-at רגילה (וקטור יחיד) לא תופסת תקלת stuck-open**. למה? ומה הדפוס שכן יתפוס?`,
+    schematic: `
+<svg viewBox="0 0 1000 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="CMOS inverter at transistor level with pMOS open fault, and 2-vector test sequence.">
+
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    Stuck-Open ב-CMOS — transistor שלא מוליך
+  </text>
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+    הקיבול של החוט הופך את התא ל-latch זמני
+  </text>
+
+  <!-- ============ TOP: CMOS INVERTER WITH FAULT ============ -->
+  <rect x="20" y="90" width="960" height="540" rx="12"
+        fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
+  <text x="500" y="128" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="22">
+    CMOS Inverter — pMOS פתוח (stuck-open)
+  </text>
+
+  <!-- Vdd rail -->
+  <line x1="400" y1="180" x2="600" y2="180" stroke="#ff6080" stroke-width="2.6"/>
+  <text x="500" y="170" text-anchor="middle" fill="#ff6080" font-size="18" font-weight="bold">Vdd</text>
+
+  <!-- pMOS (top — FAULTY) -->
+  <rect x="450" y="200" width="100" height="100" rx="6" fill="#3a0a14" stroke="#ff6060" stroke-width="2.8" stroke-dasharray="4,4"/>
+  <text x="500" y="244" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">pMOS</text>
+  <text x="500" y="270" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">OPEN</text>
+  <text x="500" y="288" text-anchor="middle" fill="#ff8080" font-size="12" font-style="italic">(broken)</text>
+
+  <!-- pMOS source up (to Vdd), drain down (to output) -->
+  <line x1="500" y1="180" x2="500" y2="200" stroke="#ff6080" stroke-width="2.4"/>
+  <line x1="500" y1="300" x2="500" y2="380" stroke="#ff6080" stroke-width="2.4"/>
+
+  <!-- Gate of pMOS (left side) -->
+  <line x1="440" y1="250" x2="350" y2="250" stroke="#cca040" stroke-width="2"/>
+
+  <!-- Input on left (drives both gates) -->
+  <line x1="350" y1="250" x2="350" y2="460" stroke="#cca040" stroke-width="2.4"/>
+  <circle cx="350" cy="355" r="6" fill="#cca040"/>
+  <line x1="350" y1="355" x2="200" y2="355" stroke="#cca040" stroke-width="2.4"/>
+  <circle cx="180" cy="355" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="180" y="361" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">IN</text>
+
+  <!-- Output -->
+  <circle cx="500" cy="380" r="8" fill="#cca040"/>
+  <line x1="500" y1="380" x2="780" y2="380" stroke="#ff9933" stroke-width="2.4"/>
+  <circle cx="800" cy="380" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="800" y="386" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">OUT</text>
+
+  <!-- Capacitance icon on output -->
+  <line x1="610" y1="370" x2="660" y2="370" stroke="#a0a0c0" stroke-width="2"/>
+  <line x1="620" y1="378" x2="650" y2="378" stroke="#a0a0c0" stroke-width="2"/>
+  <text x="635" y="402" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">C_load</text>
+
+  <!-- nMOS (bottom — OK) -->
+  <line x1="500" y1="380" x2="500" y2="460" stroke="#80f0a0" stroke-width="2.4"/>
+  <rect x="450" y="460" width="100" height="100" rx="6" fill="#0a1825" stroke="#80f0a0" stroke-width="2.4"/>
+  <text x="500" y="504" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">nMOS</text>
+  <text x="500" y="525" text-anchor="middle" fill="#a0c0d0" font-size="12">healthy</text>
+
+  <!-- Gate of nMOS from input -->
+  <line x1="440" y1="510" x2="350" y2="510" stroke="#cca040" stroke-width="2"/>
+  <circle cx="350" cy="510" r="6" fill="#cca040"/>
+
+  <!-- GND -->
+  <line x1="500" y1="560" x2="500" y2="600" stroke="#80f0a0" stroke-width="2.4"/>
+  <line x1="450" y1="600" x2="550" y2="600" stroke="#80f0a0" stroke-width="2.6"/>
+  <line x1="465" y1="608" x2="535" y2="608" stroke="#80f0a0" stroke-width="2"/>
+  <line x1="478" y1="616" x2="522" y2="616" stroke="#80f0a0" stroke-width="2"/>
+  <text x="500" y="592" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">GND</text>
+
+  <!-- ============ BOTTOM: TWO-VECTOR TEST ============ -->
+  <rect x="20" y="650" width="960" height="510" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="500" y="688" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+    מבחן 2-vector — לתפיסת stuck-open ב-pMOS
+  </text>
+
+  <!-- V1 vector -->
+  <rect x="60" y="720" width="430" height="180" rx="8" fill="rgba(96,192,255,0.06)" stroke="#80c8ff" stroke-width="2"/>
+  <text x="275" y="754" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">V1 — Initialization</text>
+  <text x="275" y="788" text-anchor="middle" fill="#c8b090" font-size="17">IN = 1 → nMOS מוליך → OUT = 0</text>
+  <text x="275" y="816" text-anchor="middle" fill="#c8b090" font-size="15">הקיבול \`C_load\` נטען ל-0 (GND)</text>
+  <text x="275" y="844" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">מצב התחלתי מוגדר</text>
+  <text x="275" y="876" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">(אם בדיקה רגילה הייתה עוצרת כאן — PASS)</text>
+
+  <!-- V2 vector -->
+  <rect x="510" y="720" width="430" height="180" rx="8" fill="rgba(255,80,80,0.07)" stroke="#ff6060" stroke-width="2"/>
+  <text x="725" y="754" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">V2 — Launch</text>
+  <text x="725" y="788" text-anchor="middle" fill="#c8b090" font-size="17">IN = 0 → pMOS אמור לפתוח → OUT = 1</text>
+  <text x="725" y="816" text-anchor="middle" fill="#ff8080" font-size="15">אבל pMOS פגום → C_load שומר על 0</text>
+  <text x="725" y="844" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="15">⇒ קוראים OUT = 0 (לא 1!)</text>
+  <text x="725" y="876" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">תקלה נתפסה ✓</text>
+
+  <!-- Why single-vector misses it -->
+  <rect x="60" y="930" width="880" height="190" rx="8" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
+  <text x="500" y="962" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="19">
+    למה stuck-at testing (וקטור יחיד) מפספס?
+  </text>
+  <text x="500" y="995" text-anchor="middle" fill="#c8b090" font-size="16">
+    אם רק IN=0 מבחנים (בלי V1 מוקדם): OUT תלוי במה ש-C_load כבר טען
+  </text>
+  <text x="500" y="1020" text-anchor="middle" fill="#c8b090" font-size="16">
+    אם C_load טעון 1 מקודם → OUT=1 → PASS (לא תופסים)
+  </text>
+  <text x="500" y="1052" text-anchor="middle" fill="#ffe080" font-size="17" font-weight="bold">
+    חייבים לטעון את הקיבול לערך **הפוך** בוקטור הראשון, ואז לבדוק
+  </text>
+  <text x="500" y="1085" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+    אותו רעיון כמו transition fault (#6011) — שני וקטורים, מצב התחלתי + launch
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'תאר את תקלת **stuck-open** ולמה היא ייחודית ל-CMOS. למה **stuck-at testing עם וקטור יחיד לא תופס** אותה, ומה הוקטור הראשון (V1) חייב לעשות? איך זה דומה לתקלת transition (#6011) ובאיזה מובן שונה?',
+        hints: [
+          'Stuck-open: transistor pull-up (pMOS) או pull-down (nMOS) **שאינו מוליך** גם כשגייטו מבקש זאת.',
+          'בלי pull-up פעיל, אין מי שמושך את ה-output ל-Vdd → ה-output **floating** → הערך תלוי במה שהקיבול הטפיל של חוט ה-output מחזיק.',
+          'אם בוקטור הקודם ה-output היה 0 (nMOS פעל וניקה את הקיבול), הוא נשאר 0 גם אחרי שאמור היה לעלות ל-1.',
+          'אם בוקטור הקודם ה-output היה 1 (במקרה), הוא יישאר 1 — וה-stuck-open יהיה שקוף.',
+          'לכן: בודקים stuck-open של pMOS דורש: V1 שמטעין את הקיבול ל-0 (input=1), ואז V2 שמבקש pull-up (input=0). אם הקיבול לא נטען ל-1, fault.',
+          'הדמיון ל-transition: שניהם דורשים 2 וקטורים. ההבדל: transition fault הוא delay בגלל איטיות; stuck-open הוא transistor שמעולם לא יוליך, וה-output הוא **memory** של הקיבול.',
+        ],
+        answer:
+`### Stuck-Open — fault model
+
+ב-CMOS inverter יש שני transistors:
+- **pMOS** (top): מוליך כש-input=0, מושך output ל-Vdd
+- **nMOS** (bottom): מוליך כש-input=1, מושך output ל-GND
+
+תקלת **stuck-open** משמעותה אחד מהם **לא מוליך** גם כשגייטו פעיל (השער "מתבקש" להוליך, אבל הוא שבור).
+
+### למה הקיבול הופך את התא ל-latch זמני
+
+חוט ה-output יושב על קיבול טפיל \`C_load\` (~fF). בכל פעם שה-pull-up או pull-down פעיל, הקיבול נטען לערך החדש. **אם אף transistor לא פעיל** (התקלה הזו), הקיבול **שומר** על הערך הקודם. ה-CMOS gate הופך זמנית ל-**dynamic latch** עד שה-leakage מאיין את הערך (mss-ms).
+
+### למה stuck-at testing נכשל
+
+stuck-at testing בודק וקטור יחיד: מציב inputs, קורא outputs, משווה. בקנקטים של pMOS-stuck-open:
+
+- אם הוקטור הוא \`input=0\` (אמור לעשות pull-up): ה-pMOS פגום. אבל אם הקיבול **במקרה** כבר טעון ל-1 (משאריות וקטור קודם), הקריאה תהיה PASS — לא רואים fault.
+- אם הוקטור הוא \`input=1\`: ה-nMOS פעיל, מושך ל-0. תקלת pMOS לא בא לידי ביטוי. PASS.
+
+**שום וקטור יחיד אינו מבטיח שהקיבול במצב הפוך לפני המבחן.**
+
+### הפתרון: 2 וקטורים — V1 + V2
+
+| וקטור | input | תפקיד |
+|---|:---:|---|
+| **V1** | \`1\` | nMOS פעיל → OUT=0, **C_load נטען ל-0** |
+| **V2** | \`0\` | pMOS אמור להפעיל pull-up → OUT צריך להיות \`1\` |
+
+ב-V2:
+- אם pMOS תקין: pull-up מצליח, C_load נטען ל-1, קוראים OUT=1. PASS.
+- אם pMOS open: C_load נשאר ב-0 (שום transistor לא מוליך), קוראים OUT=**0** במקום 1. **FAIL ✓**
+
+### דמיון לתקלת transition
+
+| | Transition Fault | Stuck-Open |
+|---|---|---|
+| מקור | delay של שער איטי | transistor שבור |
+| מנגנון | מעבר לא מספיק להגיע | קיבול שומר על ערך הקודם |
+| דורש 2-vectors | ✓ | ✓ |
+| מתגלה ע"י stuck-at יחיד | ✗ | ✗ |
+
+**ההבדל המהותי**: transition הוא delay → מצליח לבסוף; stuck-open הוא permanent → לעולם לא יגיע ליעד. שניהם דורשים את אותה תשתית בדיקה (2-vector at-speed) — לכן בתעשייה הם נבדקים יחד.
+
+### בקנבס
+
+המעגל הוא inverter chain \`IN → INV1 → INV2 → OUT\`. החוט בין INV1 ל-INV2 מסומן ב-\`wire.open = true\` כ-**proxy** ל-stuck-open. נסה:
+
+1. \`IN=0\`: \`INV1\` מבקש להוציא \`1\`, אבל החוט פתוח → המנוע מתפרש זאת כ-\`null\` → \`INV2\` מקבל \`null\` (טופל כ-0) → OUT = \`NOT 0 = 1\`. (שונה ממה שהיה בשלמות, אבל קונסיסטנטי.)
+2. \`IN=1\`: \`INV1\` מבקש להוציא \`0\`, החוט פתוח, אותה בעיה → OUT = 1 גם.
+
+**מגבלת המנוע**: \`wire.open\` כאן תמיד מחזיר 0 בקצה (deterministic), ולא "שומר על ערך קודם" כפי שהקיבול אמיתי. ה-2-vector behavior המקורי נשאר בתיאוריה — אבל המבנה ניתן לבדיקה.`,
+        interviewerMindset:
+`**שאלה ברמת VLSI / device-physics.** המראיין מחפש:
+1. **שאתה זוכר שזה ייחודי ל-CMOS** — לוגיקה אחרת (TTL, ECL) אין לה את אותה bipolar pull-up/pull-down structure.
+2. **שאתה מבין את תפקיד הקיבול** — בלי הקיבול לא היה memory effect ולא היה צורך ב-2-vector.
+3. **שאתה מציין את הקשר ל-transition** — שני ה-fault models משתפים את אותה תשתית 2-vector.
+
+**שאלת המשך**: "מה stuck-short בהשוואה ל-stuck-open?" → Stuck-short: transistor שמוליך תמיד (גם כשלא צריך) → גורם ל-Vdd-GND short → catastrophic, רואים על-ידי IDDQ (current measurement, לא logic). זה הייעוד של \`IDDQ testing\`.
+
+**שאלת bonus**: "באיזה process node התקלות האלה הופכות נפוצות יותר?" → ב-process קצה (5nm, 3nm) defect density עולה, יחד עם variation. transition + stuck-open הופכים critical. כל chip מודרני עובר test for-this.
+
+**שאלת bonus 2**: "האם CMOS dynamic logic יותר רגיש לזה?" → כן! Dynamic logic מסתמך *במפורש* על capacitance memory. תקלת stuck-open הופכת לסיוט — קשה לבדוק כי behavior נראה רגיל לרוב הזמן.`,
+        expectedAnswers: [
+          'stuck-open', 'stuck open',
+          'pMOS', 'nMOS', 'transistor',
+          'floating', 'float', 'capacitor', 'capacitance', 'C_load',
+          'V1', 'V2', '2 vectors', 'two vectors',
+          'memory', 'latch', 'dynamic',
+          'initialization', 'launch',
+          'transition',
+          'CMOS',
+        ],
+        circuit: () => build(() => {
+          // Inverter chain IN → INV1 → INV2 → OUT, with the wire
+          // between INV1 and INV2 marked as `open` to simulate the
+          // pMOS stuck-open extreme case. The engine treats open
+          // as null and downstream gates evaluate it as 0 — so the
+          // demo is structural rather than capacitance-aware. The
+          // student observes that the inverter chain no longer
+          // propagates IN; the answer text explains the limitation.
+          const inIn  = h.input(120, 240, 'IN');
+          const inv1  = h.gate('NOT', 320, 240);
+          const inv2  = h.gate('NOT', 540, 240);
+          const outOut = h.output(740, 240, 'OUT');
+
+          // Stuck-open proxy: the wire from INV1 to INV2 is "open"
+          const openWire = h.wire(inv1.id, inv2.id, 0);
+          openWire.open = true;
+
+          // Also a "healthy" reference chain for comparison
+          const ref = h.gate('NOT', 320, 400);
+          const ref2 = h.gate('NOT', 540, 400);
+          const refOut = h.output(740, 400, 'OUT (clean)');
+
+          return {
+            nodes: [inIn, inv1, inv2, outOut, ref, ref2, refOut],
+            wires: [
+              h.wire(inIn.id, inv1.id, 0),
+              openWire,                                   // FAULTY wire
+              h.wire(inv2.id, outOut.id, 0),
+              // Reference (clean) chain
+              h.wire(inIn.id, ref.id, 0),
+              h.wire(ref.id, ref2.id, 0),                 // healthy
+              h.wire(ref2.id, refOut.id, 0),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'יסוד ב-DFT — Stuck-Open transistor-level fault model',
+    tags: ['stuck-open', 'cmos', 'transistor', 'pMOS', 'nMOS', '2-vector', 'capacitance', 'dft'],
+    circuitRevealsAnswer: true,
+  },
 ];

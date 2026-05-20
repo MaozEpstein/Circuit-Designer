@@ -2260,10 +2260,16 @@ export class DFTPanel {
               <td>coupling faults (opposite polarity)</td>
               <td><code>N²+2N</code></td>
             </tr>
+            <tr>
+              <td>8</td><td class="algo">March C-</td>
+              <td>Six march elements with ascending + descending passes — production-grade.</td>
+              <td>stuck-at + coupling + most decoder (<b>linear cost</b>)</td>
+              <td><code>10N</code></td>
+            </tr>
           </tbody>
         </table>
         <div class="dft-info-text" style="margin-top:8px">
-          <b>Recommended run order:</b> #1 + #2 (smoke) → #3 + #4 (stuck-at + shorts) → #5 (decoder) → #6 + #7 (comprehensive, small RAM only).
+          <b>Recommended run order:</b> #1 + #2 (smoke) → #3 + #4 (stuck-at + shorts) → #5 (decoder) → #8 (production memory BIST) — #6 / #7 only for small RAMs or instructional comparison.
           <br><b>Trace strip below the result:</b>
           <span style="color:#506070">▮</span> write ·
           <span style="color:#40cc60">▮</span> read pass ·
