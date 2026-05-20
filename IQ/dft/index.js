@@ -1042,4 +1042,974 @@ endmodule
       };
     }),
   },
+
+  // ───────────────────────────────────────────────────────────────
+  // #6004 — Stuck-at fault detection on a half-adder + XOR (sister
+  //         question to #6003). Topology:
+  //           A → XOR1 (HA SUM)
+  //           B → XOR1
+  //           A → AND  (HA COUT)
+  //           B → AND
+  //           XOR1.out (SUM)  → XOR2.top
+  //           AND.out  (COUT) → XOR2.bot         ← FAULT lives here
+  //           XOR2.out → Y
+  //
+  //         Fault-free identity:  Y = (A⊕B) ⊕ (A·B) = A ∨ B
+  //         The fault scrambles this identity into one of three
+  //         different boolean functions:
+  //           free   →  OR
+  //           s-a-0  →  XOR     (the AND contribution is killed)
+  //           s-a-1  →  XNOR    (the XOR is inverted)
+  //         All three are distinguishable, but only with the two
+  //         "extremes" (0,0) and (1,1) — the middle vectors (0,1)/(1,0)
+  //         are symmetry-blind because OR = XOR = 1 there.
+  // ───────────────────────────────────────────────────────────────
+  {
+    id: 'stuck-at-detection-ha-xor-cout',
+    difficulty: 'hard',
+    title: 'זיהוי תקלת stuck-at על קו COUT של half-adder + XOR',
+    intro:
+`בנקודה המסומנת בעיגול הכחול בשרטוט — על קו ה-\`COUT\` בין יציאת ה-AND לכניסת ה-XOR השני — קיימת תקלת קצר: \`stuck-at-1\` או \`stuck-at-0\`.
+
+איך נכנס קלטים ב-\`A\`, \`B\` כדי לזהות את **סוג** הקצר, במספר וקטורי הבדיקה המינימלי?`,
+    schematic: `
+<svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Half-adder (XOR + AND) feeding a second XOR; fault marker on the COUT wire between AND and second XOR.">
+  <defs>
+    <marker id="dft4arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
+  </defs>
+
+  <!--
+    Layout:
+      A, B inputs on the left, each fanning out to BOTH the XOR1
+      (top, computes SUM) and the AND (bottom, computes COUT). The
+      SUM wire goes right + down into the final XOR2's top input;
+      COUT wire goes right + up into XOR2's bottom input.
+      Blue fault marker on the COUT wire, on the vertical segment.
+  -->
+
+  <!-- Input labels -->
+  <text direction="ltr" x="22" y="104" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">A</text>
+  <text direction="ltr" x="22" y="284" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">B</text>
+
+  <!-- ── A wire: fanout to XOR1.top + AND.top ─────────────────────── -->
+  <line x1="40" y1="100" x2="140" y2="100" stroke="#f0d080" stroke-width="1.8"/>
+  <circle cx="140" cy="100" r="3.8" fill="#f0d080"/>
+  <line x1="140" y1="100" x2="200" y2="100" stroke="#f0d080" stroke-width="1.8"/>
+  <line x1="140" y1="100" x2="140" y2="260" stroke="#f0d080" stroke-width="1.8"/>
+  <line x1="140" y1="260" x2="200" y2="260" stroke="#f0d080" stroke-width="1.8"/>
+
+  <!-- ── B wire: fanout to XOR1.bot + AND.bot ─────────────────────── -->
+  <line x1="40" y1="280" x2="180" y2="280" stroke="#f0d080" stroke-width="1.8"/>
+  <circle cx="180" cy="280" r="3.8" fill="#f0d080"/>
+  <line x1="180" y1="280" x2="200" y2="280" stroke="#f0d080" stroke-width="1.8"/>
+  <line x1="180" y1="280" x2="180" y2="140" stroke="#f0d080" stroke-width="1.8"/>
+  <line x1="180" y1="140" x2="200" y2="140" stroke="#f0d080" stroke-width="1.8"/>
+
+  <!-- ── XOR1 (top, computes SUM = A⊕B) ───────────────────────────── -->
+  <path d="M 195 75 Q 215 120 195 165 Q 230 165 260 142 Q 290 120 260 98 Q 230 75 195 75 Z"
+        fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <path d="M 188 75 Q 208 120 188 165" fill="none" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="232" y="124" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">XOR</text>
+
+  <!-- ── AND (bottom, computes COUT = A·B) ───────────────────────── -->
+  <path d="M 200 235 L 200 305 L 240 305 A 35 35 0 0 0 240 235 Z"
+        fill="#102818" stroke="#80f0a0" stroke-width="1.8"/>
+  <text direction="ltr" x="222" y="275" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">AND</text>
+
+  <!-- ── SUM wire: XOR1.out → XOR2.top input ──────────────────────── -->
+  <line x1="290" y1="120" x2="380" y2="120" stroke="#80d4ff" stroke-width="1.8"/>
+  <line x1="380" y1="120" x2="380" y2="180" stroke="#80d4ff" stroke-width="1.8"/>
+  <line x1="380" y1="180" x2="430" y2="180" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="338" y="112" text-anchor="middle" fill="#80d4ff" font-size="10" font-style="italic">SUM = A⊕B</text>
+
+  <!-- ── COUT wire: AND.out → XOR2.bot input  (with FAULT marker) ── -->
+  <line x1="280" y1="270" x2="380" y2="270" stroke="#80f0a0" stroke-width="1.8"/>
+  <!--   vertical segment UP, carries the fault -->
+  <line x1="380" y1="270" x2="380" y2="220" stroke="#80f0a0" stroke-width="1.8"/>
+  <line x1="380" y1="220" x2="430" y2="220" stroke="#80f0a0" stroke-width="1.8"/>
+  <text direction="ltr" x="335" y="284" text-anchor="middle" fill="#80f0a0" font-size="10" font-style="italic">COUT = A·B</text>
+
+  <!-- ★★★ FAULT MARKER on the COUT vertical segment, close to XOR2 -->
+  <circle cx="380" cy="240" r="11" fill="#80c8ff" stroke="#3060a0" stroke-width="2.4"/>
+  <text direction="ltr" x="403" y="244" text-anchor="start" fill="#80c8ff" font-size="11" font-weight="bold">fault</text>
+
+  <!-- ── XOR2 (right, the final XOR combining SUM + COUT) ─────────── -->
+  <path d="M 425 155 Q 445 200 425 245 Q 460 245 490 222 Q 520 200 490 178 Q 460 155 425 155 Z"
+        fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <path d="M 418 155 Q 438 200 418 245" fill="none" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="462" y="204" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">XOR</text>
+
+  <!-- ── XOR2 output → Y ──────────────────────────────────────────── -->
+  <line x1="520" y1="200" x2="600" y2="200" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft4arr)"/>
+  <text direction="ltr" x="635" y="206" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="15">Y</text>
+
+  <!-- Caption -->
+  <text direction="ltr" x="350" y="362" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+    Y = (A⊕B) ⊕ (A·B)   (when fault-free)
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: null,
+        question: 'מה הפונקציה הלוגית של המעגל ללא תקלה? ובכל אחת משתי התקלות? כמה וקטורי בדיקה מינימליים נדרשים, ומה הם?',
+        hints: [
+          'התחל בחישוב הפונקציה ללא תקלה: \\\`Y = SUM ⊕ COUT = (A⊕B) ⊕ (A·B)\\\`. בדוק את 4 השורות בטבלת האמת ופשט.',
+          'תובנת מפתח: \\\`(A⊕B) ⊕ (A·B) = A ∨ B\\\` — זוהי **זהות ה-half-adder**: SUM XOR COUT = OR. בלי הזהות הזו אי-אפשר לאפיין נכון את הפונקציה ללא תקלה.',
+          's-a-0 על קו COUT: ה-COUT שנכנס ל-XOR השני שווה 0. \\\`Y = (A⊕B) ⊕ 0 = A⊕B\\\` → **המעגל הופך ל-XOR.**',
+          's-a-1 על קו COUT: ה-COUT שנכנס שווה 1. \\\`Y = (A⊕B) ⊕ 1 = ¬(A⊕B)\\\` → **המעגל הופך ל-XNOR.**',
+          'שלוש פונקציות שונות: \\\`OR\\\` (free), \\\`XOR\\\` (s-a-0), \\\`XNOR\\\` (s-a-1). שים לב לסימטריה — בכניסות (0,1) ו-(1,0) כל השלוש סימטריות לאמצע (OR=XOR=1, XNOR=0). אז וקטורים "באמצע" לא מפרידים בין free ל-s-a-0!',
+          'הוקטורים המבחינים חייבים להיות בקצוות: \\\`(0,0)\\\` מבחין את s-a-1 (=1) מ-free=s-a-0 (=0), ו-\\\`(1,1)\\\` מבחין את free (=1) מ-s-a-0=s-a-1 (=0). שני הקצוות יחד = הבחנה מלאה.',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 940 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Truth-table comparison of OR / XOR / XNOR — the three functions produced by free / s-a-0 / s-a-1.">
+  <rect x="0" y="0" width="940" height="46" fill="#0c1a28"/>
+  <text direction="ltr" x="470" y="20" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">
+    Fault scrambles the half-adder identity into 3 different functions
+  </text>
+  <text direction="ltr" x="470" y="38" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+    free = OR  ·  s-a-0 = XOR  ·  s-a-1 = XNOR  ·  distinguished by the two extremes (0,0) and (1,1)
+  </text>
+
+  <!-- ── Truth-table panel ──────────────────────────────────────── -->
+  <rect x="40" y="62" width="860" height="310" rx="8" fill="#0e1218" stroke="#3a2818" stroke-width="1.4"/>
+  <text direction="ltr" x="470" y="92" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="13" letter-spacing="2">
+    Y(A, B) UNDER EACH SCENARIO
+  </text>
+
+  <g font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#cca040">
+    <text x="120" y="125" text-anchor="middle">A</text>
+    <text x="200" y="125" text-anchor="middle">B</text>
+    <text x="340" y="125" text-anchor="middle">A⊕B (SUM)</text>
+    <text x="470" y="125" text-anchor="middle">A·B (COUT)</text>
+    <text x="600" y="125" text-anchor="middle">Free = OR</text>
+    <text x="720" y="125" text-anchor="middle">s-a-0 = XOR</text>
+    <text x="840" y="125" text-anchor="middle">s-a-1 = XNOR</text>
+  </g>
+  <line x1="60" y1="135" x2="880" y2="135" stroke="#402a00" stroke-width="1"/>
+
+  ${[
+    [0,0, 0,0, 0,0,1,  /*detect*/ 'sa1',    'XNOR-only'],
+    [0,1, 1,0, 1,1,0,  /*detect*/ null,     'free=sa0, sa1 differs'],
+    [1,0, 1,0, 1,1,0,  /*detect*/ null,     'free=sa0, sa1 differs'],
+    [1,1, 0,1, 1,0,0,  /*detect*/ 'or-only','free vs sa0=sa1'],
+  ].map(([a,b,sum,cout,free,sa0,sa1,kind,note], i) => {
+    const y = 165 + i * 44;
+    const isExtreme = (a === b);
+    const rowBg = isExtreme ? '<rect x="60" y="' + (y - 22) + '" width="820" height="38" fill="rgba(64,204,96,0.08)" stroke="rgba(64,204,96,0.35)" stroke-width="1.2" rx="3"/>' : '';
+    const noteEl = isExtreme
+      ? '<text direction="ltr" x="900" y="' + (y + 4) + '" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">⚡</text>'
+      : '';
+    return `
+      ${rowBg}
+      <text direction="ltr" x="120" y="${y + 4}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="13">${a}</text>
+      <text direction="ltr" x="200" y="${y + 4}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="13">${b}</text>
+      <text direction="ltr" x="340" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="12">${sum}</text>
+      <text direction="ltr" x="470" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="12">${cout}</text>
+      <text direction="ltr" x="600" y="${y + 4}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="13">${free}</text>
+      <text direction="ltr" x="720" y="${y + 4}" text-anchor="middle" fill="#${sa0?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa0}</text>
+      <text direction="ltr" x="840" y="${y + 4}" text-anchor="middle" fill="#${sa1?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa1}</text>
+      ${noteEl}
+    `;
+  }).join('')}
+
+  <!-- Footnote — extreme rows are the detecting vectors -->
+  <text direction="ltr" x="470" y="358" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">
+    ⚡ rows = the two extremes that fully distinguish the 3 scenarios. Middle rows are symmetry-blind.
+  </text>
+</svg>`,
+        answer:
+`**מינימום: 2 וקטורי בדיקה — \`(0,0)\` ו-\`(1,1)\`.**
+
+### זהות ה-half-adder
+
+הפונקציה ללא תקלה:
+\`Y = SUM ⊕ COUT = (A⊕B) ⊕ (A·B)\`
+
+טבלת אמת:
+| A | B | A⊕B | A·B | Y |
+|:-:|:-:|:---:|:---:|:-:|
+| 0 | 0 | 0 | 0 | **0** |
+| 0 | 1 | 1 | 0 | **1** |
+| 1 | 0 | 1 | 0 | **1** |
+| 1 | 1 | 0 | 1 | **1** |
+
+זוהי בדיוק \`A ∨ B\` — **המעגל הוא OR**, שנבנה ממחצית-מחבר. זהות ידועה ב-DFT וב-design.
+
+### השפעת הקצר
+
+**s-a-0** על COUT (ה-COUT שנכנס ל-XOR השני נכפה ל-0):
+\`Y = (A⊕B) ⊕ 0 = A ⊕ B\` → המעגל **הופך ל-XOR**.
+
+**s-a-1** על COUT (ה-COUT נכפה ל-1):
+\`Y = (A⊕B) ⊕ 1 = ¬(A⊕B) = A XNOR B\` → המעגל **הופך ל-XNOR**.
+
+### 3 פונקציות, איפה הן מבחינות
+
+| (A,B) | free=OR | s-a-0=XOR | s-a-1=XNOR |
+|:-----:|:-------:|:---------:|:----------:|
+| **(0,0)** | **0** | **0** | **1** ⚡ |
+| (0,1) | 1 | 1 | 0 |
+| (1,0) | 1 | 1 | 0 |
+| **(1,1)** | **1** ⚡ | **0** | **0** |
+
+ב-(0,1) ו-(1,0): \`OR = XOR = 1\` (סימטרי!). הוקטורים האלה **לא מבחינים** בין free ל-s-a-0.
+
+ב-(0,0): \`OR = XOR = 0\`, \`XNOR = 1\` → מבחין את **s-a-1** מהשניים האחרים.
+ב-(1,1): \`OR = 1\`, \`XOR = XNOR = 0\` → מבחין את **free** מהשניים האחרים.
+
+**זוג הקצוות \`(0,0) + (1,1)\` נדרש**.
+
+### הסיגנטורות
+
+| תרחיש | Y(0,0) | Y(1,1) |
+|---|:---:|:---:|
+| Free  | 0 | 1 |
+| s-a-0 | 0 | 0 |
+| s-a-1 | 1 | 0 |
+
+שלוש סיגנטורות נפרדות → הבחנה מלאה.
+
+### למה לא וקטור יחיד
+
+3 תסריטים שונים דורשים לפחות \`⌈log₂(3)⌉ = 2\` וקטורים. וקטור בודד יכול לחלק רק לשני תסריטים.
+
+### מלכודת מעניינת
+
+מועמד שמתחיל מ-\`(0,1)\` או \`(1,0)\` (האמצע) — ייכנס למלכודת: עוד וקטור באמצע לא יפתור (כל אמצע נותן free=sa0). חייבים את הקצוות בדיוק.`,
+        interviewerMindset:
+`**שאלה ברמת בינוני+ עם שני שלבי "אהה":**
+
+1. **הזהות של half-adder**: \`(A⊕B) ⊕ (A·B) = A ∨ B\`. מועמד שלא רואה את זה מאבד את היכולת לאפיין את הפונקציה ללא תקלה. ATPG אמיתי מנתח כל פונקציה במונחי טבלת האמת — שווה לקפוץ ל-truth-table מיד.
+2. **הסימטריה של 3 הפונקציות (OR, XOR, XNOR)**: כולן ב-1 על האמצע (01/10) או כולן ב-0; ההבחנה היחידה היא בקצוות (00/11). מועמד שבוחר וקטור באמצע + עוד וקטור באמצע — מפספס לחלוטין את ה-s-a-0.
+
+**שאלת המשך:** "ומה אם הקצר היה על קו SUM (לא COUT)?" — אז התרחישים הם: free=OR, s-a-0=AND (\`A·B\` בלבד), s-a-1=NAND (\`¬(A·B)\`). הוקטורים הנדרשים שונים: צריך אחד מהקצוות (להבחין NAND) + אחד מהאמצע (להבחין AND מ-OR).
+
+**שאלת bonus:** "מה היחס בין ה-OR שמתקבל כאן לבין full-adder?" — full-adder נבנה מ-2 half-adders + OR של ה-COUT-ים. הזהות שלנו היא הצד "OR" של ה-FA, מוסתר בתוך השער.
+
+**שאלת bonus 2:** "תיאורית — כמה תקלות יחידות אפשריות במעגל הזה?" — 7 קווים פנימיים (A-fanout, B-fanout, A→XOR1, A→AND, B→XOR1, B→AND, SUM, COUT, Y) × 2 (s-a-0/s-a-1) = ~14-16 תקלות בודדות, חלקן עשויות להיות \`equivalent\` (לתת אותה התנהגות).`,
+        expectedAnswers: [
+          '2', 'two', 'שני', 'שניים',
+          '(0,0)', '(1,1)', '00', '11',
+          'minimum', 'מינימום', 'מינימלי',
+          'or', 'xor', 'xnor',
+          'half-adder', 'half adder', 'half_adder',
+          'identity', 'זהות',
+          'extreme', 'edge', 'symmetry', 'סימטריה',
+        ],
+      },
+    ],
+    source: 'אחות לשאלת stuck-at NOR+AND (#6003) — half-adder identity twist',
+    tags: ['stuck-at', 'atpg', 'fault-detection', 'half-adder', 'xor', 'identity', 'symmetry', 'dft'],
+    circuitRevealsAnswer: true,
+    // Canvas: 3 parallel rows of (XOR + AND + XOR) sharing A and B.
+    // Row 1 — fault-free. Row 2 — wire AND→XOR2.bot has stuckAt:0.
+    // Row 3 — same wire has stuckAt:1. User can change A and B with
+    // (1,1) → Out1=1, Out2=0, Out3=0 ; (0,0) → Out1=0, Out2=0, Out3=1.
+    circuit: () => build(() => {
+      // ── Shared inputs ─────────────────────────────────────────────
+      const A = h.input(80, 140, 'A');     A.fixedValue = 1;
+      const B = h.input(80, 280, 'B');     B.fixedValue = 1;
+
+      // Each row builds the (XOR1, AND, XOR2, Out) chain.
+      const mkRow = (yMid, label) => ({
+        xor1: h.gate('XOR', 320, yMid - 60),     // SUM = A⊕B
+        and1: h.gate('AND', 320, yMid + 60),     // COUT = A·B
+        xor2: h.gate('XOR', 560, yMid),          // SUM ⊕ COUT
+        out:  h.output(760, yMid, label),
+      });
+      const r1 = mkRow(220, 'Out (free)');
+      const r2 = mkRow(500, 'Out (s-a-0)');
+      const r3 = mkRow(780, 'Out (s-a-1)');
+
+      const wires = [];
+      const wireRow = (row) => {
+        wires.push(h.wire(A.id,        row.xor1.id, 0));   // A → XOR1 top
+        wires.push(h.wire(B.id,        row.xor1.id, 1));   // B → XOR1 bot
+        wires.push(h.wire(A.id,        row.and1.id, 0));   // A → AND top
+        wires.push(h.wire(B.id,        row.and1.id, 1));   // B → AND bot
+        wires.push(h.wire(row.xor1.id, row.xor2.id, 0));   // SUM → XOR2 top
+        const cout = h.wire(row.and1.id, row.xor2.id, 1);  // COUT → XOR2 bot (FAULT SITE)
+        wires.push(cout);
+        wires.push(h.wire(row.xor2.id, row.out.id,  0));   // Y → Out
+        return cout;
+      };
+      const w1 = wireRow(r1);
+      const w2 = wireRow(r2);  w2.stuckAt = 0;
+      const w3 = wireRow(r3);  w3.stuckAt = 1;
+
+      return {
+        nodes: [
+          A, B,
+          r1.xor1, r1.and1, r1.xor2, r1.out,
+          r2.xor1, r2.and1, r2.xor2, r2.out,
+          r3.xor1, r3.and1, r3.xor2, r3.out,
+        ],
+        wires,
+      };
+    }),
+  },
+
+  // ───────────────────────────────────────────────────────────────
+  // #6005 — Bridge fault between the two data wires of a gate-level
+  //         2:1 MUX. Topology:
+  //           A → wire pA → AND_A (with S)        AND_A.out → OR
+  //           B → wire pB → AND_B (with ¬S)      AND_B.out → OR
+  //           OR.out → Out
+  //         Fault-free function:  Out = S·A + ¬S·B  =  (S ? A : B)
+  //         The bridge wired-ANDs (or wired-ORs) wires pA and pB
+  //         together. Under the bridge:
+  //           wired-AND:  Out = A·B   (independent of S!)
+  //           wired-OR :  Out = A+B   (independent of S!)
+  //         The bridge ERASES the MUX's S-dependence — that's the
+  //         pedagogical "aha".
+  //
+  //         Detection requires:
+  //           1. A ≠ B  (otherwise A·B = A+B = A = B, bridge is transparent)
+  //           2. BOTH S values (to distinguish AND-bridge from OR-bridge)
+  //         Minimum test set = 2 vectors, e.g.
+  //           (A,B,S) = (0,1,0)  → free=1, AND=0, OR=1   (catches AND)
+  //           (A,B,S) = (0,1,1)  → free=0, AND=0, OR=1   (catches OR)
+  // ───────────────────────────────────────────────────────────────
+  {
+    id: 'bridge-detection-mux-data',
+    difficulty: 'hard',
+    title: 'זיהוי תקלת bridge בין שני קווי data במולטיפלקסר',
+    intro:
+`בנקודה המסומנת בעיגול הכחול בשרטוט קיים **קצר (bridge)** בין שני קווי ה-data של ה-MUX —
+כלומר שני הקווים מחוברים פיזית. הקצר יכול להיות אחד משני סוגים:
+
+- **wired-AND** (קצר דומיננטי-0): שני הקווים מקבלים את הערך \`A · B\`.
+- **wired-OR** (קצר דומיננטי-1): שני הקווים מקבלים את הערך \`A + B\`.
+
+איך נכנס קלטים ב-\`A\`, \`B\`, \`S\` כדי לזהות את **סוג** הקצר, במספר וקטורי הבדיקה המינימלי?`,
+    schematic: `
+<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Gate-level 2:1 MUX with a bridge fault between the two data wires (A and B) before they enter their respective ANDs.">
+  <defs>
+    <marker id="dft5arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
+  </defs>
+
+  <!-- Input labels -->
+  <text direction="ltr" x="22" y="84"  text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">A</text>
+  <text direction="ltr" x="22" y="224" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">B</text>
+  <text direction="ltr" x="22" y="334" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">S</text>
+
+  <!-- ── A wire: horizontal into AND_A.top ───────────────────────── -->
+  <line x1="40"  y1="80"  x2="295" y2="80"  stroke="#f0d080" stroke-width="1.8"/>
+
+  <!-- ── B wire: horizontal into AND_B.top ───────────────────────── -->
+  <line x1="40"  y1="220" x2="295" y2="220" stroke="#f0d080" stroke-width="1.8"/>
+
+  <!-- ── Bridge marker: BLUE CIRCLE between A wire and B wire ──── -->
+  <!-- Vertical "short" line in the middle of the two parallel data wires.
+       Dashed to indicate a physical short across what should be two
+       independent nets. -->
+  <line x1="180" y1="80"  x2="180" y2="220" stroke="#80c8ff" stroke-width="1.6" stroke-dasharray="4 3"/>
+  <!-- Small dots where the bridge attaches to each wire -->
+  <circle cx="180" cy="80"  r="3.5" fill="#80c8ff"/>
+  <circle cx="180" cy="220" r="3.5" fill="#80c8ff"/>
+  <!-- ★★★ FAULT MARKER ★★★ -->
+  <circle cx="180" cy="150" r="11" fill="#80c8ff" stroke="#3060a0" stroke-width="2.4"/>
+  <text direction="ltr" x="202" y="154" text-anchor="start" fill="#80c8ff" font-size="11" font-weight="bold">bridge</text>
+
+  <!-- ── S wire: fanout to AND_A bottom (UP) and INV (RIGHT) ───── -->
+  <line x1="40"  y1="330" x2="110" y2="330" stroke="#f0d080" stroke-width="1.8"/>
+  <circle cx="110" cy="330" r="3.8" fill="#f0d080"/>
+  <!-- UP to AND_A bottom -->
+  <line x1="110" y1="330" x2="110" y2="110" stroke="#f0d080" stroke-width="1.8"/>
+  <line x1="110" y1="110" x2="295" y2="110" stroke="#f0d080" stroke-width="1.8"/>
+  <!-- RIGHT to INV input -->
+  <line x1="110" y1="330" x2="245" y2="330" stroke="#f0d080" stroke-width="1.8"/>
+
+  <!-- ── INV: triangle pointing RIGHT, bubble on right tip ──────── -->
+  <polygon points="245,314 245,346 278,330" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <circle cx="283" cy="330" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="262" y="368" text-anchor="middle" fill="#80d4ff" font-size="11" font-style="italic">INV</text>
+
+  <!-- ── ¬S wire: from INV bubble → up → into AND_B bottom ─────── -->
+  <line x1="288" y1="330" x2="320" y2="330" stroke="#80d4ff" stroke-width="1.8"/>
+  <line x1="320" y1="330" x2="320" y2="250" stroke="#80d4ff" stroke-width="1.8"/>
+  <line x1="320" y1="250" x2="295" y2="250" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="335" y="298" text-anchor="start" fill="#80d4ff" font-size="10" font-style="italic">¬S</text>
+
+  <!-- ── AND_A: 2-input AND, takes A and S ─────────────────────── -->
+  <path d="M 295 65 L 295 125 L 330 125 A 30 30 0 0 0 330 65 Z"
+        fill="#102818" stroke="#80f0a0" stroke-width="1.8"/>
+  <text direction="ltr" x="316" y="100" text-anchor="middle" fill="#80f0a0" font-size="10" font-weight="bold">AND</text>
+
+  <!-- ── AND_B: 2-input AND, takes B and ¬S ────────────────────── -->
+  <path d="M 295 205 L 295 265 L 330 265 A 30 30 0 0 0 330 205 Z"
+        fill="#102818" stroke="#80f0a0" stroke-width="1.8"/>
+  <text direction="ltr" x="316" y="240" text-anchor="middle" fill="#80f0a0" font-size="10" font-weight="bold">AND</text>
+
+  <!-- AND_A output → OR top input -->
+  <line x1="360" y1="95" x2="450" y2="95"  stroke="#80f0a0" stroke-width="1.6"/>
+  <line x1="450" y1="95" x2="450" y2="155" stroke="#80f0a0" stroke-width="1.6"/>
+  <line x1="450" y1="155" x2="475" y2="155" stroke="#80f0a0" stroke-width="1.6"/>
+
+  <!-- AND_B output → OR bottom input -->
+  <line x1="360" y1="235" x2="450" y2="235" stroke="#80f0a0" stroke-width="1.6"/>
+  <line x1="450" y1="235" x2="450" y2="195" stroke="#80f0a0" stroke-width="1.6"/>
+  <line x1="450" y1="195" x2="475" y2="195" stroke="#80f0a0" stroke-width="1.6"/>
+
+  <!-- ── OR gate ───────────────────────────────────────────────── -->
+  <path d="M 470 135 Q 490 175 470 215 Q 510 215 540 195 Q 565 175 540 155 Q 510 135 470 135 Z"
+        fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <path d="M 463 135 Q 483 175 463 215" fill="none" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="508" y="180" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">OR</text>
+
+  <!-- ── OR output → Out ───────────────────────────────────────── -->
+  <line x1="565" y1="175" x2="625" y2="175" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft5arr)"/>
+  <text direction="ltr" x="665" y="181" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="15">Out</text>
+
+  <!-- Caption -->
+  <text direction="ltr" x="360" y="362" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+    Out = S·A + ¬S·B = (S ? A : B)   (when fault-free)
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: null,
+        question: 'מה הפונקציה הלוגית של המעגל ללא תקלה? ומה היא הופכת להיות תחת כל אחד מהשני סוגי הקצר? כמה וקטורי בדיקה מינימליים נדרשים, ומה הם?',
+        hints: [
+          'התחל בזיהוי הטופולוגיה: זוהי מימוש של MUX 2:1 ברמת שערים. \\\`Out = (S·A) + (¬S·B) = (S ? A : B)\\\`.',
+          'תובנת מפתח: כשיש קצר בין שני קווי הדאטה, **שני הקווים נושאים אותו ערך**. הערך תלוי בסוג הקצר:\\n• wired-AND: שני הקווים = \\\`A · B\\\`.\\n• wired-OR: שני הקווים = \\\`A + B\\\`.',
+          'הצב את הערך המשותף בפונקציה. עבור wired-AND, שניהם נראים כ-\\\`(A·B)\\\` עבור ה-AND שלהם. אז \\\`Out = S·(A·B) + ¬S·(A·B) = (A·B)·(S + ¬S) = A·B\\\` — **\\\`S\\\` נעלם!**',
+          'באופן דומה ל-wired-OR: \\\`Out = S·(A+B) + ¬S·(A+B) = A+B\\\`. **\\\`S\\\` נעלם גם פה!**',
+          'אז יש 3 תרחישים: \\\`free = S?A:B\\\`, \\\`AND-bridge = A·B\\\`, \\\`OR-bridge = A+B\\\`. כדי **להפעיל** את הקצר חייבים \\\`A ≠ B\\\` (אחרת \\\`A·B = A+B = A = B\\\` ואין הבחנה).',
+          'כדי **להבחין** בין AND ל-OR צריך לבדוק **את שני ערכי \\\`S\\\`**. עם \\\`A≠B\\\` ושני ערכי \\\`S\\\` — 2 וקטורים בלבד עושים את העבודה. למשל \\\`(0,1,0)\\\` ו-\\\`(0,1,1)\\\`.',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 1240 660" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Truth-table comparison showing how the bridge erases the MUX's S-dependence.">
+  <rect x="0" y="0" width="1240" height="62" fill="#0c1a28"/>
+  <text direction="ltr" x="620" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="20">
+    Bridge erases the MUX's S-dependence — Out becomes independent of S
+  </text>
+  <text direction="ltr" x="620" y="52" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+    free = (S ? A : B)   ·   AND-bridge = A·B   ·   OR-bridge = A+B
+  </text>
+
+  <!-- ── Truth-table panel ──────────────────────────────────────── -->
+  <rect x="50" y="82" width="1140" height="540" rx="10" fill="#0e1218" stroke="#3a2818" stroke-width="1.6"/>
+  <text direction="ltr" x="620" y="118" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="17" letter-spacing="3">
+    OUT(A, B, S) UNDER EACH SCENARIO
+  </text>
+
+  <g font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold" fill="#cca040">
+    <text x="135" y="160" text-anchor="middle">A</text>
+    <text x="230" y="160" text-anchor="middle">B</text>
+    <text x="325" y="160" text-anchor="middle">S</text>
+    <text x="525" y="160" text-anchor="middle">Free = (S?A:B)</text>
+    <text x="790" y="160" text-anchor="middle">AND-bridge = A·B</text>
+    <text x="1050" y="160" text-anchor="middle">OR-bridge = A+B</text>
+  </g>
+  <line x1="80" y1="175" x2="1160" y2="175" stroke="#402a00" stroke-width="1.4"/>
+
+  ${[
+    [0,0,0, 0, 0, 0, null],
+    [0,0,1, 0, 0, 0, null],
+    [0,1,0, 1, 0, 1, 'and'],
+    [0,1,1, 0, 0, 1, 'or'],
+    [1,0,0, 0, 0, 1, 'or'],
+    [1,0,1, 1, 0, 1, 'and'],
+    [1,1,0, 1, 1, 1, null],
+    [1,1,1, 1, 1, 1, null],
+  ].map(([a,b,s,free,andBr,orBr,kind], i) => {
+    const y = 215 + i * 48;
+    const active = kind !== null;
+    const rowBg = active
+      ? '<rect x="80" y="' + (y - 26) + '" width="1080" height="42" fill="rgba(64,204,96,0.08)" stroke="rgba(64,204,96,0.35)" stroke-width="1.4" rx="4"/>'
+      : '<rect x="80" y="' + (y - 26) + '" width="1080" height="42" fill="rgba(80,80,80,0.05)" stroke="rgba(80,80,80,0.22)" stroke-width="1.2" rx="4" stroke-dasharray="4 4"/>';
+    const noteEl = active
+      ? '<text direction="ltr" x="1180" y="' + (y + 6) + '" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">⚡</text>'
+      : '<text direction="ltr" x="1180" y="' + (y + 6) + '" text-anchor="middle" fill="#666" font-size="16">—</text>';
+    return `
+      ${rowBg}
+      <text direction="ltr" x="135"  y="${y + 6}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="18">${a}</text>
+      <text direction="ltr" x="230"  y="${y + 6}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="18">${b}</text>
+      <text direction="ltr" x="325"  y="${y + 6}" text-anchor="middle" fill="#${s?'80f0a0':'506080'}" font-weight="bold" font-size="18">${s}</text>
+      <text direction="ltr" x="525"  y="${y + 6}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="18">${free}</text>
+      <text direction="ltr" x="790"  y="${y + 6}" text-anchor="middle" fill="#${andBr?'80f0a0':'506080'}" font-weight="bold" font-size="18">${andBr}</text>
+      <text direction="ltr" x="1050" y="${y + 6}" text-anchor="middle" fill="#${orBr?'80f0a0':'506080'}" font-weight="bold" font-size="18">${orBr}</text>
+      ${noteEl}
+    `;
+  }).join('')}
+
+  <text direction="ltr" x="620" y="645" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">
+    ⚡ rows = vectors that activate the bridge (require A ≠ B).   Dashed rows = transparent.
+  </text>
+</svg>`,
+        answer:
+`**מינימום: 2 וקטורי בדיקה — חייבים \`A ≠ B\` ושני ערכי \`S\` שונים.** למשל \`(A,B,S) = (0,1,0)\` ו-\`(0,1,1)\`.
+
+### תובנת המפתח — הקצר מוחק את \`S\`
+
+בריג בין שני קווי הדאטה גורם לשני הקווים לשאת אותו ערך משותף:
+- **wired-AND**: שני הקווים = \`A · B\`
+- **wired-OR**: שני הקווים = \`A + B\`
+
+נציב בפונקציית ה-MUX:
+\`\`\`
+Out = S · (data_top) + ¬S · (data_bottom)
+
+free       : Out = S · A   + ¬S · B   = (S ? A : B)
+AND-bridge : Out = S · (A·B) + ¬S · (A·B) = (A·B) · (S + ¬S) = A · B
+OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
+\`\`\`
+
+**ה-\`S\` נעלם** משתי פונקציות ה-bridge — שני הקווים נושאים את אותו ערך, אז ה-MUX לא יכול להפריד ביניהם. זוהי תכונה כללית של bridge בין data lines של MUX.
+
+### למה צריך \`A ≠ B\`
+
+אם \`A = B\` אז \`A·B = A+B = A = B\`, וכל שלוש הפונקציות נותנות אותו פלט. הקצר "שקוף". חייבים \`A ≠ B\` כדי שהקצר ישפיע.
+
+### למה צריך שני ערכי \`S\`
+
+עם \`A ≠ B\` קבוע, נסתכל על שני ערכי \`S\`:
+- \`S=0\` (free בוחר ב-B): free=B, AND=A·B, OR=A+B. אם A=0, B=1: free=1, AND=0, OR=1.
+- \`S=1\` (free בוחר ב-A): free=A, AND=A·B, OR=A+B. אם A=0, B=1: free=0, AND=0, OR=1.
+
+| (A,B,S) | Free | AND-br | OR-br |
+|---|:---:|:---:|:---:|
+| (0,1,0) | **1** | **0** | **1** |
+| (0,1,1) | **0** | **0** | **1** |
+
+**סיגנטורות נפרדות:** Free=(1,0), AND-br=(0,0), OR-br=(1,1). שלוש שונות, הבחנה מלאה.
+
+### למה לא וקטור יחיד
+
+3 תסריטים → דורש \`⌈log₂(3)⌉ = 2\` וקטורים. וקטור בודד יכול לחלק לכל היותר ל-2 קבוצות.
+
+### מלכודות נפוצות
+
+1. **בחירת A=B**: כל בחירה כזו "שוטפת" את הקצר → הבחנה בלתי-אפשרית. רוב התלמידים יבחרו \`(1,1,0)\` או דומה ויחשבו שזה מספיק.
+2. **שני וקטורים עם אותו S**: אי-אפשר להבחין AND מ-OR אם \`S\` קבוע. למשל \`(0,1,0) + (1,0,0)\` נותנים זוג סיגנטורות צמודות שלא מספיק.
+3. **התעלמות מסימטריה ב-A vs B**: \`(0,1,0)\` ו-\`(1,0,1)\` נותנים את אותה תוצאה ל-AND ו-OR — מתועה אבל לא מבחין כי שניהם מעבירים \`A→Out\` או \`B→Out\` בצורה סימטרית.
+
+המעגל החי למטה — שורה 1 (free), שורה 2 (AND-bridge), שורה 3 (OR-bridge). שנה את \`A/B/S\` והפלט של 3 השורות יתפצל בקצוות.`,
+        interviewerMindset:
+`**שאלה ברמת קושי גבוהה** — דורשת הבנה של כמה שכבות:
+
+1. **זיהוי טופולוגיית ה-MUX** — ראש מועמד צריך לראות מיד \`(S·A) + (¬S·B)\` כ-MUX ולא להיתקע בניתוח שערים נקודתי.
+2. **סמנטיקה של bridge** — wired-AND ו-wired-OR הם שני מודלים פיזיקליים שונים (CMOS pull-down vs pull-up). מועמד שלא יודע את ההבחנה מחמיץ את הכל.
+3. **התובנה ש-\`S\` נמחק** — זה ה-"אהה" של השאלה. הקצר משבית את התלות התכלת המטרית של ה-MUX. מועמד שמזהה את זה ישר ניגש לוקטורים.
+4. **שלוש דרישות לוקטורים**: \`A≠B\` להפעלה, שני ערכי \`S\` להבחנה. שלושה תנאים בלתי-תלויים.
+
+**שאלת המשך מתבקשת:** "ומה אם הקצר היה בין \`S\` ל-\`¬S\` (קווי הסלקט)?" — תשובה: \`S = ¬S\`. wired-AND: שניהם = \`S·¬S = 0\` → \`Out = 0·A + 0·B = 0\` תמיד. wired-OR: שניהם = \`S+¬S = 1\` → \`Out = A + B\` תמיד. שתי תקלות שונות מהראשונות, ושני מודלים שונים.
+
+**שאלת bonus תאורטית:** "במציאות, האם הקצר באמת סימטרי?" — לא. בסיליקון אמיתי, בדרך כלל יש "dominator" — הקו עם הציר חזק יותר מנצח. מודלים אמיתיים: A-dominated (B נמשך לערך של A), B-dominated, AND-bridge, OR-bridge. ATPG מסחרי מנתח את כל ארבעת המודלים בנפרד.
+
+**שאלת bonus ל-design**: "איך מתגוננים מ-bridge faults?" — שמירה על מרווחים בין routes (DRC rules), שכבות metal שונות לקווים שכנים, ו-PVT testing במהלך production.`,
+        expectedAnswers: [
+          '2', 'two', 'שני', 'שניים',
+          '(0,1,0)', '(0,1,1)', '(1,0,0)', '(1,0,1)',
+          'minimum', 'מינימום', 'מינימלי',
+          'bridge', 'גשר', 'קצר',
+          'wired-and', 'wired and', 'wired-or', 'wired or',
+          'mux', 'multiplexer', 'מולטיפלקסר',
+          'A != B', 'A ≠ B', 'A neq B',
+          'select', 's=0', 's=1',
+          'erase', 'eliminate', 'eliminates', 'מוחק', 'מבטל',
+        ],
+      },
+    ],
+    source: 'אחות לשאלות #6003 / #6004 — תקלת bridge בין קווי data של MUX',
+    tags: ['bridge', 'wired-and', 'wired-or', 'mux', 'atpg', 'fault-detection', 'dft'],
+    circuitRevealsAnswer: true,
+    // Canvas: 3 parallel rows of the same gate-level 2:1 MUX, sharing
+    // A, B, and S inputs.
+    //   Row 1 — fault-free.
+    //   Row 2 — wires (A→AND_A) and (B→AND_B) bridged with bridgeMode='and'.
+    //   Row 3 — same wires bridged with bridgeMode='or'.
+    // Default (A,B,S) = (0,1,0):
+    //   Out (free)  = ¬S·B = 1·1 = 1
+    //   Out (AND-bridge) = A·B = 0·1 = 0     ← differs from free
+    //   Out (OR-bridge)  = A+B = 0+1 = 1     ← matches free
+    // Flip S to 1 → free = A = 0; AND = 0; OR = 1.  Now OR differs.
+    circuit: () => build(() => {
+      // Layout: inputs stacked on the LEFT, three scenario COLUMNS
+      // stretching out to the RIGHT (side-by-side instead of stacked
+      // vertically). Each column is one variant of the MUX:
+      //   col 1 — fault-free
+      //   col 2 — wires (A→AND_A) and (B→AND_B) bridged in wired-AND mode
+      //   col 3 — same wires bridged in wired-OR mode
+      // A horizontal trunk wire from each input feeds the corresponding
+      // pin on all three columns — no zig-zagging across vertical rows.
+      const A    = h.input(80,  100, 'A');     A.fixedValue = 0;
+      const B    = h.input(80,  280, 'B');     B.fixedValue = 1;
+      const S    = h.input(80,  460, 'S');     S.fixedValue = 0;
+      const notS = h.gate('NOT', 260, 460);
+
+      const mkColumn = (xLeft, label) => ({
+        andA: h.gate('AND', xLeft,         140),    // top half — fed by A and S
+        andB: h.gate('AND', xLeft,         320),    // bot half — fed by B and ¬S
+        or1:  h.gate('OR',  xLeft + 180,   230),    // collects both ANDs
+        out:  h.output(xLeft + 360,        230, label),
+      });
+      const c1 = mkColumn(500,  'Out (free)');
+      const c2 = mkColumn(960,  'Out (AND-br)');
+      const c3 = mkColumn(1420, 'Out (OR-br)');
+
+      const wires = [];
+      const wireCol = (col, mode) => {
+        const wA = h.wire(A.id, col.andA.id, 0);    // A → AND_A.top  (BRIDGE SITE)
+        const wB = h.wire(B.id, col.andB.id, 0);    // B → AND_B.top  (BRIDGE SITE)
+        wires.push(wA);
+        wires.push(wB);
+        wires.push(h.wire(S.id,    col.andA.id, 1));
+        wires.push(h.wire(notS.id, col.andB.id, 1));
+        wires.push(h.wire(col.andA.id, col.or1.id, 0));
+        wires.push(h.wire(col.andB.id, col.or1.id, 1));
+        wires.push(h.wire(col.or1.id,  col.out.id, 0));
+        if (mode) {
+          // Symmetric bridge: each wire references the other, both
+          // share the same bridgeMode. The engine resolves both wires
+          // to (A·B) under 'and' / (A+B) under 'or' via _applyWireFault.
+          wA.bridgedWith = wB.id;  wA.bridgeMode = mode;
+          wB.bridgedWith = wA.id;  wB.bridgeMode = mode;
+        }
+      };
+      wireCol(c1, null);     // fault-free
+      wireCol(c2, 'and');    // wired-AND bridge
+      wireCol(c3, 'or');     // wired-OR bridge
+
+      // S → INV (shared by all three columns)
+      wires.push(h.wire(S.id, notS.id, 0));
+
+      return {
+        nodes: [
+          A, B, S, notS,
+          c1.andA, c1.andB, c1.or1, c1.out,
+          c2.andA, c2.andB, c2.or1, c2.out,
+          c3.andA, c3.andB, c3.or1, c3.out,
+        ],
+        wires,
+      };
+    }),
+  },
+
+  // ───────────────────────────────────────────────────────────────
+  // #6006 — Memory test strategy on an 8×8 RAM. Two-part conceptual
+  //         question, exercises the full MemoryTestRunner pipeline:
+  //   Part א — single stuck-at cell. Goal: find which cell + polarity.
+  //   Part ב — cell-to-cell parasitic coupling (capacitive). Goal:
+  //            recommend test patterns that catch it.
+  //   Live circuit drops an 8-addr × 8-bit RAM on the canvas so the
+  //   student can inject faults via the MEMORY BIST cell-fault grid
+  //   (STUCK mode) and the COUPLE mode, then run patterns from the
+  //   MEMORY TESTS section to verify their answer end-to-end.
+  // ───────────────────────────────────────────────────────────────
+  {
+    id: 'ram-8x8-stuck-coupling-strategy',
+    difficulty: 'hard',
+    title: 'בדיקת זיכרון RAM 8×8 — תאים תקועים וקיבול פרזיטי',
+    intro:
+`נתון \`RAM\` של **8 כתובות × 8 ביטים** (סה"כ 64 תאי-ביט).
+תכנן אסטרטגיית בדיקות שתאתר תקלות במעגל הזיכרון. שתי תקלות אפשריות:
+
+- **תא בודד תקוע** ב-\`0\` או ב-\`1\` בלי קשר למה שנכתב אליו.
+- **תא משפיע על תא אחר** (קיבול פרזיטי בין שני תאי SRAM/DRAM שכנים).
+
+לכל סוג תקלה — איזה דפוסי בדיקה תריץ, באיזה סדר, וכמה אופרציות נדרשות?`,
+    schematic: `
+<svg viewBox="0 0 900 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Two stacked 8x8 RAM grids: stuck-at example on top, coupling pair below.">
+
+  <!-- ===================== TOP HEADER ===================== -->
+  <text x="450" y="42" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    RAM 8 × 8 — שני סוגי תקלות
+  </text>
+  <text x="450" y="74" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+    8 addresses (rows) × 8 bits per word (columns)
+  </text>
+
+  <!-- ============================================================ -->
+  <!-- =============== PANEL A: Part א (stuck-at) ================= -->
+  <!-- ============================================================ -->
+  <rect x="20" y="100" width="860" height="490" rx="12"
+        fill="rgba(255,80,80,0.05)" stroke="rgba(255,96,96,0.6)" stroke-width="2"/>
+
+  <text x="450" y="140" text-anchor="middle" fill="#ff8a8a" font-weight="bold" font-size="26">
+    סעיף א — תא בודד תקוע
+  </text>
+  <text x="450" y="168" text-anchor="middle" fill="#c8b090" font-size="17" font-style="italic">
+    cell stuck at 0 or 1, regardless of writes
+  </text>
+
+  <!-- Bit column headers -->
+  <g font-size="20" font-weight="bold" fill="#cca040">
+    <text x="120" y="215" text-anchor="middle">addr</text>
+    <text x="195" y="215" text-anchor="middle">b7</text>
+    <text x="251" y="215" text-anchor="middle">b6</text>
+    <text x="307" y="215" text-anchor="middle">b5</text>
+    <text x="363" y="215" text-anchor="middle">b4</text>
+    <text x="419" y="215" text-anchor="middle">b3</text>
+    <text x="475" y="215" text-anchor="middle">b2</text>
+    <text x="531" y="215" text-anchor="middle">b1</text>
+    <text x="587" y="215" text-anchor="middle">b0</text>
+  </g>
+
+  <!-- 8x8 grid: stuck-at only -->
+  ${Array.from({ length: 8 }, (_, a) => {
+    const y = 235 + a * 38;
+    const addrLabel = `<text x="120" y="${y + 27}" text-anchor="middle" fill="#c8b090" font-size="20" font-weight="bold">${a}</text>`;
+    const cells = Array.from({ length: 8 }, (_, b) => {
+      const x = 170 + b * 56;
+      let fill = '#0a1825', stroke = '#3a4a60', strokeW = 1.6;
+      let dot = '';
+      if (a === 3 && b === 3) {
+        fill = '#3a0a14';
+        stroke = '#ff6060';
+        strokeW = 3;
+        dot = `<text x="${x + 25}" y="${y + 30}" text-anchor="middle" fill="#ff6060" font-weight="bold" font-size="28">?</text>`;
+      }
+      return `<rect x="${x}" y="${y + 2}" width="50" height="34" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>${dot}`;
+    }).join('');
+    return addrLabel + cells;
+  }).join('')}
+
+  <!-- Explanation under grid -->
+  <text x="450" y="550" text-anchor="middle" fill="#ff8080" font-size="19" font-weight="bold">
+    קריאה ≠ כתיבה — התא תמיד מחזיר את ערכו התקוע
+  </text>
+  <text x="450" y="580" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
+    המטרה: לאתר את התא + ערך התקלה (0 או 1)
+  </text>
+
+  <!-- ============================================================ -->
+  <!-- =============== PANEL B: Part ב (coupling) ================= -->
+  <!-- ============================================================ -->
+  <rect x="20" y="620" width="860" height="540" rx="12"
+        fill="rgba(204,102,255,0.05)" stroke="rgba(204,102,255,0.6)" stroke-width="2"/>
+
+  <text x="450" y="660" text-anchor="middle" fill="#d699ff" font-weight="bold" font-size="26">
+    סעיף ב — קיבול פרזיטי בין תאים
+  </text>
+  <text x="450" y="688" text-anchor="middle" fill="#c8b090" font-size="17" font-style="italic">
+    write to A leaks into B (parasitic capacitance)
+  </text>
+
+  <!-- Bit column headers -->
+  <g font-size="20" font-weight="bold" fill="#cca040">
+    <text x="120" y="735" text-anchor="middle">addr</text>
+    <text x="195" y="735" text-anchor="middle">b7</text>
+    <text x="251" y="735" text-anchor="middle">b6</text>
+    <text x="307" y="735" text-anchor="middle">b5</text>
+    <text x="363" y="735" text-anchor="middle">b4</text>
+    <text x="419" y="735" text-anchor="middle">b3</text>
+    <text x="475" y="735" text-anchor="middle">b2</text>
+    <text x="531" y="735" text-anchor="middle">b1</text>
+    <text x="587" y="735" text-anchor="middle">b0</text>
+  </g>
+
+  <!-- 8x8 grid: coupling pair only -->
+  ${Array.from({ length: 8 }, (_, a) => {
+    const y = 755 + a * 38;
+    const addrLabel = `<text x="120" y="${y + 27}" text-anchor="middle" fill="#c8b090" font-size="20" font-weight="bold">${a}</text>`;
+    const cells = Array.from({ length: 8 }, (_, b) => {
+      const x = 170 + b * 56;
+      let fill = '#0a1825', stroke = '#3a4a60', strokeW = 1.6;
+      let dot = '';
+      if (a === 1 && b === 5) {
+        fill = '#1a0a2a'; stroke = '#cc66ff'; strokeW = 3;
+        dot = `<text x="${x + 25}" y="${y + 30}" text-anchor="middle" fill="#cc66ff" font-weight="bold" font-size="26">A</text>`;
+      } else if (a === 6 && b === 5) {
+        fill = '#1a0a2a'; stroke = '#cc66ff'; strokeW = 3;
+        dot = `<text x="${x + 25}" y="${y + 30}" text-anchor="middle" fill="#cc66ff" font-weight="bold" font-size="26">B</text>`;
+      }
+      return `<rect x="${x}" y="${y + 2}" width="50" height="34" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>${dot}`;
+    }).join('');
+    return addrLabel + cells;
+  }).join('')}
+
+  <!-- Curved arrow A→B
+       A cell: x=170+5*56=450, y=755+1*38+2=795. Right-edge centre (500, 814).
+       B cell: x=450, y=755+6*38+2=985. Right-edge centre (500, 1004). -->
+  <defs>
+    <marker id="arrowB6006" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#cc66ff"/>
+    </marker>
+  </defs>
+  <path d="M 500 814 C 660 855, 660 970, 500 1004"
+        stroke="#cc66ff" stroke-width="2.8" fill="none"
+        stroke-dasharray="8,5" opacity="0.9"
+        marker-end="url(#arrowB6006)"/>
+  <text x="680" y="912" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
+    coupling
+  </text>
+
+  <!-- Explanation under grid -->
+  <text x="450" y="1100" text-anchor="middle" fill="#d699ff" font-size="19" font-weight="bold">
+    כתיבה ל-A → משפיעה על ערכו של B
+  </text>
+  <text x="450" y="1130" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
+    המטרה: לזהות aggressor + victim
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'אילו דפוסי בדיקה תריץ כדי לזהות **איזה תא** ב-RAM תקוע ו-**לאיזה ערך** (0 או 1)? כמה אופרציות נדרשות?',
+        hints: [
+          'תקלת \\\`stuck-at-1\\\`: התא תמיד מחזיר \\\`1\\\` בקריאה, בלי קשר למה שכתבת. תקלת \\\`stuck-at-0\\\`: הפוך.',
+          'אסטרטגיה בסיסית: כתוב ערך ידוע לכל התאים, וקרא אותם בחזרה. כל קריאה שונה מהצפי → תא תקול.',
+          'דפוס **All-zero**: כתוב \\\`0\\\` לכל \\\`N\\\` התאים, קרא את כולם. כל תא שמחזיר \\\`1\\\` הוא **\\\`s-a-1\\\`**.',
+          'דפוס **All-one**: כתוב \\\`0xFF\\\` לכל התאים, קרא. כל תא שמחזיר ערך שאינו \\\`0xFF\\\` הוא **\\\`s-a-0\\\`** (וברמת ביט אפשר לדעת באיזה ביט).',
+          'מינימום אופרציות לזיהוי שלם: שני דפוסים × (\\\`N\\\` write + \\\`N\\\` read) = **\\\`4N\\\` ops**. עבור N=8: 32 ops.',
+          '**שדרוג**: דפוס \\\`Address-as-data\\\` (כתוב את כתובת A כערך לתא A) מזהה בנוסף **בעיות במקודד הכתובות** (decoder bugs). ב-\\\`2N\\\` ops, חסכוני יותר אבל מאתר תאים פגומים רק כשהערך השונה מבדיל.',
+        ],
+        answer:
+`**אסטרטגיה: All-zero + All-one. סה"כ \`4N = 32\` אופרציות, מזהה את התא ואת ערך התקלה.**
+
+| שלב | פעולה | מאתר |
+|---|---|---|
+| 1 | כתוב \`0\` לכל הכתובות, קרא הכל | קריאה ≠ 0 → תא **s-a-1** |
+| 2 | כתוב \`0xFF\` לכל הכתובות, קרא הכל | קריאה ≠ 0xFF → תא **s-a-0** |
+
+- **למה גם וגם**: All-zero לבד עיוור ל-s-a-0; All-one לבד עיוור ל-s-a-1. חייבים שתי קוטביות.
+- **שדרוג Address-as-data**: \`mem[A] = A\` ב-\`2N = 16\` ops; גם תופס decoder bugs (write→cell לא נכון).
+
+### בקנבס — תקלה מוזרקת
+
+ב-RAM יש stuck-at-1 על \`addr=3, b4\`. הרץ \`MEMORY TESTS\`:
+- **All-zero** → **FAIL בכתובת 3** (קוראים \`0x10\` במקום \`0x00\`)
+- **All-one** → **PASS** (הביט התקוע תואם)`,
+        interviewerMindset:
+`**שאלת בסיס** בראיון memory-test. המראיין מחפש:
+
+1. **שאתה מבחין בין \`s-a-0\` ל-\`s-a-1\`** — שני דפוסים שונים, אחד לא מספיק.
+2. **שאתה לא ממציא דפוס מסובך** — All-zero + All-one זה הזוג הקלאסי, פשוט וכיסוי מלא לתקלת stuck-at.
+3. **שאתה זוכר את \`Address-as-data\`** — bonus שמראה מודעות ל-decoder bugs בלי לעלות בזמן.
+4. **שאתה מקבל ספירה נכונה**: \`4N\` ops. מועמד שמדבר על "כמה זמן זה לוקח" בלי לקבע מספר — חסר.
+
+**שאלת המשך נפוצה**: "ומה אם כמה תאים תקועים בו-זמנית?" — אותו מסלול עובד; כל מיקום פגום מתגלה בנפרד. מועמד שיגיד "צריך דפוס מורכב יותר" טועה — single-stuck-at fault model הוא linear ומכסה גם מספר תאים פגומים בו-זמנית (כל אחד נחשף ב-vector שלו).
+
+**שאלה תאורטית bonus**: "מה ה-information-theoretic lower bound לזיהוי תא תקול?" — צריך לזהות אחד מתוך \`2N\` אפשרויות (N תאים × 2 קוטביות), אז \`⌈log₂(2N)⌉ = log₂N + 1\` בדיקות \`yes/no\`. עבור N=8: 4 קריאות בלבד מבחינה תאורטית. בפועל אנחנו מבזבזים יותר כי ה-RAM קורא word-by-word, אבל זה ה-floor.`,
+        expectedAnswers: [
+          'all-zero', 'all zero', 'allzero',
+          'all-one', 'all one', 'allone',
+          '4N', '4n', '32', 'thirty-two',
+          'stuck-at', 's-a-0', 's-a-1',
+          'address-as-data', 'address as data',
+          'write', 'read', 'compare',
+          'decoder',
+        ],
+        // Live circuit for part א: an 8×8 RAM with cell at addr=3,
+        // bit 4 stuck at 1. The student opens MEMORY TESTS, picks
+        // All-zero → RUN → sees FAIL at addr=3 (bit 4 reads 1 not 0).
+        // Then picks All-one → PASS (the stuck-1 matches the expected 1).
+        // This visualises the "need both polarities" insight.
+        circuit: () => build(() => {
+          const ram = h.block('RAM', 480, 280, {
+            addrBits: 3,
+            dataBits: 8,
+            label: 'RAM 8×8 — תא 3·b4 תקוע ב-1',
+          });
+          ram.cellFaults = {
+            3: { stuckAt: 1, bit: 4 },
+          };
+          return { nodes: [ram], wires: [] };
+        }),
+      },
+      {
+        label: 'ב',
+        question: 'אילו דפוסי בדיקה תריץ כדי לזהות **שני תאים שמשפיעים זה על זה** (קיבול פרזיטי)? מה ההבדל מבדיקת stuck-at, ולמה All-zero/All-one **לא** תופסים את התקלה הזו?',
+        hints: [
+          'קיבול פרזיטי בין תאים = **coupling fault**. סוגים קלאסיים: \\\`CFin\\\` (כתיבה ב-A הופכת את B), \\\`CFid\\\` (כתיבה ב-A כופה ערך קבוע ל-B), \\\`CFst\\\` (תא A במצב מסוים כופה את B).',
+          'למה All-zero/All-one **לא** עובדים: שניהם כותבים אותו ערך לכל התאים. אז \\\`A·B = A+B = A = B\\\` ואין mismatch בין מה שאמור להיות לבין מה שיש — הקיבול לא משנה כלום.',
+          'הרעיון המרכזי: צריך **קונטרסט בין תאים שכנים**. תא A בערך אחד, תא B בערך הפוך, ואז לכתוב ל-A ולקרוא את B.',
+          'דפוס **Walking-1**: background של 0 לכל התאים. לכל תא \\\`c\\\` בנפרד: כתוב \\\`1\\\` ל-c, ואז **cross-read** את כל התאים האחרים — אם הם מחזירים \\\`0\\\` הכל בסדר; אם תא אחר מחזיר \\\`1\\\` → coupling מ-c לאותו תא.',
+          'דפוס **Walking-0**: הפוך — background של 1, walk-0 דרך כל תא. תופס את התקלות שתלויות במעבר \\\`1→0\\\` במקום \\\`0→1\\\`.',
+          'שני ה-walkings הללו תופסים יחד \\\`CFin\\\` ו-\\\`CFid\\\` בשני הכיוונים. ל-\\\`CFst\\\` (state coupling) — דפוס שמותיר תא במצב מסוים תקופה ארוכה ואז קורא תאים שכנים. למשל **Checkerboard** או **All-one** + cross-reads.',
+          'עלות: \\\`Walking-1\\\` על N תאים = \\\`N + N·(N+1) = N²+2N\\\` ops. ל-N=8: 80 ops לכל walking. סה"כ \\\`~160 ops\\\` לזוג Walking-1/Walking-0.',
+        ],
+        answer:
+`**אסטרטגיה: Walking-1 + Walking-0 ל-\`CFin/CFid\`, + Checkerboard ל-\`CFst\`. ~176 ops ל-N=8.**
+
+### למה All-zero / All-one לא עובדים
+
+כל התאים נושאים אותו ערך → אין הפרש פוטנציאלי בין aggressor ל-victim → הקיבול שקוף לחלוטין. **חייבים קונטרסט בין תאים שכנים.**
+
+### Walking-1 — תופס CFin/CFid בכיוון \`0→1\`
+
+- אתחל הכל ל-\`0\`.
+- לכל תא \`c\`: כתוב \`1\` ל-\`c\` · קרא \`c\` · **cross-read** את שאר התאים (אמורים להישאר \`0\`) · שחזר \`0\`.
+- אם קריאה של תא אחר מחזירה \`1\` → coupling מ-\`c\` לאותו תא.
+- עלות: \`N² + 2N\` ≈ 80 ops עבור N=8.
+
+### Walking-0
+
+הפוך: background \`0xFF\`, walk-0 דרך כל תא. תופס CFin/CFid בכיוון \`1→0\`.
+
+### Checkerboard — תופס CFst
+
+זוגיות = \`0xAA\`, אי-זוגיות = \`0x55\` → קונטרסט קבוע ⇒ חושף state-coupling. עלות: \`2N = 16\` ops.
+
+| דפוס | תופס | ops (N=8) |
+|---|---|---:|
+| Walking-1 | CFin/CFid (0→1) | 80 |
+| Walking-0 | CFin/CFid (1→0) | 80 |
+| Checkerboard | CFst | 16 |
+
+### בקנבס — תקלה מוזרקת
+
+ב-RAM יש \`CFin(addr 1 → addr 6, 0→1)\`. הרץ:
+- **All-zero** → **PASS** (אין transition \`0→1\` ל-addr 1; הקיבול שקוף)
+- **All-one** → **PASS**
+- **Walking-1** → **FAIL בכתובת 6** ✓
+
+זוהי הוכחה ויזואלית: דפוסי same-value עיוורים ל-coupling, ו-Walking-1 תופס.`,
+        interviewerMindset:
+`**שאלה מתקדמת.** המראיין מחפש:
+
+1. **שאתה מזהה שזה לא stuck-at** — coupling הוא class תקלות שונה, עם דפוסים אחרים. מועמד שיציע All-zero/All-one כפתרון — מפספס לחלוטין.
+2. **שאתה מסביר *למה* All-zero לא עובד** — כי הקיבול דורש קונטרסט. זוהי תובנה כללית של memory testing.
+3. **שאתה מכיר את \`Walking-1\`** ואת התפקיד של ה-**cross-read** (קריאת תאים שכנים אחרי כתיבה לתא ה"מטייל"). זה הלב של הדפוס.
+4. **שאתה לא טוען ב-\`Walking-1\` בודד** — צריך גם Walking-0 לכיוון \`1→0\`.
+5. **שאתה מבחין בין סוגי coupling** — CFin (transition flip), CFid (transition force), CFst (state-based). כלים מודרניים מודלים את כולם.
+6. **שאתה מקבל ספירה נכונה** — \`O(N²)\` לעומת \`O(N)\` של stuck-at. זה לא חולשה, זה מבני.
+
+**שאלת המשך**: "מתי מוותרים על Walking-1 בייצור?" — ב-RAMs גדולים (1M+ cells), Walking הופך לבלתי-מעשי (\`10¹²\` ops). מחליפים ב-March tests (March C−, March B) שמשיגים כיסוי דומה ב-\`O(N)\` ops על-ידי שילוב חכם של write+read+restore.
+
+**שאלת bonus**: "האם יש coupling שאף Walking לא תופס?" — כן. **CFdyn** (dynamic coupling) דורש רצף של 3+ פעולות בזמן ספציפי. תופסים אותם רק עם דפוסים מותאמים, או אנליזה fail-aware של ה-design.
+
+**bonus 2**: "במציאות, איפה הקיבול הזה מתרחש?" — בעיקר בין **bit-lines שכנים** ב-DRAM (cross-talk), ובין מילים שכנות (word-line crosstalk) ב-SRAM צפוף. ATE מודרני (Teradyne, Advantest) משלב BIST של March + targeted coupling tests.`,
+        expectedAnswers: [
+          'walking-1', 'walking 1', 'walking1',
+          'walking-0', 'walking 0', 'walking0',
+          'checkerboard',
+          'cfin', 'cfid', 'cfst', 'coupling',
+          'cross-read', 'cross read', 'crossread',
+          'contrast', 'קונטרסט',
+          'aggressor', 'victim',
+          'n²', 'n^2', 'n squared',
+        ],
+        // Live circuit for part ב: 8×8 RAM with a CFin coupling
+        // fault — write 0→1 to address 1 flips the contents of
+        // address 6. The student picks Walking-1 → RUN → sees FAIL
+        // at addr=6 (cross-read returns 0xFF instead of 0).
+        // All-zero / All-one on the same RAM both PASS, demonstrating
+        // why same-value patterns are blind to coupling.
+        circuit: () => build(() => {
+          const ram = h.block('RAM', 480, 280, {
+            addrBits: 3,
+            dataBits: 8,
+            label: 'RAM 8×8 — CFin: addr 1 → addr 6',
+          });
+          ram.couplingFaults = [
+            { aggressor: 1, victim: 6, type: 'CFin', trigger: '01' },
+          ];
+          return { nodes: [ram], wires: [] };
+        }),
+      },
+    ],
+    source: 'תכנון: סוגיה דו-חלקית — stuck-at vs coupling — סדרה DFT memory tests',
+    tags: ['memory', 'ram', 'stuck-at', 'coupling', 'walking-1', 'walking-0', 'cfin', 'cfid', 'cfst', 'march', 'dft'],
+    circuitRevealsAnswer: true,
+  },
 ];
