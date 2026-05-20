@@ -274,6 +274,15 @@ export class DFTPanel {
     // BOUNDARY / DIAGNOSE). Survives re-render so the user's fold
     // choices aren't undone by a fault-sim tick.
     this._collapsedCategories = new Set();
+    // Coupling-fault UI state, per RAM id:
+    //   _couplingMode    — 'stuck' (default) | 'couple'
+    //   _couplingPending — the address waiting for its partner (aggressor)
+    //   _couplingDraft   — { aggressor, victim, type, trigger, ... } once
+    //                       both endpoints are picked and the form is open
+    // All three survive re-renders (the panel re-builds on every tick).
+    this._couplingMode    = new Map();
+    this._couplingPending = new Map();
+    this._couplingDraft   = new Map();
     // Per-field LFSR edit state. Key shape: `<lfsrId>:<field>`. A
     // field is in view mode (read-only text + pencil) until the user
     // clicks the pencil; then it enters edit mode (input + save/
@@ -449,28 +458,87 @@ export class DFTPanel {
           const addr  = parseInt(cellTrg.dataset.addr, 10);
           const bitRaw = cellTrg.dataset.bit;
           const ram = this._scene?.nodes?.find(n => n.id === ramId);
-          if (ram && ram.type === 'RAM' && Number.isFinite(addr)) {
-            if (!ram.cellFaults) ram.cellFaults = {};
-            const isWord = (bitRaw === 'word');
-            const bit = isWord ? null : parseInt(bitRaw, 10);
-            const cur = ram.cellFaults[addr] || null;
-            const matches = cur && ((isWord && cur.bit === null) || (!isWord && cur.bit === bit));
-            // Cycle: clean → s-a-1 → s-a-0 → clean (only for this addr/bit slot)
-            if (!matches) {
-              ram.cellFaults[addr] = { stuckAt: 1, bit: isWord ? null : bit };
-            } else if (cur.stuckAt === 1) {
-              ram.cellFaults[addr] = { stuckAt: 0, bit: isWord ? null : bit };
-            } else {
-              delete ram.cellFaults[addr];
-            }
-            // Also clear matching ffStates entry so the new memory layout
-            // takes effect from the next clock edge.
-            const ffStates = window.state?.ffStates;
-            if (ffStates?.get && ffStates.get(ram.id)) {
-              // Don't blow away the whole ms — just allow the next
-              // _applyCellFault to use the fresh ram.cellFaults map.
-            }
-            bus.emit('node:edited', { node: ram, field: 'cellFaults' });
+          if (!ram || ram.type !== 'RAM' || !Number.isFinite(addr)) return;
+          // Mode-aware branch: STUCK cycles stuck-at as before; COUPLE
+          // treats the click as a pair-selection step.
+          const mode = this._couplingMode.get(ramId) || 'stuck';
+          if (mode === 'couple') {
+            this._handleCoupleClick(ramId, addr);
+            return;
+          }
+          if (!ram.cellFaults) ram.cellFaults = {};
+          const isWord = (bitRaw === 'word');
+          const bit = isWord ? null : parseInt(bitRaw, 10);
+          const cur = ram.cellFaults[addr] || null;
+          const matches = cur && ((isWord && cur.bit === null) || (!isWord && cur.bit === bit));
+          // Cycle: clean → s-a-1 → s-a-0 → clean (only for this addr/bit slot)
+          if (!matches) {
+            ram.cellFaults[addr] = { stuckAt: 1, bit: isWord ? null : bit };
+          } else if (cur.stuckAt === 1) {
+            ram.cellFaults[addr] = { stuckAt: 0, bit: isWord ? null : bit };
+          } else {
+            delete ram.cellFaults[addr];
+          }
+          bus.emit('node:edited', { node: ram, field: 'cellFaults' });
+          if (this._visible) this._render();
+          return;
+        }
+        // Coupling-mode toolbar — STUCK / COUPLE switch.
+        const coupleModeTrg = e.target.closest('[data-action="couple-mode"]');
+        if (coupleModeTrg) {
+          e.preventDefault();
+          const ramId = coupleModeTrg.dataset.ramId;
+          const newMode = coupleModeTrg.dataset.mode;
+          if (ramId && (newMode === 'stuck' || newMode === 'couple')) {
+            this._couplingMode.set(ramId, newMode);
+            // Switching mode cancels any pending pair / draft.
+            this._couplingPending.delete(ramId);
+            this._couplingDraft.delete(ramId);
+            if (this._visible) this._render();
+          }
+          return;
+        }
+        // Form: change a field of the coupling draft (type, trigger, etc.).
+        const coupleSetTrg = e.target.closest('[data-action="couple-set"]');
+        if (coupleSetTrg) {
+          e.preventDefault();
+          const ramId = coupleSetTrg.dataset.ramId;
+          const field = coupleSetTrg.dataset.field;
+          const value = coupleSetTrg.dataset.value;
+          const draft = this._couplingDraft.get(ramId);
+          if (draft && field) {
+            const numericFields = new Set(['forceTo', 'aggressorValue']);
+            draft[field] = numericFields.has(field) ? parseInt(value, 10) : value;
+            this._couplingDraft.set(ramId, draft);
+            if (this._visible) this._render();
+          }
+          return;
+        }
+        // Form: ADD button — commits the draft as a new couplingFaults entry.
+        const coupleAddTrg = e.target.closest('[data-action="couple-add"]');
+        if (coupleAddTrg) {
+          e.preventDefault();
+          this._commitCouplingDraft(coupleAddTrg.dataset.ramId);
+          return;
+        }
+        // Form: CANCEL — discards the draft.
+        const coupleCancelTrg = e.target.closest('[data-action="couple-cancel"]');
+        if (coupleCancelTrg) {
+          e.preventDefault();
+          this._couplingDraft.delete(coupleCancelTrg.dataset.ramId);
+          if (this._visible) this._render();
+          return;
+        }
+        // List row: ✕ button — remove a coupling entry.
+        const coupleRemoveTrg = e.target.closest('[data-action="couple-remove"]');
+        if (coupleRemoveTrg) {
+          e.preventDefault();
+          const ramId = coupleRemoveTrg.dataset.ramId;
+          const idx   = parseInt(coupleRemoveTrg.dataset.idx, 10);
+          const ram = this._scene?.nodes?.find(n => n.id === ramId);
+          if (ram && Number.isFinite(idx) && Array.isArray(ram.couplingFaults)) {
+            ram.couplingFaults.splice(idx, 1);
+            bus.emit('node:edited', { node: ram, field: 'couplingFaults' });
             if (this._visible) this._render();
           }
           return;
@@ -626,6 +694,9 @@ export class DFTPanel {
         setDftTrace(null);
         this._updateTraceButtons();
       }
+      // Coupling UI is RAM-id-keyed; clear pending/draft state on topology mutation.
+      this._couplingPending.clear();
+      this._couplingDraft.clear();
       if (this._visible) this._render();
     };
     bus.on('node:added',     refresh);
@@ -2230,9 +2301,14 @@ export class DFTPanel {
       let resultBlock = '';
       if (result) {
         const tier = result.passed ? '#40cc60' : '#ff4040';
+        // When a coupling fault caused the mismatch, surface it in the
+        // summary so the user immediately sees the proximate source.
+        const causedByText = (!result.passed && result.firstFail?.causedBy)
+          ? ` · <span style="color:#ff8090">${result.firstFail.causedBy.type} from addr ${result.firstFail.causedBy.aggressor} ↗</span>`
+          : '';
         const summary = result.passed
           ? `<span style="color:#40cc60;font-weight:bold">PASS</span> · <span style="color:#876">${result.steps} ops</span> <small>(${result.writes}w + ${result.reads}r)</small>`
-          : `<span style="color:#ff4040;font-weight:bold">FAIL</span> at <code style="color:#ffb0b0">addr ${result.firstFail.addr}</code> ${result.firstFail.bit === null ? '<small>(whole word)</small>' : `<small>(bit ${result.firstFail.bit})</small>`} — expected <code style="color:#40cc60">${result.firstFail.expected.toString(2).padStart(dBits, '0')}</code> got <code style="color:#ff4040">${result.firstFail.observed.toString(2).padStart(dBits, '0')}</code>`;
+          : `<span style="color:#ff4040;font-weight:bold">FAIL</span> at <code style="color:#ffb0b0">addr ${result.firstFail.addr}</code> ${result.firstFail.bit === null ? '<small>(whole word)</small>' : `<small>(bit ${result.firstFail.bit})</small>`} — expected <code style="color:#40cc60">${result.firstFail.expected.toString(2).padStart(dBits, '0')}</code> got <code style="color:#ff4040">${result.firstFail.observed.toString(2).padStart(dBits, '0')}</code>${causedByText}`;
 
         // Trace HEATMAP — each cell of the RAM gets a row, each step
         // gets a column. Every op lights up the (addr, step) cell with
@@ -2344,13 +2420,18 @@ export class DFTPanel {
           const guideTop    = cellBotY;
           const guideHeight = (axisH + gridH) - cellBotY + 4;
           const bitTxt = ff.bit === null ? 'whole word' : `bit ${ff.bit}`;
+          // Coupling-cause line — only renders when the runner attributed
+          // the fail to a CFin / CFid / CFst entry on this RAM.
+          const causedByLine = ff.causedBy
+            ? `<br><small style="color:#ffb0b0">${ff.causedBy.type} from addr ${ff.causedBy.aggressor} ↗</small>`
+            : '';
           failMarker = `
             <div class="dft-hm-fail-guide"
                  style="left:${cellCenterX - 1}px;top:${guideTop}px;height:${guideHeight}px"></div>
             <div class="dft-hm-fail-marker"
                  style="left:${cellCenterX}px;top:${axisH + gridH + 4}px">
               <div class="dft-hm-fail-chevron">▲</div>
-              <div class="dft-hm-fail-label">addr ${ff.addr} · step ${ff.stepIdx}<br><small>${bitTxt}</small></div>
+              <div class="dft-hm-fail-label">addr ${ff.addr} · step ${ff.stepIdx}<br><small>${bitTxt}</small>${causedByLine}</div>
             </div>`;
         }
 
@@ -2456,6 +2537,238 @@ export class DFTPanel {
     if (this._visible) this._render();
   }
 
+  // Two-click pair-selection flow for coupling mode. First click on a
+  // cell selects it as aggressor (highlighted). Second click on a
+  // *different* cell opens the configuration form. Click the same cell
+  // a second time to cancel the selection.
+  _handleCoupleClick(ramId, addr) {
+    const pending = this._couplingPending.get(ramId);
+    if (pending == null) {
+      this._couplingPending.set(ramId, addr);
+    } else if (pending === addr) {
+      this._couplingPending.delete(ramId);   // toggle off
+    } else {
+      // Both endpoints picked — initialise the draft.
+      this._couplingDraft.set(ramId, {
+        aggressor: pending,
+        victim: addr,
+        type: 'CFin',
+        trigger: '01',
+        forceTo: 1,
+        aggressorValue: 1,
+      });
+      this._couplingPending.delete(ramId);
+    }
+    if (this._visible) this._render();
+  }
+
+  // ADD button: convert the draft into a permanent couplingFaults entry
+  // on the RAM. Strip irrelevant fields by type to keep the schema clean.
+  _commitCouplingDraft(ramId) {
+    const ram = this._scene?.nodes?.find(n => n.id === ramId);
+    const draft = this._couplingDraft.get(ramId);
+    if (!ram || ram.type !== 'RAM' || !draft) return;
+    if (!Array.isArray(ram.couplingFaults)) ram.couplingFaults = [];
+    const entry = { aggressor: draft.aggressor, victim: draft.victim, type: draft.type };
+    if (draft.type === 'CFin' || draft.type === 'CFid') {
+      entry.trigger = draft.trigger;
+    }
+    if (draft.type === 'CFid' || draft.type === 'CFst') {
+      entry.forceTo = draft.forceTo;
+    }
+    if (draft.type === 'CFst') {
+      entry.aggressorValue = draft.aggressorValue;
+    }
+    ram.couplingFaults.push(entry);
+    this._couplingDraft.delete(ramId);
+    bus.emit('node:edited', { node: ram, field: 'couplingFaults' });
+    if (this._visible) this._render();
+  }
+
+  // Render the SVG overlay that draws curves between coupled cells on
+  // the cell-fault grid. Positions are computed from the known CSS grid
+  // column widths and cell heights:
+  //   col 1 (addr label): 28px
+  //   col 2 (WORD):       36px
+  //   data cols:          26px each
+  //   column gap:         3px
+  //   row height:         18px (cell) + 3px row gap
+  // Curves anchor at the WORD column centre — one per aggressor and one
+  // per victim. Colour-coded by type: red=CFin, orange=CFid, purple=CFst.
+  _renderCouplingSVG(couplingFaults, dutDataBits, renderedCells, draft) {
+    const hasDraft  = !!(draft && draft.aggressor != null && draft.victim != null);
+    const hasFaults = !!(couplingFaults && couplingFaults.length);
+    if (!hasFaults && !hasDraft) return '';
+    const ADDR_W = 28, WORD_W = 36, CELL_W = 26, CELL_H = 18, GAP = 3;
+    const headerH = CELL_H;
+    const rowCenterY = (a) => headerH + GAP + CELL_H / 2 + a * (CELL_H + GAP);
+    const gridW = ADDR_W + GAP + WORD_W + GAP + dutDataBits * (CELL_W + GAP) - GAP;
+    const gridH = headerH + GAP + renderedCells * (CELL_H + GAP) - GAP;
+    // Right-margin gutter for the curves. SVG extends beyond gridW so
+    // the curves sit OUTSIDE the table, hugging its right edge.
+    const GUTTER  = 90;
+    const svgW    = gridW + GUTTER;
+    const ANCHOR_X = gridW + 4;     // start/end x — just past the grid
+
+    const colorOf = (t) => t === 'CFin' ? '#ff5060'
+                         : t === 'CFid' ? '#ff9933'
+                         : '#cc66ff';
+    // Bulge proportional to address distance — closer pairs get tight
+    // arcs, far pairs sweep wider. Capped so a 16-row spread still fits
+    // inside the gutter.
+    const bulgeFor = (a, v) => Math.min(GUTTER - 30, 16 + Math.abs(a - v) * 3);
+
+    const renderPath = (aAddr, vAddr, type, isDraft) => {
+      if (aAddr >= renderedCells || vAddr >= renderedCells) return '';
+      const ay = rowCenterY(aAddr);
+      const vy = rowCenterY(vAddr);
+      const midY = (ay + vy) / 2;
+      const bulge = bulgeFor(aAddr, vAddr);
+      const cx = ANCHOR_X + bulge;
+      const c  = colorOf(type);
+      const dash = isDraft ? '3,3' : (type === 'CFst' ? '4,3' : '');
+      const opacity = isDraft ? 0.55 : 0.9;
+      // Self-coupling — small loop just outside the grid right edge.
+      const dPath = (aAddr === vAddr)
+        ? `M ${ANCHOR_X} ${ay - 5} C ${ANCHOR_X + 28} ${ay - 12}, ${ANCHOR_X + 28} ${ay + 12}, ${ANCHOR_X} ${ay + 5}`
+        : `M ${ANCHOR_X} ${ay} Q ${cx} ${midY} ${ANCHOR_X} ${vy}`;
+      const arrowId = `dft-couple-arrow-${type}${isDraft ? '-draft' : ''}`;
+      // Small filled dot at the aggressor anchor so the curve start is
+      // visually grounded to the row even though there's no cell at
+      // that x. The arrowhead at the victim provides the same grounding.
+      const startDot = `<circle cx="${ANCHOR_X}" cy="${ay}" r="2.5" fill="${c}" opacity="${opacity}"/>`;
+      return `
+        ${startDot}
+        <path d="${dPath}" stroke="${c}" stroke-width="2.2" fill="none" opacity="${opacity}"
+              stroke-dasharray="${dash}"
+              marker-end="url(#${arrowId})"
+              style="filter: drop-shadow(0 0 4px ${c}aa)"/>
+        <text x="${cx + 6}" y="${midY + 4}" fill="${c}" font-size="10"
+              font-family="JetBrains Mono, monospace" font-weight="bold"
+              text-anchor="start" opacity="${isDraft ? 0.85 : 1}"
+              style="text-shadow: 0 0 4px ${c}88">${type}${isDraft ? '?' : ''}</text>`;
+    };
+
+    const committedPaths = (couplingFaults || []).map(cf =>
+      renderPath(cf.aggressor, cf.victim, cf.type, false)
+    ).join('');
+
+    // Preview path for the draft (during form configuration). Same
+    // colour as the chosen type, but dashed + lower opacity to signal
+    // "not committed yet".
+    const draftPath = hasDraft
+      ? renderPath(draft.aggressor, draft.victim, draft.type || 'CFin', true)
+      : '';
+
+    // Arrow markers — one per type, plus draft variants (smaller alpha).
+    const marker = (id, fill) => `
+      <marker id="${id}" markerWidth="9" markerHeight="9"
+              refX="7.5" refY="4.5" orient="auto">
+        <polygon points="0 0, 9 4.5, 0 9" fill="${fill}"/>
+      </marker>`;
+
+    return `
+      <svg class="dft-mbist-couple-svg" width="${svgW}" height="${gridH}"
+           viewBox="0 0 ${svgW} ${gridH}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          ${marker('dft-couple-arrow-CFin',       '#ff5060')}
+          ${marker('dft-couple-arrow-CFid',       '#ff9933')}
+          ${marker('dft-couple-arrow-CFst',       '#cc66ff')}
+          ${marker('dft-couple-arrow-CFin-draft', '#ff5060')}
+          ${marker('dft-couple-arrow-CFid-draft', '#ff9933')}
+          ${marker('dft-couple-arrow-CFst-draft', '#cc66ff')}
+        </defs>
+        ${committedPaths}
+        ${draftPath}
+      </svg>`;
+  }
+
+  // Inline form rendered below the cell grid when the user has just
+  // picked an aggressor + victim pair. Lets the user choose the
+  // coupling type and the type-specific parameters (trigger / forceTo /
+  // aggressorValue), then ADD to commit or CANCEL to discard.
+  _renderCouplingForm(ramId, draft) {
+    const radio = (field, value, label, tip = '') => {
+      const checked = String(draft[field]) === String(value);
+      return `<button class="dft-couple-radio${checked ? ' checked' : ''}"
+                     data-action="couple-set" data-ram-id="${ramId}"
+                     data-field="${field}" data-value="${value}"
+                     title="${tip}">
+        <span class="dot"></span>${label}
+      </button>`;
+    };
+    const triggerRow = (draft.type === 'CFin' || draft.type === 'CFid')
+      ? `<div class="dft-couple-form-row">
+           <span class="lbl">TRIGGER</span>
+           ${radio('trigger', '01',  '0→1',  'Aggressor write transition from all-zero to all-ones')}
+           ${radio('trigger', '10',  '1→0',  'Aggressor write transition from all-ones to all-zero')}
+           ${radio('trigger', 'any', 'any',  'Either direction triggers')}
+         </div>`
+      : '';
+    const aggValueRow = (draft.type === 'CFst')
+      ? `<div class="dft-couple-form-row">
+           <span class="lbl">AGG STATE</span>
+           ${radio('aggressorValue', 0, 'all-0', 'Trigger while aggressor holds 0x0')}
+           ${radio('aggressorValue', 1, 'all-1', 'Trigger while aggressor holds all-ones')}
+         </div>`
+      : '';
+    const forceRow = (draft.type === 'CFid' || draft.type === 'CFst')
+      ? `<div class="dft-couple-form-row">
+           <span class="lbl">FORCE VICTIM</span>
+           ${radio('forceTo', 0, 'all-0', 'Force victim to 0x0')}
+           ${radio('forceTo', 1, 'all-1', 'Force victim to all-ones')}
+         </div>`
+      : '';
+    return `
+      <div class="dft-couple-form">
+        <div class="dft-couple-form-title">
+          PAIR: <code>addr ${draft.aggressor}</code> → <code>addr ${draft.victim}</code>
+        </div>
+        <div class="dft-couple-form-row">
+          <span class="lbl">TYPE</span>
+          ${radio('type', 'CFin', 'CFin', 'Inversion coupling: aggressor transition flips victim')}
+          ${radio('type', 'CFid', 'CFid', 'Idempotent coupling: aggressor transition forces victim to a fixed value')}
+          ${radio('type', 'CFst', 'CFst', 'State coupling: while aggressor holds a state, victim reads as a forced value')}
+        </div>
+        ${triggerRow}
+        ${aggValueRow}
+        ${forceRow}
+        <div class="dft-couple-form-actions">
+          <button class="dft-couple-add"    data-action="couple-add"    data-ram-id="${ramId}">✓ ADD</button>
+          <button class="dft-couple-cancel" data-action="couple-cancel" data-ram-id="${ramId}">✕ CANCEL</button>
+        </div>
+      </div>`;
+  }
+
+  // Compact list of all coupling entries on a RAM, each with a ✕ button
+  // to remove. Rendered below the form (or below the grid when no form
+  // is active). Empty when the RAM has no coupling faults.
+  _renderCouplingList(ramId, couplingFaults) {
+    const typeColor = (t) => t === 'CFin' ? '#ff5060' : t === 'CFid' ? '#ff9933' : '#cc66ff';
+    const rows = couplingFaults.map((cf, i) => {
+      let detail = '';
+      if (cf.type === 'CFin') detail = `trigger ${cf.trigger}`;
+      else if (cf.type === 'CFid') detail = `trigger ${cf.trigger} · force ${cf.forceTo ? 'all-1' : 'all-0'}`;
+      else if (cf.type === 'CFst') detail = `agg=${cf.aggressorValue ? 'all-1' : 'all-0'} · force ${cf.forceTo ? 'all-1' : 'all-0'}`;
+      return `
+        <div class="dft-couple-list-row">
+          <code class="addr">${cf.aggressor}</code>
+          <span class="arrow">→</span>
+          <code class="addr">${cf.victim}</code>
+          <span class="type" style="color:${typeColor(cf.type)}">${cf.type}</span>
+          <span class="detail">${detail}</span>
+          <button class="rm" data-action="couple-remove"
+                  data-ram-id="${ramId}" data-idx="${i}"
+                  title="Remove this coupling fault">✕</button>
+        </div>`;
+    }).join('');
+    return `
+      <div class="dft-couple-list">
+        <div class="dft-couple-list-title">COUPLING FAULTS · ${couplingFaults.length}</div>
+        ${rows}
+      </div>`;
+  }
+
   _renderMbistControllers() {
     const allNodes = this._scene?.nodes || [];
     const wires    = this._scene?.wires || [];
@@ -2520,17 +2833,56 @@ export class DFTPanel {
       // Cell-fault injection grid for the auto-detected DUT.
       let cellGrid = '';
       if (dut.ram) {
-        const cellFaults = dut.ram.cellFaults || {};
+        const cellFaults     = dut.ram.cellFaults || {};
+        const couplingFaults = dut.ram.couplingFaults || [];
+        const ramId          = dut.ram.id;
         const dutAddrBits = Math.max(1, (dut.ram.addrBits | 0) || 4);
         const dutDataBits = Math.max(1, (dut.ram.dataBits | 0) || 8);
         const cells = 1 << dutAddrBits;
         const bitCols = Array.from({ length: dutDataBits }, (_, i) => dutDataBits - 1 - i); // MSB-first display
         // Cap rendered cell count to keep the panel responsive on huge RAMs.
         const renderedCells = Math.min(cells, 64);
+        const mode = this._couplingMode.get(ramId) || 'stuck';
+        const pendingAggressor = this._couplingPending.get(ramId);
+        const draft = this._couplingDraft.get(ramId) || null;
+        const isAggressorOf = new Set();   // addrs that are aggressors of an existing CF
+        const isVictimOf    = new Set();
+        for (const cf of couplingFaults) {
+          isAggressorOf.add(cf.aggressor);
+          isVictimOf.add(cf.victim);
+        }
+        // Draft endpoints — kept highlighted while the configuration
+        // form is open so the user can always see which pair they're
+        // configuring (otherwise the cells would lose their pending
+        // outline the moment the form appears).
+        const draftAggAddr = draft ? draft.aggressor : null;
+        const draftVicAddr = draft ? draft.victim    : null;
         const cellRows = Array.from({ length: renderedCells }, (_, a) => {
           const f = cellFaults[a];
           const wordState = !f ? '·' : (f.bit == null ? (f.stuckAt === 1 ? '1' : '0') : '·');
           const wordCls   = !f ? 'clean' : (f.bit == null ? (f.stuckAt === 1 ? 'sa1' : 'sa0') : 'clean');
+          // Coupling-mode visual markers on the WORD cell. Order of
+          // precedence (most specific first): pending > draft-aggressor
+          // > draft-victim > committed-aggressor > committed-victim.
+          let extraWordCls = '';
+          if (mode === 'couple') {
+            if (pendingAggressor === a)            extraWordCls = ' couple-pending';
+            else if (draftAggAddr === a)            extraWordCls = ' couple-draft-agg';
+            else if (draftVicAddr === a)            extraWordCls = ' couple-draft-vic';
+            else if (isAggressorOf.has(a))          extraWordCls = ' couple-aggressor';
+            else if (isVictimOf.has(a))             extraWordCls = ' couple-victim';
+          }
+          const wordTitle = mode === 'couple'
+            ? (draftAggAddr === a
+                ? `addr ${a} — AGGRESSOR of pending pair`
+                : draftVicAddr === a
+                  ? `addr ${a} — VICTIM of pending pair`
+                  : pendingAggressor == null
+                    ? `addr ${a} — click to select as AGGRESSOR`
+                    : pendingAggressor === a
+                      ? `addr ${a} — click again to cancel selection`
+                      : `addr ${a} — click to PAIR with aggressor ${pendingAggressor}`)
+            : `addr ${a} · WORD (every bit) — click to cycle clean → s-a-1 → s-a-0`;
           const bitCells = bitCols.map(b => {
             let state = '·'; let bcls = 'clean';
             if (f && f.bit === null) {
@@ -2541,30 +2893,69 @@ export class DFTPanel {
               bcls  = (f.stuckAt === 1) ? 'sa1' : 'sa0';
             }
             return `<span class="dft-mbist-cell ${bcls}" data-action="mbist-cell-toggle"
-                          data-ram-id="${dut.ram.id}" data-addr="${a}" data-bit="${b}"
+                          data-ram-id="${ramId}" data-addr="${a}" data-bit="${b}"
                           title="addr ${a} · bit ${b} — click to cycle clean → s-a-1 → s-a-0">${state}</span>`;
           }).join('');
           return `
             <span class="dft-mbist-addrlabel">${a}</span>
-            <span class="dft-mbist-cell ${wordCls}" data-action="mbist-cell-toggle"
-                  data-ram-id="${dut.ram.id}" data-addr="${a}" data-bit="word"
-                  title="addr ${a} · WORD (every bit) — click to cycle clean → s-a-1 → s-a-0">${wordState}</span>
+            <span class="dft-mbist-cell ${wordCls}${extraWordCls}" data-action="mbist-cell-toggle"
+                  data-ram-id="${ramId}" data-addr="${a}" data-bit="word"
+                  data-cell-addr="${a}"
+                  title="${wordTitle}">${wordState}</span>
             ${bitCells}`;
         }).join('');
         const bitHeader = bitCols.map(b => `<span class="dft-mbist-bitlabel">b${b}</span>`).join('');
         const truncatedNote = cells > renderedCells
           ? `<div class="dft-info-text" style="margin-top:6px">Showing first ${renderedCells} of ${cells} cells — edit larger RAMs via JSON.</div>`
           : '';
+
+        // Coupling toolbar — mode switch + count chip.
+        const modeToolbar = `
+          <div class="dft-mbist-mode-toolbar">
+            <button class="dft-mbist-mode-btn${mode === 'stuck' ? ' active' : ''}"
+                    data-action="couple-mode" data-mode="stuck" data-ram-id="${ramId}"
+                    title="Click cells to cycle stuck-at-1 / stuck-at-0 / clean.">STUCK</button>
+            <button class="dft-mbist-mode-btn${mode === 'couple' ? ' active couple' : ''}"
+                    data-action="couple-mode" data-mode="couple" data-ram-id="${ramId}"
+                    title="Click two cells to pair as aggressor → victim and inject a coupling fault.">🔗 COUPLE</button>
+            <span class="dft-mbist-coupling-chip${couplingFaults.length ? ' has' : ''}"
+                  title="${couplingFaults.length} coupling fault${couplingFaults.length === 1 ? '' : 's'} on this RAM">
+              ${couplingFaults.length} coupling fault${couplingFaults.length === 1 ? '' : 's'}
+            </span>
+          </div>`;
+
+        // Pending hint — only in couple mode.
+        const pendingHint = mode === 'couple'
+          ? (pendingAggressor == null
+              ? `<div class="dft-mbist-couple-hint">Click any cell in the WORD column to select it as the <b>aggressor</b>.</div>`
+              : `<div class="dft-mbist-couple-hint active">Aggressor: <code>addr ${pendingAggressor}</code> — click another cell to pair, or click <code>addr ${pendingAggressor}</code> again to cancel.</div>`)
+          : '';
+
+        // Inline form (only when a draft exists).
+        const inlineForm = draft ? this._renderCouplingForm(ramId, draft) : '';
+
+        // Coupling list (existing entries) with delete buttons.
+        const couplingList = couplingFaults.length > 0
+          ? this._renderCouplingList(ramId, couplingFaults)
+          : '';
+
         cellGrid = `
           <div class="dft-mbist-faults">
             <div class="dft-mbist-faults-title">CELL FAULTS · ${dut.ram.label || dut.ram.id} (${cells}×${dutDataBits})</div>
-            <div class="dft-mbist-grid" style="grid-template-columns: 28px 36px repeat(${dutDataBits}, 26px)">
-              <span class="dft-mbist-corner">addr</span>
-              <span class="dft-mbist-bitlabel">WORD</span>
-              ${bitHeader}
-              ${cellRows}
+            ${modeToolbar}
+            ${pendingHint}
+            <div class="dft-mbist-grid-wrap">
+              <div class="dft-mbist-grid" style="grid-template-columns: 28px 36px repeat(${dutDataBits}, 26px)">
+                <span class="dft-mbist-corner">addr</span>
+                <span class="dft-mbist-bitlabel">WORD</span>
+                ${bitHeader}
+                ${cellRows}
+              </div>
+              ${this._renderCouplingSVG(couplingFaults, dutDataBits, renderedCells, draft)}
             </div>
             ${truncatedNote}
+            ${inlineForm}
+            ${couplingList}
           </div>`;
       }
 

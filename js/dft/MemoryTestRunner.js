@@ -14,6 +14,8 @@
 //
 // Mirrors the cell-fault application from SimulationEngine.js:273-282.
 
+import { applyCouplingOnWrite, applyCFstOnReadWithCause } from './CouplingFaults.js';
+
 function _mask(bits) {
   if (bits >= 32) return Math.pow(2, bits) - 1;
   return (1 << bits) - 1;
@@ -76,7 +78,8 @@ export function runMemoryTest(ram, pattern) {
   const dataBits = Math.max(1, (ram.dataBits | 0) || 8);
   const cells    = 1 << addrBits;
   const dmask    = _mask(dataBits);
-  const cellFaults = ram.cellFaults || null;
+  const cellFaults     = ram.cellFaults || null;
+  const couplingFaults = ram.couplingFaults || null;
 
   // Working snapshot of the storage. Apply fault on read AND write
   // paths — fault is storage-transparent and order-resilient.
@@ -94,29 +97,60 @@ export function runMemoryTest(ram, pattern) {
       const addr = (rawOp.addr | 0) & (cells - 1);
 
       if (rawOp.op === 'write') {
+        const oldVal  = ((mem[addr] ?? 0) | 0) & dmask;
         const wValRaw = (rawOp.data | 0) & dmask;
         const wValOut = _applyCellFault(cellFaults, addr, wValRaw, dataBits);
         mem[addr] = wValOut;
         writes++;
-        trace.push({ op: 'write', addr, data: wValRaw, observed: wValOut });
+        // DFT coupling — a CFin / CFid here may mutate mem[victim]. We
+        // record the side-effect on the trace entry so the UI can
+        // highlight which writes triggered coupling effects.
+        const couplingEffect = applyCouplingOnWrite(couplingFaults, addr, oldVal, wValOut, mem, dataBits);
+        const wEntry = { op: 'write', addr, data: wValRaw, observed: wValOut };
+        if (couplingEffect) wEntry.couplingFired = couplingEffect;
+        trace.push(wEntry);
         continue;
       }
 
       if (rawOp.op === 'read') {
         const stored   = (mem[addr] !== undefined) ? mem[addr] : 0;
-        const observed = _applyCellFault(cellFaults, addr, stored & dmask, dataBits);
+        let observed   = _applyCellFault(cellFaults, addr, stored & dmask, dataBits);
+        // DFT CFst — if an aggressor cell currently holds the trigger
+        // state, the victim read is overridden. Capture the cause so
+        // the fail label can attribute it.
+        const cfst = applyCFstOnReadWithCause(couplingFaults, addr, observed, mem, dataBits);
+        observed = cfst.val;
         const expected = (rawOp.expected | 0) & dmask;
         reads++;
         const isFail = (observed !== expected);
-        trace.push({ op: 'read', addr, expected, observed, isFail });
+        const rEntry = { op: 'read', addr, expected, observed, isFail };
+        if (cfst.causedBy) rEntry.couplingFired = cfst.causedBy;
+        trace.push(rEntry);
         if (isFail && firstFail === null) {
           // Whole-word fault? The mismatch is on every bit — report null.
           // Single-bit fault? Pin the differing bit.
           const cf  = cellFaults && cellFaults[addr];
           const bit = cf ? (cf.bit == null ? null : cf.bit)
                          : _firstMismatchBit(expected, observed, dataBits);
-          firstFail = { stepIdx, addr, bit: bit === -1 ? null : bit,
-                        expected, observed };
+          // causedBy: explain the proximate source. CFst hit on this
+          // read takes priority; otherwise look back for the most
+          // recent write whose coupling fired into this addr.
+          let causedBy = cfst.causedBy;
+          if (!causedBy) {
+            for (let i = trace.length - 2; i >= 0; i--) {
+              const t = trace[i];
+              if (t.couplingFired && t.couplingFired.victim === addr) {
+                causedBy = t.couplingFired;
+                break;
+              }
+            }
+          }
+          firstFail = {
+            stepIdx, addr,
+            bit: bit === -1 ? null : bit,
+            expected, observed,
+            ...(causedBy ? { causedBy } : {}),
+          };
         }
         continue;
       }

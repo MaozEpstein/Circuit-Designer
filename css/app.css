@@ -3533,6 +3533,287 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
 .dft-mbist-cell.sa0         { background: #2a0a14; color: #ff8060; border-color: #6a2030; }
 .dft-mbist-cell.sa0:hover   { background: #3a1a24; }
 
+/* ── DFT RAM coupling-fault injection (Phase 3 + 4) ────────────────
+   The MBIST cell-fault grid gains a STUCK / COUPLE mode toggle, a
+   pair-selection flow with a pulsing aggressor highlight, an inline
+   configuration form, a list of active couplings, and an SVG overlay
+   that draws curves between linked cells. */
+
+.dft-mbist-mode-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0 8px;
+}
+.dft-mbist-mode-btn {
+  background: rgba(20,30,45,0.6);
+  border: 1px solid #2a3a4a;
+  color: #7a8a9a;
+  font: bold 9.5px 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.dft-mbist-mode-btn:hover { background: rgba(40,60,90,0.7); color: #c0d0e0; }
+.dft-mbist-mode-btn.active {
+  background: #2a1a08;
+  border-color: #aa6a2a;
+  color: #ffb878;
+}
+.dft-mbist-mode-btn.active.couple {
+  background: #2a081a;
+  border-color: #aa2a4a;
+  color: #ff8ba0;
+  box-shadow: 0 0 8px rgba(255,80,100,0.4);
+}
+.dft-mbist-coupling-chip {
+  margin-left: auto;
+  color: #6a5060;
+  font: 9.5px 'JetBrains Mono', monospace;
+  padding: 2px 8px;
+  border: 1px solid rgba(100,80,90,0.3);
+  border-radius: 10px;
+}
+.dft-mbist-coupling-chip.has {
+  color: #ff8ba0;
+  border-color: rgba(255,80,100,0.45);
+  background: rgba(40,8,12,0.4);
+}
+
+.dft-mbist-couple-hint {
+  font: 9.5px 'JetBrains Mono', monospace;
+  color: #876;
+  padding: 5px 10px;
+  margin-bottom: 6px;
+  border-left: 3px solid #5a4040;
+  background: rgba(40,20,20,0.3);
+  border-radius: 0 3px 3px 0;
+}
+.dft-mbist-couple-hint.active {
+  color: #ff8ba0;
+  border-left-color: #ff5060;
+  background: rgba(80,16,24,0.35);
+}
+.dft-mbist-couple-hint code {
+  color: #ffd0d0;
+  background: rgba(255,64,80,0.15);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+/* Pair-selection visual states on WORD column cells. */
+.dft-mbist-cell.couple-pending {
+  outline: 2px solid #ffb878;
+  outline-offset: 1px;
+  box-shadow: 0 0 10px rgba(255,184,120,0.7);
+  animation: dftCouplePulse 1.4s ease-in-out infinite;
+}
+.dft-mbist-cell.couple-aggressor {
+  outline: 1.5px solid rgba(255,80,100,0.6);
+  outline-offset: 1px;
+}
+.dft-mbist-cell.couple-victim {
+  outline: 1.5px dashed rgba(204,102,255,0.55);
+  outline-offset: 1px;
+}
+/* Draft endpoints — stay highlighted for the entire duration of the
+   configuration form so the user never loses sight of the pair they're
+   shaping. AGG = solid red glow; VICTIM = dashed purple. Both pulse
+   gently to signal "in-progress, awaiting commit". */
+.dft-mbist-cell.couple-draft-agg {
+  outline: 2px solid #ff5060;
+  outline-offset: 1px;
+  background: rgba(255,80,100,0.18) !important;
+  color: #ffd0d0 !important;
+  box-shadow: 0 0 10px rgba(255,80,100,0.7);
+  animation: dftCouplePulse 1.4s ease-in-out infinite;
+}
+.dft-mbist-cell.couple-draft-vic {
+  outline: 2px dashed #cc66ff;
+  outline-offset: 1px;
+  background: rgba(204,102,255,0.18) !important;
+  color: #e8d0ff !important;
+  box-shadow: 0 0 10px rgba(204,102,255,0.55);
+  animation: dftCouplePulseVic 1.4s ease-in-out infinite;
+}
+@keyframes dftCouplePulseVic {
+  0%, 100% { box-shadow: 0 0 10px rgba(204,102,255,0.55); }
+  50%      { box-shadow: 0 0 16px rgba(204,102,255,0.85), 0 0 26px rgba(204,102,255,0.35); }
+}
+@keyframes dftCouplePulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,184,120,0.7); }
+  50%      { box-shadow: 0 0 18px rgba(255,184,120,1), 0 0 28px rgba(255,184,120,0.45); }
+}
+
+/* Inline pair-configuration form. Reuses the .dft-info-panel feel so
+   it nests visually with the other info panels in the section. */
+.dft-couple-form {
+  margin-top: 10px;
+  background: rgba(40,16,24,0.4);
+  border: 1px solid rgba(255,80,100,0.4);
+  border-radius: 4px;
+  padding: 8px 12px 10px;
+  font: 10px 'JetBrains Mono', monospace;
+}
+.dft-couple-form-title {
+  color: #ffd0d0;
+  letter-spacing: 0.5px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.dft-couple-form-title code {
+  color: #ffb0b0;
+  background: rgba(255,80,100,0.15);
+  padding: 0 5px;
+  border-radius: 2px;
+}
+.dft-couple-form-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+.dft-couple-form-row .lbl {
+  width: 90px;
+  color: #876;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  font-size: 9px;
+}
+.dft-couple-radio {
+  background: rgba(20,30,40,0.5);
+  border: 1px solid #2a3040;
+  color: #8090a0;
+  font: 9.5px 'JetBrains Mono', monospace;
+  padding: 3px 8px 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s;
+}
+.dft-couple-radio:hover { background: rgba(60,40,50,0.6); color: #d0c0c8; }
+.dft-couple-radio .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2a3040;
+  border: 1px solid #3a4050;
+  display: inline-block;
+}
+.dft-couple-radio.checked {
+  background: rgba(255,80,100,0.15);
+  border-color: rgba(255,80,100,0.55);
+  color: #ffd0d0;
+}
+.dft-couple-radio.checked .dot {
+  background: #ff5060;
+  border-color: #ffb0b0;
+  box-shadow: 0 0 4px rgba(255,80,100,0.6);
+}
+
+.dft-couple-form-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.dft-couple-add {
+  background: #082a14;
+  color: #40cc60;
+  border: 1px solid #2aaa6a;
+  border-radius: 3px;
+  padding: 4px 14px;
+  font: bold 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.dft-couple-add:hover  { background: #143a24; box-shadow: 0 0 8px rgba(64,204,96,0.5); }
+.dft-couple-cancel {
+  background: rgba(20,20,30,0.5);
+  color: #8090a0;
+  border: 1px solid #3a3a4a;
+  border-radius: 3px;
+  padding: 4px 14px;
+  font: bold 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+.dft-couple-cancel:hover { background: rgba(50,30,40,0.6); color: #c0a8b0; }
+
+/* Coupling list (existing entries on the RAM). */
+.dft-couple-list {
+  margin-top: 10px;
+  font: 10px 'JetBrains Mono', monospace;
+}
+.dft-couple-list-title {
+  color: #cca040;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  font-size: 9.5px;
+}
+.dft-couple-list-row {
+  display: grid;
+  grid-template-columns: 30px 12px 30px 50px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: rgba(20,30,40,0.4);
+  border-radius: 3px;
+  margin-bottom: 3px;
+  transition: background 0.12s;
+}
+.dft-couple-list-row:hover { background: rgba(40,50,60,0.5); }
+.dft-couple-list-row .addr {
+  color: #ffd0d0;
+  text-align: center;
+  background: rgba(255,80,100,0.1);
+  border-radius: 2px;
+}
+.dft-couple-list-row .arrow { color: #6a5060; text-align: center; }
+.dft-couple-list-row .type  { font-weight: bold; }
+.dft-couple-list-row .detail { color: #876; font-size: 9px; }
+.dft-couple-list-row .rm {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #6a5060;
+  font: bold 11px monospace;
+  padding: 1px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.dft-couple-list-row .rm:hover {
+  background: rgba(255,64,80,0.15);
+  border-color: rgba(255,64,80,0.4);
+  color: #ff8090;
+}
+
+/* Wrapper around the cell grid that hosts the absolute-positioned
+   SVG overlay (Phase 4) on top of the cell CSS Grid. Made inline-block
+   so the wrap shrinks to the grid's intrinsic width — otherwise the
+   block-level default would stretch it across the panel and the SVG
+   (which uses explicit pixel dimensions matching the grid) would float
+   far to the right of the cells. */
+.dft-mbist-grid-wrap {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+}
+.dft-mbist-grid-wrap > .dft-mbist-couple-svg {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+  overflow: visible;
+  /* width / height come from the inline SVG attributes so the curve
+     coords stay in the same pixel system as the cells. Do NOT use
+     width:100%; that would stretch the viewBox and offset the arrows. */
+}
+
 /* Memory Tests (Phase 1) — standalone panel-driven RAM test runner.
    Controls row sits inside a .dft-chain-block, below the standard
    header. Select + RUN + algorithm label, with the mini-trace strip

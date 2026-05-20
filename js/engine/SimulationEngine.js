@@ -4,6 +4,7 @@
  * Migrated from engine.js — same logic, ES Module format.
  */
 import { FF_TYPE_SET, MEMORY_TYPE_SET, parseSlices, sliceWidth } from '../components/Component.js';
+import { applyCouplingOnWrite, applyCFstOnRead } from '../dft/CouplingFaults.js';
 
 // ── Combinational Gate Functions ──────────────────────────────
 export const GATE_FN = {
@@ -1443,7 +1444,12 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const addr = _w(dataSlots[0]);
         const re   = _w(dataSlots[3]) ?? 1;
         const dMask = _mask(node.dataBits || 4);
-        if (re) ms.q = _applyCellFault(node, addr, (ms.memory[addr] ?? 0) & dMask, node.dataBits);
+        if (re) {
+          let rVal = _applyCellFault(node, addr, (ms.memory[addr] ?? 0) & dMask, node.dataBits);
+          // DFT CFst: aggressor in trigger state overrides this read.
+          rVal = applyCFstOnRead(node.couplingFaults, addr, rVal, ms.memory, node.dataBits);
+          ms.q = rVal;
+        }
 
       } else if (node.type === 'ROM') {
         // Inputs: ADDR(0), RE(1), CLK
@@ -2376,8 +2382,21 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         const we   = dataSlots[2] ? _wv(dataSlots[2].wire.id) : 0;
         const re   = dataSlots[3] ? _wv(dataSlots[3].wire.id) : 1;
         const dMask = _mask(node.dataBits || 4);
-        if (we) ms.memory[addr] = _applyCellFault(node, addr, data & dMask, node.dataBits);
-        if (re) ms.q = _applyCellFault(node, addr, (ms.memory[addr] ?? 0) & dMask, node.dataBits);
+        if (we) {
+          const oldVal = (ms.memory[addr] ?? 0) & dMask;
+          const newVal = _applyCellFault(node, addr, data & dMask, node.dataBits);
+          ms.memory[addr] = newVal;
+          // DFT coupling: a write transition on this aggressor cell can
+          // flip / force another cell (CFin / CFid). No-op when the RAM
+          // has no couplingFaults attached.
+          applyCouplingOnWrite(node.couplingFaults, addr, oldVal, newVal, ms.memory, node.dataBits);
+        }
+        if (re) {
+          let rVal = _applyCellFault(node, addr, (ms.memory[addr] ?? 0) & dMask, node.dataBits);
+          // DFT CFst: aggressor in trigger state can override the read value.
+          rVal = applyCFstOnRead(node.couplingFaults, addr, rVal, ms.memory, node.dataBits);
+          ms.q = rVal;
+        }
         nodeValues.set(node.id, ms.q);
         propagate(node.id);
       }
