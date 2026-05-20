@@ -69,85 +69,102 @@ const NOT_INVERTER_SVG = `
 
 // ─── FA K-maps (SUM + COUT) ─────────────────────────────────────
 const FA_KMAP_SVG = `
-<svg viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="K-maps for FA SUM and COUT">
-  <text x="310" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">K-maps עבור FA</text>
+<svg viewBox="0 0 940 540" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="14" role="img" aria-label="K-maps for FA SUM and COUT">
+  <text x="470" y="30" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">K-maps עבור FA</text>
 
-  <!-- ===== SUM K-map (left) ===== -->
-  <text x="155" y="50" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">SUM = A ⊕ B ⊕ Cin</text>
-  <text x="155" y="72" text-anchor="middle" fill="#80b0e0" font-size="10" font-weight="bold">B,Cin</text>
-  <text x="50"  y="170" fill="#80b0e0" font-size="10" font-weight="bold">A</text>
-  <g fill="#c8d8f0" font-size="10" text-anchor="middle">
-    <text x="105" y="90">00</text>
-    <text x="145" y="90">01</text>
-    <text x="185" y="90">11</text>
-    <text x="225" y="90">10</text>
+  <!-- ===== SUM K-map (left) =====
+       grid origin: (110, 110). Cells 60×60. Inner axis labels at top/left. -->
+  <text x="245" y="70" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">SUM = A ⊕ B ⊕ Cin</text>
+  <text x="245" y="98" text-anchor="middle" fill="#80b0e0" font-size="14" font-weight="bold">B, Cin</text>
+  <text x="70"  y="200" fill="#80b0e0" font-size="16" font-weight="bold">A</text>
+
+  <!-- column headers -->
+  <g fill="#c8d8f0" font-size="14" text-anchor="middle">
+    <text x="140" y="125">00</text>
+    <text x="200" y="125">01</text>
+    <text x="260" y="125">11</text>
+    <text x="320" y="125">10</text>
   </g>
-  <g fill="#c8d8f0" font-size="10" text-anchor="end">
-    <text x="78" y="118">0</text>
-    <text x="78" y="158">1</text>
+  <!-- row labels -->
+  <g fill="#c8d8f0" font-size="16" text-anchor="end" font-weight="bold">
+    <text x="100" y="178">0</text>
+    <text x="100" y="238">1</text>
   </g>
-  <g stroke="#506080" stroke-width="1" fill="none">
-    <rect x="85" y="100" width="160" height="80"/>
-    <line x1="125" y1="100" x2="125" y2="180"/>
-    <line x1="165" y1="100" x2="165" y2="180"/>
-    <line x1="205" y1="100" x2="205" y2="180"/>
-    <line x1="85"  y1="140" x2="245" y2="140"/>
+
+  <!-- grid frame -->
+  <g stroke="#506080" stroke-width="1.5" fill="none">
+    <rect x="110" y="140" width="240" height="120"/>
+    <line x1="170" y1="140" x2="170" y2="260"/>
+    <line x1="230" y1="140" x2="230" y2="260"/>
+    <line x1="290" y1="140" x2="290" y2="260"/>
+    <line x1="110" y1="200" x2="350" y2="200"/>
   </g>
-  <g fill="#c8d8f0" font-size="13" text-anchor="middle" font-weight="bold">
-    <text x="105" y="125" fill="#506080">0</text>
-    <text x="145" y="125">1</text>
-    <text x="185" y="125" fill="#506080">0</text>
-    <text x="225" y="125">1</text>
-    <text x="105" y="165">1</text>
-    <text x="145" y="165" fill="#506080">0</text>
-    <text x="185" y="165">1</text>
-    <text x="225" y="165" fill="#506080">0</text>
+
+  <!-- cell values — ones are bright, zeros are dim -->
+  <g font-size="22" text-anchor="middle" font-weight="bold">
+    <text x="140" y="180" fill="#3a4a60">0</text>
+    <text x="200" y="180" fill="#ffe080">1</text>
+    <text x="260" y="180" fill="#3a4a60">0</text>
+    <text x="320" y="180" fill="#ffe080">1</text>
+    <text x="140" y="240" fill="#ffe080">1</text>
+    <text x="200" y="240" fill="#3a4a60">0</text>
+    <text x="260" y="240" fill="#ffe080">1</text>
+    <text x="320" y="240" fill="#3a4a60">0</text>
   </g>
-  <text x="155" y="210" text-anchor="middle" fill="#c8d8f0" font-size="10">תבנית "שחמט" — אין קבוצות,</text>
-  <text x="155" y="225" text-anchor="middle" fill="#c8d8f0" font-size="10">לכן SUM = A ⊕ B ⊕ Cin.</text>
+
+  <text x="245" y="295" text-anchor="middle" fill="#c8d8f0" font-size="14">תבנית "שחמט" — אף שתי משבצות סמוכות אינן שתיהן 1</text>
+  <text x="245" y="318" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">⟹ אין קבוצות → SUM = A ⊕ B ⊕ Cin</text>
 
   <!-- ===== COUT K-map (right) ===== -->
-  <text x="465" y="50" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">COUT = AB + A·Cin + B·Cin</text>
-  <text x="465" y="72" text-anchor="middle" fill="#80b0e0" font-size="10" font-weight="bold">B,Cin</text>
-  <text x="360" y="170" fill="#80b0e0" font-size="10" font-weight="bold">A</text>
-  <g fill="#c8d8f0" font-size="10" text-anchor="middle">
-    <text x="415" y="90">00</text>
-    <text x="455" y="90">01</text>
-    <text x="495" y="90">11</text>
-    <text x="535" y="90">10</text>
+  <text x="715" y="70" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">COUT = AB + A·Cin + B·Cin</text>
+  <text x="715" y="98" text-anchor="middle" fill="#80b0e0" font-size="14" font-weight="bold">B, Cin</text>
+  <text x="540" y="200" fill="#80b0e0" font-size="16" font-weight="bold">A</text>
+
+  <g fill="#c8d8f0" font-size="14" text-anchor="middle">
+    <text x="610" y="125">00</text>
+    <text x="670" y="125">01</text>
+    <text x="730" y="125">11</text>
+    <text x="790" y="125">10</text>
   </g>
-  <g fill="#c8d8f0" font-size="10" text-anchor="end">
-    <text x="388" y="118">0</text>
-    <text x="388" y="158">1</text>
+  <g fill="#c8d8f0" font-size="16" text-anchor="end" font-weight="bold">
+    <text x="570" y="178">0</text>
+    <text x="570" y="238">1</text>
   </g>
-  <g stroke="#506080" stroke-width="1" fill="none">
-    <rect x="395" y="100" width="160" height="80"/>
-    <line x1="435" y1="100" x2="435" y2="180"/>
-    <line x1="475" y1="100" x2="475" y2="180"/>
-    <line x1="515" y1="100" x2="515" y2="180"/>
-    <line x1="395" y1="140" x2="555" y2="140"/>
+
+  <g stroke="#506080" stroke-width="1.5" fill="none">
+    <rect x="580" y="140" width="240" height="120"/>
+    <line x1="640" y1="140" x2="640" y2="260"/>
+    <line x1="700" y1="140" x2="700" y2="260"/>
+    <line x1="760" y1="140" x2="760" y2="260"/>
+    <line x1="580" y1="200" x2="820" y2="200"/>
   </g>
-  <g fill="#c8d8f0" font-size="13" text-anchor="middle" font-weight="bold">
-    <text x="415" y="125" fill="#506080">0</text>
-    <text x="455" y="125" fill="#506080">0</text>
-    <text x="495" y="125">1</text>
-    <text x="535" y="125" fill="#506080">0</text>
-    <text x="415" y="165" fill="#506080">0</text>
-    <text x="455" y="165">1</text>
-    <text x="495" y="165">1</text>
-    <text x="535" y="165">1</text>
+
+  <g font-size="22" text-anchor="middle" font-weight="bold">
+    <text x="610" y="180" fill="#3a4a60">0</text>
+    <text x="670" y="180" fill="#3a4a60">0</text>
+    <text x="730" y="180" fill="#ffe080">1</text>
+    <text x="790" y="180" fill="#3a4a60">0</text>
+    <text x="610" y="240" fill="#3a4a60">0</text>
+    <text x="670" y="240" fill="#ffe080">1</text>
+    <text x="730" y="240" fill="#ffe080">1</text>
+    <text x="790" y="240" fill="#ffe080">1</text>
   </g>
-  <!-- B·Cin group (vertical, col=11) -->
-  <rect x="478" y="106" width="34" height="68" rx="14" fill="none" stroke="#40d0f0" stroke-width="2.2"/>
-  <text x="498" y="245" text-anchor="middle" fill="#40d0f0" font-size="10" font-weight="bold">B·Cin</text>
-  <!-- A·Cin group (row A=1, cols 01,11) -->
-  <rect x="441" y="148" width="74" height="28" rx="13" fill="none" stroke="#f0a040" stroke-width="2.2"/>
-  <text x="478" y="265" text-anchor="middle" fill="#f0a040" font-size="10" font-weight="bold">A·Cin</text>
-  <!-- A·B group (row A=1, cols 11,10) -->
-  <rect x="481" y="152" width="74" height="24" rx="12" fill="none" stroke="#39ff80" stroke-width="2.2"/>
-  <text x="518" y="285" text-anchor="middle" fill="#39ff80" font-size="10" font-weight="bold">A·B</text>
-  <text x="465" y="305" text-anchor="middle" fill="#c8d8f0" font-size="10">3 קבוצות-2 → COUT = AB + ACin + BCin.</text>
-  <text x="465" y="320" text-anchor="middle" fill="#c8d8f0" font-size="10">אופטימיזציה: AB + (A⊕B)·Cin — חולק XOR עם SUM.</text>
+
+  <!-- B·Cin group (vertical, column = BC=11) — covers (0,11) + (1,11) -->
+  <rect x="708" y="148" width="44" height="104" rx="18" fill="none" stroke="#40d0f0" stroke-width="3"/>
+  <text x="730" y="345" text-anchor="middle" fill="#40d0f0" font-size="16" font-weight="bold">B·Cin</text>
+
+  <!-- A·Cin group (row A=1, BC=01 + BC=11) -->
+  <rect x="648" y="216" width="104" height="36" rx="16" fill="none" stroke="#f0a040" stroke-width="3"/>
+  <text x="700" y="378" text-anchor="middle" fill="#f0a040" font-size="16" font-weight="bold">A·Cin</text>
+
+  <!-- A·B group (row A=1, BC=11 + BC=10) -->
+  <rect x="712" y="222" width="104" height="28" rx="14" fill="none" stroke="#39ff80" stroke-width="3"/>
+  <text x="764" y="412" text-anchor="middle" fill="#39ff80" font-size="16" font-weight="bold">A·B</text>
+
+  <text x="715" y="450" text-anchor="middle" fill="#c8d8f0" font-size="14">3 קבוצות-2 חופפות ⟹ COUT = AB + A·Cin + B·Cin</text>
+  <text x="715" y="478" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">אופטימיזציה: COUT = AB + (A⊕B)·Cin — חולק XOR עם SUM</text>
+  <text x="715" y="502" text-anchor="middle" fill="#c8d8f0" font-size="13">("רוב 1 מתוך 3" — COUT=1 כשרוב הקלטים = 1)</text>
 </svg>
 `;
 
@@ -3700,79 +3717,73 @@ next:     seen_d = seen + X            ← נדבק ל-1 ברגע שראינו 1
   </text>
 </svg>`,
         answer:
-`**Priority encoder 8-to-3.** 3 ביטי פלט (Y[2:0]) + 1 דגל \`valid\`.
+`**Priority encoder 8→3.** הפלט הוא **המיקום הבינארי של ה-MSB** + דגל \`valid\` למקרה X=0.
+
+### תובנת המפתח — Y הוא פשוט המיקום
+
+כל אפשרות של מיקום ה-MSB → 3 ביטים של Y. **הביט i של Y שווה לביט i של המיקום**:
+
+| מיקום MSB | בינארי | Y[2] | Y[1] | Y[0] |
+|:---:|:---:|:---:|:---:|:---:|
+| **7** | 111 | 1 | 1 | 1 |
+| **6** | 110 | 1 | 1 | 0 |
+| **5** | 101 | 1 | 0 | 1 |
+| **4** | 100 | 1 | 0 | 0 |
+| **3** | 011 | 0 | 1 | 1 |
+| **2** | 010 | 0 | 1 | 0 |
+| **1** | 001 | 0 | 0 | 1 |
+| **0** | 000 | 0 | 0 | 0 |
+
+**מסקנה ישירה מהטבלה:**
+- **Y[2] = 1** כשה-MSB במיקום ∈ {4,5,6,7} → "יש ביט דלוק בחצי העליון"
+- **Y[1] = 1** כשה-MSB במיקום ∈ {2,3,6,7}
+- **Y[0] = 1** כשה-MSB במיקום אי-זוגי ∈ {1,3,5,7}
 
 ### נוסחאות בוליאניות
 
-הרעיון: \`Y[i] = 1\` אם המיקום של ה-MSB הדלוק שווה לאחד הערכים שמייצרים את \`Y[i]=1\`. ספציפית:
-
 \`\`\`
 Y[2] = X[7] ∨ X[6] ∨ X[5] ∨ X[4]
-     = "MSB position ≥ 4"
+       — מספיק OR פשוט (אין צורך לדכא ביטים גבוהים)
 
-Y[1] = X[7] ∨ X[6]
-     ∨ (¬X[7] ∧ ¬X[6] ∧ ¬X[5] ∧ ¬X[4] ∧ (X[3] ∨ X[2]))
-     = "MSB position ∈ {6, 7, 2, 3}"
+Y[1] = X[7] ∨ X[6]                         (MSB ∈ {6,7})
+     ∨ ¬(X[7..4]) ∧ (X[3] ∨ X[2])          (MSB ∈ {2,3}, רק כשאין גבוה יותר)
 
-Y[0] = X[7]
-     ∨ (¬X[7] ∧ ¬X[6] ∧ X[5])
-     ∨ (¬X[7] ∧ ¬X[6] ∧ ¬X[5] ∧ ¬X[4] ∧ X[3])
-     ∨ (¬X[7..1] ∧ X[0])
-     = "MSB position ∈ {7, 5, 3, 1}" (אי-זוגי)
-\`\`\`
+Y[0] = X[7]                                 (MSB=7)
+     ∨ ¬(X[7..6]) ∧ X[5]                    (MSB=5)
+     ∨ ¬(X[7..4]) ∧ X[3]                    (MSB=3)
+     ∨ ¬(X[7..2]) ∧ X[1]                    (MSB=1)
 
-\`\`\`
 valid = X[7] ∨ X[6] ∨ X[5] ∨ X[4] ∨ X[3] ∨ X[2] ∨ X[1] ∨ X[0]
 \`\`\`
 
-### דוגמת חישוב
+שים לב: \`Y[2]\` נקי (סתם OR), \`Y[1]\` ו-\`Y[0]\` דורשים שלילה של ביטים גבוהים — קלאסיקה של priority encoder.
 
-עבור \`X = 0b00101011\` (= 43):
-- X[7]=0, X[6]=0, X[5]=**1** ← MSB.
-- Y[2] = X[7] ∨ X[6] ∨ X[5] ∨ X[4] = 0 ∨ 0 ∨ 1 ∨ 0 = 1.
-- Y[1] = ... = 0.
-- Y[0] = ¬X[7] ∧ ¬X[6] ∧ X[5] = 1 ∧ 1 ∧ 1 = 1.
-- Y[2:0] = 101 = **5** ✓
+### דוגמת חישוב — X = 00101011 (=43)
 
-### חישוב יעיל יותר — TREE structure
+ה-MSB ב-X הוא **ביט 5** (כי X[7]=X[6]=0, X[5]=1).
 
-במקום SOP גדול, ניתן לחשב ב-2 שכבות:
+| ביט | חישוב | תוצאה |
+|---|---|:---:|
+| Y[2] | 0 ∨ 0 ∨ 1 ∨ 0 | **1** |
+| Y[1] | (0∨0) ∨ ¬X[7..4]=0 | **0** |
+| Y[0] | 0 ∨ (¬X[7..6] ∧ X[5]) = 1∧1∧1 | **1** |
 
-**שכבה 1:** הפרד את 8 הביטים ל-2 קבוצות של 4. לכל קבוצה:
-- \`hi_any = X[7] ∨ X[6] ∨ X[5] ∨ X[4]\` (= Y[2])
-- \`lo_any = X[3] ∨ X[2] ∨ X[1] ∨ X[0]\`
-
-**שכבה 2:** בחר את הקבוצה הגבוהה אם \`hi_any\`, אחרת הנמוכה:
-- אם \`hi_any\`: ענן חיפוש על X[7..4] עם MUX.
-- אחרת: על X[3..0].
-
-זה תרגום ל-tree עם עומק \`O(log W)\` במקום SOP שטוח.
+\`Y = 101 = 5\` ✓ (נכון, log₂(43) ≈ 5.43, floor = 5)
 
 ### מקרה X=0
 
-לא מוגדר אריתמטית (\`log(0) = −∞\`). אפשרויות מימוש:
-1. **\`valid\` flag:** מציין שהפלט תקין רק כש-\`valid = 1\`.
-2. **החזרת 0:** ב-X=0, Y = 000 (קונבנציה).
-3. **דגל error:** סיגנל נפרד.
-
-### הכללה ל-16-bit
-
-אותה תבנית, רק \`Y\` הוא 4-bit (כי MSB position ∈ 0..15). אורך הביטוי לכל \`Y[i]\` גדל אבל המבנה זהה. עומק לוגי = \`O(log 16) = 4\` שכבות.
-
-### ספירת שערים (גישת tree)
-
-לכל ביט פלט ~\`log_2(W)\` שכבות עץ. עבור 8-bit: 3 שכבות. סך ~25 שערים בסיסיים (אופטימיזציה).
+לוג של 0 לא מוגדר. הוסף \`valid = OR(X[7..0])\` — כש-\`valid=0\`, ה-Y חסר משמעות. הקונבנציה: Y=000 + \`valid=0\` מסמן undefined.
 
 ### השוואה לשאלה האחות #1015
 
 | | **#1015 — סדרתי (FSM)** | **#1016 — מקבילי (זה)** |
 |---|---|---|
-| חומרה | 4 רכיבים (1 D-FF + AND + OR + NOT) | ~25 שערים |
-| חביון | N קלוקים (אחד לכל ביט) | קלוק יחיד |
-| Scaling | \`O(1)\` חומרה — לא משתנה עם N | \`O(N)\` שערים — גדל עם רוחב הוקטור |
-| מתי לבחור? | זרם סדרתי (UART, SPI) | וקטור פנימי (CPU, ALU) |
+| חומרה | 4 רכיבים | ~25 שערים |
+| חביון | N קלוקים | קלוק יחיד |
+| Scaling | \`O(1)\` חומרה | \`O(N)\` שערים |
+| מתי? | זרם סדרתי (UART) | וקטור פנימי (ALU) |
 
-זוהי דוגמה קלאסית של trade-off **שטח-מול-זמן** שמראיין חומרה אוהב לבדוק.`,
+זה ה-trade-off הקלאסי **שטח-מול-זמן** — אותה משימה, שתי גישות הפוכות.`,
         interviewerMindset:
 `שאלת priority encoder קלאסית. המראיין מחפש:
 

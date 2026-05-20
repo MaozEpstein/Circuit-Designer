@@ -2779,7 +2779,7 @@ export class DFTPanel {
       `</span>`;
     const infoPanel = this._infoOpen.has('mbist') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Each MBIST_CONTROLLER walks a connected RAM through the March C− algorithm: { ⇕w0; ⇑r0,w1; ⇑r1,w0; ⇓r0,w1; ⇓r1,w0; ⇕r0 }. Drives ADDR / DATA / WE / RE through an optional 4-mux TEST_MODE collar; monitors RAM.Q via DATA_IN. Detects stuck-at faults on memory cells.</div>
+        <div class="dft-info-lead">Each MBIST_CONTROLLER walks a connected RAM through the March C− algorithm: { ⇕w0; ⇑r0,w1; ⇑r1,w0; ⇓r0,w1; ⇓r1,w0; ⇕r0 }. Drives ADDR / DATA / WE / RE through an optional 4-mux TEST_MODE collar; monitors RAM.Q via DATA_IN.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status warn">idle</span>
           <span class="dft-info-text">Waiting for START. Pulse START to begin the March test (≈ 15·N cycles for N cells).</span>
@@ -2796,8 +2796,64 @@ export class DFTPanel {
           <span class="dft-chain-status bad">fail</span>
           <span class="dft-info-text">First mismatch detected — <code>failAddr</code> / <code>failBit</code> pin the offending cell.</span>
         </div>
-        <div class="dft-info-row">
-          <span class="dft-info-text"><b>Cell-fault grid:</b> click a cell (rows = address, columns = bit, plus WORD = whole-cell) to cycle clean → s-a-1 → s-a-0 → clean. Edits mutate <code>ram.cellFaults</code> and become visible the next cycle — re-pulse START to re-test.</span>
+
+        <div class="dft-info-subtitle">Stuck-at cell faults <span class="dft-info-subtitle-hint">(STUCK mode below — click cells to cycle)</span></div>
+        <table class="dft-info-table">
+          <thead>
+            <tr><th>Type</th><th>What it does</th><th>Best pattern to catch</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="algo sa1">s-a-1</td>
+              <td>Cell always reads all-ones, regardless of writes.</td>
+              <td><b>All-zero</b> — writes 0, expects 0; faulty cell returns 0xF → FAIL.</td>
+            </tr>
+            <tr>
+              <td class="algo sa0">s-a-0</td>
+              <td>Cell always reads 0.</td>
+              <td><b>All-one</b> — writes 0xF, expects 0xF; faulty cell returns 0 → FAIL.</td>
+            </tr>
+            <tr>
+              <td class="algo bit">single-bit</td>
+              <td>Only one bit position in the word is stuck; the rest of the word is healthy.</td>
+              <td><b>Walking-1 / Walking-0</b> — exercises every bit through both polarities.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="dft-info-subtitle">Coupling faults between cells <span class="dft-info-subtitle-hint">(🔗 COUPLE mode below — pick aggressor + victim)</span></div>
+        <table class="dft-info-table">
+          <thead>
+            <tr><th>Type</th><th>Triggers when</th><th>Effect on victim</th><th>Best pattern</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="algo cfin">CFin</td>
+              <td>Aggressor write transition (0→1 or 1→0)</td>
+              <td>victim <b>flips</b> from its current value</td>
+              <td><b>Walking-1 / Walking-0</b></td>
+            </tr>
+            <tr>
+              <td class="algo cfid">CFid</td>
+              <td>Aggressor write transition</td>
+              <td>victim <b>forced</b> to <code>forceTo</code></td>
+              <td>Walking-1 (trig 01) / Walking-0 (trig 10)</td>
+            </tr>
+            <tr>
+              <td class="algo cfst">CFst</td>
+              <td>Aggressor <em>holds</em> <code>aggressorValue</code> — no write needed!</td>
+              <td>every read returns <code>forceTo</code></td>
+              <td><b>All-one</b> or <b>All-zero</b> (matching state)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="dft-info-text-row">
+          <b>Cell-fault grid below:</b> rows = address, columns = bit (plus <code>WORD</code> = whole-cell).
+          Click cells in <b>STUCK</b> mode to cycle <code>clean → s-a-1 → s-a-0 → clean</code>.
+          Switch to <b>🔗 COUPLE</b> mode, then click two cells to inject a coupling fault between them.
+          All edits mutate <code>ram.cellFaults</code> / <code>ram.couplingFaults</code> and become visible the next cycle —
+          re-pulse <b>START</b> to re-test.
         </div>
       </div>` : '';
 

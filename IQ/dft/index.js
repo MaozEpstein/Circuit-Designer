@@ -701,351 +701,263 @@ endmodule
   },
 
   // ───────────────────────────────────────────────────────────────
-  // #6003 — Stuck-at fault detection on a fanout-C / NOR+AND circuit
-  //         (slide 40). The C signal fans out: one branch → AND directly,
-  //         the other → inverter → NOR. The fault sits on the C net
-  //         BEFORE the fanout split, so a stuck value propagates through
-  //         both branches simultaneously. ATPG asks for the minimum test
-  //         set that distinguishes fault-free / s-a-0 / s-a-1.
+  // #6003 — Stuck-at fault detection on a NOR+AND+INV circuit with C
+  //         fanout (slide 40). Topology:
+  //           A → AND.top
+  //           B → NOR.top
+  //           C fanouts: forward → INV → AND.bot
+  //                       up      → (fault) → NOR.bot
+  //           NOR.out → AND.mid
+  //           AND.out → Out
+  //         Function: Out = A · NOR(B,C) · ¬C = A · ¬B · ¬C
+  //
+  //         The fault sits on the C→NOR wire (the upward branch).
+  //         Pedagogically interesting: s-a-0 is REDUNDANT (the ¬C from
+  //         the INV branch already forces Out=0 whenever C=1, so a
+  //         stuck-at-0 on the C→NOR wire never affects Out). Only
+  //         s-a-1 is detectable, with the unique vector (1,0,0).
   // ───────────────────────────────────────────────────────────────
   {
     id: 'stuck-at-detection-nor-and-cfanout',
     difficulty: 'medium',
-    title: 'זיהוי תקלת stuck-at על קו C עם פאן-אאוט — מינימום וקטורי בדיקה',
+    title: 'זיהוי תקלת stuck-at על קו C→NOR (פאן-אאוט) — מינימום וקטורי בדיקה',
     intro:
-`נתון המעגל בשרטוט:
+`בנקודה המסומנת בעיגול הכחול בשרטוט קיימת תקלת קצר — או \`stuck-at-1\` או \`stuck-at-0\`.
 
-- \`A\` נכנס ישירות ל-AND.
-- \`B\` נכנס ל-NOR.
-- **\`C\` עושה פאן-אאוט**: ענף אחד ממשיך ל-AND (קלט נפרד), ענף שני נכנס למהפך
-  ומשם ל-NOR. ה-AND הוא 3-כניסות: \`A\`, \`C\`, ופלט ה-NOR.
-
-ידוע שבנקודה המסומנת בעיגול הכחול — **על קו \`C\` לפני פיצול הפאן-אאוט** — קיימת תקלה.
-או שהנקודה מקוצרת ל-\`'1'\` (stuck-at-1) או מקוצרת ל-\`'0'\` (stuck-at-0). כשהיא תקועה,
-**שני הענפים** רואים את הערך התקוע (גם זה שנכנס ישירות ל-AND, גם זה שעובר ב-INV אל ה-NOR).
-
-איך נכנס קלטים בנקודות \`A\`, \`B\`, \`C\` כדי לזהות את **סוג** הקצר — במספר וקטורי הבדיקה
-המינימלי האפשרי?`,
+איך נכנס קלטים ב-\`A\`, \`B\`, \`C\` כדי לזהות את **סוג** הקצר, במספר וקטורי הבדיקה המינימלי?`,
     schematic: `
-<svg viewBox="0 0 620 360" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="3-input AND fed by A, NOR, and C fanout. Fault marker on C net before fanout split.">
+<svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="3-input AND fed by A, NOR(B,C), and INV(C). C fans out: one branch through INV to AND, the other up with the fault circle into the NOR.">
   <defs>
     <marker id="dft3arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
   </defs>
 
-  <!-- Input labels -->
-  <text direction="ltr" x="22" y="74" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">A</text>
-  <text direction="ltr" x="22" y="164" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">B</text>
-  <text direction="ltr" x="22" y="304" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">C</text>
+  <!--
+    Topology matches the slide exactly per the user's verbal walkthrough:
+      A → AND top input (long horizontal at top, then DOWN into AND).
+      B → NOR top input.
+      C → fanout point. From the fanout:
+          • FORWARD branch: continues right → INV → up & right → AND bottom.
+          • UP branch    : goes up, has the BLUE FAULT CIRCLE on it, then
+                           L-bends left into NOR bottom input.
+      NOR output → AND middle input.
+      AND has THREE inputs (A, NOR.out, INV.out) and output → Out.
+      Out = A · NOR(B, C) · ¬C = A · ¬B · ¬C (when fault-free).
+  -->
 
-  <!-- ── A wire: straight across to AND top input ───────────────── -->
-  <line x1="40" y1="70" x2="430" y2="70" stroke="#f0d080" stroke-width="1.8"/>
-  <line x1="430" y1="70" x2="430" y2="130" stroke="#f0d080" stroke-width="1.8"/>
+  <!-- ── Input labels ───────────────────────────────────────────── -->
+  <text direction="ltr" x="22" y="64"  text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">A</text>
+  <text direction="ltr" x="22" y="154" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">B</text>
+  <text direction="ltr" x="22" y="324" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">C</text>
 
-  <!-- ── B wire: straight across to NOR top input ───────────────── -->
-  <line x1="40" y1="160" x2="240" y2="160" stroke="#f0d080" stroke-width="1.8"/>
+  <!-- ── A wire: long horizontal then DOWN into AND top input ──── -->
+  <line x1="40"  y1="60"  x2="600" y2="60"  stroke="#f0d080" stroke-width="1.8"/>
+  <line x1="600" y1="60"  x2="600" y2="135" stroke="#f0d080" stroke-width="1.8"/>
 
-  <!-- ── C wire: from input C with FAULT MARKER, then fans out ─── -->
-  <!-- segment from input to fault marker -->
-  <line x1="40" y1="300" x2="100" y2="300" stroke="#f0d080" stroke-width="1.8"/>
-  <!-- fault marker (blue circle, before the fanout split) -->
-  <circle cx="120" cy="300" r="11" fill="#80c8ff" stroke="#3060a0" stroke-width="2.2"/>
-  <text direction="ltr" x="120" y="282" text-anchor="middle" fill="#80c8ff" font-size="10" font-weight="bold">fault</text>
-  <!-- continued C wire after fault -->
-  <line x1="131" y1="300" x2="200" y2="300" stroke="#f0d080" stroke-width="1.8"/>
-  <!-- fanout junction dot -->
-  <circle cx="200" cy="300" r="3.5" fill="#f0d080"/>
+  <!-- ── B wire: short horizontal to NOR top input ──────────────── -->
+  <line x1="40"  y1="150" x2="200" y2="150" stroke="#f0d080" stroke-width="1.8"/>
 
-  <!-- Branch 1: C → up to AND bottom input -->
-  <line x1="200" y1="300" x2="200" y2="200" stroke="#f0d080" stroke-width="1.8"/>
-  <line x1="200" y1="200" x2="430" y2="200" stroke="#f0d080" stroke-width="1.8"/>
-  <text direction="ltr" x="318" y="193" text-anchor="middle" fill="#a0a0c0" font-size="10" font-style="italic">C → AND (fanout)</text>
+  <!-- ── C wire: horizontal to the fanout junction at x=200 ────── -->
+  <!-- Fanout placed just LEFT of the NOR so the UP branch can enter the
+       NOR from the LEFT (same direction as B) without an awkward
+       right-to-left L-bend at the top. -->
+  <line x1="40"  y1="320" x2="200" y2="320" stroke="#f0d080" stroke-width="1.8"/>
+  <!-- fanout dot — explicit junction marker -->
+  <circle cx="200" cy="320" r="3.8" fill="#f0d080"/>
 
-  <!-- Branch 2: C → right to inverter -->
-  <line x1="200" y1="300" x2="245" y2="300" stroke="#f0d080" stroke-width="1.8"/>
-
-  <!-- Inverter (triangle + bubble) -->
-  <polygon points="245,285 245,315 275,300" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <circle cx="281" cy="300" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="260" y="332" text-anchor="middle" fill="#80d4ff" font-size="10">INV</text>
-
-  <!-- Inverter output → up to NOR bottom input -->
-  <line x1="286" y1="300" x2="320" y2="300" stroke="#80d4ff" stroke-width="1.8"/>
-  <line x1="320" y1="300" x2="320" y2="200" stroke="#80d4ff" stroke-width="1.8"/>
-  <line x1="320" y1="200" x2="240" y2="200" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="300" y="248" text-anchor="middle" fill="#80d4ff" font-size="10">C̄</text>
-
-  <!-- ── NOR gate ──────────────────────────────────────────────── -->
-  <path d="M 240 130 Q 272 180 240 230 Q 285 230 312 207 Q 335 180 312 153 Q 285 130 240 130 Z"
+  <!-- ── NOR gate (left of AND) ─────────────────────────────────── -->
+  <!-- The NOR uses a SHALLOW concave back (control point close to the
+       back edge) so the input pins at y=150 and y=200 land cleanly on
+       the back curve at x≈222 — wires entering at x=220 connect to the
+       gate body unambiguously. -->
+  <path d="M 220 118 Q 232 175 220 232 Q 280 232 312 207 Q 340 175 312 143 Q 280 118 220 118 Z"
         fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <circle cx="340" cy="180" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="278" y="184" text-anchor="middle" fill="#80d4ff" font-size="10" font-weight="bold">NOR</text>
+  <circle cx="345" cy="175" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="268" y="180" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">NOR</text>
 
   <!-- NOR output → AND middle input -->
-  <line x1="345" y1="180" x2="430" y2="180" stroke="#80d4ff" stroke-width="1.8"/>
+  <line x1="350" y1="175" x2="600" y2="175" stroke="#80d4ff" stroke-width="1.8"/>
 
-  <!-- ── 3-input AND gate (taller D-shape with 3 input lines) ──── -->
-  <path d="M 430 105 L 430 215 L 480 215 A 55 55 0 0 0 480 105 Z" fill="#102818" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="460" y="166" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">AND</text>
-  <text direction="ltr" x="460" y="182" text-anchor="middle" fill="#80f0a0" font-size="9">(3-in)</text>
+  <!-- ── 3-input AND gate ───────────────────────────────────────── -->
+  <path d="M 600 105 L 600 245 L 645 245 A 70 70 0 0 0 645 105 Z"
+        fill="#102818" stroke="#80f0a0" stroke-width="2"/>
+  <text direction="ltr" x="624" y="180" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">AND</text>
 
   <!-- AND output → Out -->
-  <line x1="513" y1="160" x2="575" y2="160" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft3arr)"/>
-  <text direction="ltr" x="595" y="164" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">Out</text>
+  <line x1="715" y1="175" x2="745" y2="175" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft3arr)"/>
+  <text direction="ltr" x="755" y="181" text-anchor="end" fill="#80f0a0" font-weight="bold" font-size="15">Out</text>
+
+  <!-- ── C fanout — UP branch (with fault) into NOR bottom input ── -->
+  <!-- Route: UP from the fanout dot, then RIGHT into the NOR's bottom
+       input — same orientation as B (entering NOR from its LEFT). -->
+  <!--    vertical segment upward (carries the fault) -->
+  <line x1="200" y1="320" x2="200" y2="200" stroke="#f0d080" stroke-width="1.8"/>
+  <!--    short horizontal RIGHT into NOR bottom input -->
+  <line x1="200" y1="200" x2="220" y2="200" stroke="#f0d080" stroke-width="1.8"/>
+
+  <!-- ★★★ FAULT MARKER — blue circle on the UP wire, midway up ★★★ -->
+  <circle cx="200" cy="255" r="11" fill="#80c8ff" stroke="#3060a0" stroke-width="2.4"/>
+  <text direction="ltr" x="222" y="259" text-anchor="start" fill="#80c8ff" font-size="11" font-weight="bold">fault</text>
+
+  <!-- ── C fanout — FORWARD branch through INV ──────────────────── -->
+  <!--    horizontal RIGHT from fanout dot to INV input -->
+  <line x1="200" y1="320" x2="345" y2="320" stroke="#f0d080" stroke-width="1.8"/>
+  <!--    INV triangle pointing RIGHT, bubble on right tip -->
+  <polygon points="345,303 345,337 378,320" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <circle  cx="383" cy="320" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
+  <text direction="ltr" x="362" y="358" text-anchor="middle" fill="#80d4ff" font-size="11" font-style="italic">INV</text>
+
+  <!-- ── INV output → up & right → AND bottom input ─────────────── -->
+  <!-- Route: right from INV → vertical up → right into AND bottom.
+       The vertical part crosses the NOR-output wire at (560, 175); a
+       small "jump arc" on the vertical wire makes the crossing clear. -->
+  <line x1="388" y1="320" x2="560" y2="320" stroke="#80d4ff" stroke-width="1.8"/>
+  <!-- Vertical part below the crossing -->
+  <line x1="560" y1="320" x2="560" y2="180" stroke="#80d4ff" stroke-width="1.8"/>
+  <!-- Small jump arc OVER the NOR output wire at y=175 -->
+  <path d="M 560 180 A 5 5 0 0 1 560 170" fill="none" stroke="#80d4ff" stroke-width="1.8"/>
+  <!-- Continue UP from above the crossing → into AND bottom input -->
+  <line x1="560" y1="170" x2="560" y2="215" stroke="#80d4ff" stroke-width="1.8"/>
+  <line x1="560" y1="215" x2="600" y2="215" stroke="#80d4ff" stroke-width="1.8"/>
+
+  <!-- net labels -->
+  <text direction="ltr" x="225" y="194" text-anchor="start" fill="#f0d080" font-size="10" font-style="italic">C (faulty)</text>
+  <text direction="ltr" x="430" y="312" text-anchor="start" fill="#80d4ff" font-size="10" font-style="italic">¬C</text>
+
+  <!-- Caption -->
+  <text direction="ltr" x="380" y="392" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+    Out = A · NOR(B, C) · ¬C = A · ¬B · ¬C   (when fault-free)
+  </text>
 </svg>`,
     parts: [
       {
         label: null,
         question: 'כמה וקטורי בדיקה מינימליים נדרשים, ומה הם? אילו פלטים?',
         hints: [
-          'התחל מחישוב הפונקציה הלוגית. עם פאן-אאוט של \\\`C\\\` (ענף ישיר ל-AND + ענף דרך INV ל-NOR), הפלט הוא \\\`Out = A · C · NOR(B, C̄) = A · C · B̄ · C = A · B̄ · C\\\` (כי \\\`C · C = C\\\`).',
-          '**מעוררים את התקלה (activation):**\\n• עבור s-a-0 צריך \\\`C = 1\\\` אמיתית (כדי שהקצר מ-1 ל-0 ייצור הפרש).\\n• עבור s-a-1 צריך \\\`C = 0\\\` אמיתית.',
-          '**מפיצים את התקלה (propagation):** הפלט הוא \\\`A · B̄ · C\\\`. צריך \\\`A = 1\\\` ו-\\\`B = 0\\\` כדי שכל שינוי ב-\\\`C\\\` יחלחל ל-Out. ל-s-a-1 (\\\`C = 0\\\` אמיתית, Out=0 אמיתי) צריך לוודא שעם \\\`C = 1\\\` תקוע נקבל פלט 1 — ולכן \\\`A · B̄\\\` חייב להיות 1 → \\\`A = 1, B = 0\\\`. אותה דרישה ל-s-a-0.',
-          'אז:\\n• \\\`(A,B,C) = (1,0,1)\\\` מזהה s-a-0 — free Out=1, עם s-a-0 ה-\\\`C\\\` נראה 0 בכל מקום → Out=0.\\n• \\\`(A,B,C) = (1,0,0)\\\` מזהה s-a-1 — free Out=0, עם s-a-1 ה-\\\`C\\\` נראה 1 בכל מקום → Out=1.',
-          '**מינימום = 2 וקטורי בדיקה.** עם 2 הקלטים האלה הסיגנטורות נפרדות לחלוטין: free=(1,0), s-a-0=(0,0), s-a-1=(1,1).',
-          'בדיקת שפיות שלישית אופציונלית: \\\`(A,B,C) = (0,0,0)\\\` — Out=0 בכל המצבים. סיגנטורת free על 3 הוקטורים: \\\`(1, 0, 0)\\\`. כל סטייה מ-(1,0,0) מצביעה על איזו תקלה ספציפית פעילה.',
+          'חשב את הפונקציה הלוגית: \\\`Out = A · NOR(B, C) · ¬C = A · ¬(B∨C) · ¬C = A · ¬B · ¬C · ¬C = A · ¬B · ¬C\\\`.',
+          'שים לב — ה-AND מכפיל בשני גורמים שכל אחד תלוי ב-C: ה-\\\`¬C\\\` הישיר (מה-INV) וה-\\\`NOR(B,C)\\\`. שניהם הופכים ל-0 כש-\\\`C=1\\\`.',
+          '**בודקים s-a-0** (הקו ל-NOR תקוע ב-0): \\\`NOR(B, 0) = ¬B\\\`. אז \\\`Out_faulty = A · ¬B · ¬C\\\` — **זהה ל-Out_free**. **התקלה s-a-0 רדוננטית — לא ניתנת לזיהוי בכלל!**',
+          '**בודקים s-a-1** (הקו ל-NOR תקוע ב-1): \\\`NOR(B, 1) = 0\\\`. אז \\\`Out_faulty = 0\\\` תמיד.\\nמתי \\\`Out_free = 1\\\`? כש-\\\`A=1, B=0, C=0\\\`. \\n→ וקטור הזיהוי: \\\`(1, 0, 0)\\\` (free=1, faulty=0).',
+          '**המסקנה:** אם ידוע שבוודאות אחת משתי התקלות פעילה, **וקטור יחיד מספיק.** \\\`(1,0,0)\\\` → Out=0 ⟹ s-a-1; Out=1 ⟹ s-a-0 (כי s-a-0 לא משנה את ההתנהגות).',
         ],
         answerSchematic: `
-<svg viewBox="0 0 960 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Two faulty circuits: stuck-at-0 and stuck-at-1, with their respective detecting test vectors and propagated values.">
-  <defs>
-    <marker id="dft3aG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
-    <marker id="dft3aR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff8080"/></marker>
-  </defs>
-
-  <rect x="0" y="0" width="960" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="480" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
-    Two faulty variants — fault sits on C net before fanout; minimum test set = 2
+<svg viewBox="0 0 940 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Truth table comparison of free / s-a-0 / s-a-1 showing s-a-0 is redundant.">
+  <rect x="0" y="0" width="940" height="46" fill="#0c1a28"/>
+  <text direction="ltr" x="470" y="20" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">
+    s-a-0 is REDUNDANT — single test vector (1,0,0) discriminates the two cases
+  </text>
+  <text direction="ltr" x="470" y="38" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+    Out = A · NOR(B, C_faulty) · ¬C   (C̄ comes from the INV branch, unaffected by the fault)
   </text>
 
-  <!-- ═══════════ LEFT: Stuck-at-0 circuit, pattern (A,B,C)=(1,0,1) ═══════════ -->
-  <rect x="20" y="56" width="450" height="410" rx="8" fill="#1a1408" stroke="#aa6a3a" stroke-width="1.6"/>
-  <text direction="ltr" x="245" y="82" text-anchor="middle" fill="#f0a060" font-weight="bold" font-size="13">
-    Stuck-at-0 — test (A,B,C) = (1, 0, 1)
+  <!-- ── Truth-table panel ──────────────────────────────────────── -->
+  <rect x="40" y="62" width="860" height="380" rx="8" fill="#0e1218" stroke="#3a2818" stroke-width="1.4"/>
+  <text direction="ltr" x="470" y="92" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="13" letter-spacing="2">
+    FULL TRUTH TABLE
   </text>
 
-  <!-- Input labels (left side) -->
-  <text direction="ltr" x="50" y="124" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">A=1</text>
-  <text direction="ltr" x="50" y="204" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">B=0</text>
-  <text direction="ltr" x="50" y="354" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">C=1</text>
+  <!-- column headers -->
+  <g font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#cca040">
+    <text x="100" y="125" text-anchor="middle">A</text>
+    <text x="160" y="125" text-anchor="middle">B</text>
+    <text x="220" y="125" text-anchor="middle">C</text>
+    <text x="340" y="125" text-anchor="middle">¬C (INV)</text>
+    <text x="460" y="125" text-anchor="middle">NOR(B,C_real)</text>
+    <text x="580" y="125" text-anchor="middle">Free Out</text>
+    <text x="700" y="125" text-anchor="middle">s-a-0 Out</text>
+    <text x="820" y="125" text-anchor="middle">s-a-1 Out</text>
+  </g>
+  <line x1="60" y1="135" x2="880" y2="135" stroke="#402a00" stroke-width="1"/>
 
-  <!-- A wire → AND top -->
-  <line x1="80" y1="120" x2="360" y2="120" stroke="#80f0a0" stroke-width="1.8"/>
-  <line x1="360" y1="120" x2="360" y2="180" stroke="#80f0a0" stroke-width="1.8"/>
+  ${[
+    // [A, B, C, notC, norBC, free, sa0, sa1, isDetect, sa1Mismatch]
+    [0,0,0,1,1, 0, 0, 0, false, false],
+    [0,0,1,0,0, 0, 0, 0, false, false],
+    [0,1,0,1,0, 0, 0, 0, false, false],
+    [0,1,1,0,0, 0, 0, 0, false, false],
+    [1,0,0,1,1, 1, 1, 0, false, true],   // ★ s-a-1 mismatch
+    [1,0,1,0,0, 0, 0, 0, false, false],
+    [1,1,0,1,0, 0, 0, 0, false, false],
+    [1,1,1,0,0, 0, 0, 0, false, false],
+  ].map(([a,b,c,nc,nor,free,sa0,sa1,_d,mismatch], i) => {
+    const y = 158 + i * 33;
+    const rowBg = mismatch ? '<rect x="60" y="' + (y - 17) + '" width="820" height="30" fill="rgba(255,80,100,0.10)" stroke="rgba(255,80,100,0.4)" stroke-width="1.2" rx="3"/>' : '';
+    const noteX = 920;
+    const note = mismatch
+      ? '<text direction="ltr" x="' + (820 + 70) + '" y="' + (y + 3) + '" text-anchor="middle" fill="#ff8090" font-size="10" font-weight="bold">⚡ s-a-1 detected</text>'
+      : '';
+    return `
+      ${rowBg}
+      <text direction="ltr" x="100" y="${y + 3}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="13">${a}</text>
+      <text direction="ltr" x="160" y="${y + 3}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="13">${b}</text>
+      <text direction="ltr" x="220" y="${y + 3}" text-anchor="middle" fill="#${c?'80f0a0':'506080'}" font-weight="bold" font-size="13">${c}</text>
+      <text direction="ltr" x="340" y="${y + 3}" text-anchor="middle" fill="#80d4ff" font-size="12">${nc}</text>
+      <text direction="ltr" x="460" y="${y + 3}" text-anchor="middle" fill="#80d4ff" font-size="12">${nor}</text>
+      <text direction="ltr" x="580" y="${y + 3}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="13">${free}</text>
+      <text direction="ltr" x="700" y="${y + 3}" text-anchor="middle" fill="#${sa0?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa0}</text>
+      <text direction="ltr" x="820" y="${y + 3}" text-anchor="middle" fill="#${mismatch?'ff5060':sa1?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa1}</text>
+    `;
+  }).join('')}
 
-  <!-- B wire → NOR top -->
-  <line x1="80" y1="200" x2="220" y2="200" stroke="#80f0a0" stroke-width="1.8"/>
-
-  <!-- C wire from input, value=1, with stuck-at-0 fault marker -->
-  <line x1="80" y1="350" x2="115" y2="350" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="98" y="343" text-anchor="middle" fill="#80f0a0" font-size="9">c=1</text>
-  <!-- fault marker -->
-  <circle cx="135" cy="350" r="12" fill="#1a0808" stroke="#ff6060" stroke-width="2.4"/>
-  <text direction="ltr" x="135" y="354" text-anchor="middle" fill="#ff6060" font-weight="bold" font-size="14">0</text>
-  <text direction="ltr" x="135" y="332" text-anchor="middle" fill="#ff6060" font-size="9" font-weight="bold">s-a-0</text>
-  <!-- After-fault wire: now stuck at 0 -->
-  <line x1="147" y1="350" x2="200" y2="350" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-  <text direction="ltr" x="173" y="343" text-anchor="middle" fill="#ff8080" font-size="10">→ 0</text>
-  <!-- Fanout junction -->
-  <circle cx="200" cy="350" r="3.5" fill="#ff8080"/>
-
-  <!-- Branch 1: C-fanout up to AND bottom input -->
-  <line x1="200" y1="350" x2="200" y2="250" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-  <line x1="200" y1="250" x2="360" y2="250" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-  <text direction="ltr" x="280" y="242" text-anchor="middle" fill="#ff8080" font-size="10">C→AND = 0</text>
-
-  <!-- Branch 2: continues to inverter -->
-  <line x1="200" y1="350" x2="240" y2="350" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-
-  <!-- Inverter -->
-  <polygon points="240,335 240,365 268,350" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <circle cx="274" cy="350" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <!-- inverter output value=1 -->
-  <line x1="279" y1="350" x2="320" y2="350" stroke="#80d4ff" stroke-width="1.8"/>
-  <line x1="320" y1="350" x2="320" y2="240" stroke="#80d4ff" stroke-width="1.8"/>
-  <line x1="320" y1="240" x2="220" y2="240" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="300" y="296" text-anchor="middle" fill="#80d4ff" font-size="10">C̄=1</text>
-
-  <!-- NOR -->
-  <path d="M 220 170 Q 250 220 220 270 Q 260 270 285 250 Q 305 220 285 195 Q 260 170 220 170 Z"
-        fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <circle cx="310" cy="220" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="252" y="224" text-anchor="middle" fill="#80d4ff" font-size="10" font-weight="bold">NOR</text>
-  <!-- NOR output value = NOT(0+1) = 0 -->
-  <line x1="315" y1="220" x2="360" y2="220" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="335" y="212" text-anchor="middle" fill="#80d4ff" font-size="10">NOR=0</text>
-
-  <!-- 3-input AND -->
-  <path d="M 360 100 L 360 270 L 405 270 A 85 85 0 0 0 405 100 Z" fill="#102818" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="385" y="184" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">AND</text>
-  <text direction="ltr" x="385" y="200" text-anchor="middle" fill="#80f0a0" font-size="9">(3-in)</text>
-
-  <line x1="435" y1="185" x2="445" y2="185" stroke="#80f0a0" stroke-width="2.4"/>
-  <line x1="445" y1="185" x2="445" y2="185" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft3aG)"/>
-  <text direction="ltr" x="445" y="178" fill="#80f0a0" font-weight="bold" font-size="13">Out</text>
-
-  <!-- Output summary box -->
-  <rect x="50" y="410" width="380" height="42" rx="6" fill="#102010" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="240" y="428" text-anchor="middle" fill="#a0a0c0" font-size="11">
-    fault-free: Out = A·B̄·C = 1·1·1 = <tspan fill="#80f0a0" font-weight="bold">1</tspan>
-  </text>
-  <text direction="ltr" x="240" y="445" text-anchor="middle" fill="#a0a0c0" font-size="11">
-    with s-a-0: Out = A·0·NOR(0,1) = 1·0·0 = <tspan fill="#ff8080" font-weight="bold" font-size="14">0  ✓ detect</tspan>
+  <!-- Highlight Free and s-a-0 columns as IDENTICAL -->
+  <rect x="540" y="138" width="80" height="298" fill="none" stroke="#80f0a0" stroke-width="1.5" stroke-dasharray="4 3" rx="4" opacity="0.7"/>
+  <rect x="660" y="138" width="80" height="298" fill="none" stroke="#80f0a0" stroke-width="1.5" stroke-dasharray="4 3" rx="4" opacity="0.7"/>
+  <text direction="ltr" x="640" y="455" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">
+    ↑ Free Out ≡ s-a-0 Out  (identical for ALL 8 inputs → s-a-0 is REDUNDANT)
   </text>
 
-  <!-- ═══════════ RIGHT: Stuck-at-1 circuit, pattern (A,B,C)=(1,0,0) ═══════════ -->
-  <rect x="490" y="56" width="450" height="410" rx="8" fill="#1a0808" stroke="#aa3a3a" stroke-width="1.6"/>
-  <text direction="ltr" x="715" y="82" text-anchor="middle" fill="#f08080" font-weight="bold" font-size="13">
-    Stuck-at-1 — test (A,B,C) = (1, 0, 0)
-  </text>
-
-  <!-- Input labels -->
-  <text direction="ltr" x="520" y="124" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">A=1</text>
-  <text direction="ltr" x="520" y="204" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">B=0</text>
-  <text direction="ltr" x="520" y="354" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">C=0</text>
-
-  <!-- A wire → AND top -->
-  <line x1="550" y1="120" x2="830" y2="120" stroke="#80f0a0" stroke-width="1.8"/>
-  <line x1="830" y1="120" x2="830" y2="180" stroke="#80f0a0" stroke-width="1.8"/>
-
-  <!-- B wire → NOR top -->
-  <line x1="550" y1="200" x2="690" y2="200" stroke="#80f0a0" stroke-width="1.8"/>
-
-  <!-- C wire with stuck-at-1 fault -->
-  <line x1="550" y1="350" x2="585" y2="350" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="568" y="343" text-anchor="middle" fill="#80f0a0" font-size="9">c=0</text>
-  <circle cx="605" cy="350" r="12" fill="#1a0808" stroke="#ff6060" stroke-width="2.4"/>
-  <text direction="ltr" x="605" y="354" text-anchor="middle" fill="#ff6060" font-weight="bold" font-size="14">1</text>
-  <text direction="ltr" x="605" y="332" text-anchor="middle" fill="#ff6060" font-size="9" font-weight="bold">s-a-1</text>
-  <line x1="617" y1="350" x2="670" y2="350" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-  <text direction="ltr" x="643" y="343" text-anchor="middle" fill="#ff8080" font-size="10">→ 1</text>
-  <circle cx="670" cy="350" r="3.5" fill="#ff8080"/>
-
-  <!-- Branch 1: up to AND bottom input -->
-  <line x1="670" y1="350" x2="670" y2="250" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-  <line x1="670" y1="250" x2="830" y2="250" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-  <text direction="ltr" x="750" y="242" text-anchor="middle" fill="#ff8080" font-size="10">C→AND = 1</text>
-
-  <!-- Branch 2: to inverter -->
-  <line x1="670" y1="350" x2="710" y2="350" stroke="#ff8080" stroke-width="1.8" stroke-dasharray="4 3"/>
-
-  <!-- Inverter -->
-  <polygon points="710,335 710,365 738,350" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <circle cx="744" cy="350" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <line x1="749" y1="350" x2="790" y2="350" stroke="#80d4ff" stroke-width="1.8"/>
-  <line x1="790" y1="350" x2="790" y2="240" stroke="#80d4ff" stroke-width="1.8"/>
-  <line x1="790" y1="240" x2="690" y2="240" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="770" y="296" text-anchor="middle" fill="#80d4ff" font-size="10">C̄=0</text>
-
-  <!-- NOR -->
-  <path d="M 690 170 Q 720 220 690 270 Q 730 270 755 250 Q 775 220 755 195 Q 730 170 690 170 Z"
-        fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <circle cx="780" cy="220" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="722" y="224" text-anchor="middle" fill="#80d4ff" font-size="10" font-weight="bold">NOR</text>
-  <line x1="785" y1="220" x2="830" y2="220" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="807" y="212" text-anchor="middle" fill="#80d4ff" font-size="10">NOR=1</text>
-
-  <!-- 3-input AND -->
-  <path d="M 830 100 L 830 270 L 875 270 A 85 85 0 0 0 875 100 Z" fill="#102818" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="855" y="184" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">AND</text>
-  <text direction="ltr" x="855" y="200" text-anchor="middle" fill="#80f0a0" font-size="9">(3-in)</text>
-
-  <line x1="905" y1="185" x2="915" y2="185" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft3aG)"/>
-  <text direction="ltr" x="915" y="178" fill="#80f0a0" font-weight="bold" font-size="13">Out</text>
-
-  <!-- Output summary -->
-  <rect x="520" y="410" width="380" height="42" rx="6" fill="#102010" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="710" y="428" text-anchor="middle" fill="#a0a0c0" font-size="11">
-    fault-free: Out = A·B̄·C = 1·1·0 = <tspan fill="#80f0a0" font-weight="bold">0</tspan>
-  </text>
-  <text direction="ltr" x="710" y="445" text-anchor="middle" fill="#a0a0c0" font-size="11">
-    with s-a-1: Out = A·1·NOR(0,0) = 1·1·1 = <tspan fill="#ff8080" font-weight="bold" font-size="14">1  ✓ detect</tspan>
-  </text>
+  <!-- Highlight (1,0,0) row -->
+  <text direction="ltr" x="920" y="261" text-anchor="middle" fill="#ff8090" font-size="11" font-weight="bold">⚡</text>
 </svg>`,
         answer:
-`**מינימום: 2 וקטורי בדיקה.**
+`**טוויסט: אחת התקלות (s-a-0) רדוננטית — לא ניתנת לזיהוי.** אם ידוע שיש תקלה — **וקטור יחיד \`(1,0,0)\` מספיק** להבחין בין השתיים.
 
-| # | (A, B, C) | Free Out | s-a-0 Out | s-a-1 Out |
-|:-:|:---------:|:--------:|:---------:|:---------:|
-| 1 | (1, 0, 1) | **1**    | **0** ⚡  | 1         |
-| 2 | (1, 0, 0) | **0**    | 0         | **1** ⚡  |
+הפונקציה ללא תקלה:
+\`Out = A · NOR(B, C) · ¬C = A · ¬(B∨C) · ¬C = A · ¬B · ¬C · ¬C = A · ¬B · ¬C\`
 
-\`⚡\` = פלט שונה מ-free → תקלה התגלתה.
+### ניתוח שתי התקלות
 
-**הסיגנטורות (וקטור הפלט על 2 הקלטים):**
-- Fault-free: \`(1, 0)\`
-- s-a-0: \`(0, 0)\` — שונה מ-free בקלט #1 → \`s-a-0\` זוהתה.
-- s-a-1: \`(1, 1)\` — שונה מ-free בקלט #2 → \`s-a-1\` זוהתה.
+**s-a-0** על קו \`C→NOR\`: ה-NOR רואה \`(B, 0)\`.
+\`Out_faulty = A · NOR(B, 0) · ¬C = A · ¬B · ¬C\` = **בדיוק Out_free.**
+→ **רדוננטית.** התקלה לעולם לא מעוותת את הפלט, כי ה-\`¬C\` מהענף של ה-INV ממילא מאפס את ה-Out בכל \`C=1\` (האזור היחיד שבו ה-NOR יכול להתנהג שונה תחת התקלה).
 
-כל שלושת התסריטים נפרדים → ב-2 וקטורים אפשר לזהות לא רק *אם* יש תקלה, אלא גם *איזו*.
+**s-a-1** על קו \`C→NOR\`: ה-NOR רואה \`(B, 1)\` → תמיד 0.
+\`Out_faulty = A · 0 · ¬C = 0\` (תמיד).
+לזיהוי צריך \`Out_free = 1\` — כלומר \`A=1, B=0, C=0\`.
 
-### למה אלה הוקטורים הנכונים?
+### הוקטור היחיד
 
-הפונקציה ללא תקלה: \`Out = A · C · NOR(B, C̄) = A · C · B̄ · C = A · B̄ · C\`.
+| (A, B, C) | Free Out | s-a-0 Out | s-a-1 Out |
+|:---------:|:--------:|:---------:|:---------:|
+| **(1, 0, 0)** | **1** | 1 (זהה) | **0** ⚡ |
 
-הקלפ של השאלה: **התקלה על קו \`C\` לפני הפאן-אאוט** מעוותת בו-זמנית את הענף שהולך ישירות ל-AND ואת הענף שעובר ב-INV ל-NOR. כשמדמיינים את המעגל "התקול", פשוט מחליפים את \`C\` בקבוע (0 או 1) בכל מקום.
+- Out = 1 → אין הבחנה בין free ל-s-a-0 (היא רדוננטית) — מעניינו, אם הנחת היסוד היא "יש תקלה", זה s-a-0.
+- Out = 0 → s-a-1.
 
-**Sensitization (להעיר את התקלה):** צריך שהערך האמיתי של \`C\` יהיה שונה מהערך התקוע.
-- \`s-a-0\`: \`C\` אמיתי = **1** (כך הקצר מ-1 ל-0 יוצר הפרש).
-- \`s-a-1\`: \`C\` אמיתי = **0** (הקצר מ-0 ל-1 יוצר הפרש).
+**1 וקטור = הבחנה מלאה.**
 
-**Propagation (להעביר את ההפרש ל-Out):** מהביטוי \`Out = A · B̄ · C\`, כדי שערך \`C\` יחלחל ל-Out, נדרש \`A = 1\` ו-\`B = 0\` (אחרת ה-AND או ה-NOR יחתכו את הסיגנל).
+### למה s-a-0 רדוננטית?
 
-לכן:
-- וקטור 1 (\`s-a-0\`): \`A = 1, B = 0, C = 1\` → \`(1, 0, 1)\`.
-- וקטור 2 (\`s-a-1\`): \`A = 1, B = 0, C = 0\` → \`(1, 0, 0)\`.
+הביטוי הסופי \`Out = A · ¬B · ¬C\` כולל את \`¬C\` כגורם. בכל פעם ש-\`C=1\`, ה-Out נסגר ל-0 ע"י ה-\`¬C\` הזה — בלי קשר למה ש-NOR מחזיר. ולכן הקטעת ה-\`C\` ל-NOR (s-a-0) לא משנה כלום: כש-\`C=0\` ממילא ה-NOR מקבל \`(B, 0)\` נורמלית; כש-\`C=1\` ה-\`¬C\` הישיר חוסם את ה-Out. הענף הקדמי דרך ה-INV "מסתיר" את התקלה.
 
-### חישוב מלא של הוקטורים
+זוהי דוגמה קלאסית של **redundant fault** — תקלות שכלי ATPG מוכרחים לזהות כדי לא לבזבז עליהן וקטורי בדיקה.
 
-| מצב | \`(A,B,C) = (1,0,1)\` | \`(A,B,C) = (1,0,0)\` |
-|:---:|:--------------------:|:--------------------:|
-| Free | C̄=0, NOR(0,0)=1, AND(1,1,1)=**1** | C̄=1, NOR(0,1)=0, AND(1,0,0)=**0** |
-| s-a-0 (C נראה 0) | C̄=1, NOR(0,1)=0, AND(1,0,0)=**0** | C̄=1, NOR(0,1)=0, AND(1,0,0)=**0** |
-| s-a-1 (C נראה 1) | C̄=0, NOR(0,0)=1, AND(1,1,1)=**1** | C̄=0, NOR(0,0)=1, AND(1,1,1)=**1** |
+### לנסות חי בקנבס
 
-### וקטור בדיקת שפיות (אופציונלי) — 3 קלטים → סיגנטורה (1, 0, 0)
-
-מוסיפים קלט שלישי \`(A,B,C) = (0,0,0)\`:
-
-| # | (A, B, C) | Free | s-a-0 | s-a-1 |
-|:-:|:---------:|:----:|:-----:|:-----:|
-| 1 | (1, 0, 1) | **1**| **0** | 1     |
-| 2 | (1, 0, 0) | **0**| 0     | **1** |
-| 3 | (0, 0, 0) | 0    | 0     | 0     |
-
-**סיגנטורת ה-Free על 3 הוקטורים: \`(1, 0, 0)\`** — בדיוק התוצאה המבוקשת. כל סטייה ממנה:
-- סטייה בקלט #1 (Out=0 במקום 1) → \`s-a-0\`.
-- סטייה בקלט #2 (Out=1 במקום 0) → \`s-a-1\`.
-- אין סטייה → המעגל תקין.
-
-### למה לא וקטור יחיד?
-
-עם וקטור אחד ישנן 2 אפשרויות פלט בלבד (0 או 1). יש 3 תסריטים שצריך להבחין ביניהם (free / s-a-0 / s-a-1). וקטור יחיד יכול לחלק לכל היותר ל-2 קבוצות → לא יכול להבחין בין 3. **2 וקטורים = 4 סיגנטורות אפשריות → מספיק.** זהו ה-information-theoretic lower bound.
-
-### הכללה ל-stuck-at testing
-
-זוהי דוגמה ל-**single-stuck-at fault model** — מודל התקלה הנפוץ ביותר ב-DFT. הכלים המקצועיים (Synopsys TetraMAX, Mentor Tessent) עושים בדיוק את התהליך הזה ב-ATPG (Automatic Test Pattern Generation):
-
-1. **D-algorithm** — מסמן את הערך השונה (\`D\` = "fault active", \`D̄\` = "fault inverted") ומבצע backtrace דרך ה-justification (סיבוב כדי לקבל את הקלטים) ו-propagation (סיבוב כדי להעביר את ה-D ל-PO).
-2. **PODEM / FAN** — אלגוריתמים מודרניים יעילים יותר.
-
-**הערה על fanout:** כאשר אות עושה פאן-אאוט (כמו \`C\` כאן), תקלה על האות **לפני הפיצול** מתפשטת בכל הענפים — וזה מקרה "stem fault". תקלה על ענף ספציפי אחרי הפיצול היא "branch fault" וייתכן שלא תהיה זהה לתקלה על ה-stem. ATPG אמיתי מטפל בכל מיקום נפרדות.`,
+למטה: 3 שורות מקבילות (fault-free, s-a-0, s-a-1). שנה את \`A/B/C\` ותראה ש-\`Out (free) = Out (s-a-0)\` בכל קומבינציה — בדיוק העדות לרדוננטיות. רק \`Out (s-a-1)\` נופל ל-0 ב-\`(1,0,0)\`.`,
         interviewerMindset:
-`שאלת ATPG בסיסית עם טוויסט של fanout. המראיין מחפש:
+`זוהי **שאלת מלכודת** — מועמד שעובד מכני יחשב 2 וקטורים ויפספס את התובנה. המראיין מחפש:
 
-1. **שאתה מזהה את ה-fanout של \`C\`** — מועמד שמתעלם מההסתעפות ומחשב Out = A·B̄·C ולא מבחין בכפילות התקלה (היא משפיעה גם על AND וגם על INV→NOR) — אזהרה. עם fanout, תקלה על ה-stem (לפני הפיצול) משפיעה על שני הענפים בו-זמנית.
-2. **שאתה ניגש מהיציאה אחורה (backward justification)** — לא מנסה לרוץ על כל 8 הקומבינציות. ההסקה הלוגית של "\`A=1\`, \`B=0\` נדרשים, ו-\`C\` מתחלף" צריכה לקפוץ מיד.
-3. **שאתה מבחין בין activation ל-propagation** — שני תנאים שונים. activation = \`C\` אמיתי שונה מהערך התקוע. propagation = \`A=1, B=0\` כדי שערך \`C\` יחלחל ל-Out.
-4. **שאתה מצדיק את המינימום מתוך תאוריה** — וקטור יחיד = 2 תוצאות אפשריות, 3 תסריטים = דורש ≥ log₂(3) = 2 וקטורים. שאלת bonus.
+1. **חישוב הפונקציה ולפשט עד הסוף** — \`Out = A · ¬B · ¬C\`. שני גורמים שתלויים ב-C (\`NOR(B,C)\` ו-\`¬C\`) מתאחדים. מי שעוצר ב-\`A · NOR(B,C) · ¬C\` בלי לפשט יכול להתעלם מהרדוננטיות.
+2. **לזהות שה-\`¬C\` מסתיר את התקלה** — תקלה על קו ל-NOR משפיעה רק על \`NOR(B, C_faulty)\`. אבל \`¬C\` הישיר מהענף של ה-INV מאפס כל פלט כש-\`C=1\`. אז שינוי ב-\`NOR\` כש-\`C=1\` בלתי-נראה. וכש-\`C=0\` — ה-NOR ממילא מקבל את ה-0 הנכון. אז s-a-0 פשוט "מסכים" עם המציאות.
+3. **לקרוא לתקלה בשם:** **redundant fault.** מועמד שמשתמש במונח הזה מקבל ניקוד גבוה.
+4. **הצדקה לוקטור יחיד** — אם מניחים שיש בדיוק תקלה אחת מבין שתיים, וקטור אחד יכול להפריד בין שתי אפשרויות (2 פלטים = 2 תסריטים). כאן \`(1,0,0)\` עושה את העבודה.
 
-**שאלת המשך נפוצה:** "ואם הקצר היה רק על ענף אחד של ה-fanout — נגיד רק על הענף ל-INV?" — תשובה: אז זו לא תקלת stem אלא תקלת branch. ה-AND עדיין רואה את \`C\` האמיתי, רק ה-NOR מקבל ערך תקוע. במקרה הזה s-a-0 על branch ל-INV הופך להיות **redundant fault** (לא ניתן לגלות) — כי כדי לגלות צריך \`C=0\` כדי שהערך אמיתי של \`C̄\` יהיה 1 (שונה מ-0 התקוע), אבל אז ה-\`C\` של ענף ה-AND מאפס את ה-Out לפני שזה משנה. זה מדגים למה ATPG מחשבן ענפים בנפרד.
+**שאלת המשך נפוצה:** "איזה כלי ATPG עושה בייצור עם תקלה כזו?" — מסמן אותה כ-\`untestable\` ומדווח ב-coverage report. תקלות רדוננטיות מורידות את ה-coverage המקסימלי (לדוגמה אם יש 10 תקלות ו-1 רדוננטית, הכיסוי המקסימלי הוא 90%, לא 100%).
 
-**שאלת המשך מתקדמת:** "ולכמה תקלות יחידות אפשריות במעגל הזה ב-single-stuck-at model?" — ספירת קווים נפרדים (stem + branches): A (1 קו), B (1), C-stem (1), C-branch-to-AND (1), C-branch-to-INV (1), C̄ (1), NOR-out (1), AND-out=Out (1) → 8 קווים × 2 (s-a-0 / s-a-1) = **16 תקלות יחידות**. חלקן redundant.
-
-**שאלת bonus:** "ומה ההבדל בין \`stem fault\` ל-\`branch fault\` בפאן-אאוט?" — stem = לפני הפיצול, משפיע על כל הענפים. branch = אחרי הפיצול, משפיע רק על ענף אחד. עבור מעגלי משובש או ATPG מדויק, חייבים למדל את שניהם נפרדות.`,
+**שאלת bonus:** "איך משחזרים את ה-\`¬C\` שמסתיר את התקלה?" — אם משנים את הטופולוגיה (למשל מוציאים את ענף ה-INV ומכניסים שער אחר), התקלה הופכת לניתנת-לזיהוי. הרדוננטיות תלויה בהקשר ה-fanout, לא רק בקו עצמו.`,
         expectedAnswers: [
           '2', 'two', 'שני', 'שניים',
           '(1,0,1)', '(1,1,1)',
@@ -1058,101 +970,75 @@ endmodule
         ],
       },
     ],
-    source: 'IQ/PP — מצגת שאלות מעגלים, שקף 40 (Stuck-at fault on C net with fanout)',
-    tags: ['stuck-at', 'atpg', 'fault-detection', 'fanout', 'sensitization', 'propagation', 'test-vectors', 'dft'],
+    source: 'IQ/PP — מצגת שאלות מעגלים, שקף 40 (Stuck-at on C→NOR wire with C fanout)',
+    tags: ['stuck-at', 'redundant-fault', 'atpg', 'fault-detection', 'fanout', 'test-vectors', 'dft'],
     circuitRevealsAnswer: true,
-    // Canvas: THREE sub-circuits stacked vertically, all driven by the SAME
-    // A and B inputs. Each row uses a different "C source" to model the
-    // three possible scenarios as live, running gate-level netlists:
+    // Canvas: THREE rows of the same circuit. Each row has C fanning
+    // out — forward through INV to AND (bottom), and up to NOR (bottom).
+    // NOR.out → AND middle. 3-input AND with A on top. The wire that
+    // carries C to the NOR is the one tagged with stuckAt in rows 2/3.
     //
-    //   Row 1 — FAULT-FREE: C source is the real input C (user-controllable).
-    //   Row 2 — STUCK-AT-0: C source is a constant 0 (the fault is wired in).
-    //   Row 3 — STUCK-AT-1: C source is a constant 1.
+    //   Row 1 — fault-free. All three outputs of A·NOR(B,C)·¬C visible.
+    //   Row 2 — C→NOR wire injected with stuckAt:0 (s-a-0). REDUNDANT;
+    //           Out matches free for every input combination.
+    //   Row 3 — C→NOR wire injected with stuckAt:1 (s-a-1).
     //
-    // Each row implements the topology from the slide: C fanouts to both the
-    // 3-input AND (cascaded as 2× AND-2) AND through an INV to a NOR whose
-    // other input is B. The three Out labels are: Out (free), Out (s-a-0),
-    // Out (s-a-1) — so the user can change A/B/C and watch how the three
-    // outputs react. With defaults (1,0,1): free=1, s-a-0=0, s-a-1=1 → the
-    // s-a-0 fault is "live" and visible. Set C=0 and the s-a-1 row will go
-    // high while the others go low — exactly the test pattern (1,0,0).
+    // The wire.stuckAt mechanism (built during the DFT expansion)
+    // makes the engine treat the wire as if forced to that value —
+    // visually rendered with the dashed orange overlay. Default
+    // (A,B,C) = (1,0,0):
+    //   Out (free)  = 1·NOR(0,0)·1 = 1·1·1 = 1
+    //   Out (s-a-0) = 1·NOR(0,0)·1 = 1·1·1 = 1   ← identical to free
+    //   Out (s-a-1) = 1·NOR(0,1)·1 = 1·0·1 = 0   ← detected
     circuit: () => build(() => {
-      // ── Shared inputs at the very left ────────────────────────────────
+      // ── Shared inputs ─────────────────────────────────────────────────
       const A = h.input(80,  140, 'A');      A.fixedValue = 1;
       const B = h.input(80,  240, 'B');      B.fixedValue = 0;
-      const C = h.input(80,  360, 'C');      C.fixedValue = 1;
-      // Constants that model the stuck-at faults — they look like inputs
-      // but their value is hardcoded; the user shouldn't toggle them.
-      const C0 = h.input(80,  640, 'C s-a-0 (=0)'); C0.fixedValue = 0;
-      const C1 = h.input(80,  920, 'C s-a-1 (=1)'); C1.fixedValue = 1;
+      const C = h.input(80,  360, 'C');      C.fixedValue = 0;
 
-      // ── Row 1: FAULT-FREE ─────────────────────────────────────────────
-      const inv1   = h.gate('NOT', 300, 360);
-      const nor1   = h.gate('NOR', 500, 320);
-      // 3-input AND: (A · C · NOR_out) cascaded as two AND-2 gates
-      const and1a  = h.gate('AND', 500, 180);  // A · C
-      const and1b  = h.gate('AND', 720, 250);  // (A·C) · NOR_out
-      const Out1   = h.output(920, 250, 'Out (free)');
+      // Three parallel rows of the same C-fanout circuit. Each row has
+      // its own INV, NOR, and 3-input AND (built as two cascaded AND-2:
+      // and_a = NOR.out · ¬C; and_b = and_a · A).
+      const mkRow = (yMid, label) => {
+        const yTop = yMid - 70;
+        const yBot = yMid + 80;
+        return {
+          inv:  h.gate('NOT', 340, yBot),
+          nor:  h.gate('NOR', 540, yMid),
+          andA: h.gate('AND', 540, yTop - 20),  // computes NOR.out · ¬C
+          andB: h.gate('AND', 760, yTop + 20),  // computes A · (NOR.out · ¬C)
+          out:  h.output(960, yTop + 20, label),
+        };
+      };
+      const r1 = mkRow(280, 'Out (free)');
+      const r2 = mkRow(560, 'Out (s-a-0)');
+      const r3 = mkRow(840, 'Out (s-a-1)');
 
-      // ── Row 2: STUCK-AT-0 (fault hard-wired in) ──────────────────────
-      const inv2   = h.gate('NOT', 300, 640);
-      const nor2   = h.gate('NOR', 500, 600);
-      const and2a  = h.gate('AND', 500, 460);
-      const and2b  = h.gate('AND', 720, 530);
-      const Out2   = h.output(920, 530, 'Out (s-a-0)');
-
-      // ── Row 3: STUCK-AT-1 (fault hard-wired in) ──────────────────────
-      const inv3   = h.gate('NOT', 300, 920);
-      const nor3   = h.gate('NOR', 500, 880);
-      const and3a  = h.gate('AND', 500, 740);
-      const and3b  = h.gate('AND', 720, 810);
-      const Out3   = h.output(920, 810, 'Out (s-a-1)');
+      const wires = [];
+      const wireRow = (row) => {
+        wires.push(h.wire(A.id,         row.andB.id, 0));   // A → AND top
+        wires.push(h.wire(C.id,         row.inv.id,  0));   // C → INV (forward fanout)
+        wires.push(h.wire(B.id,         row.nor.id,  0));   // B → NOR top
+        const cToNor = h.wire(C.id,     row.nor.id,  1);    // C → NOR (UP branch — this is the fault site)
+        wires.push(cToNor);
+        wires.push(h.wire(row.nor.id,   row.andA.id, 0));   // NOR → AND_a
+        wires.push(h.wire(row.inv.id,   row.andA.id, 1));   // ¬C → AND_a
+        wires.push(h.wire(row.andA.id,  row.andB.id, 1));   // AND_a → AND_b
+        wires.push(h.wire(row.andB.id,  row.out.id,  0));   // AND_b → Out
+        return cToNor;
+      };
+      const w1 = wireRow(r1);
+      const w2 = wireRow(r2);  w2.stuckAt = 0;     // s-a-0 on C→NOR wire
+      const w3 = wireRow(r3);  w3.stuckAt = 1;     // s-a-1 on C→NOR wire
 
       return {
         nodes: [
-          A, B, C, C0, C1,
-          inv1, nor1, and1a, and1b, Out1,
-          inv2, nor2, and2a, and2b, Out2,
-          inv3, nor3, and3a, and3b, Out3,
+          A, B, C,
+          r1.inv, r1.nor, r1.andA, r1.andB, r1.out,
+          r2.inv, r2.nor, r2.andA, r2.andB, r2.out,
+          r3.inv, r3.nor, r3.andA, r3.andB, r3.out,
         ],
-        wires: [
-          // ─── Row 1 — Fault-free ────────────────────────────────────
-          // A fans out to all three AND1a's (top of each row)
-          h.wire(A.id, and1a.id, 0),
-          // B fans out to all three NORs (top input)
-          h.wire(B.id, nor1.id, 0),
-          // C fans out (within row 1) to INV1 AND directly to AND1a's second input
-          h.wire(C.id, inv1.id, 0),
-          h.wire(C.id, and1a.id, 1),
-          // INV1 → NOR1 bottom input
-          h.wire(inv1.id, nor1.id, 1),
-          // (A · C) and NOR_out → AND1b → Out1
-          h.wire(and1a.id, and1b.id, 0),
-          h.wire(nor1.id,  and1b.id, 1),
-          h.wire(and1b.id, Out1.id,  0),
-
-          // ─── Row 2 — Stuck-at-0 ────────────────────────────────────
-          h.wire(A.id,  and2a.id, 0),
-          h.wire(B.id,  nor2.id, 0),
-          // C-stem stuck at 0: both AND's C input AND inverter input are tied
-          // to the constant C0 node. This is the "fault wired in".
-          h.wire(C0.id, inv2.id,  0),
-          h.wire(C0.id, and2a.id, 1),
-          h.wire(inv2.id, nor2.id, 1),
-          h.wire(and2a.id, and2b.id, 0),
-          h.wire(nor2.id,  and2b.id, 1),
-          h.wire(and2b.id, Out2.id, 0),
-
-          // ─── Row 3 — Stuck-at-1 ────────────────────────────────────
-          h.wire(A.id,  and3a.id, 0),
-          h.wire(B.id,  nor3.id, 0),
-          h.wire(C1.id, inv3.id,  0),
-          h.wire(C1.id, and3a.id, 1),
-          h.wire(inv3.id, nor3.id, 1),
-          h.wire(and3a.id, and3b.id, 0),
-          h.wire(nor3.id,  and3b.id, 1),
-          h.wire(and3b.id, Out3.id, 0),
-        ],
+        wires,
       };
     }),
   },

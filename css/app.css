@@ -4441,6 +4441,102 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   padding: 2px 8px;
 }
 .dft-info-text { color: #c8d0dc; }
+
+/* Standalone note that isn't paired with a status pill — spans full
+   width of the info panel (no narrow column from the grid layout). */
+.dft-info-text-row {
+  margin: 10px 0 2px;
+  padding: 8px 10px;
+  color: #c8d0dc;
+  background: rgba(255,160,40,0.04);
+  border-radius: 3px;
+  border-left: 2px solid rgba(255,160,40,0.3);
+  line-height: 1.6;
+}
+.dft-info-text-row code {
+  background: rgba(170,106,42,0.18);
+  padding: 0 4px;
+  border-radius: 2px;
+  color: #ffd0a0;
+}
+
+/* Section subtitle inside an info panel — used to group the rows that
+   follow (e.g. "Stuck-at cell faults" before the table of types). */
+.dft-info-subtitle {
+  margin: 14px 0 6px;
+  color: #ffc890;
+  font: bold 10.5px 'JetBrains Mono', monospace;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255,200,144,0.18);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dft-info-subtitle-hint {
+  color: #876;
+  font-weight: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.3px;
+  text-transform: none;
+}
+
+/* Generic info table — used by both the MBIST coupling/stuck-at
+   reference table and the MEMORY TESTS algorithm table. Same look as
+   the existing .dft-memtest-algo-table (matched colour roles), but
+   reusable from any info panel. */
+.dft-info-table {
+  width: 100%;
+  margin-top: 4px;
+  border-collapse: collapse;
+  font: 10.5px 'JetBrains Mono', monospace;
+}
+.dft-info-table thead th {
+  text-align: left;
+  color: #cca040;
+  padding: 4px 8px;
+  border-bottom: 1px solid #402a00;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  background: rgba(255,160,40,0.04);
+}
+.dft-info-table tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(64,40,0,0.4);
+  vertical-align: top;
+  color: #c8b090;
+  line-height: 1.45;
+}
+.dft-info-table tbody tr:hover { background: rgba(255,160,40,0.05); }
+.dft-info-table tbody tr:last-child td { border-bottom: none; }
+.dft-info-table td.algo {
+  font-weight: bold;
+  white-space: nowrap;
+  width: 1%;
+  color: #ffb878;
+}
+/* Per-type accent colours — matches the SVG overlay and the section
+   badges so the same colour vocabulary tells the same story across UI. */
+.dft-info-table td.algo.sa1  { color: #ffb878; }
+.dft-info-table td.algo.sa0  { color: #ff8060; }
+.dft-info-table td.algo.bit  { color: #cca040; }
+.dft-info-table td.algo.cfin { color: #ff5060; }
+.dft-info-table td.algo.cfid { color: #ff9933; }
+.dft-info-table td.algo.cfst { color: #cc66ff; }
+.dft-info-table td b { color: #ffe080; }
+.dft-info-table td code {
+  background: rgba(170,106,42,0.18);
+  border: 1px solid rgba(170,106,42,0.35);
+  border-radius: 2px;
+  padding: 0 4px;
+  color: #ffd0a0;
+}
+.dft-info-table td em {
+  color: #ffd0a0;
+  font-style: italic;
+}
 /* Lead-in line at the top of every info popover — short context
    sentence before the legend rows. Italic + dimmer than the rows
    so the eye lands on the legend, but reads it on the way down. */

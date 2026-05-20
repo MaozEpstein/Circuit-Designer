@@ -3375,6 +3375,131 @@ D0 = ¬Q2·¬Q1·x   +  ¬Q2·Q1·Q0·¬x  +  Q2·¬Q1·¬Q0·¬x     (~6 שער
     ],
     source: 'IQ/PP — מצגת שאלות מעגלים, שקף 22 (DFA mod 5)',
     tags: ['fsm', 'dfa', 'moore', 'divisibility', 'mod-5', 'sequential'],
+    circuitRevealsAnswer: true,
+    // Gate-level realisation of the 5-state Moore DFA. State is 3 bits
+    // (Q2,Q1,Q0); transitions encoded as minimal SOP (K-map minimised
+    // with don't-cares for the unreachable states 5/6/7):
+    //   D2 = Q1·¬Q0·¬X + Q2·X
+    //   D1 = ¬Q1·Q0    + Q0·X      + Q2·¬X
+    //   D0 = ¬Q2·¬Q1·X + Q1·Q0·¬X  + Q2·¬X
+    //   Y  = ¬Q2·¬Q1·¬Q0           (Moore: high iff state = 0)
+    // Note that the term `Q2·¬X` appears in both D1 and D0 — the
+    // circuit reuses a single AND for it.
+    // Three D-FFs hold the state; reset is done by setting initialQ=0.
+    // Feed X bits MSB-first one per posedge CLK and Y settles next tick.
+    circuit: () => build(() => {
+      const X    = h.input(120,  80, 'X');
+      const clk  = h.clock(120, 820);
+
+      // Negations of the inputs / state bits — reused by multiple terms.
+      const notX  = h.gate('NOT', 260,  80);
+      const notQ0 = h.gate('NOT', 560, 700);
+      const notQ1 = h.gate('NOT', 560, 480);
+      const notQ2 = h.gate('NOT', 1180, 260);   // only for Y
+
+      // ── D2 logic — D2 = Q1·¬Q0·¬X + Q2·X ────────────────────────
+      const d2_a1 = h.gate('AND', 700, 200);   // Q1·¬Q0
+      const d2_a2 = h.gate('AND', 800, 220);   // (Q1·¬Q0)·¬X
+      const d2_a3 = h.gate('AND', 700, 280);   // Q2·X
+      const d2_or = h.gate('OR',  900, 250);
+
+      // ── D1 logic — D1 = ¬Q1·Q0 + Q0·X + Q2·¬X ──────────────────
+      const d1_a1 = h.gate('AND', 700, 400);   // ¬Q1·Q0
+      const d1_a2 = h.gate('AND', 700, 460);   // Q0·X
+      const d1_a3 = h.gate('AND', 700, 520);   // Q2·¬X
+      const d1_or1= h.gate('OR',  820, 430);   // (¬Q1·Q0)+(Q0·X)
+      const d1_or2= h.gate('OR',  920, 475);   // + Q2·¬X
+
+      // ── D0 logic — D0 = ¬Q2·¬Q1·X + Q1·Q0·¬X + Q2·¬X ────────────
+      // The third term `Q2·¬X` is the same as `d1_a3`, so we just wire
+      // d1_a3's output into the final OR — no extra AND needed.
+      const d0_a1a = h.gate('AND', 700, 600);   // ¬Q2·¬Q1
+      const d0_a1b = h.gate('AND', 800, 620);   // (¬Q2·¬Q1)·X
+      const d0_a2  = h.gate('AND', 700, 680);   // Q1·Q0
+      const d0_a3  = h.gate('AND', 800, 700);   // (Q1·Q0)·¬X
+      const d0_or1 = h.gate('OR',  900, 660);   // a1b + a3
+      const d0_or2 = h.gate('OR',  980, 680);   // (a1b+a3) + (Q2·¬X reused)
+
+      // ── State register: 3 D-FFs (Q2, Q1, Q0) ────────────────────
+      const ff2  = h.ffD(1040, 250, 'Q2');
+      const ff1  = h.ffD(1040, 475, 'Q1');
+      const ff0  = h.ffD(1040, 660, 'Q0');
+
+      // ── Y logic — Y = ¬Q2·¬Q1·¬Q0 ───────────────────────────────
+      const y_a1 = h.gate('AND', 1300, 320);   // ¬Q2·¬Q1
+      const y_a2 = h.gate('AND', 1420, 360);   // (¬Q2·¬Q1)·¬Q0
+      const Y    = h.output(1580, 360, 'Y');
+
+      return {
+        nodes: [
+          X, clk,
+          notX, notQ0, notQ1, notQ2,
+          d2_a1, d2_a2, d2_a3, d2_or,
+          d1_a1, d1_a2, d1_a3, d1_or1, d1_or2,
+          d0_a1a, d0_a1b, d0_a2, d0_a3, d0_or1, d0_or2,
+          ff2, ff1, ff0,
+          y_a1, y_a2, Y,
+        ],
+        wires: [
+          // Common inverters
+          h.wire(X.id,    notX.id,  0),
+          h.wire(ff0.id,  notQ0.id, 0),
+          h.wire(ff1.id,  notQ1.id, 0),
+          h.wire(ff2.id,  notQ2.id, 0),
+
+          // D2 = Q1·¬Q0·¬X + Q2·X
+          h.wire(ff1.id,  d2_a1.id, 0),   // Q1
+          h.wire(notQ0.id,d2_a1.id, 1),   // ¬Q0
+          h.wire(d2_a1.id,d2_a2.id, 0),   // (Q1·¬Q0)
+          h.wire(notX.id, d2_a2.id, 1),   // ¬X
+          h.wire(ff2.id,  d2_a3.id, 0),   // Q2
+          h.wire(X.id,    d2_a3.id, 1),   // X
+          h.wire(d2_a2.id,d2_or.id, 0),
+          h.wire(d2_a3.id,d2_or.id, 1),
+          h.wire(d2_or.id,ff2.id,   0),
+
+          // D1 = ¬Q1·Q0 + Q0·X + Q2·¬X
+          h.wire(notQ1.id,d1_a1.id, 0),
+          h.wire(ff0.id,  d1_a1.id, 1),
+          h.wire(ff0.id,  d1_a2.id, 0),
+          h.wire(X.id,    d1_a2.id, 1),
+          h.wire(ff2.id,  d1_a3.id, 0),
+          h.wire(notX.id, d1_a3.id, 1),
+          h.wire(d1_a1.id,d1_or1.id,0),
+          h.wire(d1_a2.id,d1_or1.id,1),
+          h.wire(d1_or1.id,d1_or2.id,0),
+          h.wire(d1_a3.id,d1_or2.id, 1),
+          h.wire(d1_or2.id,ff1.id,  0),
+
+          // D0 = ¬Q2·¬Q1·X + Q1·Q0·¬X + Q2·¬X (last term reused from d1_a3)
+          h.wire(notQ2.id, d0_a1a.id, 0),       // ¬Q2
+          h.wire(notQ1.id, d0_a1a.id, 1),       // ¬Q1
+          h.wire(d0_a1a.id,d0_a1b.id, 0),       // ¬Q2·¬Q1
+          h.wire(X.id,     d0_a1b.id, 1),       // · X
+          h.wire(ff1.id,   d0_a2.id,  0),       // Q1
+          h.wire(ff0.id,   d0_a2.id,  1),       // Q0
+          h.wire(d0_a2.id, d0_a3.id,  0),       // Q1·Q0
+          h.wire(notX.id,  d0_a3.id,  1),       // · ¬X
+          h.wire(d0_a1b.id,d0_or1.id, 0),
+          h.wire(d0_a3.id, d0_or1.id, 1),
+          h.wire(d0_or1.id,d0_or2.id, 0),
+          h.wire(d1_a3.id, d0_or2.id, 1),       // reuse Q2·¬X from D1
+          h.wire(d0_or2.id,ff0.id,    0),
+
+          // Clocks
+          h.wire(clk.id, ff2.id, 1),
+          h.wire(clk.id, ff1.id, 1),
+          h.wire(clk.id, ff0.id, 1),
+
+          // Y = ¬Q2·¬Q1·¬Q0 — cascaded AND2
+          h.wire(notQ2.id,y_a1.id, 0),
+          h.wire(notQ1.id,y_a1.id, 1),
+          h.wire(y_a1.id, y_a2.id, 0),
+          h.wire(notQ0.id,y_a2.id, 1),
+          h.wire(y_a2.id, Y.id,    0),
+        ],
+      };
+    }),
   },
 
   // ───────────────────────────────────────────────────────────────
