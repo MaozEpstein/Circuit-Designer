@@ -52,12 +52,26 @@ export const h = {
     n.id = _nid();
     return n;
   },
-  /** D-FF. Pin layout: D=0, CLK=1; output Q=0. */
-  ffD(x, y, label = 'D-FF') {
+  /** D-FF. Pin layout: D=0, CLK=1, RST=2 (optional); output Q=0.
+   *
+   * Optional reset:
+   *   opts.reset = 'async' | 'sync'        // default behaviour when a
+   *                                        // wire is attached with
+   *                                        // { isResetWire: true }
+   *   opts.resetValue = 0 | 1              // value latched on reset
+   *   opts.resetActiveLow = false | true   // false = active-high
+   *
+   * Without `opts.reset`, the FF behaves identically to before — fully
+   * backward compatible.
+   */
+  ffD(x, y, label = 'D-FF', opts = {}) {
     const n = createComponent(COMPONENT_TYPES.FF_SLOT, x, y);
     n.id = _nid();
     n.ffType = 'D';
     n.label = label;
+    if (opts.reset)                    n.resetMode      = opts.reset;
+    if (opts.resetValue !== undefined) n.resetValue     = opts.resetValue ? 1 : 0;
+    if (opts.resetActiveLow)           n.resetActiveLow = true;
     return n;
   },
   gate(kind, x, y) {

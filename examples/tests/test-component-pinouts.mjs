@@ -61,7 +61,8 @@ const anchors = [
   ['OUTPUT',      { targetValue: 0, label: 'OUT', sandbox: true }],
   ['CLOCK',       { value: 0 }],
   ['GATE_SLOT',   { gate: null, label: 'G' }],
-  ['FF_SLOT',     { ffType: null, initialQ: 0, label: 'FF' }],
+  ['FF_SLOT',     { ffType: null, initialQ: 0, label: 'FF',
+                    resetMode: null, resetValue: 0, resetActiveLow: false }],
 ];
 for (const [type, expected] of anchors) {
   const n = createComponent(type, 0, 0);

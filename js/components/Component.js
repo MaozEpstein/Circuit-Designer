@@ -112,7 +112,14 @@ export function createComponent(type, x, y) {
     case COMPONENT_TYPES.GATE_SLOT:
       return { ...base, gate: null, label: 'G' };
     case COMPONENT_TYPES.FF_SLOT:
-      return { ...base, ffType: null, initialQ: 0, label: 'FF' };
+      // Optional async/sync reset: when a wire is attached with
+      // `isResetWire: true`, the FF respects it according to the
+      // properties below. Default behaviour (no reset wire connected,
+      // or resetMode null) is identical to the historical D-FF.
+      return { ...base, ffType: null, initialQ: 0, label: 'FF',
+               resetMode: null,        // null | 'async' | 'sync'
+               resetValue: 0,          // value latched when reset asserts
+               resetActiveLow: false }; // false = active-high, true = active-low
     case COMPONENT_TYPES.SCAN_FF:
       // DFT scan flip-flop: D + TI inputs, TE select, CLK. On rising
       // edge, Q ← (TE === 1 ? TI : D). Default initialQ = 0.
@@ -284,6 +291,11 @@ export function createWire(sourceId, targetId, targetInputIndex = 0, sourceOutpu
     netName: opts.netName || '',          // Label for the net/wire
     colorGroup: opts.colorGroup || null,  // Color group identifier
     isClockWire: opts.isClockWire || false,
+    // Marks the wire as the asynchronous-reset feed into a FF. The
+    // FF reads this wire from `inputSlots.find(s => s.wire.isResetWire)`
+    // and honours the destination node's resetMode / resetValue /
+    // resetActiveLow properties.
+    isResetWire: opts.isResetWire || false,
     // DFT (Layer 1): stuck-at fault site. null = no fault, 0 = stuck-at-0,
     // 1 = stuck-at-1. SimulationEngine intercepts wireValues.set and forces
     // the stuck value into the wire whenever this is non-null.

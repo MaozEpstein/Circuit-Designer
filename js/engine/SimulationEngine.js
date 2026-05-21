@@ -1343,17 +1343,51 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
 
     const prevClk = ffState.prevClkValue;
 
+    // ── Optional async / sync reset ────────────────────────────
+    // A wire fed into the FF with `isResetWire: true` triggers the
+    // reset behaviour. Node properties control polarity (resetActiveLow)
+    // and timing (resetMode = 'async' | 'sync'). When no reset wire is
+    // attached or resetMode is null, the FF behaves exactly as before.
+    const rstSlot = inputSlots.find(s => s.wire.isResetWire);
+    const rstNow  = rstSlot ? (wireValues.get(rstSlot.wire.id) ?? null) : null;
+    const rstActiveLow = node.resetActiveLow === true;
+    const rstVal       = node.resetValue ? 1 : 0;
+    const rstMode      = node.resetMode || 'async';
+    const rstAsserted  = rstSlot && rstNow !== null &&
+                         (rstActiveLow ? rstNow === 0 : rstNow === 1);
+
+    // Async reset: forces Q immediately, bypasses the clock edge.
+    if (rstAsserted && rstMode === 'async') {
+      if (ffState.q !== rstVal) {
+        ffState.q    = rstVal;
+        ffState.qNot = rstVal ^ 1;
+        ffUpdated    = true;
+      }
+      if (clkNow !== null) ffState.prevClkValue = clkNow;
+      return;
+    }
+
     if (clkNow === 1 && prevClk === 0) {
-      const dataSlots = inputSlots.filter(s => s !== clkSlot);
-      const dataArgs  = dataSlots.map(s => wireValues.get(s.wire.id) ?? null);
+      // Sync reset: overrides D at the clock edge.
+      if (rstAsserted && rstMode === 'sync') {
+        if (ffState.q !== rstVal) {
+          ffState.q    = rstVal;
+          ffState.qNot = rstVal ^ 1;
+          ffUpdated    = true;
+        }
+      } else {
+        // Normal data capture — exclude clock and reset slots.
+        const dataSlots = inputSlots.filter(s => s !== clkSlot && s !== rstSlot);
+        const dataArgs  = dataSlots.map(s => wireValues.get(s.wire.id) ?? null);
 
-      const ffType = node.type === 'FF_SLOT' ? node.ffType : FF_TYPE_MAP[node.type];
-      const { q: newQ, qNot: newQNot } = FF_FN[ffType](dataArgs, ffState.q);
+        const ffType = node.type === 'FF_SLOT' ? node.ffType : FF_TYPE_MAP[node.type];
+        const { q: newQ, qNot: newQNot } = FF_FN[ffType](dataArgs, ffState.q);
 
-      if (newQ !== ffState.q || newQNot !== ffState.qNot) {
-        ffState.q    = newQ;
-        ffState.qNot = newQNot;
-        ffUpdated = true;
+        if (newQ !== ffState.q || newQNot !== ffState.qNot) {
+          ffState.q    = newQ;
+          ffState.qNot = newQNot;
+          ffUpdated    = true;
+        }
       }
     }
 
