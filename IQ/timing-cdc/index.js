@@ -8731,15 +8731,31 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
         answer:
 `### Async Reset
 
-\`\`\`
-        ┌──────────┐
-  D ────┤D       Q ├──── (Q goes 0 immediately when RST=1)
-        │          │
-CLK ────┤▷         │
-        │          │
-RST ────┤RST       │   ← extra "reset" input, level-sensitive
-        └──────────┘
-\`\`\`
+<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18">
+  <!-- Input wires -->
+  <line x1="40" y1="80" x2="200" y2="80" stroke="#cca040" stroke-width="2.4"/>
+  <text x="120" y="68" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">D</text>
+
+  <line x1="40" y1="140" x2="200" y2="140" stroke="#cca040" stroke-width="2.4"/>
+  <text x="120" y="128" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
+  <polyline points="200,130 214,140 200,150" fill="none" stroke="#cca040" stroke-width="2.4"/>
+
+  <line x1="40" y1="200" x2="200" y2="200" stroke="#ff6060" stroke-width="3"/>
+  <text x="120" y="188" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">RST</text>
+  <polygon points="195,194 205,200 195,206" fill="#ff6060"/>
+
+  <!-- FF body -->
+  <rect x="200" y="50" width="280" height="180" rx="10" fill="#0a1825" stroke="#cc66ff" stroke-width="3"/>
+  <text x="340" y="150" text-anchor="middle" fill="#cc99ff" font-size="32" font-weight="bold">D-FF</text>
+  <text x="340" y="190" text-anchor="middle" fill="#ff8080" font-size="14" font-style="italic">RST bypasses CLK</text>
+
+  <!-- Output -->
+  <line x1="480" y1="140" x2="640" y2="140" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="560" y="128" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
+
+  <text x="380" y="262" text-anchor="middle" fill="#c8b090" font-size="16">RST=1 → Q=0 immediately (no CLK edge needed)</text>
+</svg>
 
 | תכונה | Async |
 |---|---|
@@ -8750,17 +8766,42 @@ RST ────┤RST       │   ← extra "reset" input, level-sensitive
 
 ### Sync Reset
 
-\`\`\`
-        ┌──────────┐
-        │  ┌────┐  │
-  D ────┼─┤MUX │  │
-RST ────┤  │1=0 │  │     ← reset gated into D
-        │  └────┘  │
-        │     │    │
-        ├─────┤D Q├──── Q updates only on CLK edge
-CLK ────┤▷         │
-        └──────────┘
-\`\`\`
+<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18">
+  <!-- D input -->
+  <line x1="40" y1="100" x2="200" y2="100" stroke="#cca040" stroke-width="2.4"/>
+  <text x="120" y="88" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">D</text>
+
+  <!-- RST input (gated into MUX sel) -->
+  <line x1="40" y1="180" x2="200" y2="180" stroke="#ff6060" stroke-width="3"/>
+  <text x="120" y="168" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">RST</text>
+
+  <!-- MUX (trapezoid) -->
+  <path d="M 200 80 L 260 100 L 260 180 L 200 200 Z" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
+  <text x="230" y="146" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">MUX</text>
+  <text x="230" y="166" text-anchor="middle" fill="#a0c0d0" font-size="12">1→0</text>
+
+  <!-- MUX → FF.D -->
+  <line x1="260" y1="140" x2="340" y2="140" stroke="#a0a0c0" stroke-width="2.4"/>
+  <text x="300" y="128" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">gated D</text>
+
+  <!-- CLK -->
+  <line x1="40" y1="240" x2="340" y2="240" stroke="#cca040" stroke-width="2.4"/>
+  <text x="120" y="228" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
+  <polyline points="340,230 354,240 340,250" fill="none" stroke="#cca040" stroke-width="2.4"/>
+
+  <!-- FF body -->
+  <rect x="340" y="90" width="240" height="180" rx="10" fill="#0a1825" stroke="#cc66ff" stroke-width="3"/>
+  <text x="460" y="170" text-anchor="middle" fill="#cc99ff" font-size="32" font-weight="bold">D-FF</text>
+  <text x="460" y="206" text-anchor="middle" fill="#80f0a0" font-size="14" font-style="italic">Q updates only on CLK ↑</text>
+
+  <!-- Output -->
+  <line x1="580" y1="180" x2="700" y2="180" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="640" y="168" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
+
+  <text x="360" y="302" text-anchor="middle" fill="#c8b090" font-size="16">RST gated into D (via MUX) → captures on CLK edge</text>
+</svg>
+
 
 | תכונה | Sync |
 |---|---|
@@ -9100,17 +9141,55 @@ MTBF_reset = exp(t_avail / τ) / (T_w · f_clk · f_rst)
         answer:
 `## הפתרון הסטנדרטי: 2-FF Reset Synchronizer
 
-\`\`\`
-  VCC (=1) ──── D ┌──────┐         D ┌──────┐
-                  │ FF1  │  Q1 ────  │ FF2  │ ──── nRST_out
-                  │      │           │      │
-       CLK ─────▷│      │       ──▷│      │
-                  └──┬───┘           └──┬───┘
-                     │ async-rst         │ async-rst (both active-low)
-                     └───────────────────┘
-                              │
-                          nRST_in (external, asynchronous)
-\`\`\`
+<svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18">
+  <!-- VCC tie at the top-left -->
+  <rect x="40" y="60" width="100" height="44" rx="8" fill="#3a3a0a" stroke="#ffe060" stroke-width="2.4"/>
+  <text x="90" y="89" text-anchor="middle" fill="#ffe060" font-size="20" font-weight="bold">VCC=1</text>
+
+  <!-- VCC → FF1.D -->
+  <line x1="140" y1="82" x2="240" y2="82" stroke="#ffe060" stroke-width="2.4"/>
+  <text x="190" y="72" text-anchor="middle" fill="#ffe060" font-size="14" font-style="italic">D tied high</text>
+
+  <!-- FF1 -->
+  <rect x="240" y="48" width="140" height="80" rx="10" fill="#1a1428" stroke="#cc66ff" stroke-width="2.8"/>
+  <text x="310" y="100" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF1</text>
+  <polyline points="240,72 254,82 240,92" fill="none" stroke="#cca040" stroke-width="2.4"/>
+
+  <!-- FF1 → FF2 -->
+  <line x1="380" y1="82" x2="480" y2="82" stroke="#a0a0c0" stroke-width="2.4"/>
+  <text x="430" y="72" text-anchor="middle" fill="#a0a0c0" font-size="14">Q1</text>
+
+  <!-- FF2 -->
+  <rect x="480" y="48" width="140" height="80" rx="10" fill="#1a1428" stroke="#cc66ff" stroke-width="2.8"/>
+  <text x="550" y="100" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF2</text>
+  <polyline points="480,72 494,82 480,92" fill="none" stroke="#cca040" stroke-width="2.4"/>
+
+  <!-- Output nRST_out -->
+  <line x1="620" y1="82" x2="740" y2="82" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="760" y="88" fill="#ff9933" font-size="18" font-weight="bold">nRST_out</text>
+
+  <!-- CLK rail -->
+  <line x1="40" y1="200" x2="660" y2="200" stroke="#cca040" stroke-width="2.6"/>
+  <text x="40" y="190" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
+  <line x1="310" y1="200" x2="310" y2="128" stroke="#cca040" stroke-width="2.4"/>
+  <line x1="550" y1="200" x2="550" y2="128" stroke="#cca040" stroke-width="2.4"/>
+
+  <!-- nRST_in rail (active-low, dashed red, shared async reset) -->
+  <line x1="40" y1="280" x2="660" y2="280" stroke="#ff6060" stroke-width="3" stroke-dasharray="8,5"/>
+  <text x="40" y="270" fill="#ff6060" font-size="18" font-weight="bold">nRST_in</text>
+  <text x="670" y="286" fill="#ff8080" font-size="14" font-style="italic">(active-low, async)</text>
+  <line x1="310" y1="280" x2="310" y2="128" stroke="#ff6060" stroke-width="2.4"/>
+  <line x1="550" y1="280" x2="550" y2="128" stroke="#ff6060" stroke-width="2.4"/>
+  <polygon points="304,128 316,128 310,140" fill="#ff6060"/>
+  <polygon points="544,128 556,128 550,140" fill="#ff6060"/>
+
+  <!-- Bottom caption -->
+  <text x="400" y="338" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">
+    Assert: 0 cycles (async) · Deassert: 2 cycles (sync)
+  </text>
+</svg>
+
 
 ### איך זה עובד
 
@@ -9542,22 +9621,76 @@ nRST_in → [Reset Synchronizer] → nRST_internal
 ### Scenario: שני pipelines, אותו reset signal
 
 **Pipeline A** (Direct async reset):
-\`\`\`
-in → FF_A1 → FF_A2 → FF_A3 → FF_A4 → out_A
-        │      │       │       │
-        └──────┴───────┴───────┴──── RST (async, direct)
-\`\`\`
+
+<svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18">
+  <!-- Input -->
+  <circle cx="40" cy="60" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="40" y="68" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">in</text>
+
+  <!-- 4 FFs -->
+  ${[0, 1, 2, 3].map(i => {
+    const x = 110 + i * 160;
+    return `
+      <line x1="${x - 28}" y1="60" x2="${x}" y2="60" stroke="#a0a0c0" stroke-width="2.4"/>
+      <rect x="${x}" y="32" width="120" height="56" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
+      <text x="${x + 60}" y="68" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF_A${i + 1}</text>
+      <polyline points="${x},48 ${x + 12},60 ${x},72" fill="none" stroke="#cca040" stroke-width="2.4"/>
+      <line x1="${x + 60}" y1="88" x2="${x + 60}" y2="140" stroke="#ff6060" stroke-width="2.6"/>
+      <polygon points="${x + 54},88 ${x + 66},88 ${x + 60},100" fill="#ff6060"/>
+    `;
+  }).join('')}
+
+  <!-- out -->
+  <line x1="750" y1="60" x2="820" y2="60" stroke="#ff9933" stroke-width="2.4"/>
+  <circle cx="845" cy="60" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="845" y="68" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">out_A</text>
+
+  <!-- RST rail -->
+  <line x1="40" y1="140" x2="820" y2="140" stroke="#ff6060" stroke-width="3" stroke-dasharray="8,5"/>
+  <text x="40" y="170" fill="#ff6060" font-size="18" font-weight="bold">RST (async, direct)</text>
+</svg>
 
 **Pipeline B** (Reset synchronizer):
-\`\`\`
-in → FF_B1 → FF_B2 → FF_B3 → FF_B4 → out_B
-        │      │       │       │
-        └──────┴───────┴───────┴──── rst_internal
-                                            ↑
-                              [Reset Synchronizer]
-                                            ↑
-                                          RST_in
-\`\`\`
+
+<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18">
+  <!-- Input -->
+  <circle cx="40" cy="60" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="40" y="68" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">in</text>
+
+  <!-- 4 FFs -->
+  ${[0, 1, 2, 3].map(i => {
+    const x = 110 + i * 160;
+    return `
+      <line x1="${x - 28}" y1="60" x2="${x}" y2="60" stroke="#a0a0c0" stroke-width="2.4"/>
+      <rect x="${x}" y="32" width="120" height="56" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
+      <text x="${x + 60}" y="68" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF_B${i + 1}</text>
+      <polyline points="${x},48 ${x + 12},60 ${x},72" fill="none" stroke="#cca040" stroke-width="2.4"/>
+      <line x1="${x + 60}" y1="88" x2="${x + 60}" y2="140" stroke="#cc66ff" stroke-width="2.6"/>
+      <polygon points="${x + 54},88 ${x + 66},88 ${x + 60},100" fill="#cc66ff"/>
+    `;
+  }).join('')}
+
+  <line x1="750" y1="60" x2="820" y2="60" stroke="#ff9933" stroke-width="2.4"/>
+  <circle cx="845" cy="60" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="845" y="68" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">out_B</text>
+
+  <!-- rst_internal rail (purple, going to synchronizer) -->
+  <line x1="40" y1="140" x2="820" y2="140" stroke="#cc66ff" stroke-width="3"/>
+  <text x="850" y="146" fill="#cc99ff" font-size="16" font-weight="bold">rst_internal</text>
+
+  <!-- Synchronizer block -->
+  <rect x="280" y="180" width="320" height="60" rx="10" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
+  <text x="440" y="218" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">Reset Synchronizer</text>
+  <line x1="440" y1="180" x2="440" y2="140" stroke="#cc66ff" stroke-width="2.6"/>
+  <polygon points="434,140 446,140 440,154" fill="#cc66ff"/>
+
+  <!-- RST_in feeding the synchronizer -->
+  <line x1="440" y1="270" x2="440" y2="240" stroke="#ff6060" stroke-width="3" stroke-dasharray="8,5"/>
+  <text x="350" y="270" fill="#ff6060" font-size="18" font-weight="bold">RST_in</text>
+</svg>
+
 
 ### בשחרור (RST: 1 → 0)
 
@@ -9801,78 +9934,126 @@ F(A, B, C) = A·B + B'·C
 
 הפונקציה עצמה תקינה. אבל יש **static-1 hazard** מוסתר. השאלות הבאות חושפות אותו, מתקנים אותו, ומלמדות מה ההבדל בין static ל-dynamic hazards.`,
     schematic: `
-<svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Gate-level implementation of F = AB + B'C with 4 gates and 3 inputs.">
+<svg viewBox="0 0 1000 520" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Gate-level implementation of F = AB + B'C with 4 gates and 3 inputs in a clean two-stage layout.">
 
+  <defs>
+    <!-- Light grid pattern for backdrop -->
+    <pattern id="grid510" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a2435" stroke-width="0.6"/>
+    </pattern>
+    <!-- AND gate cell shape -->
+    <symbol id="and-gate" viewBox="0 0 100 60">
+      <path d="M 4 4 L 50 4 A 28 28 0 0 1 50 56 L 4 56 Z"
+            fill="rgba(128,200,255,0.22)" stroke="#80c8ff" stroke-width="2.6"/>
+    </symbol>
+    <!-- OR gate cell shape -->
+    <symbol id="or-gate" viewBox="0 0 100 60">
+      <path d="M 4 4 Q 20 30, 4 56 L 50 56 Q 76 56, 96 30 Q 76 4, 50 4 Z"
+            fill="rgba(255,192,128,0.22)" stroke="#ffc080" stroke-width="2.6"/>
+    </symbol>
+    <!-- NOT gate cell shape (triangle + bubble) -->
+    <symbol id="not-gate" viewBox="0 0 100 60">
+      <path d="M 4 4 L 86 30 L 4 56 Z"
+            fill="rgba(255,224,128,0.22)" stroke="#ffe060" stroke-width="2.6"/>
+      <circle cx="94" cy="30" r="6" fill="#0a1825" stroke="#ffe060" stroke-width="2.4"/>
+    </symbol>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="520" fill="url(#grid510)"/>
+
+  <!-- Title -->
   <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     F(A, B, C) = A·B + B'·C
   </text>
   <text x="500" y="78" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
-    4 gates: AND, NOT, AND, OR  ·  3 inputs  ·  static-1 hazard מוסתר
+    4 gates · 3 inputs · static-1 hazard מוסתר במעבר B
   </text>
 
-  <!-- Inputs -->
-  <g font-size="20" font-weight="bold">
-    <circle cx="80" cy="160" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-    <text x="80" y="168" text-anchor="middle" fill="#cca040">A</text>
-    <circle cx="80" cy="260" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-    <text x="80" y="268" text-anchor="middle" fill="#cca040">B</text>
-    <circle cx="80" cy="360" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-    <text x="80" y="368" text-anchor="middle" fill="#cca040">C</text>
+  <!-- Stage backdrops -->
+  <rect x="220" y="120" width="220" height="340" rx="14"
+        fill="rgba(128,200,255,0.04)" stroke="rgba(128,200,255,0.35)" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="330" y="146" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">stage 1 — AND / NOT</text>
+
+  <rect x="540" y="120" width="240" height="340" rx="14"
+        fill="rgba(255,192,128,0.04)" stroke="rgba(255,192,128,0.35)" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="660" y="146" text-anchor="middle" fill="#ffc080" font-size="16" font-weight="bold">stage 2 — OR (reconverge)</text>
+
+  <!-- ════════ Input pads ════════ -->
+  <g font-size="22" font-weight="bold">
+    <circle cx="80" cy="200" r="28" fill="#0a1825" stroke="#cca040" stroke-width="2.6"/>
+    <text x="80" y="208" text-anchor="middle" fill="#cca040">A</text>
+    <circle cx="80" cy="290" r="28" fill="#0a1825" stroke="#cca040" stroke-width="2.6"/>
+    <text x="80" y="298" text-anchor="middle" fill="#cca040">B</text>
+    <circle cx="80" cy="400" r="28" fill="#0a1825" stroke="#cca040" stroke-width="2.6"/>
+    <text x="80" y="408" text-anchor="middle" fill="#cca040">C</text>
   </g>
 
-  <!-- Wires from inputs -->
-  <g stroke="#a0a0c0" stroke-width="2" fill="none">
-    <line x1="106" y1="160" x2="280" y2="200"/>
-    <line x1="106" y1="260" x2="240" y2="260"/>
-    <circle cx="240" cy="260" r="3" fill="#a0a0c0"/>
-    <line x1="240" y1="260" x2="280" y2="220"/>
-    <line x1="240" y1="260" x2="290" y2="320"/>
-    <line x1="106" y1="360" x2="380" y2="360"/>
+  <!-- ════════ Wires from inputs to stage 1 ════════ -->
+  <g stroke="#cca040" stroke-width="2.4" fill="none">
+    <!-- A → g1.in0 -->
+    <path d="M 108 200 L 240 200 L 240 220"/>
+    <!-- B → fanout point -->
+    <path d="M 108 290 L 180 290"/>
   </g>
 
-  <!-- g1 = AND -->
-  <path d="M 280 190 L 320 190 A 30 30 0 0 1 320 250 L 280 250 Z"
-        fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2.4"/>
-  <text x="305" y="216" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND</text>
-  <text x="305" y="234" text-anchor="middle" fill="#c8d8f0" font-size="14">g1 · 60 ps</text>
+  <!-- B fanout dot -->
+  <circle cx="180" cy="290" r="5" fill="#cca040" stroke="#0a1825" stroke-width="2"/>
 
-  <!-- g2 = NOT -->
-  <path d="M 290 308 L 330 320 L 290 332 Z"
-        fill="rgba(255,224,128,0.25)" stroke="#ffe060" stroke-width="2.4"/>
-  <circle cx="338" cy="320" r="5" fill="#0a1825" stroke="#ffe060" stroke-width="2"/>
-  <text x="306" y="324" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">¬</text>
-  <text x="310" y="356" fill="#ffe060" font-size="14">g2 · 30 ps</text>
-
-  <!-- g3 = AND -->
-  <path d="M 380 332 L 420 332 A 30 30 0 0 1 420 392 L 380 392 Z"
-        fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2.4"/>
-  <text x="405" y="358" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND</text>
-  <text x="405" y="376" text-anchor="middle" fill="#c8d8f0" font-size="14">g3 · 60 ps</text>
-
-  <!-- Wire g2 to g3 -->
-  <line x1="343" y1="320" x2="380" y2="350" stroke="#a0a0c0" stroke-width="2"/>
-
-  <!-- Wire g1.out and g3.out to OR -->
-  <g stroke="#a0a0c0" stroke-width="2" fill="none">
-    <line x1="350" y1="220" x2="540" y2="280"/>
-    <line x1="450" y1="362" x2="540" y2="320"/>
+  <g stroke="#cca040" stroke-width="2.4" fill="none">
+    <!-- B → g1.in1 (up) -->
+    <path d="M 180 290 L 180 240 L 240 240"/>
+    <!-- B → g2.in (down to NOT) -->
+    <path d="M 180 290 L 180 350 L 230 350"/>
+    <!-- C → g3.in1 (skip past NOT into g3) -->
+    <path d="M 108 400 L 240 400 L 240 420"/>
   </g>
 
-  <!-- g4 = OR -->
-  <path d="M 540 270 L 570 270 Q 600 270, 620 300 Q 600 330, 570 330 L 540 330 Q 560 300, 540 270 Z"
-        fill="rgba(255,192,128,0.25)" stroke="#ffc080" stroke-width="2.4"/>
-  <text x="582" y="296" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">OR</text>
-  <text x="582" y="316" text-anchor="middle" fill="#c8d8f0" font-size="14">g4 · 50 ps</text>
+  <!-- ════════ g1 = AND (top) ════════ -->
+  <use href="#and-gate" x="240" y="200" width="80" height="48"/>
+  <text x="280" y="230" text-anchor="middle" fill="#c8d8f0" font-size="15" font-weight="bold">g1 = AND</text>
+  <text x="280" y="270" text-anchor="middle" fill="#80c8ff" font-size="14">A·B · 60 ps</text>
 
-  <!-- Output -->
-  <line x1="620" y1="300" x2="800" y2="300" stroke="#ff9933" stroke-width="2.4"/>
-  <circle cx="820" cy="300" r="26" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="820" y="308" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">F</text>
+  <!-- ════════ g2 = NOT ════════ -->
+  <use href="#not-gate" x="230" y="330" width="80" height="40"/>
+  <text x="270" y="394" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">g2 = NOT B</text>
+  <text x="270" y="412" text-anchor="middle" fill="#a0c0d0" font-size="13">30 ps</text>
 
-  <!-- Annotations -->
-  <text x="500" y="446" text-anchor="middle" fill="#cc99ff" font-size="16" font-style="italic">
-    AB מכוסה ע"י g1; B'C מכוסה ע"י g3; OR מאחד
+  <!-- g2 → g3 wire -->
+  <path d="M 320 350 L 360 350 L 360 410 L 380 410" stroke="#a0a0c0" stroke-width="2.4" fill="none"/>
+
+  <!-- ════════ g3 = AND (bottom) ════════ -->
+  <use href="#and-gate" x="380" y="400" width="80" height="48"/>
+  <text x="420" y="395" text-anchor="middle" fill="#c8d8f0" font-size="15" font-weight="bold">g3 = AND</text>
+  <text x="420" y="468" text-anchor="middle" fill="#80c8ff" font-size="14">B'·C · 60 ps</text>
+
+  <!-- C → g3.in1 (lower input) -->
+  <path d="M 240 420 L 360 420 L 360 432 L 380 432" stroke="#a0a0c0" stroke-width="2.4" fill="none"/>
+
+  <!-- ════════ Stage 1 → Stage 2 (reconvergence into OR) ════════ -->
+  <g stroke="#80c8ff" stroke-width="2.8" fill="none">
+    <!-- g1.out → g4.in0 -->
+    <path d="M 320 224 L 520 224 L 520 290 L 580 290"/>
+  </g>
+  <g stroke="#80c8ff" stroke-width="2.8" fill="none">
+    <!-- g3.out → g4.in1 -->
+    <path d="M 460 424 L 520 424 L 520 310 L 580 310"/>
+  </g>
+
+  <!-- ════════ g4 = OR ════════ -->
+  <use href="#or-gate" x="580" y="276" width="100" height="56"/>
+  <text x="630" y="306" text-anchor="middle" fill="#c8d8f0" font-size="16" font-weight="bold">g4 = OR</text>
+  <text x="630" y="356" text-anchor="middle" fill="#ffc080" font-size="14">50 ps</text>
+
+  <!-- ════════ Output ════════ -->
+  <path d="M 680 304 L 880 304" stroke="#ff9933" stroke-width="2.6" fill="none"/>
+  <circle cx="910" cy="304" r="28" fill="#0a1825" stroke="#ff9933" stroke-width="2.6"/>
+  <text x="910" y="312" text-anchor="middle" fill="#ff9933" font-size="22" font-weight="bold">F</text>
+
+  <!-- ════════ Hint banner ════════ -->
+  <rect x="80" y="478" width="840" height="32" rx="8" fill="rgba(204,102,255,0.08)" stroke="#cc66ff" stroke-width="1.6"/>
+  <text x="500" y="500" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">
+    AB דרך g1 · B'C דרך g2→g3 · ה-OR מאחד — וב-fanout של B מסתתר ה-hazard
   </text>
 </svg>`,
     parts: [
