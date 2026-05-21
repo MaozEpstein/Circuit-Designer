@@ -6139,129 +6139,13 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
 
 ### Handshake (4-phase)
 
-<svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="4-phase handshake waveform showing req, req_sync, ack, ack_sync with 2-cycle sync delays in each direction.">
+| שלב | פעולה | זמן (cycles) |
+|:---:|---|:---:|
+| ① | A: \`bus_data\` יציב, \`req=1\` | 0 |
+| ② | B רואה \`req_sync=1\` (אחרי 2 cycles sync), דוגם bus, \`ack=1\` | 2-3 |
+| ③ | A רואה \`ack_sync=1\` (אחרי 2 cycles), \`req=0\` | 5-6 |
+| ④ | B רואה \`req_sync=0\`, \`ack=0\` | 8-9 |
 
-  <text x="500" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
-    Handshake (4-phase) — תהליך
-  </text>
-  <text x="500" y="70" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
-    1-bit req/ack מסונכרנים בנפרד · bus_data יציב כש-req יציב · 4 שלבים = transaction
-  </text>
-
-  <!-- Cycle column lines (background grid) -->
-  ${Array.from({length: 12}, (_, i) => {
-    const x = 140 + i * 65;
-    return `<line x1="${x}" y1="100" x2="${x}" y2="510" stroke="#2a3a4a" stroke-width="1"/>`;
-  }).join('')}
-
-  <!-- Cycle labels at top -->
-  ${Array.from({length: 12}, (_, i) => {
-    const x = 140 + i * 65 + 32;
-    return `<text x="${x}" y="120" text-anchor="middle" fill="#7a8a9a" font-size="16">${i + 1}</text>`;
-  }).join('')}
-  <line x1="140" y1="128" x2="920" y2="128" stroke="#3a4a5a" stroke-width="1.4"/>
-
-  <!-- Row labels and waveforms -->
-  ${(() => {
-    // 4-phase handshake transitions:
-    //   cycle 1:  req↑    (A asserts req + valid bus_data)
-    //   cycle 3:  req_sync↑   (after 2-cycle sync in B)
-    //   cycle 4:  ack↑    (B responds)
-    //   cycle 6:  ack_sync↑   (after 2-cycle sync in A)
-    //   cycle 6:  req↓    (A drops req immediately)
-    //   cycle 8:  req_sync↓
-    //   cycle 9:  ack↓    (B drops ack)
-    //   cycle 11: ack_sync↓   (transaction complete)
-    const X = c => 140 + (c - 1) * 65;   // cycle edge x
-    const rows = [
-      {
-        label: 'bus_data',
-        side: 'A',
-        sideColor: '#ffb080',
-        color: '#80c8ff',
-        top: 160,
-        // bus stays valid while req is high; shown as a labelled tube
-        kind: 'bus',
-        valid: [1, 7],   // from cycle 1 to cycle 6 (edge of 7)
-      },
-      { label: 'req',      side: 'A', sideColor: '#ffb080', color: '#ffe060', top: 230, kind: 'signal', edges: [[1, 'up'], [6, 'down']] },
-      { label: 'req_sync', side: 'B', sideColor: '#80f0a0', color: '#ffe060', top: 300, kind: 'signal', edges: [[3, 'up'], [8, 'down']] },
-      { label: 'ack',      side: 'B', sideColor: '#80f0a0', color: '#cc99ff', top: 370, kind: 'signal', edges: [[4, 'up'], [9, 'down']] },
-      { label: 'ack_sync', side: 'A', sideColor: '#ffb080', color: '#cc99ff', top: 440, kind: 'signal', edges: [[6, 'up'], [11, 'down']] },
-    ];
-    return rows.map(r => {
-      const yTop = r.top + 6;
-      const yBot = r.top + 46;
-      const yMid = (yTop + yBot) / 2;
-
-      // Side badge (DOMAIN A or DOMAIN B)
-      const sideText = `<text x="36" y="${yMid + 5}" fill="${r.sideColor}" font-size="16" font-weight="bold">${r.side}:</text>`;
-      const nameText = `<text x="120" y="${yMid + 5}" text-anchor="end" fill="#cca040" font-size="18" font-weight="bold">${r.label}</text>`;
-
-      if (r.kind === 'bus') {
-        const x0 = X(r.valid[0]);
-        const x1 = X(r.valid[1]);
-        const tube = `
-          <rect x="${x0}" y="${yTop}" width="${x1 - x0}" height="40" rx="4"
-                fill="rgba(128,200,255,0.22)" stroke="${r.color}" stroke-width="2"/>
-          <text x="${(x0 + x1) / 2}" y="${yMid + 5}" text-anchor="middle" fill="${r.color}" font-size="16" font-weight="bold">valid data</text>
-        `;
-        // Idle lines before/after the valid tube
-        const idleLeft  = `<line x1="124" y1="${yMid}" x2="${x0}" y2="${yMid}" stroke="#5a6a7a" stroke-width="1.8" stroke-dasharray="4,3"/>`;
-        const idleRight = `<line x1="${x1}" y1="${yMid}" x2="920" y2="${yMid}" stroke="#5a6a7a" stroke-width="1.8" stroke-dasharray="4,3"/>`;
-        return sideText + nameText + idleLeft + idleRight + tube;
-      }
-
-      // For signal rows: render the waveform as line segments
-      // Start at the leftmost edge with low (yBot), then walk through edges.
-      const segments = [];
-      let cur = 'low';
-      let prevX = 124;
-      let prevY = yBot;
-      for (const [c, dir] of r.edges) {
-        const ex = X(c);
-        // Horizontal at prev level
-        segments.push(`<line x1="${prevX}" y1="${prevY}" x2="${ex}" y2="${prevY}" stroke="${r.color}" stroke-width="3"/>`);
-        // Vertical transition
-        const newY = (dir === 'up') ? yTop : yBot;
-        segments.push(`<line x1="${ex}" y1="${prevY}" x2="${ex}" y2="${newY}" stroke="${r.color}" stroke-width="3"/>`);
-        prevX = ex; prevY = newY;
-        cur = (dir === 'up') ? 'high' : 'low';
-      }
-      // Tail
-      segments.push(`<line x1="${prevX}" y1="${prevY}" x2="920" y2="${prevY}" stroke="${r.color}" stroke-width="3"/>`);
-
-      // 0/1 labels at the levels (just at start, to indicate which is which)
-      const labels0 = `<text x="${X(1) - 10}" y="${yBot + 5}" text-anchor="end" fill="#7a8a9a" font-size="14">0</text>`;
-      const labels1 = `<text x="${X(1) - 10}" y="${yTop + 5}" text-anchor="end" fill="#7a8a9a" font-size="14">1</text>`;
-
-      return sideText + nameText + segments.join('') + labels0 + labels1;
-    }).join('');
-  })()}
-
-  <!-- Annotations: 2-cycle sync delays -->
-  <!-- req → req_sync delay -->
-  <line x1="${140 + 0 * 65}" y1="262" x2="${140 + 2 * 65}" y2="332" stroke="#ff8080" stroke-width="1.6" stroke-dasharray="4,3"/>
-  <rect x="195" y="270" width="120" height="26" rx="5" fill="rgba(10,24,37,0.9)" stroke="#ff8080" stroke-width="1.4"/>
-  <text x="255" y="288" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">2 cycles sync</text>
-
-  <!-- ack → ack_sync delay -->
-  <line x1="${140 + 3 * 65}" y1="402" x2="${140 + 5 * 65}" y2="472" stroke="#ff8080" stroke-width="1.6" stroke-dasharray="4,3"/>
-  <rect x="385" y="410" width="120" height="26" rx="5" fill="rgba(10,24,37,0.9)" stroke="#ff8080" stroke-width="1.4"/>
-  <text x="445" y="428" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">2 cycles sync</text>
-
-  <!-- Phase numbers at top of timeline -->
-  ${[
-    { x: 140 + 0 * 65 + 32, phase: '①', label: 'req↑' },
-    { x: 140 + 3 * 65 + 32, phase: '②', label: 'ack↑' },
-    { x: 140 + 5 * 65 + 32, phase: '③', label: 'req↓' },
-    { x: 140 + 8 * 65 + 32, phase: '④', label: 'ack↓' },
-  ].map(p => `
-    <circle cx="${p.x}" cy="148" r="14" fill="#1a1428" stroke="#cc66ff" stroke-width="2"/>
-    <text x="${p.x}" y="153" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">${p.phase}</text>
-  `).join('')}
-</svg>
 
 - A מציב ה-bus, ואז מציב \`req=1\`. B מסנכרן \`req\` (2 cycles). כש-B רואה \`req_sync=1\` → דוגם את ה-bus.
 - B מציב \`ack=1\`. A מסנכרן \`ack\` (2 cycles). אחרי \`ack_sync=1\` → A יודע ש-B קיבל.
@@ -8729,101 +8613,22 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
           'בעולם האמיתי: Async הוא הסטנדרט ב-ASIC; Sync ב-FPGA (כי block FFs יש להם רק sync reset).',
         ],
         answer:
-`### Async Reset
+`### השוואה
 
-<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18">
-  <!-- Input wires -->
-  <line x1="40" y1="80" x2="200" y2="80" stroke="#cca040" stroke-width="2.4"/>
-  <text x="120" y="68" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">D</text>
+| | **Async** | **Sync** |
+|---|---|---|
+| הכנסה לתוקף | מיידית, ללא CLK | רק ב-CLK rising edge הבא |
+| מבנה פנימי | פין reset נפרד ב-FF | RST דרך MUX לפני D |
+| Recovery time | חייב — \`t_rec\` לפני CLK | לא רלוונטי |
+| כשלון בdeassert | מטא-יציבות אפשרי | אף פעם (clean) |
+| חיסרון עיקרי | קושי בשחרור | דורש CLK פעיל — לא POR |
+| מתאים ל | POR, watchdog, ASIC | FPGA, deterministic |
 
-  <line x1="40" y1="140" x2="200" y2="140" stroke="#cca040" stroke-width="2.4"/>
-  <text x="120" y="128" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
-  <polyline points="200,130 214,140 200,150" fill="none" stroke="#cca040" stroke-width="2.4"/>
-
-  <line x1="40" y1="200" x2="200" y2="200" stroke="#ff6060" stroke-width="3"/>
-  <text x="120" y="188" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">RST</text>
-  <polygon points="195,194 205,200 195,206" fill="#ff6060"/>
-
-  <!-- FF body -->
-  <rect x="200" y="50" width="280" height="180" rx="10" fill="#0a1825" stroke="#cc66ff" stroke-width="3"/>
-  <text x="340" y="150" text-anchor="middle" fill="#cc99ff" font-size="32" font-weight="bold">D-FF</text>
-  <text x="340" y="190" text-anchor="middle" fill="#ff8080" font-size="14" font-style="italic">RST bypasses CLK</text>
-
-  <!-- Output -->
-  <line x1="480" y1="140" x2="640" y2="140" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="560" y="128" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
-
-  <text x="380" y="262" text-anchor="middle" fill="#c8b090" font-size="16">RST=1 → Q=0 immediately (no CLK edge needed)</text>
-</svg>
-
-| תכונה | Async |
-|---|---|
-| הכנסה לתוקף | מיידית, ללא תלות ב-CLK |
-| Recovery time | חייב להתקיים — \`t_rec\` לפני edge הבא של CLK |
-| כשלון בdeassert | מטא-יציבות אם RST משחרר בתוך setup window |
-| מתאים ל | startup, watchdog, power-on reset (POR) |
-
-### Sync Reset
-
-<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18">
-  <!-- D input -->
-  <line x1="40" y1="100" x2="200" y2="100" stroke="#cca040" stroke-width="2.4"/>
-  <text x="120" y="88" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">D</text>
-
-  <!-- RST input (gated into MUX sel) -->
-  <line x1="40" y1="180" x2="200" y2="180" stroke="#ff6060" stroke-width="3"/>
-  <text x="120" y="168" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">RST</text>
-
-  <!-- MUX (trapezoid) -->
-  <path d="M 200 80 L 260 100 L 260 180 L 200 200 Z" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-  <text x="230" y="146" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">MUX</text>
-  <text x="230" y="166" text-anchor="middle" fill="#a0c0d0" font-size="12">1→0</text>
-
-  <!-- MUX → FF.D -->
-  <line x1="260" y1="140" x2="340" y2="140" stroke="#a0a0c0" stroke-width="2.4"/>
-  <text x="300" y="128" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">gated D</text>
-
-  <!-- CLK -->
-  <line x1="40" y1="240" x2="340" y2="240" stroke="#cca040" stroke-width="2.4"/>
-  <text x="120" y="228" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
-  <polyline points="340,230 354,240 340,250" fill="none" stroke="#cca040" stroke-width="2.4"/>
-
-  <!-- FF body -->
-  <rect x="340" y="90" width="240" height="180" rx="10" fill="#0a1825" stroke="#cc66ff" stroke-width="3"/>
-  <text x="460" y="170" text-anchor="middle" fill="#cc99ff" font-size="32" font-weight="bold">D-FF</text>
-  <text x="460" y="206" text-anchor="middle" fill="#80f0a0" font-size="14" font-style="italic">Q updates only on CLK ↑</text>
-
-  <!-- Output -->
-  <line x1="580" y1="180" x2="700" y2="180" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="640" y="168" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
-
-  <text x="360" y="302" text-anchor="middle" fill="#c8b090" font-size="16">RST gated into D (via MUX) → captures on CLK edge</text>
-</svg>
-
-
-| תכונה | Sync |
-|---|---|
-| הכנסה לתוקף | רק על rising edge של CLK הבא |
-| Recovery time | לא רלוונטי — ה-reset הוא נתון רגיל |
-| כשלון בdeassert | אף-פעם (clean) |
-| חיסרון | דורש CLK פעיל — לא מתאים ל-POR |
-| מתאים ל | FPGA, deterministic test flows |
-
-### Trade-off ניהולי
-
-| תרחיש | בחירה |
-|---|---|
-| Power-on (אין CLK יציב) | **Async** — היחיד שעובד |
-| Glitch resistance | **Sync** — לא רגיש ל-glitches על RST line |
-| Skew על RST tree | **Async** סובל מ-deassertion ordering, **Sync** לא |
-| ASIC standard cell | בדרך כלל **Async** ב-active-low (\`nRST\`) |
-| FPGA block FF | בדרך כלל **Sync** — חוסך פין |
+ה-trade-off הקלאסי: **Async** הוא היחיד שעובד ללא CLK יציב (פתאומיות חשמל), אבל ה-deassertion שלו דורש סנכרון (סעיף ג'). **Sync** clean לחלוטין, אבל אינו מתאים ל-startup.
 
 ### בקנבס
 
-ה-engine תומך בשניהם דרך \`h.ffD(x, y, label, { reset: 'async' | 'sync' })\`. ה-circuit הנוכחי משתמש ב-\`async\`. הצב \`RST=1\` ופעם ב-CLK — תראה את כל ה-FFs מתאפסים מיד; הצב \`RST=0\` ופעם → השרשרת מתחילה להעביר את \`in=1\` הלאה.`,
+ה-engine תומך בשניהם דרך \`h.ffD(x, y, label, { reset: 'async' | 'sync' })\`. הצב \`RST=1\` ב-canvas → כל ה-FFs מתאפסים מיד (async).`,
         interviewerMindset:
 `**שאלת פתיחה.** המראיין מחפש:
 1. **שאתה מצייר את שני המבנים** — לא רק "async הוא ללא clock, sync הוא עם clock". תרשים פנימי של ה-FF.
@@ -8972,60 +8777,36 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
           'הקשר ל-#5006: שניהם metastability — אבל #5006 על data, #5009 על reset signal.',
         ],
         answer:
-`## הסכנה: Recovery Time Violation
+`### החלון האסור סביב CLK edge
 
-### הפרמטר \`t_recovery\` (ולפעמים \`t_removal\`)
+| פרמטר | אילוץ |
+|---|---|
+| **\`t_recovery\`** | RST deassert חייב להיות **לפני** CLK edge ב-≥ t_recovery |
+| **\`t_removal\`** | RST deassert חייב להיות **אחרי** CLK edge ב-≥ t_removal |
 
-| פרמטר | מה זה | אילוץ |
-|---|---|---|
-| **\`t_recovery\`** | זמן מינימלי בין \`RST: 1→0\` ל-CLK rising edge | RST_dessert ≤ CLK_edge − t_recovery |
-| **\`t_removal\`** | זמן מינימלי בין CLK rising edge ל-\`RST: 1→0\` | RST_deassert ≥ CLK_edge + t_removal |
-
-יחד הם מגדירים **חלון אסור** סביב ה-CLK edge:
-
-\`\`\`
-         t_removal
-              ←─────┤
-       CLK_edge ────┼──→  t_recovery
-                   ↑
-              forbidden window
-\`\`\`
-
-### למה בדיוק metastable?
-
-ב-FF פנימי, ה-latch הראשון "מקפיא" על RST=1. כשRST=0 בדיוק כש-CLK עולה:
-- ה-latch מנסה לקבל D (כי RST שחרר)
-- אבל ה-latch *גם* מתאושש מ-state=0 (RST פעיל זה עתה)
-- שני "כיוונים" של כוח על ה-latch → metastable Q.
-
-זה בדיוק כמו metastability על data path (#5006), אבל הקלט הוא reset במקום data. הזמן \`τ\` (settling time) זהה.
+יחד: **forbidden window** סביב ה-edge. אם RST משחרר בתוכו → ה-FF נכנס ל-metastability בדיוק כמו ב-data CDC (#5006), כי ה-latch הפנימי "מתלבט" בין reset לשחרור.
 
 ### דוגמה מספרית
 
-נניח: \`t_recovery = 100 ps\`, \`t_removal = 50 ps\`, \`T_clk = 1 ns\`.
+עם \`t_recovery = 100 ps\`, \`t_removal = 50 ps\`:
 
-| תרחיש | האם בטוח? |
+| RST deassert | תוצאה |
 |---|:---:|
-| RST deassert 200 ps לפני CLK edge | ✓ (>100 ps recovery) |
-| RST deassert 80 ps לפני CLK edge | ✗ recovery violation |
-| RST deassert 30 ps אחרי CLK edge | ✗ removal violation |
-| RST deassert 200 ps אחרי CLK edge | ✓ |
+| 200 ps לפני CLK | ✓ בטוח |
+| 80 ps לפני CLK | ✗ recovery violation |
+| 30 ps אחרי CLK | ✗ removal violation |
 
-### MTBF — מקביל ל-#5006
+### MTBF זהה בצורתו ל-#5006
 
 \`\`\`
-MTBF_reset = exp(t_avail / τ) / (T_w · f_clk · f_rst)
+MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
 \`\`\`
-
-ה-\`t_avail\` הוא הזמן בין הקצה שבו ה-metastability מתחילה לבין ה-קצה הבא. כל cycle נוסף שמוסיף לסטגלות ⇒ exponent יותר גדול.
 
 ### הפתרון
 
-לא לתת ל-RST לעבור בלי סנכרון. הסטנדרט בתעשייה: **reset synchronizer** — ראה סעיף ג'.
+**Reset synchronizer** (סעיף ג') — לא לתת ל-RST לחצות domain ללא סנכרון.
 
-### בקנבס
-
-ה-engine **לא מודל** את ה-recovery violation (זה תהליך הסתברותי). אבל ה-circuit הנוכחי משתמש ב-async reset; אם תחבר RST למקור אסינכרוני (לא ל-clock domain שלך), הסכנה הזו תופיע פיזית.`,
+> ה-engine לא מודל את ההפרה (הסתברותית). מוצג כ-concept בלבד.`,
         interviewerMindset:
 `**שאלת recovery — קלאסית של ASIC.** המראיין מחפש:
 1. **שאתה זוכר את השם** — t_recovery (לא רק "setup time עבור reset").
@@ -9139,89 +8920,25 @@ MTBF_reset = exp(t_avail / τ) / (T_w · f_clk · f_rst)
           'למה שני FFs ולא אחד? לבטל metastability של ה-FF הראשון — בדיוק כמו synchronizer רגיל ב-#5006.',
         ],
         answer:
-`## הפתרון הסטנדרטי: 2-FF Reset Synchronizer
+`### המבנה (2-FF Reset Synchronizer)
 
-<svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18">
-  <!-- VCC tie at the top-left -->
-  <rect x="40" y="60" width="100" height="44" rx="8" fill="#3a3a0a" stroke="#ffe060" stroke-width="2.4"/>
-  <text x="90" y="89" text-anchor="middle" fill="#ffe060" font-size="20" font-weight="bold">VCC=1</text>
-
-  <!-- VCC → FF1.D -->
-  <line x1="140" y1="82" x2="240" y2="82" stroke="#ffe060" stroke-width="2.4"/>
-  <text x="190" y="72" text-anchor="middle" fill="#ffe060" font-size="14" font-style="italic">D tied high</text>
-
-  <!-- FF1 -->
-  <rect x="240" y="48" width="140" height="80" rx="10" fill="#1a1428" stroke="#cc66ff" stroke-width="2.8"/>
-  <text x="310" y="100" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF1</text>
-  <polyline points="240,72 254,82 240,92" fill="none" stroke="#cca040" stroke-width="2.4"/>
-
-  <!-- FF1 → FF2 -->
-  <line x1="380" y1="82" x2="480" y2="82" stroke="#a0a0c0" stroke-width="2.4"/>
-  <text x="430" y="72" text-anchor="middle" fill="#a0a0c0" font-size="14">Q1</text>
-
-  <!-- FF2 -->
-  <rect x="480" y="48" width="140" height="80" rx="10" fill="#1a1428" stroke="#cc66ff" stroke-width="2.8"/>
-  <text x="550" y="100" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF2</text>
-  <polyline points="480,72 494,82 480,92" fill="none" stroke="#cca040" stroke-width="2.4"/>
-
-  <!-- Output nRST_out -->
-  <line x1="620" y1="82" x2="740" y2="82" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="760" y="88" fill="#ff9933" font-size="18" font-weight="bold">nRST_out</text>
-
-  <!-- CLK rail -->
-  <line x1="40" y1="200" x2="660" y2="200" stroke="#cca040" stroke-width="2.6"/>
-  <text x="40" y="190" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
-  <line x1="310" y1="200" x2="310" y2="128" stroke="#cca040" stroke-width="2.4"/>
-  <line x1="550" y1="200" x2="550" y2="128" stroke="#cca040" stroke-width="2.4"/>
-
-  <!-- nRST_in rail (active-low, dashed red, shared async reset) -->
-  <line x1="40" y1="280" x2="660" y2="280" stroke="#ff6060" stroke-width="3" stroke-dasharray="8,5"/>
-  <text x="40" y="270" fill="#ff6060" font-size="18" font-weight="bold">nRST_in</text>
-  <text x="670" y="286" fill="#ff8080" font-size="14" font-style="italic">(active-low, async)</text>
-  <line x1="310" y1="280" x2="310" y2="128" stroke="#ff6060" stroke-width="2.4"/>
-  <line x1="550" y1="280" x2="550" y2="128" stroke="#ff6060" stroke-width="2.4"/>
-  <polygon points="304,128 316,128 310,140" fill="#ff6060"/>
-  <polygon points="544,128 556,128 550,140" fill="#ff6060"/>
-
-  <!-- Bottom caption -->
-  <text x="400" y="338" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">
-    Assert: 0 cycles (async) · Deassert: 2 cycles (sync)
-  </text>
-</svg>
-
+\`VCC=1 → FF1.D · FF1.Q → FF2.D · FF2.Q = nRST_out\`
+שני ה-FFs מקבלים את \`nRST_in\` כ-async reset (active-low) משותף.
 
 ### איך זה עובד
 
-**Assertion (nRST_in: 1 → 0)**: שני ה-FFs מאופסים **מיד** (async). nRST_out = 0 בו-זמנית.
-
-**Deassertion (nRST_in: 0 → 1)**:
-- FF1 דוגם D=1 בקצה הבא של CLK → Q1=1 אחרי cycle אחד.
-- FF2 דוגם Q1=1 בקצה הבא → nRST_out=1 אחרי שני cycles סה"כ.
-- בכל זמן ביניים, אם FF1 נכנס ל-metastability — FF2 דוגם אחרי cycle נוסף, מספיק זמן ל-settling.
-
-### למה זה עובד
-
-| בעיה | פתרון |
+| מצב | התנהגות |
 |---|---|
-| Async assert — לא רוצים לחכות ל-CLK | ✓ async-reset על FF1 + FF2 |
-| Sync deassert — לא רוצים metastability | ✓ deassertion עובר דרך 2 FFs |
-| Metastability על FF1 | ✓ FF2 דוגם cycle אחר → MTBF גבוה |
+| **Assert** (\`nRST_in: 1→0\`) | שני ה-FFs מאופסים **מיד** (async) → nRST_out=0. Latency = **0 cycles**. |
+| **Deassert** (\`nRST_in: 0→1\`) | FF1 דוגם D=1 → Q1=1 ב-CLK הבא; FF2 דוגם Q1 → nRST_out=1 cycle אחרי. Latency = **2 cycles**. |
 
 ### למה D=VCC?
 
-מטרת ה-FFs היא **לא לזכור data** אלא רק להעביר את ה-deassertion עם delay. \`D=1\` קבוע אומר: "כש-RST משוחרר, ה-pipeline מתחיל לזרום 1". זה ה-default value של \`nRST_out\` כש-reset לא פעיל.
-
-### Latency
-
-- Assert: **0 cycles** (async).
-- Deassert: **2 cycles** מ-\`nRST_in: 0→1\` עד \`nRST_out=1\`.
-
-ב-ASIC זה אמין מאוד; ב-design קריטי משתמשים ב-3 FFs במקום 2 (כמו 3-FF synchronizer ל-data critical).
+ה-FFs כאן אינם זוכרים data — הם delay-stages. \`D=1\` קבוע = "כשה-reset משוחרר, ה-default מתחיל לזרום". FF2 נותן זמן ל-FF1 להתייצב במקרה של metastability — בדיוק כמו 2-FF data synchronizer ב-#5006.
 
 ### בקנבס
 
-הצב \`nRST_in=1\` ב-default (active-low = לא פעיל). פעם CLK 2 פעמים → \`nRST_out=1\`. עכשיו הצב \`nRST_in=0\` → \`nRST_out=0\` מיד (async). הצב חזרה \`nRST_in=1\` ופעם CLK 2 פעמים → \`nRST_out=1\` שוב.`,
+הצב \`nRST_in=0\` → nRST_out=0 מיד (async). הצב \`nRST_in=1\` ופעם CLK פעמיים → nRST_out=1 (2 cycles).`,
         interviewerMindset:
 `**שאלת design קלאסית.** המראיין מחפש:
 1. **שאתה מצייר את המבנה** — שני FFs בטור, D הראשון = VCC. לא רק "synchronizer" כמילה.
@@ -9426,63 +9143,30 @@ MTBF_reset = exp(t_avail / τ) / (T_w · f_clk · f_rst)
           'פתרון 3: **שני שלבים של synchronizer** במקומות שונים — recommended ב-design מרובה domains.',
         ],
         answer:
-`## הבעיה: Deassertion Ordering
+`### הבעיה — startup window
 
-### מה קורה כש-RST משתחרר
+ה-RST עובר דרך buffer tree. ה-skew בין FFs שונה (30-200 ps typically). במהלך ה-deassertion:
 
-ה-RST מגיע ל-FFs דרך **buffer tree** (מבנה דמוי clock tree). כל buffer מוסיף delay. ה-skew בין ה-FFs **שונה לכל אחד**:
+- חלק מה-FFs יצאו מ-reset, חלק עדיין בו.
+- מערכת שקוראת state במהלך החלון הזה רואה ערך **שלא תוכנן** (counter mixed, FSM פסול).
 
-\`\`\`
-                       FF_A (skew = 0)      ← יוצא מ-reset ראשון
-RST ─→ BUF1 ──┬───→
-              │
-              ├──BUF2─── FF_B (skew = 50 ps)
-              │
-              └──BUF3─── FF_C (skew = 100 ps)  ← יוצא מ-reset אחרון
-\`\`\`
+### דוגמת counter 8-bit
 
-### דוגמה קונקרטית: 8-bit counter
+| Time אחרי RST↓ | מה קרה |
+|---|---|
+| 0 ps | FF_0 יצא, אחרים עדיין ב-reset |
+| 100 ps | FF_0..3 יצאו, FF_4..7 ב-reset → counter מציג ערך לא חוקי |
+| 220 ps | כל ה-FFs יצאו, counter תקין |
 
-נניח שכל ה-8 FFs מתחילים count מ-0 אחרי reset. CLK בקצב 1 GHz (1 ns cycle).
+### Reset skew גרוע מ-clock skew
 
-| Time | FF_0 | FF_1 | FF_2 | ... | FF_7 | counter value |
-|---|:---:|:---:|:---:|---|:---:|---|
-| RST deasserts | מעוכב 0 ps | מעוכב 30 ps | מעוכב 60 ps | ... | מעוכב 210 ps | — |
-| 100 ps אחרי | יצא | יצא | יצא | ... | עוד ב-reset | mixed! |
-| 220 ps אחרי | יצא | יצא | יצא | ... | יצא | now consistent |
+STA בודק clock skew ומסמן violations. **Reset skew לא תמיד נכלל ב-STA** — הוא נראה רק ב-startup → bug שקט.
 
-באמצע התקופה הזו (100-220 ps), ה-counter מציג **ערך שלא קיים בתכנון**. אם module אחר קורא את ה-counter ב-window הזה → תוצאה שגויה.
+### הפתרון
 
-### למה זה גרוע יותר מ-clock skew?
+\`Reset Synchronizer\` (סעיף ג') + **balanced buffer tree** (כמו clock tree). אצל SoC רב-domain: synchronizer לכל domain בנפרד — לא לחלוק.
 
-| Skew | Setup/Hold | תוצאה |
-|---|---|---|
-| Clock skew | ✓ STA tools תופסים | violations מסומנים, ניתן לתקן |
-| Reset skew | ✗ STA לרוב לא בודק | bug שקטה — מופיע רק ב-startup |
-
-### הפתרון: Synchronized Reset Tree
-
-\`\`\`
-nRST_in → [Reset Synchronizer] → nRST_internal
-                                       │
-                                       ↓
-                          Balanced Reset Buffer Tree
-                                  ↓ ↓ ↓ ↓ ↓
-                                FF_0 ... FF_7
-\`\`\`
-
-המפתח:
-1. **Reset Synchronizer** (מסעיף ג') יוצר \`nRST_internal\` שהוא **sync ל-CLK**.
-2. ה-tree מעצב את ה-distribution כך שכל ה-FFs רואים את אותו edge ב-CLK rising.
-3. STA tools בודקים את ה-tree באותה דרך כמו clock tree — \`skew ≤ 100 ps\` typically.
-
-### Multi-Domain
-
-ב-SoC עם כמה clock domains, **לכל domain reset synchronizer משלו** — לא לסנכרן reset של domain A עם CLK של domain B. זה יוצר הפרת CDC.
-
-### בקנבס
-
-ה-engine מציג אותו 4-FF chain מסעיף א'. כל ה-FFs מקבלים את אותו RST signal בו-זמנית (אין skew במודל). במציאות יש skew של 30-200 ps; ה-#5009 ב-canvas מטרתו לימודית בלבד.`,
+> ה-engine לא מודל skew על RST — מוצג אחיד.`,
         interviewerMindset:
 `**שאלה מערכתית.** המראיין מחפש:
 1. **שאתה מבחין בין clock skew ל-reset skew** — מספר אנשים לא חושבים על RST כמו על clock. הקשר נדרש.
@@ -9616,112 +9300,26 @@ nRST_in → [Reset Synchronizer] → nRST_internal
           'גם metastability ב-FF_sync1 לא משפיע: FF_sync2 דוגם cycle אחר → metastability התייצבה לפני שהיא הגיעה ל-pipeline.',
         ],
         answer:
-`## הניסוי
+`### שתי הצעות, אותו \`RST_in\`
 
-### Scenario: שני pipelines, אותו reset signal
+- **Pipeline A** — \`RST_in\` מחובר ישירות לכל ה-FFs (direct async).
+- **Pipeline B** — \`RST_in\` עובר דרך \`Reset Synchronizer\` שמפיק \`rst_internal\`, וה-FFs מקבלים אותו.
 
-**Pipeline A** (Direct async reset):
+### השחרור (\`RST_in: 1 → 0\`)
 
-<svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18">
-  <!-- Input -->
-  <circle cx="40" cy="60" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="40" y="68" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">in</text>
+| Pipeline | מתי FFs יוצאים מ-reset | metastability? |
+|---|---|:---:|
+| **A** (Direct) | מיד (0 cycles) | ⚠ אפשרי (recovery violation) |
+| **B** (Sync) | 2 cycles אחרי deassert | ✗ אין — הסינכרון בולע אותה |
 
-  <!-- 4 FFs -->
-  ${[0, 1, 2, 3].map(i => {
-    const x = 110 + i * 160;
-    return `
-      <line x1="${x - 28}" y1="60" x2="${x}" y2="60" stroke="#a0a0c0" stroke-width="2.4"/>
-      <rect x="${x}" y="32" width="120" height="56" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-      <text x="${x + 60}" y="68" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF_A${i + 1}</text>
-      <polyline points="${x},48 ${x + 12},60 ${x},72" fill="none" stroke="#cca040" stroke-width="2.4"/>
-      <line x1="${x + 60}" y1="88" x2="${x + 60}" y2="140" stroke="#ff6060" stroke-width="2.6"/>
-      <polygon points="${x + 54},88 ${x + 66},88 ${x + 60},100" fill="#ff6060"/>
-    `;
-  }).join('')}
+### ה-trade-off
 
-  <!-- out -->
-  <line x1="750" y1="60" x2="820" y2="60" stroke="#ff9933" stroke-width="2.4"/>
-  <circle cx="845" cy="60" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="845" y="68" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">out_A</text>
-
-  <!-- RST rail -->
-  <line x1="40" y1="140" x2="820" y2="140" stroke="#ff6060" stroke-width="3" stroke-dasharray="8,5"/>
-  <text x="40" y="170" fill="#ff6060" font-size="18" font-weight="bold">RST (async, direct)</text>
-</svg>
-
-**Pipeline B** (Reset synchronizer):
-
-<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18">
-  <!-- Input -->
-  <circle cx="40" cy="60" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="40" y="68" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">in</text>
-
-  <!-- 4 FFs -->
-  ${[0, 1, 2, 3].map(i => {
-    const x = 110 + i * 160;
-    return `
-      <line x1="${x - 28}" y1="60" x2="${x}" y2="60" stroke="#a0a0c0" stroke-width="2.4"/>
-      <rect x="${x}" y="32" width="120" height="56" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-      <text x="${x + 60}" y="68" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF_B${i + 1}</text>
-      <polyline points="${x},48 ${x + 12},60 ${x},72" fill="none" stroke="#cca040" stroke-width="2.4"/>
-      <line x1="${x + 60}" y1="88" x2="${x + 60}" y2="140" stroke="#cc66ff" stroke-width="2.6"/>
-      <polygon points="${x + 54},88 ${x + 66},88 ${x + 60},100" fill="#cc66ff"/>
-    `;
-  }).join('')}
-
-  <line x1="750" y1="60" x2="820" y2="60" stroke="#ff9933" stroke-width="2.4"/>
-  <circle cx="845" cy="60" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="845" y="68" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">out_B</text>
-
-  <!-- rst_internal rail (purple, going to synchronizer) -->
-  <line x1="40" y1="140" x2="820" y2="140" stroke="#cc66ff" stroke-width="3"/>
-  <text x="850" y="146" fill="#cc99ff" font-size="16" font-weight="bold">rst_internal</text>
-
-  <!-- Synchronizer block -->
-  <rect x="280" y="180" width="320" height="60" rx="10" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-  <text x="440" y="218" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">Reset Synchronizer</text>
-  <line x1="440" y1="180" x2="440" y2="140" stroke="#cc66ff" stroke-width="2.6"/>
-  <polygon points="434,140 446,140 440,154" fill="#cc66ff"/>
-
-  <!-- RST_in feeding the synchronizer -->
-  <line x1="440" y1="270" x2="440" y2="240" stroke="#ff6060" stroke-width="3" stroke-dasharray="8,5"/>
-  <text x="350" y="270" fill="#ff6060" font-size="18" font-weight="bold">RST_in</text>
-</svg>
-
-
-### בשחרור (RST: 1 → 0)
-
-**Pipeline A**:
-- כל ה-FFs יוצאים מ-reset **מיד**.
-- אם CLK עולה ב-100 ps הבאים → recovery violation → metastability על כל FF.
-- אפילו בלי violation: ה-FFs רואים את "in" באותו cycle שבו RST שחרר → אם in=1, FF_A1 יקלוט 1 מיד.
-
-**Pipeline B**:
-- ה-FFs נשארים ב-reset (rst_internal=1) עד שה-synchronizer מסיים.
-- ה-synchronizer דורש 2 CLK cycles לאחר ש-RST_in=0 לפני ש-rst_internal=0.
-- במהלך הזמן הזה, ה-FF_sync1/2 רואים את ה-CLK edges — כל metastability מתייצבת.
-- כש-rst_internal סוף-סוף משחרר, זה ב-rising edge של CLK → **0 recovery violations**.
-
-### המספרים
-
-| Pipeline | זמן שחרור | מטא-יציבות? | חזרה לתפקוד |
-|---|---|:---:|---|
-| A (Direct) | 0 ps | ⚠ אפשרי | מיד (אבל עם risk) |
-| B (Sync) | 2 cycles ≈ 2 ns | ✗ לא | בטוח, deterministic |
-
-### Trade-off
-
-- Pipeline A: latency נמוך יותר; risk גבוה יותר.
-- Pipeline B: 2 cycles "מבוזבזים" בשחרור; אבל **deterministic + safe**.
-
-ב-99% מהתעשייה: Pipeline B. ה-2 cycles הם כלום ביחס לעלות של debug שגיאה אחת ב-tape-out.
+- A: latency 0, אבל סיכון startup לא דטרמיניסטי.
+- B: 2 cycles "מבוזבזים", אבל **deterministic + safe**. ב-99% מהתעשייה: B.
 
 ### בקנבס
 
-הצב \`RST = 1\` — שני ה-pipelines מתאפסים מיד (async). הצב \`RST = 0\` ופעם CLK פעם אחת — ב-Pipeline A: \`Q_A1 = 1\` (in הועבר). ב-Pipeline B: \`Q_B1 = 0\` (כי rst_internal עדיין 1, ה-synchronizer לא הסתיים). פעם CLK שוב — ב-Pipeline A: עכשיו \`Q_A2 = 1\` גם. ב-Pipeline B: \`Q_B1\` עדיין 0 (cycle 2 של ה-sync). פעם CLK פעם שלישית — ב-Pipeline B: סוף-סוף \`Q_B1 = 1\`.`,
+הצב \`RST_in=0\` → שתי השרשרות מתאפסות מיד. הצב \`RST_in=1\` ופעם CLK פעם אחת — Q_A1 כבר התעדכן (Pipeline A יצא); Q_B1 עדיין 0 (Pipeline B עוד בתוך הסינכרון). פעם נוסף CLK פעמיים נוספות → גם Q_B1 מתעדכן.`,
         interviewerMindset:
 `**שאלת סיכום של ה-question.** המראיין מחפש:
 1. **שאתה מצליח לעבד שני circuits יחד** — לא רק "Pipeline A הוא X, Pipeline B הוא Y". איך הם **שונים** בהתנהגות פיזית.
@@ -10073,7 +9671,7 @@ F(A, B, C) = A·B + B'·C
           'Implicant 2: A·B — מכסה שני התאים בשורת A=1, BC=11 ו-10.',
         ],
         answer:
-`## K-map של \`F(A, B, C) = A·B + B'·C\`
+`### K-map
 
 \`\`\`
        BC=00  BC=01  BC=11  BC=10
@@ -10083,35 +9681,14 @@ A=1:    0      1      1      1
 
 ### Prime Implicants
 
-**Implicant 1: \`B'·C\`** (כחול)
-- מכסה: (A=0, BC=01) ו-(A=1, BC=01)
-- שני התאים בעמודה BC=01 — מאוחדים כי A הוא "don't care" (גם 0 וגם 1).
+| Implicant | מכסה | Gate |
+|---|---|---|
+| **\`B'·C\`** | עמודה BC=01 (שני התאים) | g3 (AND עם NOT) |
+| **\`A·B\`** | שורת A=1, BC=11+10 | g1 (AND) |
 
-**Implicant 2: \`A·B\`** (ירוק)
-- מכסה: (A=1, BC=11) ו-(A=1, BC=10)
-- שני התאים בשורת A=1 כש-B=1 — מאוחדים כי C הוא "don't care".
+**Minimum cover**: \`F = A·B + B'·C\` — לא ניתן לקצר. Implementation = 4 gates (AND, NOT, AND, OR).
 
-### Minimum Cover
-
-\`\`\`
-F = A·B + B'·C
-\`\`\`
-
-זה ה-minimum sum-of-products — אי אפשר לקצר יותר. שני implicants, 2 inputs כל אחד = 4 gate inputs לפני ה-OR.
-
-### התאמה ל-implementation
-
-| Implicant | Gate |
-|---|---|
-| \`A·B\` | g1 (AND) |
-| \`B'·C\` | g3 (AND) — נדרש g2 (NOT) על B |
-| OR בין שניהם | g4 (OR) |
-
-**הקבלה 1-ל-1**: כל implicant הוא AND gate, ה-sum הוא OR gate. סטנדרט של 2-level logic.
-
-### למה כדאי להכיר את ה-K-map הזה?
-
-ב-K-map הזה יש **תכונה מסוכנת**: שני 1-cells סמוכים (Gray-distance 1) מכוסים ע"י implicants **שונים**. הסעיף הבא חושף את הבעיה.`,
+> ה-K-map חושף תכונה מסוכנת: שני 1-cells סמוכים (Gray-distance 1) מכוסים ע"י implicants **שונים** → סעיף ב'.`,
         interviewerMindset:
 `**שאלת חימום — K-map בסיסי.** המראיין מחפש:
 1. **שאתה מצייר את ה-K-map ברצף Gray** — 00, 01, 11, 10 (לא 00, 01, 10, 11). זה קריטי לזיהוי adjacency.
@@ -10235,53 +9812,27 @@ F = A·B + B'·C
           'על ה-K-map: ה-hazard הוא בין שני תאים סמוכים שמכוסים ע"י implicants **שונים**: (A=1, BC=01) ע"י B\'C, ו-(A=1, BC=11) ע"י AB.',
         ],
         answer:
-`## Trace של ה-Glitch
+`### Trace — \`A=C=1\`, \`B: 1→0\` ב-t=0
 
-נתון \`A=1\`, \`C=1\` קבועים, \`B\` עובר \`1 → 0\` ב-t=0.
+| Time | g1 (A·B) | B' (g2) | g3 (B'·C) | **F** |
+|:---:|:---:|:---:|:---:|:---:|
+| t<0 | 1 | 0 | 0 | **1** |
+| t=60 ps | **0** | 0 | 0 | **0** ⚠ glitch! |
+| t=90 ps | 0 | **1** | **1** | **1** (recovered) |
 
-| Time | B | g1 (A·B) | B' (g2) | g3 (B'·C) | F = g4 |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| t < 0 | 1 | 1 | 0 | 0 | **1** |
-| t = 0 | B drops to 0 — gates start propagating | | | | |
-| t = 60 ps | 0 | **0** (g1 dropped) | 0 (g2 not done yet) | 0 (g3 not done) | **0** ⚠ |
-| t = 90 ps | 0 | 0 | **1** (g2 done) | **1** (g3 done) | **1** (recovered) |
+ה-glitch קיים בחלון **30 ps** (60-90 ps) — F יורד ל-0 למרות שהפונקציה הלוגית אומרת F=1.
 
-### ה-glitch
+### למה — מבט ב-K-map
 
-בין \`t = 60 ps\` ל-\`t = 90 ps\` (חלון של **30 ps**): F = 0 — **למרות שהפונקציה הלוגית אומרת F=1 בכל הזמן הזה**.
+שני 1-cells סמוכים (A=1, BC=01) ו-(A=1, BC=11) מכוסים ע"י implicants **שונים** (B'C ו-AB). במעבר B: 1→0 כש-A=C=1, ה-implicant הישן (AB) "נופל" לפני שהחדש (B'C) "עולה" — כי B' צריך לעבור דרך NOT נוסף.
 
-### Static-1 Hazard על ה-K-map
+### הסכנה הפרקטית
 
-\`\`\`
-       BC=00  BC=01  BC=11  BC=10
-A=0:    0      1      0      0
-A=1:    0     [1]    [1]     1     ← מעבר HAZARD
-                ↑       ↑
-            B'·C     A·B  (implicants שונים!)
-\`\`\`
+- FF במורד הזרם דוגם בקצה CLK בתוך 90 ps → יקלוט 0 במקום 1.
+- Async control loops: glitch מפעיל edge-detector שגוי.
+- Low-power: כל glitch = switching = power בזבוז.
 
-ה-hazard הוא במעבר בין **שני תאים סמוכים** (Gray-distance 1) שמכוסים ע"י **implicants שונים**:
-- (A=1, BC=01) ב-B'·C (כחול)
-- (A=1, BC=11) ב-A·B (ירוק)
-
-המעבר \`B: 1→0\` עם A=1, C=1 הוא בדיוק המעבר בין שני התאים האלה — וה-implicants לא חופפים שם.
-
-### למה זה מטריד
-
-- אם downstream FF דוגם את F בקצה clock עד 90 ps אחרי שינוי ה-input → ייתכן ויקלוט 0 במקום 1.
-- ב-async logic (control loops) glitch יכול לעורר edge-detector שגוי → state אבוד.
-- ב-low-power design glitches גורמים לתנועה נוספת → power חינם בזבזני.
-
-### Hazard ≠ Race
-
-| Hazard | Race |
-|---|---|
-| static-1 hazard: F נופל זמנית ל-0 כשהוא אמור להישאר 1 | |
-| לא דורש שיתוף zelf | בין שני signals מתחרים |
-
-### בקנבס
-
-ה-engine לא מודל gate delays, אז הוא יראה F=1 לאורך כל הסדרה. ה-glitch קיים בpcb אמיתי. אם תרצה לראות אותו ב-simulator — תצטרך תוכנה כמו ModelSim עם SDF (Standard Delay Format).`,
+> ה-engine לא מודל gate delays — F יראה תמיד 1 ב-simulator. ה-glitch אמיתי על PCB / silicon.`,
         interviewerMindset:
 `**שאלת hazard בסיסית.** המראיין מחפש:
 1. **שאתה מתחיל מ-truth table באותו נקודה** — לא מ-K-map ישר. הוכח שלפני ואחרי המעבר, F=1.
@@ -10406,85 +9957,30 @@ A=1:    0     [1]    [1]     1     ← מעבר HAZARD
           'F = AB + B\'C + AC (מבחינה לוגית זהה ל-AB + B\'C, אבל hazard-free).',
         ],
         answer:
-`## הפתרון: הוספת ה-consensus term \`A·C\`
+`### הפתרון: הוסף \`A·C\` כ-consensus term
 
-### ה-K-map המעודכן
+\`F = A·B + B'·C + A·C\` — לוגית **זהה** ל-AB+B'C (consensus rule), אבל פיזית hazard-free.
 
-\`\`\`
-       BC=00  BC=01  BC=11  BC=10
-A=0:    0      1      0      0
-A=1:    0     [1]    [1]     1
-\`\`\`
+ב-K-map, ה-implicant \`A·C\` מכסה את שני התאים הסמוכים (A=1, BC=01) ו-(A=1, BC=11) — בדיוק את ה"תפר" של ה-hazard.
 
-הוסף קבוצה שלישית — **שורת A=1, עמודות 01 ו-11** (התאים הסמוכים שהיו "תפר"). זו קבוצת \`A·C\`:
+### למה זה פותר
 
-\`\`\`
-       BC=00  BC=01  BC=11  BC=10
-A=0:    0      1      0      0
-A=1:    0    [[1]]  [[1]]    1     ← A·C מכסה את שני התאים
-              (כחול+סגול) (ירוק+סגול)
-\`\`\`
+עם A=C=1 קבוע ו-B במעבר: \`A·C = 1\` כל הזמן (לא תלוי ב-B). ה-OR החדש (3-input) רואה תמיד לפחות אחד מ-{AB, B'C, AC} = 1 → F נשאר 1.
 
-### הפונקציה המתוקנת
-
-\`\`\`
-F = A·B + B'·C + A·C
-\`\`\`
-
-מבחינה **לוגית**: \`AB + B'C + AC = AB + B'C\` (consensus rule, חוק הקאנונה).
-
-\`\`\`
-AB + B'C + AC = AB(C + C') + B'C + AC        // expand AB
-              = ABC + ABC' + B'C + AC
-              = (ABC + AC) + ABC' + B'C        // factor AC
-              = AC + ABC' + B'C
-              = AC(1) + AB·C' + B'C            // hmm trying again
-\`\`\`
-
-באמת: AC is redundant in min-cover, BUT it's necessary for hazard freedom.
-
-### למה זה פותר את ה-Glitch
-
-נתון A=1, C=1, B עובר 1→0:
-
-| Time | g1 (AB) | g3 (B'C) | **g5 (AC)** | F = OR(g1, g3, g5) |
+| Time | g1 (AB) | g3 (B'C) | **g5 (AC)** | F |
 |:---:|:---:|:---:|:---:|:---:|
 | t<0 | 1 | 0 | **1** | 1 |
-| t=60 ps | **0** | 0 | **1** | **1** ✓ (AC מחזיק!) |
-| t=90 ps | 0 | **1** | **1** | 1 |
+| t=60 | 0 | 0 | **1** | **1 ✓** |
+| t=90 | 0 | 1 | **1** | 1 |
 
-**ה-A·C signal לא תלוי ב-B כלל** — הוא נשאר 1 לאורך כל המעבר של B. ה-OR מחזיק את F=1.
+### Implementation cost
 
-### Implementation
+- **+1 AND gate** (\`g5 = A·C\`), הרחבת ה-OR ל-3-input. Area ~+5%.
+- חוסך power של glitch-toggles → לרוב נטו חיובי.
 
-\`\`\`
-                          g5 = A · C   (60 ps)
-                              ┌────────┐
-                  A ──────────┤  AND   ├────┐
-                  C ──────────┤        │    │
-                              └────────┘    │
-                                            ▼
-            g1 ────────────────────────→ ┌─────┐
-            g3 ────────────────────────→ │ OR  │──── F (hazard-free)
-                                          │ (3) │
-                                          └─────┘
-\`\`\`
+### Consensus rule כללי
 
-תוספת: gate אחד (AND עוד אחד), והרחבת OR ל-3-input. **חינם** מבחינת logic complexity, חיוני מבחינת correctness.
-
-### עלות
-
-- Area: +1 AND gate (~5%).
-- Power: +1 gate, אבל **חוסך** power של glitches (toggles אנרגטיים) → לרוב נטו חיובי.
-- Delay: השכבה הקריטית לא משתנה (AC הוא בעצמו 60 ps, כמו AB).
-
-### ה-Rule הכללי
-
-**Consensus rule**: בכל זוג implicants סמוכים על K-map שנפגשים על variable יחיד שמתחלף ביניהם — קיים implicant שלישי (ה-consensus) שמכסה את התפר.
-
-ב-design ידני: זה השלב שאחרי "minimum cover" — בדוק כל זוג סמוך, הוסף consensus term אם צריך.
-
-ב-EDA tools: \`hazard-free synthesis\` מסומן ב-Synopsys/Cadence (לעיצובים async או speed-critical).`,
+כל זוג implicants סמוכים שנפגשים על variable יחיד — יש להם consensus term שלישי שמגשר. EDA tools (Synopsys/Cadence) מסמנים זאת תחת \`hazard-free synthesis\`.`,
         interviewerMindset:
 `**שאלת תיקון.** המראיין מחפש:
 1. **שאתה זוכר את שם ה-term** — "consensus term" או "redundant prime implicant". לא "third implicant".
@@ -10619,76 +10115,34 @@ AB + B'C + AC = AB(C + C') + B'C + AC        // expand AB
           'G = (A+B)(B\'+C)(A+C) — הזהה לוגית, hazard-free על 0.',
         ],
         answer:
-`## Static-0 Hazard — Dual של Static-1
+`### דוגמה — \`G = (A+B)·(B'+C)\`
 
-### דוגמה: \`G(A, B, C) = (A + B) · (B' + C)\`
+K-map של G:
 
-חישוב truth table:
-
-| A | B | C | A+B | B'+C | G |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| 0 | 0 | 0 | 0 | 1 | 0 |
-| 0 | 0 | 1 | 0 | 1 | 0 |
-| 0 | 1 | 0 | 1 | 0 | 0 |
-| 0 | 1 | 1 | 1 | 1 | 1 |
-| 1 | 0 | 0 | 1 | 1 | 1 |
-| 1 | 0 | 1 | 1 | 1 | 1 |
-| 1 | 1 | 0 | 1 | 0 | 0 |
-| 1 | 1 | 1 | 1 | 1 | 1 |
-
-K-map:
 \`\`\`
        BC=00  BC=01  BC=11  BC=10
 A=0:    0      0      1      0
 A=1:    1      1      1      0
 \`\`\`
 
-### זיהוי ה-Hazard
+### הסכנה — 0-cells סמוכים, max-terms שונים
 
-מסתכלים על **0-cells סמוכים** המכוסים ע"י max-terms שונים של ה-POS form:
+\`(A+B)\` מכסה 0-cells שב-A=B=0; \`(B'+C)\` מכסה 0-cells שב-B=1, C=0. במעבר \`A=0, C=0, B: 0→1\` שני max-terms שונים נחתכים → **glitch ל-1** למרות ש-G צריך להישאר 0.
 
-- \`(A+B)\` מכסה את כל ה-0-cells בהם A=0 ו-B=0 (התאים (A=0, BC=00) ו-(A=0, BC=01)).
-- \`(B'+C)\` מכסה את ה-0-cells בהם B=1 ו-C=0 (התאים (A=0, BC=10) ו-(A=1, BC=10)).
+### התיקון — consensus max-term \`(A+C)\`
 
-המעבר ה-בעייתי: **A=0, C=0, B עובר 0→1**.
-- לפני: (A=0, B=0, C=0) → G=0, מכוסה ע"י (A+B): A+B = 0.
-- אחרי: (A=0, B=1, C=0) → G=0, מכוסה ע"י (B'+C): B'+C = 0.
-- בתפר: שני max-terms שונים — glitch ל-1 אפשרי.
-
-### תיקון: הוסף Consensus Term ב-POS
-
-ה-consensus של \`(A+B)\` ו-\`(B'+C)\` הוא **\`(A+C)\`**:
-
-\`\`\`
-G = (A + B) · (B' + C) · (A + C)
-\`\`\`
-
-ב-K-map: (A+C) מכסה את התאים שבהם A=0 **ו**-C=0 → (A=0, BC=00) ו-(A=0, BC=10) — ה-0-cells הסמוכים שבעיה.
-
-### Hazard-Free Implementation
-
-| Gate | Function | מקור |
-|---|---|---|
-| OR1 | A + B | original |
-| OR2 | B' + C | original |
-| **OR3** | **A + C** | **consensus (new)** |
-| AND3 | (A+B)(B'+C)(A+C) | 3-input AND |
+\`G = (A+B) · (B'+C) · (A+C)\` — לוגית זהה, hazard-free על 0-cells.
 
 ### הסיכום הדואלי
 
 | | Static-1 | Static-0 |
 |---|---|---|
-| Form | SOP (sum of products) | POS (product of sums) |
-| Adjacent cells | שני 1-cells | שני 0-cells |
-| Glitch | 1 → 0 → 1 | 0 → 1 → 0 |
-| Implicants | min-terms (covers of 1s) | max-terms (covers of 0s) |
-| Fix | consensus min-term | consensus max-term |
+| Form | SOP | POS |
+| 1-cells / 0-cells | 1-cells סמוכים | 0-cells סמוכים |
+| Glitch | 1→0→1 | 0→1→0 |
+| Fix | consensus min-term (\`AC\`) | consensus max-term (\`A+C\`) |
 
-**כל פונקציה** יכולה לחוות **או** static-1 **או** static-0 hazards (תלוי במעבר). תיקון hazard-free דורש בדיקת שני הצדדים.
-
-### בעיצוב EDA
-
-\`Hazard-free synthesis\` בדרך כלל בודק שני הסוגים. ב-async logic זה חובה; ב-sync logic לרוב מספיק לשמור על setup time גדול מספיק.`,
+> Hazard-free design דורש בדיקת **שני הסוגים** — לא רק static-1.`,
         interviewerMindset:
 `**שאלת dualism.** המראיין מחפש:
 1. **שאתה מבין שזה דואלי לחלוטין** — לא רק "הפוך". ה-POS form עובד באותו רעיון על 0-cells.
@@ -10812,82 +10266,32 @@ G = (A + B) · (B' + C) · (A + C)
           'לחלופין: לעצב את ה-circuit עם **single-path-per-variable** — אבל זה מגביל מאוד את ה-optimization.',
         ],
         answer:
-`## Dynamic Hazard
+`### מהו dynamic hazard
 
-### הגדרה
+ה-output אמור לעבור פעם אחת (0→1 או 1→0), אבל **רץ קדימה ואחורה** מספר פעמים לפני שמתייצב. למשל \`0→1→0→1→0→1\` במקום \`0→1\`.
 
-> **Dynamic hazard**: ה-output אמור לעבור פעם אחת (\`0→1\` או \`1→0\`), אבל בפועל הוא **רץ קדימה ואחורה** מספר פעמים לפני שהוא מתייצב.
+### תנאי
 
-תרשים זמן: במקום מעבר \`0 → 1\` נקי, רואים:
-\`\`\`
-F:  0 ─┐  ┌──┐  ┌──── 1 (final)
-       └──┘  └──┘
-       ↑ 0→1→0→1→0→1  (3 ספייקים לפני הסתגלות)
-\`\`\`
+לפחות **3 מסלולים** של אותו signal עם delays שונים מגיעים ל-output. למשל B → AND ישיר, וגם B → 3 inverters → AND אחר — שני המסלולים מצטרפים ב-OR וגורמים לקפיצות.
 
-### תנאי קיומו
+### למה consensus term לא מספיק
 
-לפחות **3 מסלולים** של אותו signal עם delays שונים מגיעים ל-output. כל מסלול יוצר edge משלו.
-
-### דוגמה: Triple-Path
-
-\`\`\`
-B ──┬──────────────────→ AND──┐
-    │                          │
-    └─[NOT]─[NOT]─[NOT]─→ AND──┴── OR ──── F
-                                   │
-                              [NOT]
-\`\`\`
-
-נניח כל NOT = 20 ps. כש-B עובר \`1→0\`:
-- מסלול ישיר: B→AND_top ב-0 ps.
-- מסלול 3 inverters: B→NOT→NOT→NOT→AND_bottom ב-60 ps.
-
-תוצאה: ה-OR רואה את ה-AND_top יורד מהר, ה-AND_bottom עולה איטית, ויש חזרות בין הזמנים. **3 ספייקים אפשריים**.
-
-### למה Consensus Term לא עוזר
-
-Static hazard = "תפר" יחיד בין שני implicants. Consensus = implicant נוסף שגושר עליו.
-
-Dynamic hazard = **מספר תפרים בו-זמנית** עקב מסלולים מרובים. כל "תפר" דורש consensus אחר, וייתכנו תפרים שאין להם consensus סינתטי.
-
-טכנית: dynamic hazard נובע מ-**structure** של הרשת, לא רק מה-truth-table. שינוי הרשת (= synthesis אחר) הוא היחיד שיכול לבטל אותו לחלוטין.
-
-### הפתרון: Synchronous Sampling
-
-הגישה האולטימטיבית: **לסגור את ה-output ב-FF**.
-
-\`\`\`
-Inputs → [Combinational, with possible dynamic hazards] → D ───┐
-                                                                 │
-                                                         FF ────→ Q (clean)
-                                                                 │
-                                                       CLK ──────┘
-\`\`\`
-
-ה-FF דוגם רק בקצה ה-CLK. אם ה-CLK period גדול מספיק (\`T_clk > t_propagation_max + t_glitch_max\`) → ה-FF דוגם רק את הערך הסופי, אחרי שכל ה-glitches שקעו.
-
-זו הסיבה ש-**synchronous design** הוא הסטנדרט בתעשייה: גליטשים פנימיים אינם חשובים כל עוד ה-output נדגם בקצה clock.
-
-### ב-Async Design
-
-כשאין FF בנקודה — חייבים לעצב hazard-free:
-- Hazard-free synthesis (algorithmic, יקר ב-area)
-- Code disciplines: 1-hot encoding, race-free FSM
-- Single-path-per-input — לאסור על reconvergent fanout
-
-### תקציר — Static vs Dynamic
-
-| | Static-1/-0 | Dynamic |
+| | Static | Dynamic |
 |---|---|---|
-| מקור | פערים בין implicants | מסלולים מרובים עם delays שונים |
-| Symptom | spike יחיד | spikes מרובים |
-| תיקון | consensus term | sync sampling (FF) או redesign |
-| ב-K-map | מזוהה מ-cell adjacency | לא מזוהה — דורש gate-level trace |
+| מקור | "תפר" יחיד בין 2 implicants | מספר תפרים בו-זמנית עקב מסלולים מרובים |
+| תיקון | consensus term | **לא מספיק** — נובע מ-structure של ה-network |
 
-### בקנבס
+### הפתרון — synchronous sampling
 
-ה-engine לא מראה את ה-glitches (אין מודל delay). הצב מעגל הפונקציה במצב סטטי — תקבל את הערך הנכון. ה-dynamic hazard הוא תופעה רק במציאות אמיתית.`,
+\`Inputs → [Combinational + possible glitches] → FF → Q (clean)\`
+
+ה-FF דוגם רק בקצה CLK. אם \`T_clk > t_propagation_max + t_glitch_max\` — ה-glitches שוקעים לפני שה-FF דוגם → Q נקי. זו הסיבה ש-**synchronous design** הוא הסטנדרט.
+
+### ב-async (אין FF)
+
+חייב hazard-free synthesis (algorithmic, יקר), 1-hot encoding, או אסור reconvergent fanout.
+
+> ה-engine לא מודל delays — F יראה תמיד את הערך הסופי. dynamic hazard נצפה רק בסיליקון.`,
         interviewerMindset:
 `**שאלת סיכום.** המראיין מחפש:
 1. **שאתה מבחין בין static ל-dynamic** — לא רק "hazard". ספציפיקציה.
