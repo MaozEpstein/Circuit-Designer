@@ -8620,4 +8620,1148 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
     tags: ['retiming', 'cycle-invariant', 'leiserson-saxe', 'fmax', 'timing'],
     circuitRevealsAnswer: true,
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // #5009 — Reset Design
+  //   Sync vs Async, recovery-time / metastability on deassertion,
+  //   reset synchronizer, deassertion ordering across a reset tree,
+  //   and a failure trace where an unsynchronized async deassertion
+  //   leaves FFs in inconsistent post-reset states.
+  //
+  //   Uses the new optional async-reset pin on D-FFs (engine extension
+  //   committed separately). The live circuits are 4-FF chains with a
+  //   shared reset rail; toggle RST=1 to see all four FFs snap to 0
+  //   immediately (async behaviour, observable in the simulator).
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'interview-reset-design',
+    difficulty: 'hard',
+    title: 'Reset Design — async / sync / reset synchronizer',
+    intro:
+`כל chip מתחיל מ-state ידוע: reset. אבל "reset" הוא לא רכיב בודד — זה **תת-מערכת** עם בחירות עיצוב חשובות:
+
+- **Sync vs Async reset** — מתי כל אחד מתאים?
+- **Reset deassertion metastability** — למה שחרור אסינכרוני של reset מסוכן?
+- **Reset synchronizer** — async-assert + sync-deassert (הסטנדרט בתעשייה)
+- **Reset tree** — איך מבטיחים שכל ה-FFs יוצאים מ-reset יחד?
+
+נתון pipeline בן 4 FFs עם CLK משותף ו-RST משותף (async, active-high). השאלות הבאות בוחנות את כל ההיבטים.`,
+    schematic: `
+<svg viewBox="0 0 1000 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="4-FF chain with a shared clock and a shared async reset rail running below.">
+
+  <text x="500" y="48" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="32">
+    Pipeline 4-FF עם reset rail משותף
+  </text>
+  <text x="500" y="84" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
+    RST async, active-high · כל ה-FFs מאופסים בו-זמנית
+  </text>
+
+  <!-- Input -->
+  <circle cx="80" cy="220" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="80" y="228" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">in</text>
+
+  <!-- 4 FFs in a row -->
+  ${[1, 2, 3, 4].map(i => {
+    const x = 180 + (i - 1) * 180;
+    return `
+      <rect x="${x}" y="190" width="110" height="60" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
+      <text x="${x + 55}" y="228" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF${i}</text>
+      <polyline points="${x},212 ${x + 14},220 ${x},228" fill="none" stroke="#cca040" stroke-width="2.4"/>
+    `;
+  }).join('')}
+
+  <!-- Wires between FFs and from input -->
+  <g stroke="#a0a0c0" stroke-width="2.4" fill="none">
+    <line x1="106" y1="220" x2="180" y2="220"/>
+    <line x1="290" y1="220" x2="360" y2="220"/>
+    <line x1="470" y1="220" x2="540" y2="220"/>
+    <line x1="650" y1="220" x2="720" y2="220"/>
+    <line x1="830" y1="220" x2="900" y2="220"/>
+  </g>
+
+  <!-- Output -->
+  <circle cx="920" cy="220" r="26" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="920" y="228" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">out</text>
+
+  <!-- ════════ CLK rail (gold, broadcast) ════════ -->
+  <line x1="80" y1="320" x2="920" y2="320" stroke="#cca040" stroke-width="3.5"/>
+  <text x="40" y="328" fill="#cca040" font-size="20" font-weight="bold">CLK</text>
+  <g stroke="#cca040" stroke-width="2.4" fill="none">
+    <line x1="235" y1="320" x2="235" y2="250"/>
+    <line x1="415" y1="320" x2="415" y2="250"/>
+    <line x1="595" y1="320" x2="595" y2="250"/>
+    <line x1="775" y1="320" x2="775" y2="250"/>
+  </g>
+
+  <!-- ════════ RST rail (red dashed, broadcast) ════════ -->
+  <line x1="80" y1="420" x2="920" y2="420" stroke="#ff6060" stroke-width="3.5" stroke-dasharray="9,5"/>
+  <text x="40" y="428" fill="#ff6060" font-size="20" font-weight="bold">RST</text>
+  <text x="940" y="428" fill="#ff8080" font-size="16" font-style="italic">async</text>
+  <g stroke="#ff6060" stroke-width="2.4" fill="none">
+    <line x1="265" y1="420" x2="265" y2="250"/>
+    <line x1="445" y1="420" x2="445" y2="250"/>
+    <line x1="625" y1="420" x2="625" y2="250"/>
+    <line x1="805" y1="420" x2="805" y2="250"/>
+  </g>
+  ${[265, 445, 625, 805].map(x => `
+    <polygon points="${x - 6},250 ${x + 6},250 ${x},262" fill="#ff6060"/>
+  `).join('')}
+
+  <!-- Bottom summary -->
+  <rect x="80" y="470" width="840" height="56" rx="10" fill="rgba(255,96,96,0.05)" stroke="#ff6060" stroke-width="1.8"/>
+  <text x="500" y="504" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">
+    RST=1 → כל ה-FFs מאופסים מיידית (async, ללא תלות ב-CLK)
+  </text>
+</svg>`,
+    parts: [
+      // ─────────────────────────────────────────────────────────
+      // Part א — Sync vs Async reset
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'א',
+        question: 'הסבר את ההבדל בין **Sync reset** ל-**Async reset** ב-FF: איך כל אחד נראה במעגל, מתי הוא נכנס לתוקף, ומה ה-trade-off ביניהם. תן דוגמה למתי כל אחד מתאים יותר.',
+        hints: [
+          'Async reset: כשפין ה-reset של ה-FF פעיל → Q נקבע מיד ל-0 (או 1), **ללא תלות ב-CLK**. דורש "fork" נפרד ב-FF cell.',
+          'Sync reset: ה-reset נכנס דרך ה-D (כ-mux או AND) — כלומר Q מתאפס רק על rising edge של CLK הבא.',
+          'Async: יתרון = startup ללא CLK. חיסרון = recovery-time violations בעת deassert.',
+          'Sync: יתרון = clean deassertion. חיסרון = דורש CLK שעובד כדי שה-reset יתפוס.',
+          'בעולם האמיתי: Async הוא הסטנדרט ב-ASIC; Sync ב-FPGA (כי block FFs יש להם רק sync reset).',
+        ],
+        answer:
+`### Async Reset
+
+\`\`\`
+        ┌──────────┐
+  D ────┤D       Q ├──── (Q goes 0 immediately when RST=1)
+        │          │
+CLK ────┤▷         │
+        │          │
+RST ────┤RST       │   ← extra "reset" input, level-sensitive
+        └──────────┘
+\`\`\`
+
+| תכונה | Async |
+|---|---|
+| הכנסה לתוקף | מיידית, ללא תלות ב-CLK |
+| Recovery time | חייב להתקיים — \`t_rec\` לפני edge הבא של CLK |
+| כשלון בdeassert | מטא-יציבות אם RST משחרר בתוך setup window |
+| מתאים ל | startup, watchdog, power-on reset (POR) |
+
+### Sync Reset
+
+\`\`\`
+        ┌──────────┐
+        │  ┌────┐  │
+  D ────┼─┤MUX │  │
+RST ────┤  │1=0 │  │     ← reset gated into D
+        │  └────┘  │
+        │     │    │
+        ├─────┤D Q├──── Q updates only on CLK edge
+CLK ────┤▷         │
+        └──────────┘
+\`\`\`
+
+| תכונה | Sync |
+|---|---|
+| הכנסה לתוקף | רק על rising edge של CLK הבא |
+| Recovery time | לא רלוונטי — ה-reset הוא נתון רגיל |
+| כשלון בdeassert | אף-פעם (clean) |
+| חיסרון | דורש CLK פעיל — לא מתאים ל-POR |
+| מתאים ל | FPGA, deterministic test flows |
+
+### Trade-off ניהולי
+
+| תרחיש | בחירה |
+|---|---|
+| Power-on (אין CLK יציב) | **Async** — היחיד שעובד |
+| Glitch resistance | **Sync** — לא רגיש ל-glitches על RST line |
+| Skew על RST tree | **Async** סובל מ-deassertion ordering, **Sync** לא |
+| ASIC standard cell | בדרך כלל **Async** ב-active-low (\`nRST\`) |
+| FPGA block FF | בדרך כלל **Sync** — חוסך פין |
+
+### בקנבס
+
+ה-engine תומך בשניהם דרך \`h.ffD(x, y, label, { reset: 'async' | 'sync' })\`. ה-circuit הנוכחי משתמש ב-\`async\`. הצב \`RST=1\` ופעם ב-CLK — תראה את כל ה-FFs מתאפסים מיד; הצב \`RST=0\` ופעם → השרשרת מתחילה להעביר את \`in=1\` הלאה.`,
+        interviewerMindset:
+`**שאלת פתיחה.** המראיין מחפש:
+1. **שאתה מצייר את שני המבנים** — לא רק "async הוא ללא clock, sync הוא עם clock". תרשים פנימי של ה-FF.
+2. **שאתה מזכיר recovery time** — async דורש זמן בין deassertion ל-clock edge. לא רק "מטא-יציבות" באוויר.
+3. **שאתה מבדיל לפי טכנולוגיה** — ASIC נוטה ל-async, FPGA ל-sync. סטודנט שאומר "תמיד X" מאבד נקודות.
+
+**שאלת המשך**: "מה זה nRST?" → reset פעיל-נמוך. רוב ה-cells בתעשייה הם active-low כי מציאות של "all zeros" (חוסר חשמל) מובילה ל-reset ברירת מחדל.
+
+**שאלת bonus**: "מתי אסור להשתמש ב-async?" → במעגל שבו ה-reset מגיע מ-domain אחר ולא דרך synchronizer (סעיף ג'). דה-assertion שלו יחצה את חלון ה-setup של clock המקומי → metastability.`,
+        expectedAnswers: [
+          'async', 'sync', 'אסינכרוני', 'סינכרוני',
+          'recovery time', 'metastability', 'deassertion',
+          'CLK', 'power-on', 'POR',
+          'FPGA', 'ASIC',
+          'active-low', 'nRST',
+        ],
+        circuit: () => build(() => {
+          // 4-FF chain with shared async reset.
+          // Defaults: in=1, RST=0 → values shift through.
+          //           Toggle RST=1 to snap all FFs to 0.
+          const clk = h.clock(80, 460, 'CLK');
+          const inIn = h.input(80, 120, 'in');  inIn.fixedValue = 1;
+          const rstIn = h.input(80, 600, 'RST'); rstIn.fixedValue = 0;
+
+          const ff1 = h.ffD(220, 120, 'FF1', { reset: 'async' });
+          const ff2 = h.ffD(400, 120, 'FF2', { reset: 'async' });
+          const ff3 = h.ffD(580, 120, 'FF3', { reset: 'async' });
+          const ff4 = h.ffD(760, 120, 'FF4', { reset: 'async' });
+
+          const q1 = h.output(220, 40, 'Q1');
+          const q2 = h.output(400, 40, 'Q2');
+          const q3 = h.output(580, 40, 'Q3');
+          const q4 = h.output(760, 40, 'Q4');
+          const outOut = h.output(920, 120, 'out');
+
+          return {
+            nodes: [clk, inIn, rstIn, ff1, ff2, ff3, ff4, q1, q2, q3, q4, outOut],
+            wires: [
+              h.wire(inIn.id, ff1.id, 0),
+              h.wire(ff1.id, ff2.id, 0),
+              h.wire(ff2.id, ff3.id, 0),
+              h.wire(ff3.id, ff4.id, 0),
+              h.wire(clk.id, ff1.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff2.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff3.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff4.id, 1, 0, { isClockWire: true }),
+              h.wire(rstIn.id, ff1.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff2.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff3.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff4.id, 2, 0, { isResetWire: true }),
+              h.wire(ff1.id, q1.id, 0),
+              h.wire(ff2.id, q2.id, 0),
+              h.wire(ff3.id, q3.id, 0),
+              h.wire(ff4.id, q4.id, 0),
+              h.wire(ff4.id, outOut.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Side-by-side comparison: async vs sync reset internal structure.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Async vs Sync Reset — מבנה פנימי
+  </text>
+
+  <!-- ════════ Async (LEFT) ════════ -->
+  <rect x="40" y="90" width="440" height="460" rx="14" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2.4"/>
+  <text x="260" y="128" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="24">Async Reset</text>
+
+  <!-- FF body -->
+  <rect x="140" y="200" width="240" height="180" rx="10" fill="#0a1825" stroke="#cc66ff" stroke-width="2.6"/>
+  <text x="260" y="290" text-anchor="middle" fill="#cc99ff" font-size="28" font-weight="bold">D-FF</text>
+
+  <!-- Pins -->
+  <line x1="80" y1="240" x2="140" y2="240" stroke="#cca040" stroke-width="2.4"/>
+  <text x="120" y="232" text-anchor="end" fill="#cca040" font-size="18" font-weight="bold">D</text>
+
+  <line x1="80" y1="300" x2="140" y2="300" stroke="#cca040" stroke-width="2.4"/>
+  <polyline points="140,290 152,300 140,310" fill="none" stroke="#cca040" stroke-width="2.4"/>
+  <text x="120" y="296" text-anchor="end" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
+
+  <line x1="80" y1="360" x2="140" y2="360" stroke="#ff6060" stroke-width="3"/>
+  <text x="120" y="356" text-anchor="end" fill="#ff6060" font-size="18" font-weight="bold">RST</text>
+  <polygon points="135,354 145,360 135,366" fill="#ff6060"/>
+
+  <line x1="380" y1="290" x2="440" y2="290" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="446" y="296" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
+
+  <!-- Internal "async OR" annotation -->
+  <text x="260" y="328" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">RST bypasses CLK</text>
+  <text x="260" y="350" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">→ Q forced to 0 immediately</text>
+
+  <text x="260" y="430" text-anchor="middle" fill="#ff8080" font-size="17" font-weight="bold">RST asserts → Q=0 (no CLK needed)</text>
+  <text x="260" y="460" text-anchor="middle" fill="#c8b090" font-size="15">⚠ recovery time on deassert</text>
+  <text x="260" y="492" text-anchor="middle" fill="#c8b090" font-size="15">ASIC standard, POR</text>
+
+  <!-- ════════ Sync (RIGHT) ════════ -->
+  <rect x="520" y="90" width="440" height="460" rx="14" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2.4"/>
+  <text x="740" y="128" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">Sync Reset</text>
+
+  <!-- MUX -->
+  <path d="M 580 230 L 640 220 L 640 280 L 580 270 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="610" y="255" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">MUX</text>
+
+  <line x1="540" y1="240" x2="580" y2="240" stroke="#cca040" stroke-width="2.4"/>
+  <text x="535" y="244" text-anchor="end" fill="#cca040" font-size="18" font-weight="bold">D</text>
+
+  <line x1="540" y1="260" x2="580" y2="260" stroke="#80f0a0" stroke-width="2.4"/>
+  <text x="535" y="264" text-anchor="end" fill="#80f0a0" font-size="14">0</text>
+
+  <line x1="610" y1="300" x2="610" y2="280" stroke="#ff6060" stroke-width="2.4"/>
+  <text x="610" y="318" text-anchor="middle" fill="#ff6060" font-size="14">RST sel</text>
+
+  <!-- FF body -->
+  <rect x="680" y="220" width="180" height="160" rx="10" fill="#0a1825" stroke="#cc66ff" stroke-width="2.6"/>
+  <text x="770" y="305" text-anchor="middle" fill="#cc99ff" font-size="26" font-weight="bold">D-FF</text>
+
+  <line x1="640" y1="250" x2="680" y2="250" stroke="#a0a0c0" stroke-width="2.4"/>
+
+  <line x1="600" y1="360" x2="680" y2="360" stroke="#cca040" stroke-width="2.4"/>
+  <polyline points="680,350 692,360 680,370" fill="none" stroke="#cca040" stroke-width="2.4"/>
+  <text x="580" y="356" text-anchor="end" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
+
+  <line x1="860" y1="300" x2="920" y2="300" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="926" y="306" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
+
+  <!-- Internal annotation -->
+  <text x="740" y="425" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">RST gated through MUX → captures on CLK edge</text>
+  <text x="740" y="460" text-anchor="middle" fill="#c8b090" font-size="15">✓ no recovery issue</text>
+  <text x="740" y="492" text-anchor="middle" fill="#c8b090" font-size="15">FPGA standard, deterministic</text>
+</svg>`,
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ב — Recovery time / async deassertion danger
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ב',
+        question: 'נתון FF עם **async reset** ו-CLK פעיל. כש-RST משחרר (\\\`1 → 0\\\`) **בתוך** חלון ה-setup של ה-CLK הבא — מה הסיכון? איך זה דומה ל-metastability מסעיף #5006? איך מודדים את ה-margin הנדרש?',
+        hints: [
+          'הפרמטר נקרא **\\\`t_recovery\\\`** — הזמן המינימלי בין deassertion של RST לבין rising edge של CLK.',
+          'גם **\\\`t_removal\\\`** קיים — הזמן המינימלי בין rising edge ל-deassertion (mirror של t_hold).',
+          'אם RST יוצא מ-async בתוך setup window → ה-FF מנסה לעבור בו-זמנית מ-state=0 (כי RST פעיל) ל-state=D (כי RST שוחרר). ה-internal latch גורם ל-**metastability**.',
+          'הפתרון: לוודא ש-RST משחרר רחוק מ-CLK edge. בעולם אמיתי — לסנכרן את שחרור ה-RST (סעיף ג\').',
+          'הקשר ל-#5006: שניהם metastability — אבל #5006 על data, #5009 על reset signal.',
+        ],
+        answer:
+`## הסכנה: Recovery Time Violation
+
+### הפרמטר \`t_recovery\` (ולפעמים \`t_removal\`)
+
+| פרמטר | מה זה | אילוץ |
+|---|---|---|
+| **\`t_recovery\`** | זמן מינימלי בין \`RST: 1→0\` ל-CLK rising edge | RST_dessert ≤ CLK_edge − t_recovery |
+| **\`t_removal\`** | זמן מינימלי בין CLK rising edge ל-\`RST: 1→0\` | RST_deassert ≥ CLK_edge + t_removal |
+
+יחד הם מגדירים **חלון אסור** סביב ה-CLK edge:
+
+\`\`\`
+         t_removal
+              ←─────┤
+       CLK_edge ────┼──→  t_recovery
+                   ↑
+              forbidden window
+\`\`\`
+
+### למה בדיוק metastable?
+
+ב-FF פנימי, ה-latch הראשון "מקפיא" על RST=1. כשRST=0 בדיוק כש-CLK עולה:
+- ה-latch מנסה לקבל D (כי RST שחרר)
+- אבל ה-latch *גם* מתאושש מ-state=0 (RST פעיל זה עתה)
+- שני "כיוונים" של כוח על ה-latch → metastable Q.
+
+זה בדיוק כמו metastability על data path (#5006), אבל הקלט הוא reset במקום data. הזמן \`τ\` (settling time) זהה.
+
+### דוגמה מספרית
+
+נניח: \`t_recovery = 100 ps\`, \`t_removal = 50 ps\`, \`T_clk = 1 ns\`.
+
+| תרחיש | האם בטוח? |
+|---|:---:|
+| RST deassert 200 ps לפני CLK edge | ✓ (>100 ps recovery) |
+| RST deassert 80 ps לפני CLK edge | ✗ recovery violation |
+| RST deassert 30 ps אחרי CLK edge | ✗ removal violation |
+| RST deassert 200 ps אחרי CLK edge | ✓ |
+
+### MTBF — מקביל ל-#5006
+
+\`\`\`
+MTBF_reset = exp(t_avail / τ) / (T_w · f_clk · f_rst)
+\`\`\`
+
+ה-\`t_avail\` הוא הזמן בין הקצה שבו ה-metastability מתחילה לבין ה-קצה הבא. כל cycle נוסף שמוסיף לסטגלות ⇒ exponent יותר גדול.
+
+### הפתרון
+
+לא לתת ל-RST לעבור בלי סנכרון. הסטנדרט בתעשייה: **reset synchronizer** — ראה סעיף ג'.
+
+### בקנבס
+
+ה-engine **לא מודל** את ה-recovery violation (זה תהליך הסתברותי). אבל ה-circuit הנוכחי משתמש ב-async reset; אם תחבר RST למקור אסינכרוני (לא ל-clock domain שלך), הסכנה הזו תופיע פיזית.`,
+        interviewerMindset:
+`**שאלת recovery — קלאסית של ASIC.** המראיין מחפש:
+1. **שאתה זוכר את השם** — t_recovery (לא רק "setup time עבור reset").
+2. **שאתה מבין שזה metastability** — לא רק "violation" כללי. הקשר ל-#5006.
+3. **שאתה מציין את t_removal** — לא רק recovery. שניהם חלק מ-window אסור.
+4. **שאתה רומז על reset synchronizer** — ברמז, לא בפירוט (סעיף ג' יחשוף).
+
+**שאלת המשך**: "האם ל-sync reset יש t_recovery?" → לא! sync reset נכנס דרך D, אז הוא רגיש ל-setup/hold רגיל. אין recovery נפרד.
+
+**שאלת bonus**: "Process variation משפיע על t_recovery?" → כן. ב-slow corner ה-t_recovery גדל; ב-fast corner קטן. STA מסחרי בודק את כל הקצוות.
+
+**מלכודת**: סטודנט שמציע "להגדיל את ה-clock period" → לא עוזר. t_recovery הוא יחסית לקצה ה-clock, לא לcycle כולו.`,
+        expectedAnswers: [
+          't_recovery', 'recovery time', 'זמן recovery',
+          't_removal', 'removal time',
+          'metastability', 'מטא-יציבות',
+          'forbidden window', 'window',
+          'MTBF', 'τ',
+          'reset synchronizer',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Timing diagram showing recovery time window around CLK edge.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Recovery / Removal — חלון אסור סביב CLK edge
+  </text>
+
+  <!-- CLK waveform -->
+  <text x="60" y="150" fill="#cca040" font-size="20" font-weight="bold">CLK</text>
+  <g stroke="#cca040" stroke-width="3" fill="none">
+    <line x1="140" y1="170" x2="350" y2="170"/>
+    <line x1="350" y1="170" x2="350" y2="120"/>
+    <line x1="350" y1="120" x2="900" y2="120"/>
+  </g>
+  <text x="350" y="108" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">↑ CLK edge</text>
+
+  <!-- RST waveform: three scenarios labeled with annotations -->
+  <text x="60" y="260" fill="#ff6060" font-size="20" font-weight="bold">RST</text>
+
+  <!-- Forbidden window highlight -->
+  <rect x="280" y="200" width="140" height="100" rx="6" fill="rgba(255,96,96,0.15)" stroke="#ff6060" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="350" y="332" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">forbidden window</text>
+  <text x="350" y="356" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">t_removal ←──→ t_recovery</text>
+
+  <!-- Sample RST waveform (high then low) -->
+  <g stroke="#ff6060" stroke-width="3" fill="none">
+    <line x1="140" y1="200" x2="220" y2="200"/>
+    <line x1="220" y1="200" x2="220" y2="280"/>
+    <line x1="220" y1="280" x2="900" y2="280"/>
+  </g>
+  <text x="220" y="190" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">✓ safe deassertion</text>
+  <text x="220" y="416" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">(far before CLK edge)</text>
+
+  <!-- Dotted "bad" deassertion inside window -->
+  <g stroke="#ff8080" stroke-width="2" fill="none" stroke-dasharray="4,3">
+    <line x1="320" y1="200" x2="320" y2="280"/>
+  </g>
+  <text x="320" y="416" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">✗ inside window → metastable</text>
+
+  <!-- Bottom: MTBF reminder -->
+  <rect x="60" y="430" width="880" height="36" rx="8" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="1.8"/>
+  <text x="500" y="454" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">
+    MTBF_reset = exp(t_avail / τ) / (T_w · f_clk · f_rst)  ·  זהה למבנה #5006
+  </text>
+</svg>`,
+        circuit: () => build(() => {
+          // Same 4-FF chain — engine doesn't simulate recovery violations
+          // (probabilistic), so we reuse the part-א circuit.
+          const clk = h.clock(80, 460, 'CLK');
+          const inIn = h.input(80, 120, 'in');  inIn.fixedValue = 1;
+          const rstIn = h.input(80, 600, 'RST'); rstIn.fixedValue = 0;
+          const ff1 = h.ffD(220, 120, 'FF1', { reset: 'async' });
+          const ff2 = h.ffD(400, 120, 'FF2', { reset: 'async' });
+          const ff3 = h.ffD(580, 120, 'FF3', { reset: 'async' });
+          const ff4 = h.ffD(760, 120, 'FF4', { reset: 'async' });
+          const outOut = h.output(920, 120, 'out');
+          return {
+            nodes: [clk, inIn, rstIn, ff1, ff2, ff3, ff4, outOut],
+            wires: [
+              h.wire(inIn.id, ff1.id, 0),
+              h.wire(ff1.id, ff2.id, 0),
+              h.wire(ff2.id, ff3.id, 0),
+              h.wire(ff3.id, ff4.id, 0),
+              h.wire(clk.id, ff1.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff2.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff3.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff4.id, 1, 0, { isClockWire: true }),
+              h.wire(rstIn.id, ff1.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff2.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff3.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff4.id, 2, 0, { isResetWire: true }),
+              h.wire(ff4.id, outOut.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ג — Reset synchronizer (async assert + sync deassert)
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ג',
+        question: 'תכנן **Reset Synchronizer**: מעגל שמקבל \\\`nRST_in\\\` אסינכרוני וחיצוני, ומפיק \\\`nRST_out\\\` ש-(א) פעיל מיד בעת assertion, ו-(ב) משחרר רק על rising edge של CLK המקומי. הסבר את המבנה ולמה כל רכיב חיוני.',
+        hints: [
+          'הרעיון: רוצים assertion מהיר (async) אבל deassertion מסונכרן (sync). שילוב של שניהם.',
+          'בנייה: 2 FFs בטור, ה-D של הראשון קבוע ב-\\\`1\\\` (\\\`VCC\\\`).',
+          'שני ה-FFs מקבלים \\\`nRST_in\\\` כ-async reset (active-low) → כש-\\\`nRST_in = 0\\\` שניהם מתאפסים מיד.',
+          'כש-\\\`nRST_in = 1\\\` → ה-FF הראשון דוגם \\\`D=1\\\` בקצה הבא, ה-FF השני דוגם \\\`Q1=1\\\` עוד cycle אחר כך.',
+          'ה-output \\\`nRST_out = FF2.Q\\\`. הוא **0 מיד** (כש-async asserts) ו-**1 אחרי 2 cycles** (sync deassertion).',
+          'למה שני FFs ולא אחד? לבטל metastability של ה-FF הראשון — בדיוק כמו synchronizer רגיל ב-#5006.',
+        ],
+        answer:
+`## הפתרון הסטנדרטי: 2-FF Reset Synchronizer
+
+\`\`\`
+  VCC (=1) ──── D ┌──────┐         D ┌──────┐
+                  │ FF1  │  Q1 ────  │ FF2  │ ──── nRST_out
+                  │      │           │      │
+       CLK ─────▷│      │       ──▷│      │
+                  └──┬───┘           └──┬───┘
+                     │ async-rst         │ async-rst (both active-low)
+                     └───────────────────┘
+                              │
+                          nRST_in (external, asynchronous)
+\`\`\`
+
+### איך זה עובד
+
+**Assertion (nRST_in: 1 → 0)**: שני ה-FFs מאופסים **מיד** (async). nRST_out = 0 בו-זמנית.
+
+**Deassertion (nRST_in: 0 → 1)**:
+- FF1 דוגם D=1 בקצה הבא של CLK → Q1=1 אחרי cycle אחד.
+- FF2 דוגם Q1=1 בקצה הבא → nRST_out=1 אחרי שני cycles סה"כ.
+- בכל זמן ביניים, אם FF1 נכנס ל-metastability — FF2 דוגם אחרי cycle נוסף, מספיק זמן ל-settling.
+
+### למה זה עובד
+
+| בעיה | פתרון |
+|---|---|
+| Async assert — לא רוצים לחכות ל-CLK | ✓ async-reset על FF1 + FF2 |
+| Sync deassert — לא רוצים metastability | ✓ deassertion עובר דרך 2 FFs |
+| Metastability על FF1 | ✓ FF2 דוגם cycle אחר → MTBF גבוה |
+
+### למה D=VCC?
+
+מטרת ה-FFs היא **לא לזכור data** אלא רק להעביר את ה-deassertion עם delay. \`D=1\` קבוע אומר: "כש-RST משוחרר, ה-pipeline מתחיל לזרום 1". זה ה-default value של \`nRST_out\` כש-reset לא פעיל.
+
+### Latency
+
+- Assert: **0 cycles** (async).
+- Deassert: **2 cycles** מ-\`nRST_in: 0→1\` עד \`nRST_out=1\`.
+
+ב-ASIC זה אמין מאוד; ב-design קריטי משתמשים ב-3 FFs במקום 2 (כמו 3-FF synchronizer ל-data critical).
+
+### בקנבס
+
+הצב \`nRST_in=1\` ב-default (active-low = לא פעיל). פעם CLK 2 פעמים → \`nRST_out=1\`. עכשיו הצב \`nRST_in=0\` → \`nRST_out=0\` מיד (async). הצב חזרה \`nRST_in=1\` ופעם CLK 2 פעמים → \`nRST_out=1\` שוב.`,
+        interviewerMindset:
+`**שאלת design קלאסית.** המראיין מחפש:
+1. **שאתה מצייר את המבנה** — שני FFs בטור, D הראשון = VCC. לא רק "synchronizer" כמילה.
+2. **שאתה מסביר D=VCC** — לא ברור לרוב הסטודנטים. ה-FFs כאן הם delay, לא data.
+3. **שאתה מציין את 2 ה-cycles latency** — לא רק "מעט". ספציפי.
+4. **שאתה מזכיר את הקשר ל-#5006** — אותו מבנה (2-FF synchronizer), שימוש שונה.
+
+**שאלת המשך**: "האם 2 FFs מספיקים תמיד?" → לא ב-design קריטי. ב-process מהיר (5nm) ה-τ קטן יותר → יש שדים שדורשים 3 FFs.
+
+**שאלת bonus**: "מה אם רוצים reset gating?" → להוסיף AND לפני ה-D של FF1 (\`VCC AND test_enable\`). שולט ב-reset בזמן בדיקה.
+
+**שאלת חזית**: "מה ה-recovery time של ה-internal FFs?" → ה-FFs **כן** רגישים ל-recovery; אבל מאחר ו-\`nRST_in\` הוא הקלט שלהם, ההפרה תופיע על FF1 בלבד. FF2 עובד עם signal sync. זהו המסר היסודי.`,
+        expectedAnswers: [
+          'reset synchronizer', 'סינכרונייזר reset',
+          '2 FFs', 'two flip-flops', 'שני FFs',
+          'D=VCC', 'D = 1', 'tied high',
+          'async assert', 'sync deassert',
+          'metastability', 'FF1', 'FF2',
+          '2 cycles', 'latency',
+        ],
+        schematic: `
+<svg viewBox="0 0 1000 460" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="2-FF reset synchronizer: D tied to VCC, async reset shared, sync deassertion via 2 FFs.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Reset Synchronizer — async assert + sync deassert
+  </text>
+
+  <!-- VCC tie -->
+  <rect x="60" y="170" width="80" height="40" rx="6" fill="#3a3a0a" stroke="#ffe060" stroke-width="2.4"/>
+  <text x="100" y="196" text-anchor="middle" fill="#ffe060" font-size="20" font-weight="bold">VCC=1</text>
+
+  <line x1="140" y1="190" x2="240" y2="190" stroke="#ffe060" stroke-width="2.4"/>
+  <text x="190" y="180" text-anchor="middle" fill="#ffe060" font-size="14">D tied high</text>
+
+  <!-- FF1 -->
+  <rect x="240" y="160" width="130" height="80" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
+  <text x="305" y="210" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF1</text>
+  <polyline points="240,180 254,190 240,200" fill="none" stroke="#cca040" stroke-width="2.4"/>
+
+  <!-- FF1 → FF2 -->
+  <line x1="370" y1="190" x2="470" y2="190" stroke="#a0a0c0" stroke-width="2.4"/>
+  <text x="420" y="180" text-anchor="middle" fill="#a0a0c0" font-size="14">Q1</text>
+
+  <!-- FF2 -->
+  <rect x="470" y="160" width="130" height="80" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
+  <text x="535" y="210" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF2</text>
+  <polyline points="470,180 484,190 470,200" fill="none" stroke="#cca040" stroke-width="2.4"/>
+
+  <!-- nRST_out -->
+  <line x1="600" y1="190" x2="800" y2="190" stroke="#ff9933" stroke-width="2.4"/>
+  <circle cx="820" cy="190" r="26" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="820" y="198" text-anchor="middle" fill="#ff9933" font-size="16" font-weight="bold">nRST_out</text>
+
+  <!-- CLK rail -->
+  <line x1="60" y1="290" x2="640" y2="290" stroke="#cca040" stroke-width="3"/>
+  <text x="40" y="296" fill="#cca040" font-size="20" font-weight="bold">CLK</text>
+  <line x1="305" y1="290" x2="305" y2="240" stroke="#cca040" stroke-width="2.4"/>
+  <line x1="535" y1="290" x2="535" y2="240" stroke="#cca040" stroke-width="2.4"/>
+
+  <!-- nRST_in rail (active-low, dashed red) -->
+  <line x1="60" y1="370" x2="640" y2="370" stroke="#ff6060" stroke-width="3" stroke-dasharray="9,5"/>
+  <text x="40" y="376" fill="#ff6060" font-size="20" font-weight="bold">nRST_in</text>
+  <text x="660" y="376" fill="#ff8080" font-size="15" font-style="italic">(active-low)</text>
+  <line x1="305" y1="370" x2="305" y2="240" stroke="#ff6060" stroke-width="2.4"/>
+  <line x1="535" y1="370" x2="535" y2="240" stroke="#ff6060" stroke-width="2.4"/>
+  <polygon points="299,240 311,240 305,252" fill="#ff6060"/>
+  <polygon points="529,240 541,240 535,252" fill="#ff6060"/>
+
+  <!-- Bottom annotation -->
+  <rect x="60" y="416" width="880" height="36" rx="8" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="500" y="440" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
+    Assert: 0 cycles (async) · Deassert: 2 cycles (sync) · D=VCC = "release into 1"
+  </text>
+</svg>`,
+        circuit: () => build(() => {
+          // Reset synchronizer scene:
+          //   VCC (input fixed=1) → FF_sync1.D, FF_sync2 chained,
+          //   both with async active-low reset tied to nRST_in.
+          //
+          // Default nRST_in = 1 (not asserted). Tick CLK twice → both
+          // FFs latch 1 → nRST_out = 1. Set nRST_in = 0 → both FFs
+          // reset immediately (async, active-low) → nRST_out = 0.
+          const clk = h.clock(80, 380, 'CLK');
+          const vcc = h.input(80, 140, 'VCC'); vcc.fixedValue = 1;
+          const nrst_in = h.input(80, 500, 'nRST_in'); nrst_in.fixedValue = 1;
+
+          const ff1 = h.ffD(280, 140, 'FF_sync1',
+                            { reset: 'async', resetActiveLow: true });
+          const ff2 = h.ffD(480, 140, 'FF_sync2',
+                            { reset: 'async', resetActiveLow: true });
+
+          const nrst_out = h.output(680, 140, 'nRST_out');
+
+          return {
+            nodes: [clk, vcc, nrst_in, ff1, ff2, nrst_out],
+            wires: [
+              h.wire(vcc.id, ff1.id, 0),
+              h.wire(ff1.id, ff2.id, 0),
+              h.wire(clk.id, ff1.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff2.id, 1, 0, { isClockWire: true }),
+              h.wire(nrst_in.id, ff1.id, 2, 0, { isResetWire: true }),
+              h.wire(nrst_in.id, ff2.id, 2, 0, { isResetWire: true }),
+              h.wire(ff2.id, nrst_out.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Reset synchronizer timing: instant assertion, two-cycle synchronized deassertion.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Reset Synchronizer — timing
+  </text>
+
+  <!-- 7 cycles -->
+  ${Array.from({length: 7}, (_, i) => {
+    const x = 140 + i * 110;
+    return `
+      <line x1="${x}" y1="100" x2="${x}" y2="500" stroke="#2a3a4a" stroke-width="1"/>
+      <text x="${x + 55}" y="120" text-anchor="middle" fill="#7a8a9a" font-size="14">${i + 1}</text>
+    `;
+  }).join('')}
+  <line x1="140" y1="128" x2="800" y2="128" stroke="#3a4a5a" stroke-width="1.4"/>
+
+  <!-- Rows -->
+  ${(() => {
+    const X = c => 140 + (c - 1) * 110;
+    // nRST_in starts high, asserts low at cycle 2, deasserts high at cycle 4.
+    // FF1.Q resets to 0 at cycle 2, returns to 1 at cycle 5 (one CLK after deassert).
+    // FF2.Q (= nRST_out) resets to 0 at cycle 2, returns to 1 at cycle 6.
+    const rows = [
+      {
+        label: 'nRST_in',
+        y: 160, color: '#ff6060',
+        // (cycle, level): 1=1, transitions
+        wave: [[1, 'hi'], [2, 'lo-edge'], [4, 'hi-edge']],
+      },
+      {
+        label: 'FF1.Q',
+        y: 250, color: '#cc99ff',
+        wave: [[1, 'hi'], [2, 'lo-edge'], [5, 'hi-edge']],
+      },
+      {
+        label: 'FF2.Q = nRST_out',
+        y: 340, color: '#ff9933',
+        wave: [[1, 'hi'], [2, 'lo-edge'], [6, 'hi-edge']],
+      },
+    ];
+    return rows.map(r => {
+      const yTop = r.y;
+      const yBot = r.y + 50;
+      const yMid = (yTop + yBot) / 2;
+      const segs = [];
+      let prevX = 124;
+      let prevY = yTop;   // start high
+      for (const [c, kind] of r.wave) {
+        const ex = X(c);
+        if (kind === 'hi') {
+          // initial level — no edge, just continue
+          continue;
+        }
+        // edge
+        segs.push(`<line x1="${prevX}" y1="${prevY}" x2="${ex}" y2="${prevY}" stroke="${r.color}" stroke-width="3"/>`);
+        const newY = kind.startsWith('lo') ? yBot : yTop;
+        segs.push(`<line x1="${ex}" y1="${prevY}" x2="${ex}" y2="${newY}" stroke="${r.color}" stroke-width="3"/>`);
+        prevX = ex; prevY = newY;
+      }
+      segs.push(`<line x1="${prevX}" y1="${prevY}" x2="800" y2="${prevY}" stroke="${r.color}" stroke-width="3"/>`);
+
+      return `
+        <text x="20" y="${yMid + 5}" fill="${r.color}" font-size="16" font-weight="bold">${r.label}</text>
+        ${segs.join('')}
+      `;
+    }).join('');
+  })()}
+
+  <!-- Annotations -->
+  <text x="${140 + 1 * 110}" y="450" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">⇩ async assert (immediate)</text>
+  <text x="${140 + 4 * 110}" y="470" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">↑ sync deassert (2 cycles)</text>
+
+  <!-- Summary -->
+  <rect x="60" y="490" width="880" height="50" rx="8" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="500" y="518" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
+    nRST_out = 0 מיידית בעת assert (cycle 2) · nRST_out = 1 רק 2 cycles אחרי deassert (cycle 6)
+  </text>
+</svg>`,
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ד — Reset tree / deassertion ordering
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ד',
+        question: 'נתון מערכת עם **8 FFs** ב-stage אחד שכולם תלויים ב-reset. ה-RST signal מחולק דרך **clock tree** עם buffer-ים ויש לו skew. למה הסקיו על RST line מסוכן יותר מסקיו על clock line, ואיך פותרים זאת?',
+        hints: [
+          'אם RST מגיע ל-FF_A ב-time \\\`t\\\` ול-FF_B ב-time \\\`t + skew\\\`, אז FF_A יוצא מ-reset מוקדם יותר.',
+          'בזמן ה-skew window: FF_A מבצע פעולה רגילה (D נדגם), FF_B עדיין מאופס. תוצאה: **state inconsistency**.',
+          'דוגמה: ספירה counter שמורכב מ-8 FFs. FF_A יצא מ-reset, התחיל לספור → \\\`count=1\\\`. FF_B עדיין ב-reset → \\\`bit_B=0\\\`. ה-counter מציג ערך לא חוקי.',
+          'פתרון 1: **balanced reset tree** — וודא ש-skew על RST < 1 cycle של CLK.',
+          'פתרון 2: **reset synchronizer** (מסעיף ג\') — מחזיק RST פעיל עד שכל ה-FFs ראו את ה-deassertion ב-rising edge המקומי שלהם.',
+          'פתרון 3: **שני שלבים של synchronizer** במקומות שונים — recommended ב-design מרובה domains.',
+        ],
+        answer:
+`## הבעיה: Deassertion Ordering
+
+### מה קורה כש-RST משתחרר
+
+ה-RST מגיע ל-FFs דרך **buffer tree** (מבנה דמוי clock tree). כל buffer מוסיף delay. ה-skew בין ה-FFs **שונה לכל אחד**:
+
+\`\`\`
+                       FF_A (skew = 0)      ← יוצא מ-reset ראשון
+RST ─→ BUF1 ──┬───→
+              │
+              ├──BUF2─── FF_B (skew = 50 ps)
+              │
+              └──BUF3─── FF_C (skew = 100 ps)  ← יוצא מ-reset אחרון
+\`\`\`
+
+### דוגמה קונקרטית: 8-bit counter
+
+נניח שכל ה-8 FFs מתחילים count מ-0 אחרי reset. CLK בקצב 1 GHz (1 ns cycle).
+
+| Time | FF_0 | FF_1 | FF_2 | ... | FF_7 | counter value |
+|---|:---:|:---:|:---:|---|:---:|---|
+| RST deasserts | מעוכב 0 ps | מעוכב 30 ps | מעוכב 60 ps | ... | מעוכב 210 ps | — |
+| 100 ps אחרי | יצא | יצא | יצא | ... | עוד ב-reset | mixed! |
+| 220 ps אחרי | יצא | יצא | יצא | ... | יצא | now consistent |
+
+באמצע התקופה הזו (100-220 ps), ה-counter מציג **ערך שלא קיים בתכנון**. אם module אחר קורא את ה-counter ב-window הזה → תוצאה שגויה.
+
+### למה זה גרוע יותר מ-clock skew?
+
+| Skew | Setup/Hold | תוצאה |
+|---|---|---|
+| Clock skew | ✓ STA tools תופסים | violations מסומנים, ניתן לתקן |
+| Reset skew | ✗ STA לרוב לא בודק | bug שקטה — מופיע רק ב-startup |
+
+### הפתרון: Synchronized Reset Tree
+
+\`\`\`
+nRST_in → [Reset Synchronizer] → nRST_internal
+                                       │
+                                       ↓
+                          Balanced Reset Buffer Tree
+                                  ↓ ↓ ↓ ↓ ↓
+                                FF_0 ... FF_7
+\`\`\`
+
+המפתח:
+1. **Reset Synchronizer** (מסעיף ג') יוצר \`nRST_internal\` שהוא **sync ל-CLK**.
+2. ה-tree מעצב את ה-distribution כך שכל ה-FFs רואים את אותו edge ב-CLK rising.
+3. STA tools בודקים את ה-tree באותה דרך כמו clock tree — \`skew ≤ 100 ps\` typically.
+
+### Multi-Domain
+
+ב-SoC עם כמה clock domains, **לכל domain reset synchronizer משלו** — לא לסנכרן reset של domain A עם CLK של domain B. זה יוצר הפרת CDC.
+
+### בקנבס
+
+ה-engine מציג אותו 4-FF chain מסעיף א'. כל ה-FFs מקבלים את אותו RST signal בו-זמנית (אין skew במודל). במציאות יש skew של 30-200 ps; ה-#5009 ב-canvas מטרתו לימודית בלבד.`,
+        interviewerMindset:
+`**שאלה מערכתית.** המראיין מחפש:
+1. **שאתה מבחין בין clock skew ל-reset skew** — מספר אנשים לא חושבים על RST כמו על clock. הקשר נדרש.
+2. **שאתה רואה את ה-startup window בעיה** — לא רק "skew זה רע". ספציפית: השפעה על startup state.
+3. **שאתה מציע synchronizer + balanced tree** — שילוב של שתי טכניקות.
+4. **שאתה מזכיר multi-domain** — לכל domain reset משלו.
+
+**שאלת המשך**: "מה אם ה-counter במשך 100 ps יוצא לקריאה?" → במציאות, downstream FFs ידגמו את ה-counter בקצה ה-CLK של domain שלהם — אחרי שה-counter כבר התייצב. אבל אם downstream הוא combinational (לא FF), הוא יראה glitch.
+
+**שאלת bonus**: "האם sync reset פותר את הבעיה?" → באופן חלקי. Sync reset = RST נדגם בקצה CLK, אז skew על RST tree לא רלוונטי. אבל עדיין צריך synchronizer אם RST מגיע מ-domain אחר.
+
+**מלכודת**: "להוסיף עוד reset synchronizers" → לא עוזר אם ה-tree לא מאוזן. הפתרון הוא ה-tree, לא ה-synchronizer.`,
+        expectedAnswers: [
+          'reset tree', 'tree skew',
+          'deassertion ordering', 'inconsistency',
+          'startup state', 'counter',
+          'balanced tree', 'CTS',
+          'multi-domain', 'CDC',
+          'reset synchronizer',
+        ],
+        schematic: `
+<svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Reset buffer tree with annotated skew on each leaf branch.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Reset Tree — deassertion ordering
+  </text>
+  <text x="500" y="80" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    Buffers על ה-tree יוצרים skew · ה-FFs לא יוצאים מ-reset בו-זמנית
+  </text>
+
+  <!-- RST root -->
+  <circle cx="500" cy="140" r="28" fill="#0a1825" stroke="#ff6060" stroke-width="3"/>
+  <text x="500" y="148" text-anchor="middle" fill="#ff6060" font-size="16" font-weight="bold">RST</text>
+
+  <!-- Tree -->
+  <g stroke="#ff6060" stroke-width="3" fill="none" stroke-dasharray="6,4">
+    <line x1="500" y1="168" x2="500" y2="200"/>
+    <!-- BUF1 -->
+    <line x1="500" y1="200" x2="200" y2="200"/>
+    <line x1="500" y1="200" x2="800" y2="200"/>
+    <!-- Down from BUF1 split -->
+    <line x1="200" y1="200" x2="200" y2="260"/>
+    <line x1="800" y1="200" x2="800" y2="260"/>
+    <!-- BUF2 / BUF3 (second-level split) -->
+    <line x1="200" y1="260" x2="120" y2="320"/>
+    <line x1="200" y1="260" x2="280" y2="320"/>
+    <line x1="800" y1="260" x2="720" y2="320"/>
+    <line x1="800" y1="260" x2="880" y2="320"/>
+    <!-- to FFs -->
+    <line x1="120" y1="320" x2="120" y2="400"/>
+    <line x1="280" y1="320" x2="280" y2="400"/>
+    <line x1="720" y1="320" x2="720" y2="400"/>
+    <line x1="880" y1="320" x2="880" y2="400"/>
+  </g>
+
+  <!-- Buffer rectangles -->
+  ${[
+    { x: 200, y: 220, label: 'BUF1' },
+    { x: 800, y: 220, label: 'BUF1' },
+    { x: 120, y: 340, label: 'BUF2' },
+    { x: 280, y: 340, label: 'BUF2' },
+    { x: 720, y: 340, label: 'BUF2' },
+    { x: 880, y: 340, label: 'BUF2' },
+  ].map(b => `
+    <rect x="${b.x - 28}" y="${b.y - 18}" width="56" height="36" rx="6" fill="#1a2230" stroke="#ff8080" stroke-width="2"/>
+    <text x="${b.x}" y="${b.y + 5}" text-anchor="middle" fill="#ff8080" font-size="13">${b.label}</text>
+  `).join('')}
+
+  <!-- 4 FFs at the leaves -->
+  ${[120, 280, 720, 880].map((x, i) => `
+    <rect x="${x - 36}" y="400" width="72" height="52" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
+    <text x="${x}" y="432" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_${i}</text>
+  `).join('')}
+
+  <!-- Skew annotations -->
+  <text x="120" y="476" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">skew = 0</text>
+  <text x="280" y="476" text-anchor="middle" fill="#ffe060" font-size="15" font-weight="bold">skew = 30 ps</text>
+  <text x="720" y="476" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">skew = 60 ps</text>
+  <text x="880" y="476" text-anchor="middle" fill="#ff6060" font-size="15" font-weight="bold">skew = 100 ps</text>
+
+  <!-- Warning banner -->
+  <rect x="60" y="500" width="880" height="46" rx="10" fill="rgba(255,96,96,0.07)" stroke="#ff6060" stroke-width="2"/>
+  <text x="500" y="528" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">
+    בתוך 100 ps אחרי deassertion: state inconsistent (חלק יצאו מ-reset, חלק עדיין ב-reset)
+  </text>
+</svg>`,
+        circuit: () => build(() => {
+          // Reuse the 4-FF chain — the simulator treats RST as a single
+          // global wire (no skew model). Visual context only; the answer
+          // explains the skew teaching point.
+          const clk = h.clock(80, 460, 'CLK');
+          const inIn = h.input(80, 120, 'in');  inIn.fixedValue = 1;
+          const rstIn = h.input(80, 600, 'RST'); rstIn.fixedValue = 0;
+          const ff1 = h.ffD(220, 120, 'FF1', { reset: 'async' });
+          const ff2 = h.ffD(400, 120, 'FF2', { reset: 'async' });
+          const ff3 = h.ffD(580, 120, 'FF3', { reset: 'async' });
+          const ff4 = h.ffD(760, 120, 'FF4', { reset: 'async' });
+          const outOut = h.output(920, 120, 'out');
+          return {
+            nodes: [clk, inIn, rstIn, ff1, ff2, ff3, ff4, outOut],
+            wires: [
+              h.wire(inIn.id, ff1.id, 0),
+              h.wire(ff1.id, ff2.id, 0),
+              h.wire(ff2.id, ff3.id, 0),
+              h.wire(ff3.id, ff4.id, 0),
+              h.wire(clk.id, ff1.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff2.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff3.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, ff4.id, 1, 0, { isClockWire: true }),
+              h.wire(rstIn.id, ff1.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff2.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff3.id, 2, 0, { isResetWire: true }),
+              h.wire(rstIn.id, ff4.id, 2, 0, { isResetWire: true }),
+              h.wire(ff4.id, outOut.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ה — Failure trace + fix (separate circuits)
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ה',
+        question: 'ב-canvas יש מעגל עם **שני 4-FF chains** זה לצד זה. אחד עם async reset ישיר (RST → FFs), והשני עם **reset synchronizer** (RST → 2-FF sync → reset_internal → FFs). הצב \\\`RST = 1\\\` כדי לאפס, ואז \\\`RST = 0\\\` כדי לשחרר. מה ההבדל בהתנהגות בעת שחרור? למה הסינכרון פותר את הבעיה?',
+        hints: [
+          'באסט\' ה-direct, כל FF יוצא מ-reset מיד כש-RST=0. אם CLK עולה באותו רגע → recovery violation אפשרי (סעיף ב\').',
+          'בצד ה-synchronized, אחרי \\\`RST=0\\\` ה-FF_sync1 דוגם 1 ב-CLK הבא, ואז ה-FF_sync2 דוגם 1 ב-CLK שאחריו → ה-pipeline משוחרר רק 2 cycles אחרי \\\`RST=0\\\`.',
+          'התוצאה: ב-direct ייתכן ש-FF_A יקלוט data ו-FF_B לא, בגלל skew (סעיף ד\'). ב-synchronized — כולם משוחררים יחד.',
+          'גם metastability ב-FF_sync1 לא משפיע: FF_sync2 דוגם cycle אחר → metastability התייצבה לפני שהיא הגיעה ל-pipeline.',
+        ],
+        answer:
+`## הניסוי
+
+### Scenario: שני pipelines, אותו reset signal
+
+**Pipeline A** (Direct async reset):
+\`\`\`
+in → FF_A1 → FF_A2 → FF_A3 → FF_A4 → out_A
+        │      │       │       │
+        └──────┴───────┴───────┴──── RST (async, direct)
+\`\`\`
+
+**Pipeline B** (Reset synchronizer):
+\`\`\`
+in → FF_B1 → FF_B2 → FF_B3 → FF_B4 → out_B
+        │      │       │       │
+        └──────┴───────┴───────┴──── rst_internal
+                                            ↑
+                              [Reset Synchronizer]
+                                            ↑
+                                          RST_in
+\`\`\`
+
+### בשחרור (RST: 1 → 0)
+
+**Pipeline A**:
+- כל ה-FFs יוצאים מ-reset **מיד**.
+- אם CLK עולה ב-100 ps הבאים → recovery violation → metastability על כל FF.
+- אפילו בלי violation: ה-FFs רואים את "in" באותו cycle שבו RST שחרר → אם in=1, FF_A1 יקלוט 1 מיד.
+
+**Pipeline B**:
+- ה-FFs נשארים ב-reset (rst_internal=1) עד שה-synchronizer מסיים.
+- ה-synchronizer דורש 2 CLK cycles לאחר ש-RST_in=0 לפני ש-rst_internal=0.
+- במהלך הזמן הזה, ה-FF_sync1/2 רואים את ה-CLK edges — כל metastability מתייצבת.
+- כש-rst_internal סוף-סוף משחרר, זה ב-rising edge של CLK → **0 recovery violations**.
+
+### המספרים
+
+| Pipeline | זמן שחרור | מטא-יציבות? | חזרה לתפקוד |
+|---|---|:---:|---|
+| A (Direct) | 0 ps | ⚠ אפשרי | מיד (אבל עם risk) |
+| B (Sync) | 2 cycles ≈ 2 ns | ✗ לא | בטוח, deterministic |
+
+### Trade-off
+
+- Pipeline A: latency נמוך יותר; risk גבוה יותר.
+- Pipeline B: 2 cycles "מבוזבזים" בשחרור; אבל **deterministic + safe**.
+
+ב-99% מהתעשייה: Pipeline B. ה-2 cycles הם כלום ביחס לעלות של debug שגיאה אחת ב-tape-out.
+
+### בקנבס
+
+הצב \`RST = 1\` — שני ה-pipelines מתאפסים מיד (async). הצב \`RST = 0\` ופעם CLK פעם אחת — ב-Pipeline A: \`Q_A1 = 1\` (in הועבר). ב-Pipeline B: \`Q_B1 = 0\` (כי rst_internal עדיין 1, ה-synchronizer לא הסתיים). פעם CLK שוב — ב-Pipeline A: עכשיו \`Q_A2 = 1\` גם. ב-Pipeline B: \`Q_B1\` עדיין 0 (cycle 2 של ה-sync). פעם CLK פעם שלישית — ב-Pipeline B: סוף-סוף \`Q_B1 = 1\`.`,
+        interviewerMindset:
+`**שאלת סיכום של ה-question.** המראיין מחפש:
+1. **שאתה מצליח לעבד שני circuits יחד** — לא רק "Pipeline A הוא X, Pipeline B הוא Y". איך הם **שונים** בהתנהגות פיזית.
+2. **שאתה מציין את ה-trade-off של 2 cycles** — לא רק "B יותר טוב". explicit on cost.
+3. **שאתה מתחבר ל-real-world** — 99% של designs משתמשים ב-B. למה.
+
+**שאלת המשך**: "מה אם הייתי משתמש ב-Pipeline B אבל בלי ה-FF_sync2?" → רק FF_sync1 = synchronizer של 1 FF. metastability עדיין אפשרית בקצה הראשון. לא מספיק.
+
+**שאלת bonus**: "האם הייתי יכול לעשות synchronizer ל-RST_in ב-domain אחד, ולשלוח את התוצאה ל-domain שני?" → לא! כל domain צריך synchronizer משלו. הקשר ל-#5006 (multi-domain CDC).
+
+**ראה גם**: #5006 (CDC + synchronizers), #5004 ה' (pipeline imbalance).`,
+        expectedAnswers: [
+          'reset synchronizer', 'rst_internal',
+          '2 cycles', 'sync delay',
+          'metastability', 'recovery',
+          'deterministic', 'safe',
+          'direct', 'sync',
+          'pipeline A', 'pipeline B',
+        ],
+        circuit: () => build(() => {
+          // Two pipelines side-by-side:
+          //   A (top)    — 2 FFs with DIRECT async reset
+          //   B (bottom) — 2 FFs gated by a reset synchronizer
+          //                (FF_sync1 + FF_sync2, D tied high, active-low rst)
+          //
+          // Shared CLK + shared external RST_in.
+          // RST_in active-low (asserted = 0); default 1 (not asserted).
+          // Set RST_in=0 → both pipelines reset immediately (async).
+          // Set RST_in=1 → Pipeline A resumes immediately;
+          //                Pipeline B waits 2 CLK cycles for the
+          //                synchronizer to release rst_internal.
+          const clk     = h.clock(80, 540, 'CLK');
+          const inIn    = h.input(80, 120, 'in');     inIn.fixedValue   = 1;
+          const rst_in  = h.input(80, 620, 'RST_in'); rst_in.fixedValue = 1;  // active-low: 1 = not asserted
+          const vcc     = h.input(280, 380, 'VCC');   vcc.fixedValue    = 1;
+
+          // ── Pipeline A — direct async reset ──
+          const a1 = h.ffD(220, 120, 'FF_A1', { reset: 'async', resetActiveLow: true });
+          const a2 = h.ffD(400, 120, 'FF_A2', { reset: 'async', resetActiveLow: true });
+          const qA1 = h.output(220, 40, 'Q_A1');
+          const qA2 = h.output(400, 40, 'Q_A2');
+          const outA = h.output(560, 120, 'out_A');
+
+          // ── Reset synchronizer ──
+          const fsync1 = h.ffD(440, 380, 'FF_sync1', { reset: 'async', resetActiveLow: true });
+          const fsync2 = h.ffD(620, 380, 'FF_sync2', { reset: 'async', resetActiveLow: true });
+          const rstInternalProbe = h.output(800, 380, 'rst_int');
+
+          // ── Pipeline B — gated by rst_internal ──
+          // Need a separate active-low rst signal. The synchronizer's
+          // FF_sync2.Q is "1 when ok, 0 when reset" — same polarity as
+          // active-low RST. Feed FF_sync2.Q to B-pipeline's reset pins.
+          const b1 = h.ffD(220, 260, 'FF_B1', { reset: 'async', resetActiveLow: true });
+          const b2 = h.ffD(400, 260, 'FF_B2', { reset: 'async', resetActiveLow: true });
+          const qB1 = h.output(220, 200, 'Q_B1');
+          const qB2 = h.output(400, 200, 'Q_B2');
+          const outB = h.output(560, 260, 'out_B');
+
+          return {
+            nodes: [
+              clk, inIn, rst_in, vcc,
+              a1, a2, qA1, qA2, outA,
+              fsync1, fsync2, rstInternalProbe,
+              b1, b2, qB1, qB2, outB,
+            ],
+            wires: [
+              // ── Pipeline A ──
+              h.wire(inIn.id, a1.id, 0),
+              h.wire(a1.id, a2.id, 0),
+              h.wire(clk.id, a1.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, a2.id, 1, 0, { isClockWire: true }),
+              h.wire(rst_in.id, a1.id, 2, 0, { isResetWire: true }),
+              h.wire(rst_in.id, a2.id, 2, 0, { isResetWire: true }),
+              h.wire(a1.id, qA1.id, 0),
+              h.wire(a2.id, qA2.id, 0),
+              h.wire(a2.id, outA.id, 0),
+
+              // ── Reset synchronizer ──
+              h.wire(vcc.id, fsync1.id, 0),
+              h.wire(fsync1.id, fsync2.id, 0),
+              h.wire(clk.id, fsync1.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, fsync2.id, 1, 0, { isClockWire: true }),
+              h.wire(rst_in.id, fsync1.id, 2, 0, { isResetWire: true }),
+              h.wire(rst_in.id, fsync2.id, 2, 0, { isResetWire: true }),
+              h.wire(fsync2.id, rstInternalProbe.id, 0),
+
+              // ── Pipeline B — fed by rst_internal (= FF_sync2.Q) ──
+              h.wire(inIn.id, b1.id, 0),
+              h.wire(b1.id, b2.id, 0),
+              h.wire(clk.id, b1.id, 1, 0, { isClockWire: true }),
+              h.wire(clk.id, b2.id, 1, 0, { isClockWire: true }),
+              h.wire(fsync2.id, b1.id, 2, 0, { isResetWire: true }),
+              h.wire(fsync2.id, b2.id, 2, 0, { isResetWire: true }),
+              h.wire(b1.id, qB1.id, 0),
+              h.wire(b2.id, qB2.id, 0),
+              h.wire(b2.id, outB.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Side-by-side: direct reset releases immediately, synchronized reset releases 2 cycles later.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Direct vs Synchronized — שחרור Reset
+  </text>
+
+  <!-- Pipeline A — direct, releases immediately -->
+  <rect x="40" y="90" width="440" height="340" rx="14" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2.4"/>
+  <text x="260" y="128" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">Pipeline A — Direct</text>
+
+  <text x="60" y="170" fill="#cca040" font-size="15" font-weight="bold">RST_in</text>
+  <text x="60" y="220" fill="#cc99ff" font-size="15" font-weight="bold">Q_A1</text>
+  <text x="60" y="270" fill="#cc99ff" font-size="15" font-weight="bold">Q_A2</text>
+
+  <!-- Waveforms for A: RST drops at cycle 2, Q_A1 = 1 immediately on CLK 3 -->
+  ${(() => {
+    const X = c => 140 + (c - 1) * 65;
+    return `
+      <line x1="124" y1="160" x2="${X(2)}" y2="160" stroke="#cca040" stroke-width="3"/>
+      <line x1="${X(2)}" y1="160" x2="${X(2)}" y2="190" stroke="#cca040" stroke-width="3"/>
+      <line x1="${X(2)}" y1="190" x2="460" y2="190" stroke="#cca040" stroke-width="3"/>
+
+      <line x1="124" y1="240" x2="${X(3)}" y2="240" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(3)}" y1="240" x2="${X(3)}" y2="210" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(3)}" y1="210" x2="460" y2="210" stroke="#cc99ff" stroke-width="3"/>
+
+      <line x1="124" y1="290" x2="${X(4)}" y2="290" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(4)}" y1="290" x2="${X(4)}" y2="260" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(4)}" y1="260" x2="460" y2="260" stroke="#cc99ff" stroke-width="3"/>
+    `;
+  })()}
+
+  <text x="260" y="350" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">Q_A1=1 ב-CLK 3 (מיד אחרי deassertion)</text>
+  <text x="260" y="380" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">⚠ ייתכן recovery violation</text>
+
+  <!-- Pipeline B — synchronized, 2 cycles delay -->
+  <rect x="520" y="90" width="440" height="340" rx="14" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2.4"/>
+  <text x="740" y="128" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">Pipeline B — Sync</text>
+
+  <text x="540" y="170" fill="#cca040" font-size="15" font-weight="bold">RST_in</text>
+  <text x="540" y="220" fill="#cc99ff" font-size="15" font-weight="bold">rst_int</text>
+  <text x="540" y="270" fill="#cc99ff" font-size="15" font-weight="bold">Q_B1</text>
+
+  ${(() => {
+    const X = c => 620 + (c - 1) * 65;
+    return `
+      <line x1="604" y1="160" x2="${X(2)}" y2="160" stroke="#cca040" stroke-width="3"/>
+      <line x1="${X(2)}" y1="160" x2="${X(2)}" y2="190" stroke="#cca040" stroke-width="3"/>
+      <line x1="${X(2)}" y1="190" x2="940" y2="190" stroke="#cca040" stroke-width="3"/>
+
+      <line x1="604" y1="210" x2="${X(4)}" y2="210" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(4)}" y1="210" x2="${X(4)}" y2="240" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(4)}" y1="240" x2="940" y2="240" stroke="#cc99ff" stroke-width="3"/>
+
+      <line x1="604" y1="290" x2="${X(5)}" y2="290" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(5)}" y1="290" x2="${X(5)}" y2="260" stroke="#cc99ff" stroke-width="3"/>
+      <line x1="${X(5)}" y1="260" x2="940" y2="260" stroke="#cc99ff" stroke-width="3"/>
+    `;
+  })()}
+
+  <text x="740" y="350" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">Q_B1=1 ב-CLK 5 (2 cycles אחרי deassertion)</text>
+  <text x="740" y="380" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">✓ deterministic, no metastability</text>
+
+  <!-- Bottom -->
+  <text x="500" y="458" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">
+    2 cycles נוספים = price קטן ל-deterministic startup
+  </text>
+</svg>`,
+      },
+    ],
+    source: 'Reset Design — async / sync / synchronizer / tree',
+    tags: ['reset', 'async-reset', 'sync-reset', 'reset-synchronizer', 'metastability', 'timing'],
+    circuitRevealsAnswer: true,
+  },
 ];
