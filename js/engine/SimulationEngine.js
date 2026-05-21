@@ -7,17 +7,28 @@ import { FF_TYPE_SET, MEMORY_TYPE_SET, parseSlices, sliceWidth } from '../compon
 import { applyCouplingOnWrite, applyCFstOnRead } from '../dft/CouplingFaults.js';
 
 // ── Combinational Gate Functions ──────────────────────────────
+// Variadic for AND/OR/XOR/NAND/NOR/XNOR — accept any arity ≥ 2.
+// Single-input gates (NOT/BUF) and 2-input only TRIBUF keep their
+// fixed arity. With ≥3 inputs, the family extends naturally:
+//   AND(a,b,c)  = a & b & c                (all-true)
+//   OR(a,b,c)   = a | b | c                (any-true)
+//   XOR(a,b,c)  = a ^ b ^ c                (odd parity)
+//   NAND/NOR/XNOR = invert of the above
 export const GATE_FN = {
-  AND:    (a, b) => (a & b),
-  OR:     (a, b) => (a | b),
-  XOR:    (a, b) => (a ^ b),
-  NAND:   (a, b) => ((a & b) ^ 1),
-  NOR:    (a, b) => ((a | b) ^ 1),
-  XNOR:   (a, b) => ((a ^ b) ^ 1),
+  AND:    (...a) => a.reduce((x, y) => x & y),
+  OR:     (...a) => a.reduce((x, y) => x | y),
+  XOR:    (...a) => a.reduce((x, y) => x ^ y),
+  NAND:   (...a) => a.reduce((x, y) => x & y) ^ 1,
+  NOR:    (...a) => a.reduce((x, y) => x | y) ^ 1,
+  XNOR:   (...a) => a.reduce((x, y) => x ^ y) ^ 1,
   NOT:    (a)    => (a ^ 1),
   BUF:    (a)    => a,
   TRIBUF: (a, en) => (en === 1 ? a : null),  // null = high-Z
 };
+
+// Which gates support variable input count (2-4 in current UI).
+// NOT/BUF are inherently 1-input; TRIBUF is fixed 2.
+export const MULTI_INPUT_GATES = new Set(['AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR']);
 
 // ── Flip-Flop Next-State Functions ────────────────────────────
 const FF_FN = {
@@ -423,7 +434,10 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       } else {
         const inputSlots = inputs.get(id);
         const args = inputSlots.map(slot => _readSlot(slot));
-        if (args.some(a => a === null || a === undefined)) {
+        // An unconnected gate (no wires on any input) — output is
+        // undefined. With variadic GATE_FN, reduce() on an empty
+        // array throws, so we short-circuit here.
+        if (args.length === 0 || args.some(a => a === null || a === undefined)) {
           value = null;
         } else {
           value = GATE_FN[node.gate](...args);
@@ -541,7 +555,10 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       }
 
     } else if (node.type === 'HALF_ADDER') {
-      // HA: inputs A, B → outputs Sum (out0), Carry (out1)
+      // HA: inputs A, B → outputs Sum (out0), Carry (out1).
+      // bitWidth ≥ 1: A and B are N-bit bus values, Sum is N-bit,
+      // Carry is 1-bit (the carry-out from the highest bit). At
+      // bitWidth=1 this collapses to the classical HA (Sum=A⊕B, C=A·B).
       const inputSlots = inputs.get(id);
       const _readSlot = (slot) => {
         if (!slot) return null;
@@ -556,17 +573,22 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         nodeValues.set(id + '__out0', null);
         nodeValues.set(id + '__out1', null);
       } else {
-        const sum = a ^ b;
-        const carry = a & b;
+        const w = Math.max(1, (node.bitWidth | 0) || 1);
+        const mask = _mask(w);
+        const total = ((a & mask) + (b & mask)) >>> 0;
+        const sum   = total & mask;
+        const carry = (total >>> w) & 1;
         nodeValues.set(id + '__out0', sum);
         nodeValues.set(id + '__out1', carry);
         value = sum;
       }
 
     } else if (node.type === 'FULL_ADDER') {
-      // FA: inputs A, B, Cin → outputs Sum (out0), Cout (out1)
-      // Inputs MUST be read via sourceOutputIndex so a wire from another
-      // FA's COUT (output 1, e.g. carry chain) returns COUT and not SUM.
+      // FA: inputs A, B, Cin → outputs Sum (out0), Cout (out1).
+      // bitWidth ≥ 1: A and B are N-bit, Cin is 1-bit, Sum is N-bit,
+      // Cout is 1-bit. Semantics are ripple-carry (atomic in the engine
+      // for cycle-time, but functionally equivalent to N chained 1-bit
+      // FAs). At bitWidth=1 this collapses to the classical FA.
       const inputSlots = inputs.get(id);
       const _readSlot = (slot) => {
         if (!slot) return null;
@@ -582,8 +604,11 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
         nodeValues.set(id + '__out0', null);
         nodeValues.set(id + '__out1', null);
       } else {
-        const sum  = a ^ b ^ cin;
-        const cout = (a & b) | (b & cin) | (a & cin);
+        const w = Math.max(1, (node.bitWidth | 0) || 1);
+        const mask = _mask(w);
+        const total = ((a & mask) + (b & mask) + (cin & 1)) >>> 0;
+        const sum   = total & mask;
+        const cout  = (total >>> w) & 1;
         nodeValues.set(id + '__out0', sum);
         nodeValues.set(id + '__out1', cout);
         value = sum;
@@ -2023,7 +2048,9 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
       if (node.type === 'GATE_SLOT') {
         if (node.gate != null) {
           const args = inputSlots.map(slot => _readSlot(slot));
-          if (!args.some(a => a === null || a === undefined)) {
+          // Skip empty-args case (unconnected gate): variadic reduce
+          // would throw. Skip undefined-args case too.
+          if (args.length > 0 && !args.some(a => a === null || a === undefined)) {
             value = GATE_FN[node.gate](...args);
           }
         }

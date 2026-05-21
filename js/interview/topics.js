@@ -53,7 +53,7 @@ export const TOPICS = [
   {
     id: 'dft',
     tabNumber: 6,
-    label: 'תכן לבדיקה',
+    label: 'DFT',
     icon: '⌬',
     description: 'Scan chains, BIST, JTAG, מודלים של תקלות, fault coverage.',
   },

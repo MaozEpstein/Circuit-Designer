@@ -1202,8 +1202,11 @@ export class InterviewPanel {
       : '';
 
     // Schematic field is trusted SVG/HTML authored by us in IQ/. Inline directly.
-    const schematicHtml = q.schematic
-      ? `<div class="iv-schematic">${q.schematic}</div>`
+    // Part-level `schematic` overrides question-level so individual parts can
+    // show their own version (e.g., highlighted fault sites).
+    const effectiveSchematic = part.schematic || q.schematic;
+    const schematicHtml = effectiveSchematic
+      ? `<div class="iv-schematic">${effectiveSchematic}</div>`
       : (q.image
           ? `<div class="iv-image-wrap"><img src="${_esc(q.image)}" alt="" class="iv-image" /></div>`
           : '');

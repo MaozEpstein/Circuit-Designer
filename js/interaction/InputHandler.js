@@ -7,6 +7,7 @@ import { bus } from '../core/EventBus.js';
 import * as Renderer from '../rendering/CanvasRenderer.js';
 import { createComponent, createWire, COMPONENT_TYPES, MEMORY_TYPE_SET } from '../components/Component.js';
 import { AddNodeCommand, RemoveNodeCommand, AddWireCommand, RemoveWireCommand, SetGateCommand, SetFfTypeCommand, SetNodePropsCommand } from '../components/CircuitCommands.js';
+import { MULTI_INPUT_GATES } from '../engine/SimulationEngine.js';
 
 let _shortcuts = null;
 export function setShortcutManager(sm) { _shortcuts = sm; }
@@ -262,8 +263,9 @@ export function init(canvasEl, scene, stateManager, commandManager, selectionMan
 
   // Context menu → properties
   bus.on('node:dblclick', ({ node, screenX, screenY }) => {
-    const RESIZABLE = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG', 'SPLIT', 'MERGE', 'CU']);
-    if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE.has(node.type)) {
+    const RESIZABLE = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG', 'SPLIT', 'MERGE', 'CU', 'FULL_ADDER', 'HALF_ADDER']);
+    const isMultiInputGate = node.type === 'GATE_SLOT' && MULTI_INPUT_GATES.has(node.gate);
+    if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE.has(node.type) || isMultiInputGate) {
       _showComponentPropsPopup(node, screenX, screenY);
     } else {
       _showInlineRename(node, screenX, screenY);
@@ -834,8 +836,9 @@ function _onCanvasDblClick(e) {
     return;
   }
 
-  const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG', 'SPLIT', 'MERGE', 'CU']);
-  if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE_BLOCKS.has(node.type)) {
+  const RESIZABLE_BLOCKS = new Set(['MUX', 'DEMUX', 'DECODER', 'ENCODER', 'REG_FILE', 'ALU', 'IR', 'BUS', 'IMM', 'BUS_MUX', 'SIGN_EXT', 'PIPE_REG', 'SPLIT', 'MERGE', 'CU', 'FULL_ADDER', 'HALF_ADDER']);
+  const isMultiInputGate = node.type === 'GATE_SLOT' && MULTI_INPUT_GATES.has(node.gate);
+  if (MEMORY_TYPE_SET.has(node.type) || RESIZABLE_BLOCKS.has(node.type) || isMultiInputGate) {
     _showComponentPropsPopup(node, screenX, screenY);
     return;
   }
@@ -897,6 +900,15 @@ let _compPropsPopup = null;
 
 function _getComponentFields(node) {
   switch (node.type) {
+    case 'GATE_SLOT':
+      // AND/OR/XOR/NAND/NOR/XNOR support 2-4 inputs. NOT/BUF/TRIBUF
+      // have fixed arity and are filtered out before this is called.
+      if (!MULTI_INPUT_GATES.has(node.gate)) return [];
+      return [{ key: 'inputCount', label: 'Inputs', min: 2, max: 4, val: node.inputCount || 2 }];
+    case 'FULL_ADDER':
+    case 'HALF_ADDER':
+      // Ripple-carry N-bit adder. bitWidth=1 is classic 1-bit.
+      return [{ key: 'bitWidth', label: 'Bit Width', min: 1, max: 32, val: node.bitWidth || 1 }];
     case 'MUX':     return [{ key: 'inputCount',  label: 'Inputs',      min: 2, max: 16,   val: node.inputCount || 2 }];
     case 'DEMUX':   return [{ key: 'outputCount', label: 'Outputs',     min: 2, max: 16,   val: node.outputCount || 2 }];
     case 'DECODER': return [{ key: 'inputBits',   label: 'Input Bits',  min: 1, max: 8,    val: node.inputBits || 2 }];

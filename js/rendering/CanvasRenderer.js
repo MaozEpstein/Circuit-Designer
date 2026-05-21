@@ -1373,8 +1373,13 @@ function _nodeInputAnchor(_src, node, inputIndex, isClockWire) {
     return { x: node.x - w / 2, y: dataCount === 1 ? node.y : startY + dataOrdinal * spread };
   }
   if (node.type === 'GATE_SLOT') {
-    const spread  = 18;
-    const offsetY = (inputIndex - 0.5) * spread;
+    // Anchors are evenly distributed vertically along the left edge.
+    // For n inputs the spread is chosen so they fit the gate body but
+    // remain visually distinct. Total span = (n-1)*spread, centered on node.y.
+    const isUnary = node.gate === 'NOT' || node.gate === 'BUF';
+    const n = isUnary ? 1 : Math.max(2, Math.min(4, node.inputCount || 2));
+    const spread = n <= 2 ? 18 : (n === 3 ? 16 : 12);
+    const offsetY = (inputIndex - (n - 1) / 2) * spread;
     return { x: node.x - NODE.gateW / 2, y: node.y + offsetY };
   }
   if (FF_TYPE_SET.has(node.type)) {
@@ -4028,7 +4033,11 @@ export function getClosestInputIndex(node, worldX, worldY) {
  */
 function _getNodeInputCount(node) {
   if (node.type === 'GATE_SLOT') {
-    return node.gate === 'NOT' || node.gate === 'BUF' ? 1 : 2;
+    if (node.gate === 'NOT' || node.gate === 'BUF') return 1;
+    // AND / OR / XOR / NAND / NOR / XNOR support 2-4 inputs via
+    // node.inputCount. TRIBUF stays at 2 (DATA + EN).
+    if (node.gate === 'TRIBUF') return 2;
+    return Math.max(2, Math.min(4, node.inputCount || 2));
   }
   if (node.type === 'FF_SLOT') {
     const dataCount = (node.ffType === 'SR' || node.ffType === 'JK') ? 2 : 1;
@@ -4187,7 +4196,7 @@ export function getInputAnchors(node) {
     } else if (node.type === 'FF_SLOT' && isClk) {
       label = 'CLK';
     } else if (node.type === 'GATE_SLOT') {
-      label = String.fromCharCode(65 + i); // A, B
+      label = String.fromCharCode(65 + i); // A, B, C, D
     }
     anchors.push({ ...pos, index: i, label });
   }

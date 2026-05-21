@@ -997,17 +997,19 @@ endmodule
       const C = h.input(80,  360, 'C');      C.fixedValue = 0;
 
       // Three parallel rows of the same C-fanout circuit. Each row has
-      // its own INV, NOR, and 3-input AND (built as two cascaded AND-2:
-      // and_a = NOR.out · ¬C; and_b = and_a · A).
+      // its own INV, NOR, and a SINGLE 3-input AND (A · NOR.out · ¬C)
+      // — leveraging the multi-input gate feature instead of two
+      // cascaded 2-input ANDs.
       const mkRow = (yMid, label) => {
         const yTop = yMid - 70;
         const yBot = yMid + 80;
+        const and3 = h.gate('AND', 700, yTop + 20);
+        and3.inputCount = 3;
         return {
           inv:  h.gate('NOT', 340, yBot),
           nor:  h.gate('NOR', 540, yMid),
-          andA: h.gate('AND', 540, yTop - 20),  // computes NOR.out · ¬C
-          andB: h.gate('AND', 760, yTop + 20),  // computes A · (NOR.out · ¬C)
-          out:  h.output(960, yTop + 20, label),
+          and3,
+          out:  h.output(900, yTop + 20, label),
         };
       };
       const r1 = mkRow(280, 'Out (free)');
@@ -1016,15 +1018,14 @@ endmodule
 
       const wires = [];
       const wireRow = (row) => {
-        wires.push(h.wire(A.id,         row.andB.id, 0));   // A → AND top
+        wires.push(h.wire(A.id,         row.and3.id, 0));   // A → AND.in0
         wires.push(h.wire(C.id,         row.inv.id,  0));   // C → INV (forward fanout)
         wires.push(h.wire(B.id,         row.nor.id,  0));   // B → NOR top
         const cToNor = h.wire(C.id,     row.nor.id,  1);    // C → NOR (UP branch — this is the fault site)
         wires.push(cToNor);
-        wires.push(h.wire(row.nor.id,   row.andA.id, 0));   // NOR → AND_a
-        wires.push(h.wire(row.inv.id,   row.andA.id, 1));   // ¬C → AND_a
-        wires.push(h.wire(row.andA.id,  row.andB.id, 1));   // AND_a → AND_b
-        wires.push(h.wire(row.andB.id,  row.out.id,  0));   // AND_b → Out
+        wires.push(h.wire(row.nor.id,   row.and3.id, 1));   // NOR → AND.in1
+        wires.push(h.wire(row.inv.id,   row.and3.id, 2));   // ¬C → AND.in2
+        wires.push(h.wire(row.and3.id,  row.out.id,  0));   // AND → Out
         return cToNor;
       };
       const w1 = wireRow(r1);
@@ -1034,9 +1035,9 @@ endmodule
       return {
         nodes: [
           A, B, C,
-          r1.inv, r1.nor, r1.andA, r1.andB, r1.out,
-          r2.inv, r2.nor, r2.andA, r2.andB, r2.out,
-          r3.inv, r3.nor, r3.andA, r3.andB, r3.out,
+          r1.inv, r1.nor, r1.and3, r1.out,
+          r2.inv, r2.nor, r2.and3, r2.out,
+          r3.inv, r3.nor, r3.and3, r3.out,
         ],
         wires,
       };
