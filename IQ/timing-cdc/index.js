@@ -6139,17 +6139,129 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
 
 ### Handshake (4-phase)
 
-\`\`\`
-A:  bus_data → →→→→→→→→→→→→→→→→→→→
-                     ↑
-A:  req      →   1__|\\___________
-                       \\  (2 cycles to settle in B)
-B:                      → req_sync
-                              ↓
-B:  ack      ← __________1________
-                              ↓  (2 cycles to settle in A)
-A:               ←  ack_sync
-\`\`\`
+<svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="4-phase handshake waveform showing req, req_sync, ack, ack_sync with 2-cycle sync delays in each direction.">
+
+  <text x="500" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Handshake (4-phase) — תהליך
+  </text>
+  <text x="500" y="70" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    1-bit req/ack מסונכרנים בנפרד · bus_data יציב כש-req יציב · 4 שלבים = transaction
+  </text>
+
+  <!-- Cycle column lines (background grid) -->
+  ${Array.from({length: 12}, (_, i) => {
+    const x = 140 + i * 65;
+    return `<line x1="${x}" y1="100" x2="${x}" y2="510" stroke="#2a3a4a" stroke-width="1"/>`;
+  }).join('')}
+
+  <!-- Cycle labels at top -->
+  ${Array.from({length: 12}, (_, i) => {
+    const x = 140 + i * 65 + 32;
+    return `<text x="${x}" y="120" text-anchor="middle" fill="#7a8a9a" font-size="16">${i + 1}</text>`;
+  }).join('')}
+  <line x1="140" y1="128" x2="920" y2="128" stroke="#3a4a5a" stroke-width="1.4"/>
+
+  <!-- Row labels and waveforms -->
+  ${(() => {
+    // 4-phase handshake transitions:
+    //   cycle 1:  req↑    (A asserts req + valid bus_data)
+    //   cycle 3:  req_sync↑   (after 2-cycle sync in B)
+    //   cycle 4:  ack↑    (B responds)
+    //   cycle 6:  ack_sync↑   (after 2-cycle sync in A)
+    //   cycle 6:  req↓    (A drops req immediately)
+    //   cycle 8:  req_sync↓
+    //   cycle 9:  ack↓    (B drops ack)
+    //   cycle 11: ack_sync↓   (transaction complete)
+    const X = c => 140 + (c - 1) * 65;   // cycle edge x
+    const rows = [
+      {
+        label: 'bus_data',
+        side: 'A',
+        sideColor: '#ffb080',
+        color: '#80c8ff',
+        top: 160,
+        // bus stays valid while req is high; shown as a labelled tube
+        kind: 'bus',
+        valid: [1, 7],   // from cycle 1 to cycle 6 (edge of 7)
+      },
+      { label: 'req',      side: 'A', sideColor: '#ffb080', color: '#ffe060', top: 230, kind: 'signal', edges: [[1, 'up'], [6, 'down']] },
+      { label: 'req_sync', side: 'B', sideColor: '#80f0a0', color: '#ffe060', top: 300, kind: 'signal', edges: [[3, 'up'], [8, 'down']] },
+      { label: 'ack',      side: 'B', sideColor: '#80f0a0', color: '#cc99ff', top: 370, kind: 'signal', edges: [[4, 'up'], [9, 'down']] },
+      { label: 'ack_sync', side: 'A', sideColor: '#ffb080', color: '#cc99ff', top: 440, kind: 'signal', edges: [[6, 'up'], [11, 'down']] },
+    ];
+    return rows.map(r => {
+      const yTop = r.top + 6;
+      const yBot = r.top + 46;
+      const yMid = (yTop + yBot) / 2;
+
+      // Side badge (DOMAIN A or DOMAIN B)
+      const sideText = `<text x="36" y="${yMid + 5}" fill="${r.sideColor}" font-size="16" font-weight="bold">${r.side}:</text>`;
+      const nameText = `<text x="120" y="${yMid + 5}" text-anchor="end" fill="#cca040" font-size="18" font-weight="bold">${r.label}</text>`;
+
+      if (r.kind === 'bus') {
+        const x0 = X(r.valid[0]);
+        const x1 = X(r.valid[1]);
+        const tube = `
+          <rect x="${x0}" y="${yTop}" width="${x1 - x0}" height="40" rx="4"
+                fill="rgba(128,200,255,0.22)" stroke="${r.color}" stroke-width="2"/>
+          <text x="${(x0 + x1) / 2}" y="${yMid + 5}" text-anchor="middle" fill="${r.color}" font-size="16" font-weight="bold">valid data</text>
+        `;
+        // Idle lines before/after the valid tube
+        const idleLeft  = `<line x1="124" y1="${yMid}" x2="${x0}" y2="${yMid}" stroke="#5a6a7a" stroke-width="1.8" stroke-dasharray="4,3"/>`;
+        const idleRight = `<line x1="${x1}" y1="${yMid}" x2="920" y2="${yMid}" stroke="#5a6a7a" stroke-width="1.8" stroke-dasharray="4,3"/>`;
+        return sideText + nameText + idleLeft + idleRight + tube;
+      }
+
+      // For signal rows: render the waveform as line segments
+      // Start at the leftmost edge with low (yBot), then walk through edges.
+      const segments = [];
+      let cur = 'low';
+      let prevX = 124;
+      let prevY = yBot;
+      for (const [c, dir] of r.edges) {
+        const ex = X(c);
+        // Horizontal at prev level
+        segments.push(`<line x1="${prevX}" y1="${prevY}" x2="${ex}" y2="${prevY}" stroke="${r.color}" stroke-width="3"/>`);
+        // Vertical transition
+        const newY = (dir === 'up') ? yTop : yBot;
+        segments.push(`<line x1="${ex}" y1="${prevY}" x2="${ex}" y2="${newY}" stroke="${r.color}" stroke-width="3"/>`);
+        prevX = ex; prevY = newY;
+        cur = (dir === 'up') ? 'high' : 'low';
+      }
+      // Tail
+      segments.push(`<line x1="${prevX}" y1="${prevY}" x2="920" y2="${prevY}" stroke="${r.color}" stroke-width="3"/>`);
+
+      // 0/1 labels at the levels (just at start, to indicate which is which)
+      const labels0 = `<text x="${X(1) - 10}" y="${yBot + 5}" text-anchor="end" fill="#7a8a9a" font-size="14">0</text>`;
+      const labels1 = `<text x="${X(1) - 10}" y="${yTop + 5}" text-anchor="end" fill="#7a8a9a" font-size="14">1</text>`;
+
+      return sideText + nameText + segments.join('') + labels0 + labels1;
+    }).join('');
+  })()}
+
+  <!-- Annotations: 2-cycle sync delays -->
+  <!-- req → req_sync delay -->
+  <line x1="${140 + 0 * 65}" y1="262" x2="${140 + 2 * 65}" y2="332" stroke="#ff8080" stroke-width="1.6" stroke-dasharray="4,3"/>
+  <rect x="195" y="270" width="120" height="26" rx="5" fill="rgba(10,24,37,0.9)" stroke="#ff8080" stroke-width="1.4"/>
+  <text x="255" y="288" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">2 cycles sync</text>
+
+  <!-- ack → ack_sync delay -->
+  <line x1="${140 + 3 * 65}" y1="402" x2="${140 + 5 * 65}" y2="472" stroke="#ff8080" stroke-width="1.6" stroke-dasharray="4,3"/>
+  <rect x="385" y="410" width="120" height="26" rx="5" fill="rgba(10,24,37,0.9)" stroke="#ff8080" stroke-width="1.4"/>
+  <text x="445" y="428" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">2 cycles sync</text>
+
+  <!-- Phase numbers at top of timeline -->
+  ${[
+    { x: 140 + 0 * 65 + 32, phase: '①', label: 'req↑' },
+    { x: 140 + 3 * 65 + 32, phase: '②', label: 'ack↑' },
+    { x: 140 + 5 * 65 + 32, phase: '③', label: 'req↓' },
+    { x: 140 + 8 * 65 + 32, phase: '④', label: 'ack↓' },
+  ].map(p => `
+    <circle cx="${p.x}" cy="148" r="14" fill="#1a1428" stroke="#cc66ff" stroke-width="2"/>
+    <text x="${p.x}" y="153" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">${p.phase}</text>
+  `).join('')}
+</svg>
 
 - A מציב ה-bus, ואז מציב \`req=1\`. B מסנכרן \`req\` (2 cycles). כש-B רואה \`req_sync=1\` → דוגם את ה-bus.
 - B מציב \`ack=1\`. A מסנכרן \`ack\` (2 cycles). אחרי \`ack_sync=1\` → A יודע ש-B קיבל.
