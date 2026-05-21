@@ -17,7 +17,7 @@
 // is active.
 
 import { bus } from '../../core/EventBus.js';
-import { simulateFaults } from '../FaultSimulator.js';
+import { simulateFaults, simulateTransitionFaults } from '../FaultSimulator.js';
 import { generateATPGVector, generateATPGForUndetected } from '../ATPG.js';
 import { RAM_PATTERNS, getRamPattern, WIRE_PATTERNS, getWirePattern } from '../TestPatterns.js';
 import { runMemoryTest } from '../MemoryTestRunner.js';
@@ -252,6 +252,7 @@ export class DFTPanel {
     this._visible    = false;
 
     this._runBtn  = document.getElementById('btn-dft-run');
+    this._runTransBtn = document.getElementById('btn-dft-run-trans');
     this._genBtn  = document.getElementById('btn-dft-gen');
     this._genPopup= document.getElementById('dft-pattern-popup');
     this._traceToggleBtn = document.getElementById('btn-dft-trace');
@@ -264,6 +265,10 @@ export class DFTPanel {
     // Layer 2 — last fault-sim result. null until the user clicks RUN.
     // Cleared when the scene mutates (vectors / topology may have changed).
     this._lastSim = null;
+    // Transition fault sim — independent cache so STR/STF results don't
+    // collide with stuck-at coverage. Pair semantics differ enough that
+    // unifying them would obscure both.
+    this._lastTransitionSim = null;
     // Per-block collapsed state. Each entry is a block-id like
     // `chain_0` (positional, stable per scene) or `lfsr_<nodeId>` (by
     // node id, also stable). The set survives a re-render so the
@@ -334,6 +339,7 @@ export class DFTPanel {
     if (this._collapseAllBtn) this._collapseAllBtn.addEventListener('click', () => this._toggleCollapseAll());
     if (this._editAllBtn)     this._editAllBtn.addEventListener('click', () => this._toggleEditAll());
     if (this._runBtn)   this._runBtn.addEventListener('click', () => this._runFaultSim());
+    if (this._runTransBtn) this._runTransBtn.addEventListener('click', () => this._runTransitionSim());
     if (this._genBtn)   this._genBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this._toggleGenPopup();
@@ -679,6 +685,7 @@ export class DFTPanel {
     // a stale coverage % over a different netlist would be misleading.
     const refresh = () => {
       this._lastSim = null;
+      this._lastTransitionSim = null;
       // Topology changes invalidate any prior ATPG verdict — the same
       // fault on a different netlist may have a different answer.
       this._atpgRedundant.clear();
@@ -861,13 +868,14 @@ export class DFTPanel {
     const injStuck = wires.filter(w => w.stuckAt === 0 || w.stuckAt === 1).length;
     const injOpen  = wires.filter(w => w.open).length;
     const injBrdg  = wires.filter(w => w.bridgedWith).length;
-    const injTotal = injStuck + injOpen + injBrdg;
+    const injTrans = wires.filter(w => w.slowToRise || w.slowToFall).length;
+    const injTotal = injStuck + injOpen + injBrdg + injTrans;
     const faultCnt = wireCnt * 2;       // potential s-a-0 + s-a-1 sites
 
     this._summary.innerHTML = `
       <span class="k">Wires</span><span class="v">${wireCnt}</span>
       <span class="k">Faults possible (s-a-0 + s-a-1)</span><span class="v">${faultCnt}</span>
-      <span class="k">Injected (stuck / open / bridge)</span><span class="v">${injStuck} / ${injOpen} / ${injBrdg}</span>
+      <span class="k">Injected (stuck / open / bridge / trans)</span><span class="v">${injStuck} / ${injOpen} / ${injBrdg} / ${injTrans}</span>
     `;
 
     // Compose by 5 top-level categories. Each section renders ''
@@ -876,7 +884,7 @@ export class DFTPanel {
     // to the current scene plus the always-on Overview & Diagnose
     // catalogue rows.
     const sections = {
-      overview:  this._renderTestabilityOverview(wires, { injStuck, injOpen, injBrdg, injTotal }),
+      overview:  this._renderTestabilityOverview(wires, { injStuck, injOpen, injBrdg, injTrans, injTotal }),
       coverage:  this._renderFaultCoverage(),
       scan:      this._renderScanChains(),
       lfsr:      this._renderPatternGenerators(),
@@ -963,6 +971,49 @@ export class DFTPanel {
       this._recomputeTraceDiff();
       this._updateTraceButtons();
     }
+    if (this._visible) this._render();
+  }
+
+  // Run the transition (slow-to-rise / slow-to-fall) fault simulator on
+  // the current scene. Vectors come from `scene._dft?.vectors` (same
+  // source as RUN FAULT SIM) and are paired consecutively: vector 0
+  // launches into vector 1, vector 1 into vector 2, etc. Needs ≥ 2
+  // vectors. Result is cached on this._lastTransitionSim and folded
+  // into the existing fault-list rows alongside the stuck-at columns.
+  _runTransitionSim() {
+    if (!this._scene) {
+      this._setDiagnostic('no scene attached to DFT panel');
+      return;
+    }
+    const inputs  = this._scene.nodes.filter(n => n.type === 'INPUT');
+    const outputs = this._scene.nodes.filter(n => n.type === 'OUTPUT');
+    if (inputs.length === 0) {
+      this._setDiagnostic('No INPUT nodes — drop at least one INPUT to enable transition tests.');
+      return;
+    }
+    if (outputs.length === 0) {
+      this._setDiagnostic('No OUTPUT nodes — transition coverage cannot be measured without primary outputs.');
+      return;
+    }
+    if ((this._scene.wires || []).length === 0) {
+      this._setDiagnostic('No wires — connect INPUTs through gates to OUTPUTs first.');
+      return;
+    }
+    const vectors = this._scene._dft?.vectors || this._defaultVectors();
+    if (vectors.length < 2) {
+      this._setDiagnostic(`Transition sim needs ≥ 2 vectors (consecutive pairs form the V1→V2 sequences). The scene currently has ${vectors.length}.`);
+      return;
+    }
+    // Consecutive pairing: [v0,v1], [v1,v2], …
+    const pairs = vectors.slice(0, -1).map((v, i) => [v, vectors[i + 1]]);
+    this._lastTransitionSim = simulateTransitionFaults(
+      this._scene.nodes, this._scene.wires, pairs,
+      { models: ['slow-to-rise', 'slow-to-fall'] },
+    );
+    this._lastTransitionSim._pairsSource =
+      this._scene._dft?.source ||
+      (this._scene._dft?.vectors ? 'manual' : 'default-sweep');
+    this._lastDiagnostic = null;
     if (this._visible) this._render();
   }
 
@@ -1325,11 +1376,36 @@ export class DFTPanel {
     const diag = this._lastDiagnostic
       ? `<div class="dft-empty" style="background:rgba(204,64,64,0.08);border:1px solid #cc404044;border-radius:4px;color:#ffb0b0;padding:8px 12px;margin:8px 12px 0">⚠ ${this._lastDiagnostic}</div>`
       : '';
-    if (!this._lastSim) {
+    if (!this._lastSim && !this._lastTransitionSim) {
       return `
         <div class="dft-coverage-header dft-section-header">${cvHeader}</div>${cvInfo}
         ${diag}
-        <div class="dft-empty">Click <b style="color:#ffb878">RUN FAULT SIM</b> in the header to score the test vectors against every wire fault. Coverage and per-fault detection rows will populate the table below.</div>
+        <div class="dft-empty">Click <b style="color:#ffb878">RUN FAULT SIM</b> in the header to score the test vectors against every wire fault, or <b style="color:#80c8ff">RUN TRANSITION SIM</b> for 2-vector slow-to-rise / slow-to-fall coverage. Results populate this section and the FAULT LIST.</div>
+      `;
+    }
+    // Transition-only path: render just the transition bar when the user
+    // clicked RUN TRANSITION SIM without ever running the stuck-at sim.
+    if (!this._lastSim && this._lastTransitionSim) {
+      const tc = this._lastTransitionSim.coverage;
+      const tpct = tc.percent;
+      const tbarW = Math.max(2, tpct);
+      const ttier = tpct < 70 ? '#cc4040' : tpct < 90 ? '#cca040' : '#40cc60';
+      const pairCount = this._lastTransitionSim._pairs.length;
+      return `
+        <div class="dft-coverage-header dft-section-header">${cvHeader}</div>${cvInfo}
+        ${diag}
+        <div class="dft-perf-row" style="grid-template-columns: 1fr">
+          <div style="display:flex;align-items:center;gap:1em;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px;background:#081420;border:1px solid #1a4060;border-radius:3px;height:18px;position:relative;overflow:hidden">
+              <div style="position:absolute;left:0;top:0;bottom:0;width:${tbarW}%;background:linear-gradient(90deg,${ttier}88,${ttier});box-shadow:0 0 8px ${ttier}66"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:0.92em;text-shadow:0 0 4px #000">
+                ${tpct}% — ${tc.detected} of ${tc.total} transition faults
+              </div>
+            </div>
+            <span style="color:#688;font-size:0.92em">${pairCount} pair${pairCount === 1 ? '' : 's'} <span style="color:#80c8ff;margin-left:6px;border:1px solid #80c8ff66;border-radius:10px;padding:1px 8px;font-size:0.88em">trans</span></span>
+          </div>
+        </div>
+        <div class="dft-empty" style="opacity:0.7">Click <b style="color:#ffb878">RUN FAULT SIM</b> for stuck-at + open + bridge coverage on the same scene.</div>
       `;
     }
     const { coverage, _vectors, _source } = this._lastSim;
@@ -1369,6 +1445,32 @@ export class DFTPanel {
           ${sum.exhausted ? ` <span style="color:#cca040" title="Random search ran out — could still be testable.">${sum.exhausted} exhausted</span>` : ''}
         </span>`
       : '';
+    // Transition coverage bar — rendered when RUN TRANSITION SIM has
+    // been clicked. Independent of stuck-at coverage; uses pair counts
+    // rather than vector counts. Same tier colouring rule.
+    let transBar = '';
+    if (this._lastTransitionSim) {
+      const tc = this._lastTransitionSim.coverage;
+      const tpct = tc.percent;
+      const tbarW = Math.max(2, tpct);
+      const ttier = tpct < 70 ? '#cc4040' : tpct < 90 ? '#cca040' : '#40cc60';
+      const pairCount = this._lastTransitionSim._pairs.length;
+      transBar = `
+        <div class="dft-perf-row" style="grid-template-columns: 1fr;margin-top:6px">
+          <div style="display:flex;align-items:center;gap:1em;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px;background:#081420;border:1px solid #1a4060;border-radius:3px;height:18px;position:relative;overflow:hidden">
+              <div style="position:absolute;left:0;top:0;bottom:0;width:${tbarW}%;background:linear-gradient(90deg,${ttier}88,${ttier});box-shadow:0 0 8px ${ttier}66;transition:width 0.3s"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:0.92em;text-shadow:0 0 4px #000">
+                ${tpct}% — ${tc.detected} of ${tc.total} transition faults
+              </div>
+            </div>
+            <span style="color:#688;font-size:0.92em" title="Transition fault coverage: slow-to-rise + slow-to-fall across every wire, scored against consecutive vector pairs (vector 0→1, 1→2, …). Pair count = N-1 for an N-vector set.">
+              ${pairCount} pair${pairCount === 1 ? '' : 's'}
+              <span style="color:#80c8ff;margin-left:6px;border:1px solid #80c8ff66;border-radius:10px;padding:1px 8px;font-size:0.88em">trans</span>
+            </span>
+          </div>
+        </div>`;
+    }
     // Test-compaction talking point: zero-code UI hint that production
     // ATPG output (50K+ vectors) is compressed before tester delivery.
     return `
@@ -1391,6 +1493,7 @@ export class DFTPanel {
         </div>
         ${this._vectorsViewOpen ? this._renderVectorsTable() : ''}
       </div>
+      ${transBar}
     `;
   }
 
@@ -1477,6 +1580,7 @@ export class DFTPanel {
         <span class="k">Injected — stuck-at</span><span class="v" style="color:#ff9933">${inj.injStuck}</span>
         <span class="k">Injected — open</span><span class="v" style="color:#ff4040">${inj.injOpen}</span>
         <span class="k">Injected — bridging</span><span class="v" style="color:#cc66ff">${inj.injBrdg}</span>
+        <span class="k">Injected — transition</span><span class="v" style="color:#80c8ff">${inj.injTrans || 0}</span>
       </div>
     `;
   }
@@ -3332,6 +3436,10 @@ export class DFTPanel {
           <span class="dft-info-text">Wire shorted to another; both nets converge to one (typically AND-style).</span>
         </div>
         <div class="dft-info-row">
+          <span class="dft-chain-status warn">STR / STF</span>
+          <span class="dft-info-text">Transition delay (slow-to-rise / slow-to-fall) — stateful, needs 2 consecutive vectors. Detected by RUN TRANSITION SIM (not the stuck-at sim).</span>
+        </div>
+        <div class="dft-info-row">
           <span class="dft-chain-status ok">injected</span>
           <span class="dft-info-text">✓ when a fault is currently active on this wire (you toggled it on).</span>
         </div>
@@ -3362,6 +3470,15 @@ export class DFTPanel {
         det.get(f.wireId)[f.kind] = f.detectedBy;
       });
     }
+    // Transition fault detection — keyed by pair index, not vector index.
+    // Folded into the same per-wire map so the "detected by" column shows
+    // both stuck-at and transition coverage on one row.
+    if (this._lastTransitionSim) {
+      this._lastTransitionSim.perFault.forEach(f => {
+        if (!det.has(f.wireId)) det.set(f.wireId, {});
+        det.get(f.wireId)[f.kind] = f.detectedBy;     // kind ∈ {'str','stf'}
+      });
+    }
     // Per-fault detection cell. When undetected, surfaces an ATPG
     // verdict — either a 🎯 [generate] button (default), a dim
     // [redundant] tag (prior exhaustive ATPG proved no vector exists),
@@ -3390,7 +3507,8 @@ export class DFTPanel {
       const hasStuck  = (w.stuckAt === 0 || w.stuckAt === 1);
       const hasOpen   = !!w.open;
       const hasBridge = !!w.bridgedWith;
-      const isInject  = hasStuck || hasOpen || hasBridge;
+      const hasTrans  = !!(w.slowToRise || w.slowToFall);
+      const isInject  = hasStuck || hasOpen || hasBridge || hasTrans;
       const d         = det.get(w.id);
 
       const sa0 = w.stuckAt === 0 ? pill('#ff9933', '#1a0d00', 'S0') : cellInactive;
@@ -3399,6 +3517,11 @@ export class DFTPanel {
       const br  = hasBridge
         ? pill('#cc66ff', '#1a001a', 'B→' + (w.bridgedWith || '').slice(0, 6))
         : cellInactive;
+      // Transition pills follow the same dim-when-absent / lit-when-armed
+      // convention as the other fault models. Armed via code/JSON only —
+      // there is no click-to-inject UI in this PR.
+      const strP = w.slowToRise ? pill('#80c8ff', '#001a2a', 'STR') : cellInactive;
+      const stfP = w.slowToFall ? pill('#80c8ff', '#001a2a', 'STF') : cellInactive;
 
       // Row tint follows the dominant fault (open > stuck > bridge).
       let rowStyle = '';
@@ -3406,21 +3529,39 @@ export class DFTPanel {
       if (hasOpen)        { rowStyle = 'background:rgba(255,64,64,0.10)';  idColor = '#ffb0b0'; }
       else if (hasStuck)  { rowStyle = 'background:rgba(255,153,51,0.08)'; idColor = '#ffb878'; }
       else if (hasBridge) { rowStyle = 'background:rgba(204,102,255,0.08)';idColor = '#e0c0ff'; }
+      else if (hasTrans)  { rowStyle = 'background:rgba(128,200,255,0.08)';idColor = '#b0d8ff'; }
 
       const status = isInject
         ? `<span style="color:${idColor};font-weight:bold">${
-            hasOpen ? 'open' : hasStuck ? 's-a-' + w.stuckAt : 'bridge ' + w.bridgeMode
+            hasOpen ? 'open'
+              : hasStuck ? 's-a-' + w.stuckAt
+              : hasBridge ? 'bridge ' + w.bridgeMode
+              : (w.slowToRise && w.slowToFall) ? 'STR+STF'
+              : w.slowToRise ? 'STR'
+              : 'STF'
           } ◀</span>`
         : '<span style="color:#555">—</span>';
 
       // "detected by" column. Shows the per-fault detection summary
       // when fault sim has been run. Compact: "sa0 v2 · sa1 UND · op v0".
+      // Transition fault detections show "str p0,p1" (pair indices) to
+      // distinguish them from stuck-at vector indices.
       let detectedHtml = '<span style="color:#444">—</span>';
       if (d) {
         const parts = [];
         if (d.sa0)  parts.push(`<span style="color:#876">sa0</span> ${fmtDetect(d.sa0,  `${w.id}/sa0`)}`);
         if (d.sa1)  parts.push(`<span style="color:#876">sa1</span> ${fmtDetect(d.sa1,  `${w.id}/sa1`)}`);
         if (d.open) parts.push(`<span style="color:#876">op</span> ${fmtDetect(d.open, `${w.id}/open`)}`);
+        if (d.str) {
+          const txt = d.str.length === 0 ? '<span style="color:#cc4040">UND</span>'
+            : `<span style="color:#40cc60">p${d.str.slice(0,3).join(',p')}${d.str.length > 3 ? ' +' + (d.str.length - 3) : ''}</span>`;
+          parts.push(`<span style="color:#688">str</span> ${txt}`);
+        }
+        if (d.stf) {
+          const txt = d.stf.length === 0 ? '<span style="color:#cc4040">UND</span>'
+            : `<span style="color:#40cc60">p${d.stf.slice(0,3).join(',p')}${d.stf.length > 3 ? ' +' + (d.stf.length - 3) : ''}</span>`;
+          parts.push(`<span style="color:#688">stf</span> ${txt}`);
+        }
         detectedHtml = parts.join(' · ');
       }
 
@@ -3432,6 +3573,8 @@ export class DFTPanel {
         <td style="padding:2px 8px;text-align:center">${sa1}</td>
         <td style="padding:2px 8px;text-align:center">${op}</td>
         <td style="padding:2px 8px;text-align:center">${br}</td>
+        <td style="padding:2px 8px;text-align:center">${strP}</td>
+        <td style="padding:2px 8px;text-align:center">${stfP}</td>
         <td style="padding:2px 8px">${status}</td>
         <td style="padding:2px 8px;font-size:0.88em">${detectedHtml}</td>
       </tr>`;
@@ -3449,6 +3592,8 @@ export class DFTPanel {
               <th style="padding:3px 8px">s-a-1</th>
               <th style="padding:3px 8px">open</th>
               <th style="padding:3px 8px">bridge</th>
+              <th style="padding:3px 8px" title="slow-to-rise (transition fault)">STR</th>
+              <th style="padding:3px 8px" title="slow-to-fall (transition fault)">STF</th>
               <th style="padding:3px 8px;text-align:left">injected</th>
               <th style="padding:3px 8px;text-align:left">detected by</th>
             </tr>

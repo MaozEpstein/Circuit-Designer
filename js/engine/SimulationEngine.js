@@ -260,11 +260,18 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
   // Apply per-wire fault model to a freshly propagated value. Order:
   //   open       → null (broken)
   //   stuck-at   → forced 0 / 1
+  //   transition → prior value (slow-to-rise / slow-to-fall, 2-vector)
   //   bridging   → wired-OR / wired-AND with the bridged wire's source
   const _applyWireFault = (w, val) => {
     if (!w) return val;
     if (w.open) return null;
     if (w.stuckAt === 0 || w.stuckAt === 1) return w.stuckAt;
+    // Transition delay — reads w._lastStableValue snapshotted at the
+    // START of this evaluate() call. "Didn't make it in time": returns
+    // the prior value when the requested transition is the faulty one.
+    // First tick (_lastStableValue undefined) never fires.
+    if (w.slowToRise && w._lastStableValue === 0 && val === 1) return 0;
+    if (w.slowToFall && w._lastStableValue === 1 && val === 0) return 1;
     if (w.bridgedWith) {
       const other = _wireById.get(w.bridgedWith);
       if (other) {
@@ -278,6 +285,19 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
   };
   const _origSet  = wireValues.set.bind(wireValues);
   wireValues.set  = (id, val) => _origSet(id, _applyWireFault(_wireById.get(id), val));
+
+  // ── Transition fault state — promote prev-tick value ────────
+  // Snapshot _currentValue (set at the END of the previous evaluate())
+  // into _lastStableValue so _applyWireFault can compare against it.
+  // Guarded on stepCount so re-entrant evaluations at the same tick
+  // (oscillation detection in SimulationController) don't overwrite the
+  // already-promoted prior-tick value with this tick's running result.
+  for (const w of wires) {
+    if (w._lastSnapshotStep !== stepCount) {
+      w._lastStableValue = w._currentValue;     // may be undefined on tick 0
+      w._lastSnapshotStep = stepCount;
+    }
+  }
   // Apply per-cell stuck-at fault for RAM nodes. Mirrors _applyWireFault.
   // node.cellFaults: { [addr]: { stuckAt: 0|1, bit: number|null } } where
   // bit:null means the whole word is stuck. Applied on BOTH read and write
@@ -2978,5 +2998,31 @@ export function evaluate(nodes, wires, ffStates, stepCount) {
     }
   }
 
+  // ── Transition fault state — cache this tick's settled value ──
+  // Becomes next tick's _lastStableValue. Skip null/undefined so an open
+  // or unrouted wire doesn't poison the prev-value memory.
+  for (const w of wires) {
+    const v = wireValues.get(w.id);
+    if (v === 0 || v === 1) w._currentValue = v;
+  }
+
   return { nodeValues, wireValues, ffUpdated };
+}
+
+/**
+ * Clear transition-fault state from every wire. Call before and after a
+ * fault simulation run so prior-tick values do not leak between runs (or
+ * from a live interactive simulation into a fault sim, or vice versa).
+ *
+ * Only touches the engine-private fields used by the transition fault
+ * model — leaves stuckAt / open / bridge metadata untouched.
+ *
+ * @param {object[]} wires
+ */
+export function resetTransitionState(wires) {
+  for (const w of wires) {
+    delete w._lastStableValue;
+    delete w._currentValue;
+    delete w._lastSnapshotStep;
+  }
 }

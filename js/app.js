@@ -132,6 +132,8 @@ const wireStuckAt       = document.getElementById('wire-stuckat');
 const wireOpenToggle    = document.getElementById('wire-open-toggle');
 const wireBridge        = document.getElementById('wire-bridge');
 const wireBridgeMode    = document.getElementById('wire-bridge-mode');
+const wireStrToggle     = document.getElementById('wire-str-toggle');
+const wireStfToggle     = document.getElementById('wire-stf-toggle');
 const wireClearWaypoints = document.getElementById('wire-clear-waypoints');
 let _selectedWireId = null;
 
@@ -1503,6 +1505,8 @@ function _updateWirePropsPanel() {
     wireBridge.value = wire.bridgedWith || '';
   }
   if (wireBridgeMode) wireBridgeMode.value = wire.bridgeMode || 'or';
+  if (wireStrToggle)  wireStrToggle.textContent = wire.slowToRise ? 'ON' : 'OFF';
+  if (wireStfToggle)  wireStfToggle.textContent = wire.slowToFall ? 'ON' : 'OFF';
 }
 
 // Wire selection: when clicking a wire in select mode, show wire props
@@ -1565,6 +1569,29 @@ wireBridgeMode?.addEventListener('change', () => {
   const wire = _getSelectedWire();
   if (!wire) return;
   wire.bridgeMode = wireBridgeMode.value;
+  bus.emit('node:props-changed');
+});
+
+// Transition delay faults — slow-to-rise / slow-to-fall toggles. Mirror the
+// wireOpenToggle pattern: click flips the boolean, button text reflects state,
+// emit props-changed so cached fault-sim results invalidate (a new fault
+// changes coverage). Delete-on-disarm keeps the wire object clean so any
+// fault-list enumerator that checks `wire.slowToRise === undefined` works.
+wireStrToggle?.addEventListener('click', () => {
+  const wire = _getSelectedWire();
+  if (!wire) return;
+  if (wire.slowToRise) delete wire.slowToRise;
+  else                 wire.slowToRise = true;
+  wireStrToggle.textContent = wire.slowToRise ? 'ON' : 'OFF';
+  bus.emit('node:props-changed');
+});
+
+wireStfToggle?.addEventListener('click', () => {
+  const wire = _getSelectedWire();
+  if (!wire) return;
+  if (wire.slowToFall) delete wire.slowToFall;
+  else                 wire.slowToFall = true;
+  wireStfToggle.textContent = wire.slowToFall ? 'ON' : 'OFF';
   bus.emit('node:props-changed');
 });
 

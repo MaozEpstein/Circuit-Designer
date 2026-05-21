@@ -623,9 +623,10 @@ function _drawWires(nodes, wires, wireValues) {
       ctx.restore();
     }
 
-    // DFT (Layer 1 / 1.5): per-wire fault overlays. Order matters — only
-    // ONE badge is rendered (priority: open > stuck-at > bridging) so a
-    // wire can't display three icons stacked.
+    // DFT (Layer 1 / 1.5 / 1.6): per-wire fault overlays. Order matches
+    // the engine's precedence in _applyWireFault — open > stuck-at >
+    // transition > bridge — so the visual marker reflects which fault
+    // actually dominates at evaluation time. Only ONE badge renders.
     let _faultBadge = null;     // { color, label }
     let _faultStrokeColor = null;
     let _faultDash = [6, 3];
@@ -637,6 +638,17 @@ function _drawWires(nodes, wires, wireValues) {
       _faultStrokeColor = '#ff9933';
       _faultDash        = [6, 3];
       _faultBadge       = { color: '#ff9933', text: '#ffb878', label: 'S' + wire.stuckAt };
+    } else if (wire.slowToRise || wire.slowToFall) {
+      // Transition delay — blue palette matches the FAULT LIST pill and
+      // the transition-coverage bar in DFTPanel. Longer dash than stuck-at
+      // (8/4 vs 6/3) reads as a "stretched" edge, evoking slow timing.
+      // Label collapses both directions when armed together.
+      _faultStrokeColor = '#80c8ff';
+      _faultDash        = [8, 4];
+      const _label = (wire.slowToRise && wire.slowToFall) ? 'S*'
+                   : wire.slowToRise ? 'STR'
+                   : 'STF';
+      _faultBadge       = { color: '#80c8ff', text: '#cce8ff', label: _label };
     } else if (wire.bridgedWith) {
       _faultStrokeColor = '#cc66ff';
       _faultDash        = [2, 4];           // tight dotted, distinct from S/O

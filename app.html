@@ -368,6 +368,14 @@
           <option value="and">wired-AND</option>
         </select>
       </div>
+      <div class="design-prop-row" id="wire-str-row" title="DFT — slow-to-rise transition fault. On a 0→1 transition the wire returns its prior value (0) for one cycle. Needs 2-vector at-speed test.">
+        <span>Slow-to-Rise</span>
+        <button id="wire-str-toggle" class="design-prop-toggle">OFF</button>
+      </div>
+      <div class="design-prop-row" id="wire-stf-row" title="DFT — slow-to-fall transition fault. On a 1→0 transition the wire returns its prior value (1) for one cycle. Needs 2-vector at-speed test.">
+        <span>Slow-to-Fall</span>
+        <button id="wire-stf-toggle" class="design-prop-toggle">OFF</button>
+      </div>
       <button id="wire-clear-waypoints" class="design-action" title="Clears any manually-dragged waypoints on this wire and reverts it to the auto-routed (Manhattan) path." style="margin-top:6px;font-size:10px">RESET ROUTE</button>
     </div>
     <div id="design-actions">
@@ -521,6 +529,7 @@
             <div id="dft-pattern-popup" class="dft-pattern-popup hidden"></div>
           </div>
           <button id="btn-dft-run" class="btn-secondary dft-action-run" title="Run combinational fault simulation against the scene's current test vectors">RUN FAULT SIM</button>
+          <button id="btn-dft-run-trans" class="btn-secondary dft-action-run" title="Run 2-vector transition fault simulation (slow-to-rise / slow-to-fall). Vectors are paired consecutively from the scene's current set; needs ≥ 2 vectors.">RUN TRANSITION SIM</button>
           <span class="dft-trace-cluster">
             <button id="btn-dft-trace" class="btn-secondary dft-trace-btn" title="Toggle live wire-diff overlay. Highlights wires whose value differs between the fault-free (golden) run and the current run, for the selected vector.">TRACE</button>
             <button id="btn-dft-trace-prev" class="btn-secondary dft-trace-step" title="Previous vector" disabled>◀</button>

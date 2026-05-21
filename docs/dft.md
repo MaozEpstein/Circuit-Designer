@@ -31,6 +31,72 @@ Absent entry = clean cell. `bit: null` = whole-word fault (every bit of the cell
 
 Wire-level fault state (`stuck-at-0`, `stuck-at-1`, `open`, `bridge`) is per-wire metadata read by both the simulator (live) and the fault simulator (golden vs faulty comparison).
 
+### Transition delay faults — `slowToRise` / `slowToFall` on wires
+
+The four wire-level faults above are **stateless** — the engine returns the same fault-affected value regardless of what the wire's value was a tick ago. Transition delay faults are different: they are a function of *(previous stable value, current target value)*. An at-speed test must drive the circuit with **two consecutive vectors** — V1 establishes the prior state, V2 launches the transition, and the FF capture clock samples the result. A wire that "didn't make it in time" presents the prior value to its sink for one cycle.
+
+```js
+wire.slowToRise = true;   // 0 → 1 transition on this wire returns 0 (prior)
+wire.slowToFall = true;   // 1 → 0 transition on this wire returns 1 (prior)
+```
+
+These two flags share the existing `_applyWireFault` chokepoint. Precedence inside the chokepoint is:
+
+```
+open  →  stuck-at  →  transition (STR / STF)  →  bridge
+```
+
+A wire pre-armed with `open` or `stuckAt` is **not enumerated** for transition faults — the dominant fault would always mask the transition behaviour, so the candidate is meaningless. Bridging resolves last because it combines the post-fault local value with the partner wire's source.
+
+**Engine state-tracking** — three engine-private fields per wire support this model:
+
+- `wire._lastStableValue` — the value the wire settled to on the previous tick. Promoted from `_currentValue` at the **start** of each new tick's `evaluate()` (guarded by `_lastSnapshotStep` so re-entrant calls at the same step don't overwrite the prior-tick snapshot).
+- `wire._currentValue` — cached at the **end** of each `evaluate()`. Becomes next tick's `_lastStableValue`.
+- `wire._lastSnapshotStep` — the `stepCount` value at which `_lastStableValue` was last promoted. Acts as the "have I already promoted this tick?" guard.
+
+These are not part of any public API. The only public hook is:
+
+```js
+import { resetTransitionState } from 'js/engine/SimulationEngine.js';
+resetTransitionState(wires);
+```
+
+Call this before and after a fault-simulator run so prior-tick values do not leak between runs, or between a live interactive simulation and a fault sim. `simulateTransitionFaults` calls it internally at the top, between every pair-loop iteration, and at the end.
+
+### `simulateTransitionFaults(nodes, wires, vectorPairs, opts)`
+
+Sibling of `simulateFaults()`. Mirrors its `perFault` / `coverage` shape but takes **vector pairs** instead of single vectors:
+
+```js
+import { simulateTransitionFaults } from 'js/dft/FaultSimulator.js';
+
+const result = simulateTransitionFaults(nodes, wires, [
+  [[0,0], [0,1]],   // pair 0: V1=00, V2=01 — launches a transition on PI[1]
+  [[0,1], [1,1]],   // pair 1: V1=01, V2=11 — launches on PI[0]
+], { models: ['slow-to-rise', 'slow-to-fall'] });
+
+// result.perFault[i]  = { id: 'w_0/str', wireId, kind: 'str'|'stf',
+//                         detected, detectedBy: number[] }
+// result.coverage     = { detected, total, percent }
+// result.golden[i]    = primary-output values at V2 of pair i (no fault)
+// result._pairs       = echo of vectorPairs
+```
+
+Per pair, the simulator runs V1 fault-free (seeds `_currentValue`), arms the candidate fault, runs V2, and compares V2 outputs to the golden V2 result. V1 outputs are identical by construction (fault not yet armed) so they are not compared. Detection is **pair-indexed**, not vector-indexed — `detectedBy: [0,2]` means pairs 0 and 2 caught the fault.
+
+### Panel — RUN TRANSITION SIM
+
+The DFT panel's header bar has a sibling button to RUN FAULT SIM: **RUN TRANSITION SIM**. Click → builds consecutive pairs from `scene._dft.vectors` (`[v0,v1], [v1,v2], …`), calls `simulateTransitionFaults`, and caches the result at `this._lastTransitionSim`. The FAULT LIST table grows two new columns (`STR`, `STF`) and the per-wire "detected by" cell shows `str p0,p1` / `stf p2` alongside the existing stuck-at detection. The FAULT COVERAGE section adds a second bar (blue-tinted) when transition results are present.
+
+**Pairing convention**: consecutive only. To craft non-adjacent pairs, pass them directly to `simulateTransitionFaults` from code or a test — the panel UI doesn't expose arbitrary pair construction.
+
+### Current limitations
+
+- **No ATPG** for transition faults — vectors come from the caller / panel patterns. Random-pair ATPG and PODEM-class search are out of scope for this layer.
+- **No interactive injection** UI — `wire.slowToRise = true` is set via code or JSON. The FAULT LIST pills are display-only, matching the existing stuck-at convention.
+- **Combinational propagation only** — the engine applies the prior value at the chokepoint and returns. There is no notion of "the transition eventually arrives a few hundred ps later"; while the fault is armed, every faulty-direction transition fails for the entire tick. To model "eventually arrives", disarm the fault between ticks.
+- **LOS / LOC distinction** — out of scope. The simulator doesn't care how V2 is produced; that's a test-pattern-generation concern.
+
 ## DFT Panel — `js/dft/ui/DFTPanel.js`
 
 Single panel with collapsible sections. Each section is read-only when no scene state matches it (e.g., no SCAN_FFs → "Scan Chains" hides itself with a hint).
