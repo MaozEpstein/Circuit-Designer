@@ -407,11 +407,11 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
     parts: [
       {
         label: 'א',
-        question: 'מה תצפה לראות ב-\\\`out\\\` לאחר 3 מחזורי שעון? (assumes input is asserted at start)',
+        question: 'מה תצפה לראות ב-\`out\` לאחר 3 מחזורי שעון? (assumes input is asserted at start)',
         hints: [
           'כל D-FF "מאחר" את הסיגנל ב-cycle אחד.',
           '3 D-FFs בשרשרת → הסיגנל מתאחר ב-3 cycles.',
-          'אם \\\`input = 1\\\` משעה \\\`t=0\\\`, אז \\\`out = 1\\\` משעה \\\`t = 3T_clk\\\` (T_clk = תקופה).',
+          'אם \`input = 1\` משעה \`t=0\`, אז \`out = 1\` משעה \`t = 3T_clk\` (T_clk = תקופה).',
         ],
         answer:
 `**out יעלה ל-\`1\` בדיוק לאחר 3 מחזורי שעון** מהקצה העולה הראשון של ה-clock לאחר ה-\`input = 1\`.
@@ -491,7 +491,7 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
         question: 'הפלט עולה אחרי **2** מחזורי שעון בלבד — איזה תנאי לא התקיים, setup או hold?',
         hints: [
           '**Hold violation:** הנתון משתנה **מהר מדי** אחרי הקצה — לפני שה-D-FF הספיק "לאחוז" בערך הישן.',
-          'בשרשרת \\\`DFF1 → DFF2\\\`: אם \\\`Q1\\\` משתנה (מתעדכן ל-input) ובאותו קלוק \\\`DFF2.D\\\` (= Q1) הצליח להעביר את הערך החדש ל-\\\`DFF2\\\` — זה Hold violation.',
+          'בשרשרת \`DFF1 → DFF2\`: אם \`Q1\` משתנה (מתעדכן ל-input) ובאותו קלוק \`DFF2.D\` (= Q1) הצליח להעביר את הערך החדש ל-\`DFF2\` — זה Hold violation.',
           'תוצאה: 2 ה-FFים "התעדכנו בו-זמנית" — הסיגנל "דילג" שלב. במקום 3 cycles, רק 2.',
           'הסיבה: Q1 שינתה ערך **לפני** ש-DFF2 הספיק לסיים את ה-hold time שלה אחרי הקצה הקודם.',
         ],
@@ -544,7 +544,7 @@ Hold violations בדרך כלל נגרמות מ:
         question: 'הפלט עולה אחרי **4** מחזורי שעון (איחור של 1) — איזה תנאי לא התקיים?',
         hints: [
           '**Setup violation:** הנתון לא הגיע ליציבות **בזמן** לפני הקצה — ה-D-FF מפספס את הקצה.',
-          'בשרשרת \\\`DFF1 → DFF2\\\`: אם \\\`Q1\\\` עוד לא יציב כש-clk עולה ב-DFF2 → DFF2 שומר את הערך הישן (לא קולט).',
+          'בשרשרת \`DFF1 → DFF2\`: אם \`Q1\` עוד לא יציב כש-clk עולה ב-DFF2 → DFF2 שומר את הערך הישן (לא קולט).',
           'בקצה הבא הוא יקלוט (כשהנתון כבר יציב) → איחור של cycle אחד.',
           '⇒ 3 cycles הופכים ל-4.',
         ],
@@ -874,11 +874,11 @@ Setup violations נגרמות מ:
         label: 'א',
         question: '**איזה רכיב ממשים במעגל**?',
         hints: [
-          'התחל בלמפות את ה-Boolean expression של כל יציאה: \\\`S0 = ?\\\`, \\\`S1 = ?\\\`, \\\`S2 = ?\\\`.',
-          'XOR1 נותן \\\`S0 = A0 ⊕ B0\\\`. אם רואים XOR בין שני ביטים — הוא מחבר חד-ביטי.',
-          'AND1 נותן \\\`carry = A0 · B0\\\`. כתיבת ה-truth table של \\\`(A0, B0) → (S0, carry)\\\` נראית כמו half-adder.',
-          'XOR3 מחבר את \\\`P = A1 ⊕ B1\\\` עם carry-in מ-AND1. \\\`S1 = A1 ⊕ B1 ⊕ C1\\\` — זה ה-SUM של full-adder.',
-          'OR1 מקבל \\\`(A1·B1)\\\` ו-\\\`(P·C1)\\\` ⇒ \\\`S2 = A1·B1 + (A1⊕B1)·C1\\\` — זה COUT הקלאסי של full-adder.',
+          'התחל בלמפות את ה-Boolean expression של כל יציאה: \`S0 = ?\`, \`S1 = ?\`, \`S2 = ?\`.',
+          'XOR1 נותן \`S0 = A0 ⊕ B0\`. אם רואים XOR בין שני ביטים — הוא מחבר חד-ביטי.',
+          'AND1 נותן \`carry = A0 · B0\`. כתיבת ה-truth table של \`(A0, B0) → (S0, carry)\` נראית כמו half-adder.',
+          'XOR3 מחבר את \`P = A1 ⊕ B1\` עם carry-in מ-AND1. \`S1 = A1 ⊕ B1 ⊕ C1\` — זה ה-SUM של full-adder.',
+          'OR1 מקבל \`(A1·B1)\` ו-\`(P·C1)\` ⇒ \`S2 = A1·B1 + (A1⊕B1)·C1\` — זה COUT הקלאסי של full-adder.',
           'סיכום: bit 0 הוא half-adder, bit 1 הוא full-adder עם carry-in מ-bit 0. שניהם יחד = **מחבר 2-ביט**.',
         ],
         answer:
@@ -1201,12 +1201,12 @@ Setup violations נגרמות מ:
 </svg>`,
         hints: [
           'שני המספרים האלה הם **תנאים על קלט ה-D של ה-FF סביב קצה ה-clock** — לא על השעון עצמו ולא על Q.',
-          '\\\`t_setup\\\` הוא זמן **לפני** קצה השעון העולה: D חייב להיות יציב כבר אז.',
-          '\\\`t_hold\\\` הוא זמן **אחרי** קצה השעון העולה: D חייב להישאר יציב עוד קצת.',
+          '\`t_setup\` הוא זמן **לפני** קצה השעון העולה: D חייב להיות יציב כבר אז.',
+          '\`t_hold\` הוא זמן **אחרי** קצה השעון העולה: D חייב להישאר יציב עוד קצת.',
           'יחד הם יוצרים "אזור סכנה" סביב קצה ה-clock — חלון שבו D לא יכול לזוז.',
           'הפרה של setup → ה-FF לוכד ערך שגוי או נכנס למצב **metastable** (לא 0 ולא 1).',
           'הפרה של hold → "race" — ערך חדש דחף את הישן לפני ש-FF הספיק ללכוד.',
-          'במחבר 2-ביט: ה-critical path הוא A0/B0 → AND1 → C1 → AND3 → OR1 → S2. אם ה-FF במורד הזרם דורש t_setup, צריך \\\`T_clock ≥ T_path + t_setup + t_clk-q\\\`.',
+          'במחבר 2-ביט: ה-critical path הוא A0/B0 → AND1 → C1 → AND3 → OR1 → S2. אם ה-FF במורד הזרם דורש t_setup, צריך \`T_clock ≥ T_path + t_setup + t_clk-q\`.',
         ],
         answer:
 `### Setup time (\`t_su\` או \`t_setup\`)
@@ -1337,8 +1337,8 @@ T_clock ≥ T_clk-q (של FF המקור) + T_path (גייטים) + t_setup (של
           'S0 = XOR1.out → רק שער אחד מקלט A0/B0.',
           'S1 = XOR3.out → שני מסלולים מצטרפים: דרך XOR2 (מ-A1/B1) או דרך AND1 (מ-A0/B0).',
           'S2 = OR1.out → שני מסלולים: ה"קצר" דרך AND2, וה"ארוך" דרך XOR2/AND1 + AND3.',
-          'Setup constraint: \\\`T_clk ≥ t_clk-q + T_longest_path + t_su\\\` — תופס את הנתיב הארוך ביותר.',
-          'Hold constraint: \\\`T_shortest_path ≥ t_h − t_clk-q\\\` — תופס את הנתיב הקצר ביותר. נתיב קצר מדי = race.',
+          'Setup constraint: \`T_clk ≥ t_clk-q + T_longest_path + t_su\` — תופס את הנתיב הארוך ביותר.',
+          'Hold constraint: \`T_shortest_path ≥ t_h − t_clk-q\` — תופס את הנתיב הקצר ביותר. נתיב קצר מדי = race.',
         ],
         answer:
 `### כל 12 המסלולים
@@ -1738,7 +1738,7 @@ T_shortest ≥ t_h − t_clk-q
           'בעיה: 370 ps > 300 ps. צריך **לקצר את הנתיב הקומבינטורי** המקסימלי ל-≤ 300 ps.',
           'אפשרויות: (1) להחליף שערים ב-cells מהירים יותר; (2) לשנות ארכיטקטורה (CLA במקום ripple); (3) **pipelining** — לשבור את הנתיב הארוך בעזרת FF באמצע.',
           'ל-2-bit adder הקטן הזה האופציה הטבעית היא **pipelining**. תזהה איפה אפשר לחתוך כך ששני השלבים הנפרדים יהיו ≤ 300 ps כל אחד.',
-          'המסלול הקריטי הוא \\\`XOR2 → AND3 → OR1\\\` = 150+120+100 = 370. ניתן לחתוך **בין AND3 ל-OR1** או **בין XOR2 ל-AND3**.',
+          'המסלול הקריטי הוא \`XOR2 → AND3 → OR1\` = 150+120+100 = 370. ניתן לחתוך **בין AND3 ל-OR1** או **בין XOR2 ל-AND3**.',
           'חיתוך בין AND3 ל-OR1: שלב 1 = XOR2 + AND3 = 270 ps · שלב 2 = OR1 = 100 ps. ✓ שניהם < 300.',
           'חיתוך בין XOR2 ל-AND3: שלב 1 = XOR2 = 150 ps · שלב 2 = AND3 + OR1 = 220 ps. ✓ גם.',
         ],
@@ -2038,8 +2038,8 @@ T_shortest ≥ t_h − t_clk-q
         hints: [
           'ה-FF החדש שהוספת באמצע הנתיב **מוסיף שלב** בין הקלט ליציאה. כמה clock cycles עוברים עכשיו עד שתוצאה יוצאת?',
           'לפני pipelining: cycle אחד (combinational). אחרי: 2 cycles (1 pipeline stage נוסף).',
-          'התוצאה: \\\`Latency\\\` (השהיה) הוכפלה. \\\`Throughput\\\` (תפוקה) נשמרה — וקטור חדש בכל clock, אבל הכל מאוחר ב-cycle.',
-          'הבעיה הקיומית: אם המעגל שמשתמש ב-S2 מצפה לקבל אותו באותו cycle עם S0/S1 (sync), ה-S2 שלנו יגיע באיחור — \\\`pipeline imbalance\\\`.',
+          'התוצאה: \`Latency\` (השהיה) הוכפלה. \`Throughput\` (תפוקה) נשמרה — וקטור חדש בכל clock, אבל הכל מאוחר ב-cycle.',
+          'הבעיה הקיומית: אם המעגל שמשתמש ב-S2 מצפה לקבל אותו באותו cycle עם S0/S1 (sync), ה-S2 שלנו יגיע באיחור — \`pipeline imbalance\`.',
           'הפתרון: לאזן את ה-pipeline — להוסיף FF מקביל גם לנתיב של S0 ו-S1 כדי שכולם יגיעו ביחד.',
         ],
         answer:
@@ -2341,13 +2341,13 @@ T_shortest ≥ t_h − t_clk-q
       // ─────────────────────────────────────────────────────────
       {
         label: 'ו',
-        question: 'נתון כעת: **\\\`t_hold = 200 ps\\\`** (זמן ה-hold הנדרש ע"י ה-FF במורד הזרם). תן פתרון למסלול הבעייתי במעגל.',
+        question: 'נתון כעת: **\`t_hold = 200 ps\`** (זמן ה-hold הנדרש ע"י ה-FF במורד הזרם). תן פתרון למסלול הבעייתי במעגל.',
         hints: [
-          'אילוץ ה-hold: \\\`T_shortest ≥ t_h − t_clk-q\\\`. עם \\\`t_clk-q ≈ 30 ps\\\` ו-\\\`t_h = 200 ps\\\` → צריך \\\`T_shortest ≥ 170 ps\\\`.',
-          'הנתיב הקצר ביותר במעגל הוא \\\`A0/B0 → XOR1 → S0\\\` = 150 ps. **150 < 170** → הפרת hold!',
+          'אילוץ ה-hold: \`T_shortest ≥ t_h − t_clk-q\`. עם \`t_clk-q ≈ 30 ps\` ו-\`t_h = 200 ps\` → צריך \`T_shortest ≥ 170 ps\`.',
+          'הנתיב הקצר ביותר במעגל הוא \`A0/B0 → XOR1 → S0\` = 150 ps. **150 < 170** → הפרת hold!',
           'הפתרון: להוסיף **delay buffer** על המסלול הקצר. כך ה-delay של המסלול גדל ומגיע מעל הסף.',
           'איזה רכיב? Buffer (BUF) או זוג inverters בטור. כל BUF מוסיף ~50-100 ps תלוי בטכנולוגיה.',
-          'הוספה של BUF אחד (נניח 60 ps): \\\`150 + 60 = 210 ps ≥ 170\\\` ✓.',
+          'הוספה של BUF אחד (נניח 60 ps): \`150 + 60 = 210 ps ≥ 170\` ✓.',
           'חשוב: הוספת ה-buffer **לא משפיעה על ה-setup** של מסלולים אחרים — הוא רק על המסלול הקצר של S0.',
         ],
         answer:
@@ -2580,12 +2580,12 @@ T_shortest ≥ t_h − t_clk-q
       // ─────────────────────────────────────────────────────────
       {
         label: 'ז',
-        question: 'המעגל המאוזן מסעיף ה\' מסונכרן ועובד נכון. אבל כעת צריך **לבדוק אותו ב-ATE**. הסבר איך הופכים את 4 ה-FFs ל-**scan-friendly**, תאר את **סדר ה-scan chain** עם נקודות \\\`SI\\\` ו-\\\`SO\\\`, וחשב כמה מחזורי clock נדרשים להרצת **וקטור בדיקה אחד** על המעגל.',
+        question: 'המעגל המאוזן מסעיף ה\' מסונכרן ועובד נכון. אבל כעת צריך **לבדוק אותו ב-ATE**. הסבר איך הופכים את 4 ה-FFs ל-**scan-friendly**, תאר את **סדר ה-scan chain** עם נקודות \`SI\` ו-\`SO\`, וחשב כמה מחזורי clock נדרשים להרצת **וקטור בדיקה אחד** על המעגל.',
         hints: [
-          'הופכים D-FF רגיל ל-Scan-FF ע"י הוספת **MUX 2:1 לפני ה-D**: כניסה 0 = D הפונקציונלי, כניסה 1 = SI (Scan-In). הסלקטור הוא \\\`SE\\\` (Scan-Enable).',
+          'הופכים D-FF רגיל ל-Scan-FF ע"י הוספת **MUX 2:1 לפני ה-D**: כניסה 0 = D הפונקציונלי, כניסה 1 = SI (Scan-In). הסלקטור הוא \`SE\` (Scan-Enable).',
           'SE משותף לכל ה-Scan-FFs במעגל. בזמן SE=0 → המעגל עובד פונקציונלית רגיל. בזמן SE=1 → כל ה-FFs מהווים shift-register.',
-          'סדר השרשרת חופשי, אבל הגיוני להתחיל מ-stage 1 הראשונות וללכת לשניות. למשל: \\\`SI → FF_S0 → FF_C1 → FF_P → FF_G → SO\\\`.',
-          'מחזורי clock לוקטור אחד: \\\`N\\\` ל-load (shift-in) + \\\`1\\\` ל-capture + \\\`N\\\` ל-unload (shift-out). עבור \\\`N=4\\\`: סה"כ \\\`2N+1 = 9\\\` cycles.',
+          'סדר השרשרת חופשי, אבל הגיוני להתחיל מ-stage 1 הראשונות וללכת לשניות. למשל: \`SI → FF_S0 → FF_C1 → FF_P → FF_G → SO\`.',
+          'מחזורי clock לוקטור אחד: \`N\` ל-load (shift-in) + \`1\` ל-capture + \`N\` ל-unload (shift-out). עבור \`N=4\`: סה"כ \`2N+1 = 9\` cycles.',
           'בלי scan: כדי להגיע ל-FF_P עם ערך ספציפי, היית צריך לדחוף state דרך XOR2 ב-PIs — לפעמים בלתי-אפשרי (state unreachable). עם scan: כל state בר-טעינה ב-N cycles.',
         ],
         answer:
@@ -2948,7 +2948,7 @@ T_shortest ≥ t_h − t_clk-q
       // ─────────────────────────────────────────────────────────
       {
         label: 'ח',
-        question: 'במעגל ה-pipelined מסעיף ה\' מוזרק **bridge fault** בין שני קווים שכנים בשלב ה-pipeline: הקו \\\`XOR1.out → FF_S0.D\\\` והקו \\\`AND1.out → FF_C1.D\\\` — מסומנים ב**סגול** בשרטוט. הקצר הוא **wired-AND** — שני הקווים נושאים את ה-AND של ערכיהם המקוריים. **מהו וקטור הקלט המינימלי שמזהה את התקלה?** הסבר מה רואים בפלט.',
+        question: 'במעגל ה-pipelined מסעיף ה\' מוזרק **bridge fault** בין שני קווים שכנים בשלב ה-pipeline: הקו \`XOR1.out → FF_S0.D\` והקו \`AND1.out → FF_C1.D\` — מסומנים ב**סגול** בשרטוט. הקצר הוא **wired-AND** — שני הקווים נושאים את ה-AND של ערכיהם המקוריים. **מהו וקטור הקלט המינימלי שמזהה את התקלה?** הסבר מה רואים בפלט.',
         schematic: `
 <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
      font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Bridge fault between XOR1→FF_S0 and AND1→FF_C1 wires.">
@@ -3030,10 +3030,10 @@ T_shortest ≥ t_h − t_clk-q
 </svg>`,
         hints: [
           'Bridge מתבטא רק כשלשני הקווים יש **ערכים שונים** — אם שניהם 0 או שניהם 1, ה-AND שלהם זהה לכל אחד מהם בנפרד ⇒ הקצר שקוף.',
-          'הקו XOR1.out מחשב \\\`A0 ⊕ B0\\\`. הקו AND1.out מחשב \\\`A0 · B0\\\`.',
-          'מתי שני הביטויים שונים? כש-XOR=0 ו-AND=1 (\\\`A0=B0=1\\\`) **או** כש-XOR=1 ו-AND=0 (\\\`A0≠B0\\\`).',
-          'בחר \\\`A0=B0=1\\\`: XOR1=0, AND1=1. wired-AND עושה את שני הקווים = 0. כעת \\\`FF_C1\\\` קולט 0 במקום 1.',
-          'התקלה תתבטא ב-stage 2: \\\`XOR3(P, C1=0)\\\` במקום \\\`XOR3(P, C1=1)\\\` → \\\`S1\\\` יוצא הפוך ממה שצפוי.',
+          'הקו XOR1.out מחשב \`A0 ⊕ B0\`. הקו AND1.out מחשב \`A0 · B0\`.',
+          'מתי שני הביטויים שונים? כש-XOR=0 ו-AND=1 (\`A0=B0=1\`) **או** כש-XOR=1 ו-AND=0 (\`A0≠B0\`).',
+          'בחר \`A0=B0=1\`: XOR1=0, AND1=1. wired-AND עושה את שני הקווים = 0. כעת \`FF_C1\` קולט 0 במקום 1.',
+          'התקלה תתבטא ב-stage 2: \`XOR3(P, C1=0)\` במקום \`XOR3(P, C1=1)\` → \`S1\` יוצא הפוך ממה שצפוי.',
           'מינימום: **1 וקטור בלבד** מספיק לזיהוי.',
         ],
         answer:
@@ -3184,7 +3184,7 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
       // ─────────────────────────────────────────────────────────
       {
         label: 'ט',
-        question: 'במעגל מסעיף ה\' אחד החוטים מוזרק עם תקלת **\\\`stuck-at-0\\\`** — הקו \\\`AND1.out → FF_C1.D\\\` (כלומר \\\`C1\\\` תקוע ב-0), מסומן ב**אדום** בשרטוט. **מהו וקטור הקלט המינימלי שמזהה את התקלה ומאשש שאכן הקו הזה הוא הפגום?** הסבר את ה-trade-off של מינימום וקטור לעומת זיהוי ייחודי של מיקום התקלה.',
+        question: 'במעגל מסעיף ה\' אחד החוטים מוזרק עם תקלת **\`stuck-at-0\`** — הקו \`AND1.out → FF_C1.D\` (כלומר \`C1\` תקוע ב-0), מסומן ב**אדום** בשרטוט. **מהו וקטור הקלט המינימלי שמזהה את התקלה ומאשש שאכן הקו הזה הוא הפגום?** הסבר את ה-trade-off של מינימום וקטור לעומת זיהוי ייחודי של מיקום התקלה.',
         schematic: `
 <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
      font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Stuck-at-0 fault on AND1.out → FF_C1.D wire.">
@@ -3260,11 +3260,11 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   </text>
 </svg>`,
         hints: [
-          '\\\`stuck-at-0\\\` נחשף רק כש**הערך הצפוי על החוט הוא 1**. אם הצפי 0 → התקלה שקופה.',
-          '\\\`AND1.out = A0 · B0\\\`. הוא צריך להיות 1 → \\\`A0 = B0 = 1\\\`.',
-          'C1 משפיע על \\\`XOR3\\\` (לחישוב S1) ועל \\\`AND3\\\` (לחישוב S2). תקלת stuck-at-0 ב-C1 תשנה את שניהם — תלוי בערכי A1, B1.',
-          'בחר \\\`A1=B1=0\\\`: \\\`P=0\\\`, \\\`G=0\\\`. \\\`S1\\\` ללא תקלה = \\\`XOR3(0, 1) = 1\\\`. עם תקלה: \\\`XOR3(0, 0) = 0\\\`. ✓ נחשף.',
-          'מינימום לזיהוי-של-קיום: **1 וקטור** (\\\`A0=B0=1, A1=B1=0\\\`).',
+          '\`stuck-at-0\` נחשף רק כש**הערך הצפוי על החוט הוא 1**. אם הצפי 0 → התקלה שקופה.',
+          '\`AND1.out = A0 · B0\`. הוא צריך להיות 1 → \`A0 = B0 = 1\`.',
+          'C1 משפיע על \`XOR3\` (לחישוב S1) ועל \`AND3\` (לחישוב S2). תקלת stuck-at-0 ב-C1 תשנה את שניהם — תלוי בערכי A1, B1.',
+          'בחר \`A1=B1=0\`: \`P=0\`, \`G=0\`. \`S1\` ללא תקלה = \`XOR3(0, 1) = 1\`. עם תקלה: \`XOR3(0, 0) = 0\`. ✓ נחשף.',
+          'מינימום לזיהוי-של-קיום: **1 וקטור** (\`A0=B0=1, A1=B1=0\`).',
           'אבל לזיהוי **חד-משמעי** של *איזה* חוט תקול (אם יש מספר מועמדים) — צריך לפעמים יותר וקטורים. זה ה-trade-off של "fault dictionary".',
         ],
         answer:
@@ -3583,7 +3583,7 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
         question: '**איזה רכיב ממשים במעגל**? ההבדל המכריע משאלה 5004: כאן יש **4 יציאות** (לא 3).',
         hints: [
           'במחבר N-ביט יש N+1 יציאות (סכום + carry-out). 4 inputs → לא מסתדר עם adder סטנדרטי (היה אמור להיות 3 outputs).',
-          'מה הפעולה השנייה הכי נפוצה על שני מספרים בני 2-ביט? **כפל**! \\\`2-bit × 2-bit = 4-bit result\\\`.',
+          'מה הפעולה השנייה הכי נפוצה על שני מספרים בני 2-ביט? **כפל**! \`2-bit × 2-bit = 4-bit result\`.',
           'כפל ארוך של (A1A0) ב-(B1B0):\\n  PP row 0 = A·B0\\n  PP row 1 = A·B1 (shifted left)\\nואז לחבר את שתי השורות.',
           'AND1..AND4 הם **partial products**: A0·B0, A1·B0, A0·B1, A1·B1. בדיוק 4 ANDs.',
           'XOR1 + AND5 = half-adder על העמודה האמצעית (column 1) שמסכם את A1·B0 + A0·B1.',
@@ -3765,8 +3765,8 @@ A1·B1  A0·B1                 (שורה שנייה: כפל ב-B1, מוזז שמ
           'Y1 = XOR1.out → שני קלטים: PP10 (מ-A1/B0) או PP01 (מ-A0/B1), שניהם דרך AND→XOR.',
           'Y2 = XOR2.out → שני קלטים: PP11 (מ-A1/B1) ישירות, או C1 = PP10·PP01 דרך AND5 — שני נתיבים שונים מאוד באורכם.',
           'Y3 = AND6.out → שני קלטים: PP11 (מ-A1/B1) או C1 (מ-AND5).',
-          'Setup constraint: \\\`T_clk ≥ t_clk-q + T_longest_path + t_su\\\` — תופס את הנתיב הארוך ביותר.',
-          'Hold constraint: \\\`T_shortest_path ≥ t_h − t_clk-q\\\` — תופס את הנתיב הקצר ביותר. נתיב קצר מדי = race.',
+          'Setup constraint: \`T_clk ≥ t_clk-q + T_longest_path + t_su\` — תופס את הנתיב הארוך ביותר.',
+          'Hold constraint: \`T_shortest_path ≥ t_h − t_clk-q\` — תופס את הנתיב הקצר ביותר. נתיב קצר מדי = race.',
         ],
         answer:
 `### כל 9 המסלולים
@@ -4154,7 +4154,7 @@ T_shortest ≥ t_h − t_clk-q
           'בעיה: 390 ps > 300 ps. צריך **לקצר את הנתיב הקומבינטורי** המקסימלי ל-≤ 300 ps.',
           'אופציות: (1) להחליף שערים ב-cells מהירים יותר; (2) לשנות מבנה ל-Wallace tree; (3) **pipelining** — שבירת הנתיב עם FF.',
           'למעגל קטן כזה — pipelining הוא הפתרון הפשוט והנכון. השאלה: **איפה לחתוך?**',
-          'המסלול הקריטי הוא \\\`PP10 → AND5 → XOR2 → Y2\\\` (3 שערים, 390 ps). יש גם תאום סימטרי דרך \\\`PP01\\\`.',
+          'המסלול הקריטי הוא \`PP10 → AND5 → XOR2 → Y2\` (3 שערים, 390 ps). יש גם תאום סימטרי דרך \`PP01\`.',
           'חתך מצוין: על ה-wire של **C1 = AND5.out** — מקום שמשרת **גם** XOR2 וגם AND6.',
           'שלב 1 = PP layer + AND5 = 120 + 120 = 240 ps ✓ · שלב 2 = max(XOR2, AND6) = 150 ps ✓',
           'יתרון נוסף של חיתוך על C1: שני המסלולים הקריטיים התאומים (דרך PP10 ודרך PP01) מטופלים יחד — שניהם עוברים דרך AND5.',
@@ -4482,10 +4482,10 @@ T_shortest ≥ t_h − t_clk-q
         question: 'הפתרון מסעיף ג\' הוצב במקום — אבל הוא יצר **בעיה חדשה** (למעשה שתיים). מהן הבעיות, ומה אתה מציע כדי לטפל בהן?',
         hints: [
           'ה-FF היחיד (FF_C1) חוצה את שלב ה-pipeline על קו אחד בלבד. כל קו אחר שחוצה את אותו שלב הוא בעיה.',
-          'בעיה 1 (פונקציונלית): XOR2 ו-AND6 מקבלים **\\\`C1_pipe\\\`** (cycle N−1, יצא מ-FF_C1) ויחד עם **\\\`PP11\\\`** (cycle N, combinational). שני הזמנים לא תואמים → תוצאה שגויה.',
+          'בעיה 1 (פונקציונלית): XOR2 ו-AND6 מקבלים **\`C1_pipe\`** (cycle N−1, יצא מ-FF_C1) ויחד עם **\`PP11\`** (cycle N, combinational). שני הזמנים לא תואמים → תוצאה שגויה.',
           'בעיה 2 (אי-איזון יציאות): Y0, Y1 יוצאים combinational ב-cycle 1. Y2, Y3 מגיעים cycle אחד מאוחר יותר. ה-consumer לא יודע מתי לדגום.',
           'הפתרון: כל wire שחוצה את שלב ה-pipeline חייב לעבור FF. סך הכל יש **4 קווים שחוצים**: C1, PP11, Y0 (=PP00), Y1 (=XOR1).',
-          'תוסיף 3 FFs נוספים: \\\`FF_PP11\\\`, \\\`FF_Y0\\\`, \\\`FF_Y1\\\`. ביחד עם \\\`FF_C1\\\` יש 4 FFs.',
+          'תוסיף 3 FFs נוספים: \`FF_PP11\`, \`FF_Y0\`, \`FF_Y1\`. ביחד עם \`FF_C1\` יש 4 FFs.',
           'אחרי האיזון: stage 1 = max(PP00=120, XOR1=270, AND5=240, PP11=120) = **270 ps** ✓ · stage 2 = max(XOR2=150, AND6=120) = **150 ps** ✓.',
         ],
         answer:
@@ -4834,13 +4834,13 @@ T_shortest ≥ t_h − t_clk-q
       // ─────────────────────────────────────────────────────────
       {
         label: 'ה',
-        question: 'נתון כעת: **\\\`t_hold = 200 ps\\\`** (זמן ה-hold הנדרש ע"י ה-FF במורד הזרם). תן פתרון למסלול הבעייתי במעגל מסעיף א\'.',
+        question: 'נתון כעת: **\`t_hold = 200 ps\`** (זמן ה-hold הנדרש ע"י ה-FF במורד הזרם). תן פתרון למסלול הבעייתי במעגל מסעיף א\'.',
         hints: [
-          'אילוץ ה-hold: \\\`T_shortest ≥ t_h − t_clk-q\\\`. עם \\\`t_clk-q ≈ 30 ps\\\` ו-\\\`t_h = 200 ps\\\` → צריך \\\`T_shortest ≥ 170 ps\\\`.',
-          'הנתיב הקצר ביותר במעגל הוא \\\`A0/B0 → PP00 → Y0\\\` = 120 ps. **120 < 170** → הפרת hold!',
+          'אילוץ ה-hold: \`T_shortest ≥ t_h − t_clk-q\`. עם \`t_clk-q ≈ 30 ps\` ו-\`t_h = 200 ps\` → צריך \`T_shortest ≥ 170 ps\`.',
+          'הנתיב הקצר ביותר במעגל הוא \`A0/B0 → PP00 → Y0\` = 120 ps. **120 < 170** → הפרת hold!',
           'הפתרון: להוסיף **delay buffer** על המסלול הקצר.',
           'איזה רכיב? Buffer (BUF) או זוג inverters בטור. כל BUF מוסיף ~50-100 ps תלוי בטכנולוגיה.',
-          'הוספה של BUF אחד (נניח 60 ps): \\\`120 + 60 = 180 ps ≥ 170\\\` ✓ (margin 10 ps).',
+          'הוספה של BUF אחד (נניח 60 ps): \`120 + 60 = 180 ps ≥ 170\` ✓ (margin 10 ps).',
           'חשוב: הוספת ה-buffer **לא משפיעה על ה-setup** של מסלולים אחרים — הוא רק על המסלול הקצר של Y0.',
         ],
         answer:
@@ -5087,7 +5087,7 @@ T_shortest ≥ t_h − t_clk-q
       // ─────────────────────────────────────────────────────────
       {
         label: 'ו',
-        question: 'במעגל מסעיף א\' מוזרק **bridge fault** בין שני קווים שכנים שיוצאים מ-PP layer: הקו \\\`PP10 → XOR1.in0\\\` והקו \\\`PP01 → XOR1.in1\\\` — מסומנים ב**סגול** בשרטוט. הקצר הוא **wired-AND** — שני הקווים נושאים את ה-AND של ערכיהם המקוריים. **מהו וקטור הקלט המינימלי שמזהה את התקלה?** הסבר מה רואים בפלט.',
+        question: 'במעגל מסעיף א\' מוזרק **bridge fault** בין שני קווים שכנים שיוצאים מ-PP layer: הקו \`PP10 → XOR1.in0\` והקו \`PP01 → XOR1.in1\` — מסומנים ב**סגול** בשרטוט. הקצר הוא **wired-AND** — שני הקווים נושאים את ה-AND של ערכיהם המקוריים. **מהו וקטור הקלט המינימלי שמזהה את התקלה?** הסבר מה רואים בפלט.',
         schematic: `
 <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" direction="ltr"
      font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Bridge fault between PP10→XOR1 and PP01→XOR1 wires.">
@@ -5175,9 +5175,9 @@ T_shortest ≥ t_h − t_clk-q
 </svg>`,
         hints: [
           'Bridge מתבטא רק כשלשני הקווים יש **ערכים שונים** — אם שניהם 0 או שניהם 1, ה-AND שלהם זהה לכל אחד מהם בנפרד ⇒ הקצר שקוף.',
-          'הקו \\\`PP10.out\\\` מחשב \\\`A1 · B0\\\`. הקו \\\`PP01.out\\\` מחשב \\\`A0 · B1\\\`.',
-          'מתי שני הביטויים שונים? למשל כש-PP10=0 ו-PP01=1: \\\`A1·B0=0\\\` ו-\\\`A0·B1=1\\\` ⇒ \\\`A1=0, A0=1, B0=anything, B1=1\\\`.',
-          'בחר \\\`A=01, B=11\\\` (כלומר A0=1, A1=0, B0=1, B1=1): PP10=0·1=0, PP01=1·1=1. wired-AND עושה את שני הקווים = 0.',
+          'הקו \`PP10.out\` מחשב \`A1 · B0\`. הקו \`PP01.out\` מחשב \`A0 · B1\`.',
+          'מתי שני הביטויים שונים? למשל כש-PP10=0 ו-PP01=1: \`A1·B0=0\` ו-\`A0·B1=1\` ⇒ \`A1=0, A0=1, B0=anything, B1=1\`.',
+          'בחר \`A=01, B=11\` (כלומר A0=1, A1=0, B0=1, B1=1): PP10=0·1=0, PP01=1·1=1. wired-AND עושה את שני הקווים = 0.',
           'בלי תקלה: Y3..Y0 = 1·3 = 3 = 0011. עם תקלה: XOR1 רואה (0,0) במקום (0,1) ⇒ Y1 = 0 במקום 1.',
           'מינימום: **1 וקטור בלבד** מספיק לזיהוי.',
         ],
@@ -5345,7 +5345,7 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
       // ─────────────────────────────────────────────────────────
       {
         label: 'ז',
-        question: 'במעגל מסעיף א\' אחד החוטים מוזרק עם תקלת **\\\`stuck-at-0\\\`** — הקו \\\`AND5.out\\\` (כלומר \\\`C1\\\` תקוע ב-0), מסומן ב**אדום** בשרטוט. **מהו וקטור הקלט המינימלי שמזהה את התקלה ומאשש שאכן הקו הזה הוא הפגום?** הסבר את ה-trade-off של מינימום וקטור לעומת זיהוי ייחודי של מיקום התקלה.',
+        question: 'במעגל מסעיף א\' אחד החוטים מוזרק עם תקלת **\`stuck-at-0\`** — הקו \`AND5.out\` (כלומר \`C1\` תקוע ב-0), מסומן ב**אדום** בשרטוט. **מהו וקטור הקלט המינימלי שמזהה את התקלה ומאשש שאכן הקו הזה הוא הפגום?** הסבר את ה-trade-off של מינימום וקטור לעומת זיהוי ייחודי של מיקום התקלה.',
         schematic: `
 <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
      font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Stuck-at-0 fault on AND5.out (C1) wire.">
@@ -5435,10 +5435,10 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   </text>
 </svg>`,
         hints: [
-          '\\\`stuck-at-0\\\` נחשף רק כש**הערך הצפוי על החוט הוא 1**. אם הצפי 0 → התקלה שקופה.',
-          'מתי \\\`C1 = AND5.out = 1\\\`? כש-\\\`PP10 = PP01 = 1\\\`, כלומר \\\`A1=B0=1\\\` ו-\\\`A0=B1=1\\\`. כלומר **A0=A1=B0=B1=1** = A=B=3.',
-          'בחר \\\`A=B=11\\\` (כלומר \\\`A·B=9=1001\\\`): מצופה Y3=1, Y2=0, Y1=0, Y0=1.',
-          'C1 משפיע על \\\`XOR2\\\` (לחישוב Y2) ועל \\\`AND6\\\` (לחישוב Y3). תקלת stuck-at-0 ב-C1 תשנה את שניהם.',
+          '\`stuck-at-0\` נחשף רק כש**הערך הצפוי על החוט הוא 1**. אם הצפי 0 → התקלה שקופה.',
+          'מתי \`C1 = AND5.out = 1\`? כש-\`PP10 = PP01 = 1\`, כלומר \`A1=B0=1\` ו-\`A0=B1=1\`. כלומר **A0=A1=B0=B1=1** = A=B=3.',
+          'בחר \`A=B=11\` (כלומר \`A·B=9=1001\`): מצופה Y3=1, Y2=0, Y1=0, Y0=1.',
+          'C1 משפיע על \`XOR2\` (לחישוב Y2) ועל \`AND6\` (לחישוב Y3). תקלת stuck-at-0 ב-C1 תשנה את שניהם.',
           'עם C1 stuck=0: Y2 = XOR2(PP11=1, 0) = **1** במקום 0, Y3 = AND6(PP11=1, 0) = **0** במקום 1.',
           'מינימום: **1 וקטור** מזהה את התקלה. אבל כדי **לוודא שזה דווקא C1** (ולא, למשל, PP11 או AND5 עצמו) — צריך וקטורים נוספים להבחנה.',
         ],
@@ -5641,85 +5641,85 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
 
 השאלה בודקת **הרכבה** של ידע: אתה מצוטט ל-#5002 (MTBF), אבל הפעם הסיפור עמוק יותר — multi-bit CDC הוא לא רק "סינכרונייזר לכל ביט".`,
     schematic: `
-<svg viewBox="0 0 1140 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Two clock domains with an async boundary; bus crossing with parallel 2-FF synchronizers.">
+<svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Two clock domains with an async boundary; bus crossing with parallel 2-FF synchronizers.">
 
-  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="500" y="48" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="30">
     CDC — שני clock domains, אות יחיד + bus
   </text>
-  <text x="570" y="68" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="500" y="80" text-anchor="middle" fill="#a0a0c0" font-size="19" font-style="italic">
     CLK_A → CLK_B  ·  סינכרון פר-ביט מספיק לאות יחיד; לא מספיק ל-bus
   </text>
 
   <!-- ════════ Domain boundary (vertical dashed red wall) ════════ -->
-  <line x1="540" y1="100" x2="540" y2="640" stroke="#f08080" stroke-width="3" stroke-dasharray="8,5"/>
-  <rect x="40"  y="100" width="500" height="540" fill="rgba(255,176,128,0.04)" stroke="none"/>
-  <rect x="540" y="100" width="560" height="540" fill="rgba(128,255,176,0.04)" stroke="none"/>
+  <line x1="480" y1="120" x2="480" y2="700" stroke="#f08080" stroke-width="3.5" stroke-dasharray="9,5"/>
+  <rect x="40"  y="120" width="440" height="580" fill="rgba(255,176,128,0.04)" stroke="none"/>
+  <rect x="480" y="120" width="480" height="580" fill="rgba(128,255,176,0.04)" stroke="none"/>
 
-  <text x="290" y="124" text-anchor="middle" fill="#ffb080" font-weight="bold" font-size="18">
+  <text x="260" y="148" text-anchor="middle" fill="#ffb080" font-weight="bold" font-size="22">
     DOMAIN A — CLK_A (200 MHz)
   </text>
-  <text x="820" y="124" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">
-    DOMAIN B — CLK_B (333 MHz)  ← הדומיין שלך
+  <text x="720" y="148" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">
+    DOMAIN B — CLK_B (333 MHz)
   </text>
 
-  <text x="540" y="156" text-anchor="middle" fill="#ff9999" font-size="13" font-weight="bold">
+  <text x="480" y="184" text-anchor="middle" fill="#ff9999" font-size="17" font-weight="bold">
     ⚠ async boundary
   </text>
 
   <!-- ════════ Single-bit async crossing (top) ════════ -->
-  <circle cx="80" cy="220" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="80" y="226" text-anchor="middle" fill="#cca040" font-size="13" font-weight="bold">async_in</text>
+  <circle cx="80" cy="250" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="80" y="258" text-anchor="middle" fill="#cca040" font-size="14" font-weight="bold">async_in</text>
 
-  <!-- Wire crosses the wall -->
-  <line x1="100" y1="220" x2="620" y2="220" stroke="#cc99ff" stroke-width="2.4"/>
-  <text x="320" y="208" text-anchor="middle" fill="#cc99ff" font-size="12" font-style="italic">crosses boundary</text>
+  <line x1="106" y1="250" x2="560" y2="250" stroke="#cc99ff" stroke-width="3"/>
+  <text x="290" y="232" text-anchor="middle" fill="#cc99ff" font-size="16" font-style="italic">crosses boundary</text>
 
   <!-- 2-FF synchronizer for the single bit -->
-  <rect x="620" y="200" width="80" height="40" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.2"/>
-  <text x="660" y="225" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF_S1</text>
+  <rect x="560" y="222" width="110" height="56" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
+  <text x="615" y="256" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF_S1</text>
 
-  <rect x="740" y="200" width="80" height="40" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.2"/>
-  <text x="780" y="225" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF_S2</text>
+  <rect x="700" y="222" width="110" height="56" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
+  <text x="755" y="256" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF_S2</text>
 
-  <line x1="700" y1="220" x2="740" y2="220" stroke="#a0a0c0" stroke-width="2"/>
-  <line x1="820" y1="220" x2="900" y2="220" stroke="#ff9933" stroke-width="2"/>
+  <line x1="670" y1="250" x2="700" y2="250" stroke="#a0a0c0" stroke-width="2.4"/>
+  <line x1="810" y1="250" x2="900" y2="250" stroke="#ff9933" stroke-width="2.4"/>
 
-  <circle cx="920" cy="220" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
-  <text x="920" y="226" text-anchor="middle" fill="#ff9933" font-size="13" font-weight="bold">sync_out</text>
+  <circle cx="920" cy="250" r="26" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="920" y="258" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">sync_out</text>
 
-  <text x="720" y="262" text-anchor="middle" fill="#a0a0c0" font-size="12" font-style="italic">
+  <text x="685" y="305" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     2-FF synchronizer (סעיף א')
   </text>
 
   <!-- ════════ Multi-bit bus crossing (middle, 3 parallel) ════════ -->
   ${[0, 1, 2].map(i => {
-    const y = 340 + i * 70;
+    const y = 410 + i * 80;
     return `
-      <circle cx="80" cy="${y}" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
-      <text x="80" y="${y + 5}" text-anchor="middle" fill="#cca040" font-size="13" font-weight="bold">bus[${i}]</text>
-      <line x1="98" y1="${y}" x2="620" y2="${y}" stroke="#cc99ff" stroke-width="2"/>
-      <rect x="620" y="${y - 18}" width="74" height="36" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2"/>
-      <text x="657" y="${y + 4}" text-anchor="middle" fill="#cc99ff" font-size="12" font-weight="bold">FF1_${i}</text>
-      <rect x="734" y="${y - 18}" width="74" height="36" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2"/>
-      <text x="771" y="${y + 4}" text-anchor="middle" fill="#cc99ff" font-size="12" font-weight="bold">FF2_${i}</text>
-      <line x1="694" y1="${y}" x2="734" y2="${y}" stroke="#a0a0c0" stroke-width="1.8"/>
-      <line x1="808" y1="${y}" x2="900" y2="${y}" stroke="#ff9933" stroke-width="1.8"/>
-      <circle cx="920" cy="${y}" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2"/>
-      <text x="920" y="${y + 5}" text-anchor="middle" fill="#ff9933" font-size="13" font-weight="bold">q[${i}]</text>
+      <circle cx="80" cy="${y}" r="24" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+      <text x="80" y="${y + 6}" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">bus[${i}]</text>
+      <line x1="104" y1="${y}" x2="560" y2="${y}" stroke="#cc99ff" stroke-width="2.4"/>
+      <rect x="560" y="${y - 24}" width="100" height="48" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
+      <text x="610" y="${y + 6}" text-anchor="middle" fill="#cc99ff" font-size="17" font-weight="bold">FF1_${i}</text>
+      <rect x="690" y="${y - 24}" width="100" height="48" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
+      <text x="740" y="${y + 6}" text-anchor="middle" fill="#cc99ff" font-size="17" font-weight="bold">FF2_${i}</text>
+      <line x1="660" y1="${y}" x2="690" y2="${y}" stroke="#a0a0c0" stroke-width="2"/>
+      <line x1="790" y1="${y}" x2="896" y2="${y}" stroke="#ff9933" stroke-width="2.2"/>
+      <circle cx="920" cy="${y}" r="24" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
+      <text x="920" y="${y + 6}" text-anchor="middle" fill="#ff9933" font-size="16" font-weight="bold">q[${i}]</text>
     `;
   }).join('')}
 
   <!-- Bus label -->
-  <text x="320" y="328" text-anchor="middle" fill="#ffc890" font-size="14" font-weight="bold">
+  <text x="280" y="390" text-anchor="middle" fill="#ffc890" font-size="18" font-weight="bold">
     bus[2:0] — 3 ביטים מקבילים שצריכים לעבור יחד
   </text>
-  <text x="720" y="570" text-anchor="middle" fill="#ff8080" font-size="13" font-weight="bold" font-style="italic">
+  <text x="685" y="660" text-anchor="middle" fill="#ff8080" font-size="17" font-weight="bold" font-style="italic">
     ⚠ סינכרון פר-ביט אינו מספיק — מטופל בסעיף ב'
   </text>
 
-  <!-- CLK_B label at the bottom right -->
-  <text x="820" y="610" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">
+  <!-- CLK_B label at the bottom -->
+  <rect x="600" y="700" width="280" height="42" rx="8" fill="rgba(128,240,160,0.10)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="740" y="728" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">
     CLK_B → כל ה-FFs בצד B
   </text>
 </svg>`,
@@ -5729,13 +5729,13 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
       // ─────────────────────────────────────────────────────────
       {
         label: 'א',
-        question: 'נתון ה-\\\`async_in\\\` המגיע מ-domain A. אם תדגום אותו ישירות ב-FF בודד ב-domain B, מה הסיכון? מה הפתרון הסטנדרטי, ולמה הוא **לא** מבטיח 100% נכונות?',
+        question: 'נתון ה-\`async_in\` המגיע מ-domain A. אם תדגום אותו ישירות ב-FF בודד ב-domain B, מה הסיכון? מה הפתרון הסטנדרטי, ולמה הוא **לא** מבטיח 100% נכונות?',
         hints: [
-          'הקלט \\\`async_in\\\` נשלט ע"י \\\`CLK_A\\\`, ה-FF דוגם ב-\\\`CLK_B\\\`. שני השעונים אסינכרוניים → ייתכן ש-\\\`async_in\\\` משתנה בתוך חלון ה-setup/hold של ה-FF.',
+          'הקלט \`async_in\` נשלט ע"י \`CLK_A\`, ה-FF דוגם ב-\`CLK_B\`. שני השעונים אסינכרוניים → ייתכן ש-\`async_in\` משתנה בתוך חלון ה-setup/hold של ה-FF.',
           'הפרת setup/hold ב-FF גורמת ל-**metastability** — היציאה תקועה באזור ביניים בין 0 ל-1 לזמן לא צפוי (τ).',
-          'הפתרון הקלאסי: **2-FF synchronizer** — שני FFs בטור, שניהם ב-\\\`CLK_B\\\`. FF1 ייתכן metastable; FF2 דוגם **את היציאה של FF1** אחרי cycle שלם — סביר ש-FF1 כבר התיישב.',
+          'הפתרון הקלאסי: **2-FF synchronizer** — שני FFs בטור, שניהם ב-\`CLK_B\`. FF1 ייתכן metastable; FF2 דוגם **את היציאה של FF1** אחרי cycle שלם — סביר ש-FF1 כבר התיישב.',
           'המפתח: **לא** מבטיח נכונות, רק **מקטין את הסבירות**. ראה את נוסחת ה-MTBF ב-#5002.',
-          'נוסחת MTBF: \\\`MTBF = exp(t_r / τ) / (T_w · f_clk · f_data)\\\`. שני שלבים = \\\`t_r\\\` כפול → exponent כפול → MTBF גדל **אקספוננציאלית**.',
+          'נוסחת MTBF: \`MTBF = exp(t_r / τ) / (T_w · f_clk · f_data)\`. שני שלבים = \`t_r\` כפול → exponent כפול → MTBF גדל **אקספוננציאלית**.',
         ],
         answer:
 `### הבעיה: דגימה ישירה
@@ -5871,72 +5871,86 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
           };
         }),
         answerSchematic: `
-<svg viewBox="0 0 1080 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Single bit through a 2-FF synchronizer; metastability resolves between FF_S1 and FF_S2.">
+<svg viewBox="0 0 960 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Single bit through a 2-FF synchronizer; metastability resolves between FF_S1 and FF_S2.">
 
-  <text x="540" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="480" y="50" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="30">
     2-FF Synchronizer — איך metastability מתיישבת
   </text>
-  <text x="540" y="68" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
-    FF_S1 עלול להיות metastable; ה-cycle עד FF_S2 = זמן הסתגלות t_r
+  <text x="480" y="84" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
+    FF_S1 עלול להיות metastable · ה-cycle עד FF_S2 = זמן הסתגלות t_r
   </text>
 
-  <!-- Top: cycle 0 — async_in samples during a setup violation window -->
-  <text x="60" y="120" fill="#cca040" font-size="15" font-weight="bold">Cycle 0 — דגימה ראשונה</text>
-  <line x1="60" y1="135" x2="1020" y2="135" stroke="#3a4a5a" stroke-width="1"/>
+  <!-- ════════ Cycle 0 panel (red — metastable) ════════ -->
+  <rect x="40" y="120" width="880" height="200" rx="14" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2"/>
+  <text x="480" y="156" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">
+    Cycle 0 — דגימה ראשונה (FF_S1 ייתכן metastable)
+  </text>
 
-  <circle cx="100" cy="180" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
-  <text x="100" y="186" text-anchor="middle" fill="#cca040" font-size="13" font-weight="bold">async</text>
-  <line x1="118" y1="180" x2="300" y2="180" stroke="#cca040" stroke-width="2"/>
+  <!-- async input -->
+  <circle cx="100" cy="240" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="100" y="248" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">async</text>
+  <line x1="126" y1="240" x2="290" y2="240" stroke="#cca040" stroke-width="2.4"/>
 
-  <rect x="300" y="155" width="120" height="50" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-  <text x="360" y="178" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">FF_S1</text>
-  <text x="360" y="195" text-anchor="middle" fill="#ff8080" font-size="11" font-weight="bold">⚠ metastable?</text>
+  <!-- FF_S1 with metastable warning -->
+  <rect x="290" y="208" width="160" height="70" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.8"/>
+  <text x="370" y="238" text-anchor="middle" fill="#cc99ff" font-size="22" font-weight="bold">FF_S1</text>
+  <text x="370" y="263" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">⚠ metastable?</text>
 
-  <line x1="420" y1="180" x2="560" y2="180" stroke="#ff8080" stroke-width="3" stroke-dasharray="4,3"/>
-  <text x="490" y="170" text-anchor="middle" fill="#ff8080" font-size="12" font-style="italic">value undefined</text>
+  <!-- Undefined wire -->
+  <line x1="450" y1="244" x2="610" y2="244" stroke="#ff8080" stroke-width="4" stroke-dasharray="6,4"/>
+  <text x="530" y="230" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">value undefined</text>
 
-  <rect x="560" y="155" width="120" height="50" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-  <text x="620" y="178" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">FF_S2</text>
-  <text x="620" y="195" text-anchor="middle" fill="#a0a0c0" font-size="11">לא דוגם עוד</text>
+  <!-- FF_S2 - not sampling yet -->
+  <rect x="610" y="208" width="160" height="70" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4" stroke-dasharray="4,3"/>
+  <text x="690" y="238" text-anchor="middle" fill="#cc99ff" font-size="22" font-weight="bold">FF_S2</text>
+  <text x="690" y="263" text-anchor="middle" fill="#a0a0c0" font-size="14">לא דוגם עוד</text>
 
-  <line x1="680" y1="180" x2="900" y2="180" stroke="#a0a0c0" stroke-width="2" stroke-dasharray="4,4"/>
-  <circle cx="920" cy="180" r="18" fill="#0a1825" stroke="#a0a0c0" stroke-width="2"/>
-  <text x="920" y="186" text-anchor="middle" fill="#a0a0c0" font-size="13" font-weight="bold">?</text>
+  <!-- Unknown output -->
+  <line x1="770" y1="244" x2="860" y2="244" stroke="#a0a0c0" stroke-width="2.4" stroke-dasharray="5,4"/>
+  <circle cx="888" cy="244" r="24" fill="#0a1825" stroke="#a0a0c0" stroke-width="2"/>
+  <text x="888" y="252" text-anchor="middle" fill="#a0a0c0" font-size="22" font-weight="bold">?</text>
 
-  <!-- Bottom: cycle 1 — FF_S1 has settled; FF_S2 samples cleanly -->
-  <text x="60" y="290" fill="#80f0a0" font-size="15" font-weight="bold">Cycle 1 — אחרי הסתגלות t_r</text>
-  <line x1="60" y1="305" x2="1020" y2="305" stroke="#3a4a5a" stroke-width="1"/>
+  <!-- ════════ Cycle 1 panel (green — settled) ════════ -->
+  <rect x="40" y="350" width="880" height="200" rx="14" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
+  <text x="480" y="386" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">
+    Cycle 1 — אחרי זמן הסתגלות t_r (FF_S1 התייצב, FF_S2 דוגם נקי)
+  </text>
 
-  <circle cx="100" cy="370" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
-  <text x="100" y="376" text-anchor="middle" fill="#cca040" font-size="13" font-weight="bold">async</text>
-  <line x1="118" y1="370" x2="300" y2="370" stroke="#cca040" stroke-width="2"/>
+  <!-- async input -->
+  <circle cx="100" cy="470" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+  <text x="100" y="478" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">async</text>
+  <line x1="126" y1="470" x2="290" y2="470" stroke="#cca040" stroke-width="2.4"/>
 
-  <rect x="300" y="345" width="120" height="50" rx="8" fill="#1a1428" stroke="#80f0a0" stroke-width="2.6"/>
-  <text x="360" y="368" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">FF_S1</text>
-  <text x="360" y="385" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">✓ settled (0 or 1)</text>
+  <!-- FF_S1 settled -->
+  <rect x="290" y="438" width="160" height="70" rx="8" fill="#1a1428" stroke="#80f0a0" stroke-width="3"/>
+  <text x="370" y="468" text-anchor="middle" fill="#80f0a0" font-size="22" font-weight="bold">FF_S1</text>
+  <text x="370" y="493" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">✓ settled (0 or 1)</text>
 
-  <line x1="420" y1="370" x2="560" y2="370" stroke="#80f0a0" stroke-width="3"/>
-  <text x="490" y="360" text-anchor="middle" fill="#80f0a0" font-size="12" font-style="italic">stable</text>
+  <!-- Stable wire -->
+  <line x1="450" y1="474" x2="610" y2="474" stroke="#80f0a0" stroke-width="4"/>
+  <text x="530" y="460" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">stable</text>
 
-  <rect x="560" y="345" width="120" height="50" rx="8" fill="#1a1428" stroke="#80f0a0" stroke-width="2.6"/>
-  <text x="620" y="368" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">FF_S2</text>
-  <text x="620" y="385" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">✓ samples clean</text>
+  <!-- FF_S2 samples clean -->
+  <rect x="610" y="438" width="160" height="70" rx="8" fill="#1a1428" stroke="#80f0a0" stroke-width="3"/>
+  <text x="690" y="468" text-anchor="middle" fill="#80f0a0" font-size="22" font-weight="bold">FF_S2</text>
+  <text x="690" y="493" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">✓ samples clean</text>
 
-  <line x1="680" y1="370" x2="900" y2="370" stroke="#ff9933" stroke-width="2.4"/>
-  <circle cx="920" cy="370" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
-  <text x="920" y="376" text-anchor="middle" fill="#ff9933" font-size="13" font-weight="bold">sync</text>
+  <!-- sync output -->
+  <line x1="770" y1="474" x2="860" y2="474" stroke="#ff9933" stroke-width="3"/>
+  <circle cx="888" cy="474" r="24" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="888" y="482" text-anchor="middle" fill="#ff9933" font-size="15" font-weight="bold">sync</text>
 
-  <!-- MTBF formula box -->
-  <rect x="40" y="430" width="1000" height="90" rx="10" fill="rgba(204,102,255,0.05)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="540" y="460" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="17">
+  <!-- ════════ MTBF formula box ════════ -->
+  <rect x="40" y="582" width="880" height="100" rx="12" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="2"/>
+  <text x="480" y="614" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="22">
     MTBF (2-FF) = exp(2·t_clk / τ) / (T_w · f_clk · f_data)
   </text>
-  <text x="540" y="488" text-anchor="middle" fill="#c8b090" font-size="14">
-    שני שלבים → exponent כפול → MTBF גדל אקספוננציאלית. בעבודה: ~10^40+ שנים.
+  <text x="480" y="644" text-anchor="middle" fill="#c8b090" font-size="17">
+    שני שלבים → exponent כפול → MTBF גדל אקספוננציאלית · בעבודה ~10⁴⁰⁺ שנים
   </text>
-  <text x="540" y="510" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">
-    ראה #5002 לחישוב מלא של MTBF.
+  <text x="480" y="670" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+    ראה #5002 לחישוב מלא של MTBF
   </text>
 </svg>`,
       },
@@ -5946,11 +5960,11 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
       // ─────────────────────────────────────────────────────────
       {
         label: 'ב',
-        question: 'נתון ה-bus 3-ביט מ-domain A: \\\`bus[2:0]\\\` שמתעדכן בכל \\\`CLK_A\\\` במונה (\\\`000→001→010→011→100→...\\\`). אתה מציב 2-FF synchronizer **לכל ביט בנפרד** ב-domain B (3 סינכרונייזרים מקבילים). מועמדים רבים מבצעים את זה בראיון — **למה זה שגוי**? תן דוגמה קונקרטית שבה \\\`q[2:0]\\\` ב-domain B **לא יהיה אף ערך חוקי של המונה**, אפילו אחרי הסתגלות.',
+        question: 'נתון ה-bus 3-ביט מ-domain A: \`bus[2:0]\` שמתעדכן בכל \`CLK_A\` במונה (\`000→001→010→011→100→...\`). אתה מציב 2-FF synchronizer **לכל ביט בנפרד** ב-domain B (3 סינכרונייזרים מקבילים). מועמדים רבים מבצעים את זה בראיון — **למה זה שגוי**? תן דוגמה קונקרטית שבה \`q[2:0]\` ב-domain B **לא יהיה אף ערך חוקי של המונה**, אפילו אחרי הסתגלות.',
         hints: [
           'ב-2-FF synchronizer פר-ביט, **כל ביט מסתגל בנפרד**. אם ביט אחד נתקל ב-metastability ב-FF_S1 והאחר לא, הם מתייצבים ב-cycles שונים.',
-          'דוגמה: bus עובר מ-\\\`011\\\` ל-\\\`100\\\` — **שלושת הביטים מתחלפים בו-זמנית**. אם ה-FF_S1 של ביט 2 מסתגל מהר (= 1) וה-FF_S1 של ביטים 0,1 מסתגלים איטי (= עדיין 1) → אחרי cycle 1 ה-FF_S2 דוגם \\\`111\\\`.',
-          'התוצאה: \\\`q[2:0] = 111\\\` — ערך **שלא היה אף פעם במונה**! המונה היה \\\`011\\\` או \\\`100\\\`, אבל לא \\\`111\\\`.',
+          'דוגמה: bus עובר מ-\`011\` ל-\`100\` — **שלושת הביטים מתחלפים בו-זמנית**. אם ה-FF_S1 של ביט 2 מסתגל מהר (= 1) וה-FF_S1 של ביטים 0,1 מסתגלים איטי (= עדיין 1) → אחרי cycle 1 ה-FF_S2 דוגם \`111\`.',
+          'התוצאה: \`q[2:0] = 111\` — ערך **שלא היה אף פעם במונה**! המונה היה \`011\` או \`100\`, אבל לא \`111\`.',
           'הבעיה היא **בו-זמניות**: כל סינכרונייזר עובד נכון בנפרד, אבל אין סינכרון בין הסינכרונייזרים. הם "נחתכים" באמצע מעבר.',
           'הפתרון לא יכול להיות "להוסיף עוד FFs". צריך **מבנה אחר** — נדבר על זה בסעיף ג\'.',
         ],
@@ -6089,10 +6103,10 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
       // ─────────────────────────────────────────────────────────
       {
         label: 'ג',
-        question: 'נתון שגילית את הבעיה מסעיף ב\'. נסה לתת **שלושה פתרונות שונים** מקובלים בתעשייה ל-multi-bit CDC. תיאר כל אחד בקצרה, ו\\\`compare them\\\` לפי **latency**, **throughput**, **area** ו-**complexity**.',
+        question: 'נתון שגילית את הבעיה מסעיף ב\'. נסה לתת **שלושה פתרונות שונים** מקובלים בתעשייה ל-multi-bit CDC. תיאר כל אחד בקצרה, ו\`compare them\` לפי **latency**, **throughput**, **area** ו-**complexity**.',
         hints: [
           'הקובץ הראשון: **async FIFO** — שתי-פורט עם 2 pointers (read/write) שעוברים CDC עצמאית. ה-bus מעביר נתונים דרך זיכרון.',
-          'הקובץ השני: **handshake** — אות \\\`req\\\` (1 ביט) מסונכרן ל-domain B; כאשר \\\`req\\\` יציב, ה-bus יציב. אות \\\`ack\\\` חוזר. רק 1 ביט עובר CDC, ה-bus נגזר.',
+          'הקובץ השני: **handshake** — אות \`req\` (1 ביט) מסונכרן ל-domain B; כאשר \`req\` יציב, ה-bus יציב. אות \`ack\` חוזר. רק 1 ביט עובר CDC, ה-bus נגזר.',
           'הקובץ השלישי: **Gray code** — קוד שבו רק 1 ביט מתחלף בכל מעבר. סינכרונייזר פר-ביט עובד! זה דווקא פתרון מאוד נפוץ עבור monotonic counters.',
           'שלושת הפתרונות יעבדו. הבחירה תלויה ביישום.',
         ],
@@ -6260,9 +6274,9 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
       // ─────────────────────────────────────────────────────────
       {
         label: 'ד',
-        question: 'נתון מונה Gray 2-ביט במונה הסדרה \\\`00 → 01 → 11 → 10 → 00\\\`. הוא עובר CDC עם 2-FF synchronizer **פר-ביט**. תוקק את הסדרה לאורך הגבול: מה האינוואריאנט שמבטיח נכונות, גם אם ה-FFs יוצרים metastability ב-cycle כלשהו?',
+        question: 'נתון מונה Gray 2-ביט במונה הסדרה \`00 → 01 → 11 → 10 → 00\`. הוא עובר CDC עם 2-FF synchronizer **פר-ביט**. תוקק את הסדרה לאורך הגבול: מה האינוואריאנט שמבטיח נכונות, גם אם ה-FFs יוצרים metastability ב-cycle כלשהו?',
         hints: [
-          'בקוד Gray כל מעבר משנה בדיוק **1 ביט**. רשום את הסדרה: \\\`00, 01, 11, 10, 00, ...\\\` — איזה ביט משתנה בכל מעבר?',
+          'בקוד Gray כל מעבר משנה בדיוק **1 ביט**. רשום את הסדרה: \`00, 01, 11, 10, 00, ...\` — איזה ביט משתנה בכל מעבר?',
           '00 → 01: ביט 0 משתנה. 01 → 11: ביט 1 משתנה. 11 → 10: ביט 0 משתנה. 10 → 00: ביט 1 משתנה.',
           'בכל cycle, **רק** סינכרונייזר אחד "נמצא בסכנה" של metastability — של הביט המתחלף. השני יציב.',
           'אם הסינכרונייזר של הביט המתחלף מסתגל לערך הישן → q = הקוד הישן. אם מסתגל לחדש → q = הקוד החדש. **אף פעם ערך-ביניים לא קיים בקוד.**',
@@ -6343,55 +6357,60 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
           'XOR',
         ],
         schematic: `
-<svg viewBox="0 0 1100 560" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Gray code 2-bit sequence with annotated single-bit transitions and metastability resolutions.">
+<svg viewBox="0 0 960 680" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="19" role="img" aria-label="Gray code 2-bit sequence with annotated single-bit transitions and metastability resolutions.">
 
-  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="480" y="50" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="30">
     Gray code — אינוואריאנט single-bit-change
   </text>
-  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
-    סדרה: 00 → 01 → 11 → 10 → 00  ·  כל מעבר משנה בדיוק 1 ביט
+  <text x="480" y="84" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
+    סדרה:  00 → 01 → 11 → 10 → 00  ·  כל מעבר משנה בדיוק 1 ביט
   </text>
 
   <!-- The 4 Gray codes as nodes in a ring -->
   ${[
-    { code: '00', label: '0', cx: 280, cy: 290 },
-    { code: '01', label: '1', cx: 560, cy: 180 },
-    { code: '11', label: '2', cx: 840, cy: 290 },
-    { code: '10', label: '3', cx: 560, cy: 400 },
+    { code: '00', dec: '0', cx: 200, cy: 340 },
+    { code: '01', dec: '1', cx: 480, cy: 200 },
+    { code: '11', dec: '2', cx: 760, cy: 340 },
+    { code: '10', dec: '3', cx: 480, cy: 480 },
   ].map(n => `
-    <circle cx="${n.cx}" cy="${n.cy}" r="60" fill="#0a1825" stroke="#80d4ff" stroke-width="2.4"/>
-    <text x="${n.cx}" y="${n.cy - 8}" text-anchor="middle" fill="#80d4ff" font-size="26" font-weight="bold">${n.code}</text>
-    <text x="${n.cx}" y="${n.cy + 18}" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">(= ${n.label})</text>
+    <circle cx="${n.cx}" cy="${n.cy}" r="80" fill="#0a1825" stroke="#80d4ff" stroke-width="3"/>
+    <text x="${n.cx}" y="${n.cy - 6}" text-anchor="middle" fill="#80d4ff" font-size="40" font-weight="bold">${n.code}</text>
+    <text x="${n.cx}" y="${n.cy + 28}" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">(= ${n.dec})</text>
   `).join('')}
 
-  <!-- Arrows + transition labels -->
+  <!-- Arrows -->
   <defs>
-    <marker id="grayArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <marker id="grayArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 Z" fill="#80f0a0"/>
     </marker>
   </defs>
 
-  <g stroke="#80f0a0" stroke-width="2.6" fill="none" marker-end="url(#grayArr)">
-    <path d="M 340 290 L 500 180"/>      <!-- 00→01 -->
-    <path d="M 620 180 L 780 290"/>      <!-- 01→11 -->
-    <path d="M 780 290 L 620 400"/>      <!-- 11→10 -->
-    <path d="M 500 400 L 340 290"/>      <!-- 10→00 -->
+  <g stroke="#80f0a0" stroke-width="3.5" fill="none" marker-end="url(#grayArr)">
+    <path d="M 268 296 L 420 224"/>      <!-- 00→01 -->
+    <path d="M 540 224 L 700 296"/>      <!-- 01→11 -->
+    <path d="M 700 384 L 540 456"/>      <!-- 11→10 -->
+    <path d="M 420 456 L 268 384"/>      <!-- 10→00 -->
   </g>
 
-  <!-- Per-arrow labels -->
-  <text x="395" y="218" fill="#80f0a0" font-size="14" font-weight="bold" font-style="italic">bit 0 ↺</text>
-  <text x="710" y="218" fill="#80f0a0" font-size="14" font-weight="bold" font-style="italic">bit 1 ↺</text>
-  <text x="710" y="375" fill="#80f0a0" font-size="14" font-weight="bold" font-style="italic">bit 0 ↺</text>
-  <text x="395" y="375" fill="#80f0a0" font-size="14" font-weight="bold" font-style="italic">bit 1 ↺</text>
+  <!-- Per-arrow labels (with backing pills for readability) -->
+  ${[
+    { x: 344, y: 248, label: 'bit 0 משתנה' },
+    { x: 620, y: 248, label: 'bit 1 משתנה' },
+    { x: 620, y: 432, label: 'bit 0 משתנה' },
+    { x: 344, y: 432, label: 'bit 1 משתנה' },
+  ].map(l => `
+    <rect x="${l.x - 70}" y="${l.y - 18}" width="140" height="28" rx="6" fill="rgba(10,24,37,0.85)" stroke="#80f0a0" stroke-width="1.4"/>
+    <text x="${l.x}" y="${l.y + 2}" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">${l.label}</text>
+  `).join('')}
 
   <!-- Bottom box: the invariant -->
-  <rect x="80" y="480" width="940" height="68" rx="10" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="550" y="510" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="17">
-    האינוואריאנט: בכל מעבר, רק 1 ביט בסיכון metastable. ה-2-ה stable.
+  <rect x="40" y="580" width="880" height="84" rx="12" fill="rgba(128,240,160,0.08)" stroke="#80f0a0" stroke-width="2"/>
+  <text x="480" y="612" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">
+    בכל מעבר: רק 1 ביט בסיכון metastable, השני stable
   </text>
-  <text x="550" y="535" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
-    כל settling אפשרי = ערך חוקי בסדרה. אין ערך-ביניים בלתי-חוקי.
+  <text x="480" y="644" text-anchor="middle" fill="#c8b090" font-size="17" font-style="italic">
+    כל settling אפשרי = ערך חוקי בסדרה · אין ערך-ביניים בלתי-חוקי
   </text>
 </svg>`,
       },
@@ -6605,12 +6624,12 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
       // ─────────────────────────────────────────────────────────
       {
         label: 'א',
-        question: 'נתון \\\`T_clk = 400 ps\\\`, \\\`t_CQ = 80 ps\\\`, \\\`t_setup = 80 ps\\\` עם **skew אפס** בכל ה-FFs. חשב את ה-setup slack של כל שלב. איזה שלב קריטי, ומה ה-\\\`f_max\\\` של ה-pipeline?',
+        question: 'נתון \`T_clk = 400 ps\`, \`t_CQ = 80 ps\`, \`t_setup = 80 ps\` עם **skew אפס** בכל ה-FFs. חשב את ה-setup slack של כל שלב. איזה שלב קריטי, ומה ה-\`f_max\` של ה-pipeline?',
         hints: [
-          'נוסחת setup slack: \\\`T_clk − t_CQ − logic_max − t_setup ≥ 0\\\`.',
+          'נוסחת setup slack: \`T_clk − t_CQ − logic_max − t_setup ≥ 0\`.',
           'חשב לכל שלב בנפרד: stage 1 וstage 2.',
           'שלב עם slack שלילי = setup violation. השלב הקריטי הוא **המקסימום הקטן ביותר** (= ה-min slack).',
-          'f_max נקבע ע"י השלב הקריטי: \\\`T_min = t_CQ + logic_max_critical + t_setup\\\`. \\\`f_max = 1 / T_min\\\`.',
+          'f_max נקבע ע"י השלב הקריטי: \`T_min = t_CQ + logic_max_critical + t_setup\`. \`f_max = 1 / T_min\`.',
         ],
         answer:
 `### Setup slack ללא skew
@@ -6820,9 +6839,9 @@ f_max = 1 / 420 ps ≈ 2.38 GHz
       // ─────────────────────────────────────────────────────────
       {
         label: 'ב',
-        question: 'יישם **\\\`t_sk2 = −100 ps\\\`** (ה-clock מגיע ל-FF2 **מוקדם** ב-100 ps). מה קורה ל-setup slack של stage 1 ושל stage 2? למה הקונבנציה היא ש-skew שלילי = clock מוקדם?',
+        question: 'יישם **\`t_sk2 = −100 ps\`** (ה-clock מגיע ל-FF2 **מוקדם** ב-100 ps). מה קורה ל-setup slack של stage 1 ושל stage 2? למה הקונבנציה היא ש-skew שלילי = clock מוקדם?',
         hints: [
-          'נוסחת setup slack עם skew: \\\`slack = T_clk + sk_dst − sk_src − t_CQ − logic_max − t_setup\\\`.',
+          'נוסחת setup slack עם skew: \`slack = T_clk + sk_dst − sk_src − t_CQ − logic_max − t_setup\`.',
           'Stage 1: src = FF1 (sk_src = sk1 = 0), dst = FF2 (sk_dst = sk2 = −100).',
           'Stage 2: src = FF2 (sk_src = sk2 = −100), dst = FF3 (sk_dst = sk3 = 0).',
           'Skew שלילי ב-FF2 = clock מוקדם ב-FF2 → FF2 דוגם מוקדם → stage 1 מקבל **פחות** זמן (slack יורד).',
@@ -7003,11 +7022,11 @@ Useful skew **מפזר** את 70 ה-ps האלה בין השלבים, אבל לא
       // ─────────────────────────────────────────────────────────
       {
         label: 'ג',
-        question: 'מה ערך ה-\\\`sk2\\\` שיגרום ל-**שני השלבים** להיות בעלי slack חיובי **שווה**? מה הערך של ה-slack המאוזן? למה אי אפשר לקבל slack ≥ +50 בשני השלבים בו-זמנית?',
+        question: 'מה ערך ה-\`sk2\` שיגרום ל-**שני השלבים** להיות בעלי slack חיובי **שווה**? מה הערך של ה-slack המאוזן? למה אי אפשר לקבל slack ≥ +50 בשני השלבים בו-זמנית?',
         hints: [
-          'תזכר: \\\`slack_total\\\` קבוע = +70 ps. אתה רק מחלק אותו בין שני השלבים.',
-          'איזון מושלם: \\\`slack₁ = slack₂\\\`. הגדר את ה-skew כך שבדיוק מחצית מה-slack_total בכל שלב.',
-          'slack₁ = 90 + sk2. slack₂ = −20 − sk2. הצבת \\\`slack₁ = slack₂\\\` → \\\`90 + sk2 = −20 − sk2\\\` → \\\`2·sk2 = −110\\\` → \\\`sk2 = −55\\\`.',
+          'תזכר: \`slack_total\` קבוע = +70 ps. אתה רק מחלק אותו בין שני השלבים.',
+          'איזון מושלם: \`slack₁ = slack₂\`. הגדר את ה-skew כך שבדיוק מחצית מה-slack_total בכל שלב.',
+          'slack₁ = 90 + sk2. slack₂ = −20 − sk2. הצבת \`slack₁ = slack₂\` → \`90 + sk2 = −20 − sk2\` → \`2·sk2 = −110\` → \`sk2 = −55\`.',
           'אז slack₁ = slack₂ = +35 ps.',
           'למה ≥ +50 לא אפשרי? כי 70 ps רק יש לחלק. 2·50 = 100 ps > 70. בלתי-אפשרי.',
         ],
@@ -7186,12 +7205,12 @@ useful skew **לא** יכול לפתור את הבעיה לבדו אם ה-pipeli
       // ─────────────────────────────────────────────────────────
       {
         label: 'ד',
-        question: 'נתון \\\`t_hold = 40 ps\\\` ו-\\\`logic₂_min = 30 ps\\\`. אם תדחוף את ה-\\\`sk2\\\` שלילי יותר מ-\\\`−55\\\` כדי לקבל עוד slack ל-stage 2 (לדוגמה sk2 = \\\`−80\\\`), מה הסיכון? נסחו את אילוץ ה-hold עם skew והסבירו למה useful skew הוא **bounded**.',
+        question: 'נתון \`t_hold = 40 ps\` ו-\`logic₂_min = 30 ps\`. אם תדחוף את ה-\`sk2\` שלילי יותר מ-\`−55\` כדי לקבל עוד slack ל-stage 2 (לדוגמה sk2 = \`−80\`), מה הסיכון? נסחו את אילוץ ה-hold עם skew והסבירו למה useful skew הוא **bounded**.',
         hints: [
-          'אילוץ hold עם skew: \\\`t_CQ + logic_min ≥ t_hold + (sk_dst − sk_src)\\\`.',
-          'Stage 2 hold: \\\`sk_src = sk2\\\`, \\\`sk_dst = sk3 = 0\\\`. → \\\`t_CQ + logic_min ≥ t_hold − sk2\\\`.',
-          'הצב מספרים: \\\`80 + 30 ≥ 40 − sk2\\\` → \\\`110 ≥ 40 − sk2\\\` → \\\`−sk2 ≤ 70\\\` → \\\`sk2 ≥ −70\\\`.',
-          'אם sk2 = −80: \\\`80 + 30 = 110 ≥ 40 + 80 = 120\\\` → \\\`110 < 120\\\` → **hold violation!** race condition.',
+          'אילוץ hold עם skew: \`t_CQ + logic_min ≥ t_hold + (sk_dst − sk_src)\`.',
+          'Stage 2 hold: \`sk_src = sk2\`, \`sk_dst = sk3 = 0\`. → \`t_CQ + logic_min ≥ t_hold − sk2\`.',
+          'הצב מספרים: \`80 + 30 ≥ 40 − sk2\` → \`110 ≥ 40 − sk2\` → \`−sk2 ≤ 70\` → \`sk2 ≥ −70\`.',
+          'אם sk2 = −80: \`80 + 30 = 110 ≥ 40 + 80 = 120\` → \`110 < 120\` → **hold violation!** race condition.',
           'הציוץ: useful skew bounded. גם setup צריך לעבור (sk2 בטווח [−90, −20]) וגם hold (sk2 ≥ −70). Intersection: [−70, −20].',
         ],
         answer:
@@ -7526,7 +7545,7 @@ hold check: 110 ≥ 40 − (−80) = 120
       // ─────────────────────────────────────────────────────────
       {
         label: 'א',
-        question: 'נתון המעגל BEFORE. עם \\\`t_CQ = 80 ps\\\`, \\\`t_su = 80 ps\\\`, \\\`XOR = 90\\\`, \\\`AND = 60\\\`, \\\`OR = 50\\\`: מה ה-critical path מהקלטים ל-FF? מה \\\`T_min\\\` ו-\\\`f_max\\\`?',
+        question: 'נתון המעגל BEFORE. עם \`t_CQ = 80 ps\`, \`t_su = 80 ps\`, \`XOR = 90\`, \`AND = 60\`, \`OR = 50\`: מה ה-critical path מהקלטים ל-FF? מה \`T_min\` ו-\`f_max\`?',
         hints: [
           'ה-pipeline single-stage: כל ה-logic קומבינטורי, FFs רק ביציאה.',
           'נתיב critical = הארוך ביותר מקלט עד דלת לפני FF.',
@@ -7699,7 +7718,7 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
         question: 'מהו ה-**Retiming Invariant** (Leiserson-Saxe)? מה משמרים בעת הזזת FFs? תן דוגמת loop קטן (FF בטור עם XOR בfeedback) להמחיש למה ה-invariant חייב.',
         hints: [
           'שני חלקים: (1) **cycle weight preservation** — בכל לולאה במעגל, מספר ה-FFs נשמר; (2) **I/O latency preservation** — בכל נתיב מ-PI ל-PO, מספר ה-FFs נשמר.',
-          'דוגמה ל-cycle invariant: feedback loop \\\`FF → XOR → FF\\\` (counter פשוט). אם מסירים אחד מהשניים, הפונקציה משתנה.',
+          'דוגמה ל-cycle invariant: feedback loop \`FF → XOR → FF\` (counter פשוט). אם מסירים אחד מהשניים, הפונקציה משתנה.',
           'דוגמה ל-I/O invariant: pipeline בן 3 stages עם 2 FFs. retiming יכול להזיז אותם, אבל בכל נתיב מ-input ל-output יישארו 2 FFs.',
           'הציוץ: אם המעגל **feedforward בלבד** (אין cycles), אז cycle invariant ריק (אין loops) ורק I/O latency נשמר.',
           'אסור: לשנות את ה-latency הקלט→פלט. אם BEFORE היה 1 cycle ו-AFTER היה 2 cycles, ה-retiming שגוי.',
@@ -7892,8 +7911,8 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
         question: 'תיישם retiming שיקצוץ את ה-T_min. אלו FFs מעבירים, ולאן? למה **כל ארבעת ה-FFs** (אחד לכל קלט) חייבים לעלות יחד? מה ה-T_min החדש וה-f_max?',
         hints: [
           'כדי לחתוך את ה-150 ps של logic, צריך להעביר FF לאמצע — לפני AND/OR.',
-          'אבל ה-AND וה-OR שניהם מקבלים את \\\`t1\\\` ואת \\\`t2\\\`. אם נעביר FF לפני AND ולא לפני OR, נוצרת אסימטריה.',
-          'הפתרון: \\\`r(t1) = r(t2) = r(t3) = r(t4) = 1\\\` — דחיפת כל הרכיבים שעל הנתיב.',
+          'אבל ה-AND וה-OR שניהם מקבלים את \`t1\` ואת \`t2\`. אם נעביר FF לפני AND ולא לפני OR, נוצרת אסימטריה.',
+          'הפתרון: \`r(t1) = r(t2) = r(t3) = r(t4) = 1\` — דחיפת כל הרכיבים שעל הנתיב.',
           'תוצאה: FFs ממוקמים בקלטים (a→t1, b→t1, c→t2, d→t2). 4 FFs במקום 2 — סך גדל!',
           'I/O latency נשמר: כל input → output עדיין 1 FF (אחד בכל path).',
           'Stage 1 (combinational): XOR (90 ps). Stage 2 (combinational): AND/OR (60/50). max stage = 90.',
@@ -8092,7 +8111,7 @@ f_max = 1/250 ps = 4 GHz
       // ─────────────────────────────────────────────────────────
       {
         label: 'ד',
-        question: 'מה קורה אם תזיז רק את \\\`FF_outA\\\` אחורה אבל תשאיר את \\\`FF_outB\\\` במקום? ספציפית: הוספת FFs על \\\`a → t1, b → t1, c → t2, d → t2\\\` (4 FFs חדשים), הסרת \\\`FF_outA\\\`, אבל **השארת FF_outB** בנתיב \\\`t4 → out_y\\\`. הוכח שזה שובר את הפונקציה — תן trace מספרי.',
+        question: 'מה קורה אם תזיז רק את \`FF_outA\` אחורה אבל תשאיר את \`FF_outB\` במקום? ספציפית: הוספת FFs על \`a → t1, b → t1, c → t2, d → t2\` (4 FFs חדשים), הסרת \`FF_outA\`, אבל **השארת FF_outB** בנתיב \`t4 → out_y\`. הוכח שזה שובר את הפונקציה — תן trace מספרי.',
         hints: [
           'בעיה: ה-FFs באמצע ה-stage 1 (a→t1, b→t1, c→t2, d→t2) משהים את t1, t2 ב-cycle אחד.',
           't3 (= t1 AND t2) במקרה זה: t1@(cycle n) דרך FF נדגם → באמת cycle n. t2@(cycle n) דרך FF גם.',
@@ -8265,7 +8284,7 @@ Let me redo this — getting tangled. The clean story:
       // ─────────────────────────────────────────────────────────
       {
         label: 'ה',
-        question: 'הקנבס נטען עם המעגל AFTER (retimed). חשב מחדש את ה-T_min ו-f_max. וודא שה-fungsi פונקציונלית **זהה** ל-BEFORE: לכל 4 וקטורי הכניסה \\\`(a,b,c,d)\\\` = \\\`(0,0,0,0), (1,0,1,0), (1,1,1,1), (0,1,1,0)\\\`, מה תהיה התוצאה \\\`(out_x, out_y)\\\` (בהבדל של cycle latency)?',
+        question: 'הקנבס נטען עם המעגל AFTER (retimed). חשב מחדש את ה-T_min ו-f_max. וודא שה-fungsi פונקציונלית **זהה** ל-BEFORE: לכל 4 וקטורי הכניסה \`(a,b,c,d)\` = \`(0,0,0,0), (1,0,1,0), (1,1,1,1), (0,1,1,0)\`, מה תהיה התוצאה \`(out_x, out_y)\` (בהבדל של cycle latency)?',
         hints: [
           'AFTER topology: FFs בקלטים. Stage 1 קומבינטורי = XOR (90 ps). Stage 2 קומבינטורי = AND/OR (60/50 ps).',
           'Critical = max(stage1, stage2) = 90 ps. T_min = 80 + 90 + 80 = 250 ps. f_max = 4 GHz.',
