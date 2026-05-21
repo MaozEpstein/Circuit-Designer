@@ -220,6 +220,62 @@ const MISR4_SVG = `
 </svg>
 `;
 
+// Shared circuit builder for #6008 parts א and ב.
+// 4 Scan-FFs in a chain. SE / SI / CLK common, SO out of FF4.
+// Each FF has its own functional D pad (default 0 — matches the
+// question text). Defaults: SE=1, SI=1 so the very first CLK edge
+// shifts a 1 into FF1 and the student sees motion immediately.
+function buildScanChainDemo() {
+  return build(() => {
+    const clk  = h.clock(80, 600);
+    const seIn = h.input(80, 480, 'SE');  seIn.fixedValue = 1;
+    const siIn = h.input(80, 120, 'SI');  siIn.fixedValue = 1;
+
+    const d1 = h.input(220, 320, 'D1');  d1.fixedValue = 0;
+    const d2 = h.input(420, 320, 'D2');  d2.fixedValue = 0;
+    const d3 = h.input(620, 320, 'D3');  d3.fixedValue = 0;
+    const d4 = h.input(820, 320, 'D4');  d4.fixedValue = 0;
+
+    const ff1 = h.block('SCAN_FF', 280, 180, { label: 'FF1', initialQ: 0 });
+    const ff2 = h.block('SCAN_FF', 480, 180, { label: 'FF2', initialQ: 0 });
+    const ff3 = h.block('SCAN_FF', 680, 180, { label: 'FF3', initialQ: 0 });
+    const ff4 = h.block('SCAN_FF', 880, 180, { label: 'FF4', initialQ: 0 });
+
+    const soOut = h.output(1060, 180, 'SO');
+    const q1 = h.output(280, 60, 'Q1');
+    const q2 = h.output(480, 60, 'Q2');
+    const q3 = h.output(680, 60, 'Q3');
+    const q4 = h.output(880, 60, 'Q4');
+
+    return {
+      nodes: [clk, seIn, siIn, d1, d2, d3, d4, ff1, ff2, ff3, ff4, soOut, q1, q2, q3, q4],
+      wires: [
+        h.wire(d1.id, ff1.id, 0),
+        h.wire(d2.id, ff2.id, 0),
+        h.wire(d3.id, ff3.id, 0),
+        h.wire(d4.id, ff4.id, 0),
+        h.wire(siIn.id, ff1.id, 1),
+        h.wire(ff1.id,  ff2.id, 1),
+        h.wire(ff2.id,  ff3.id, 1),
+        h.wire(ff3.id,  ff4.id, 1),
+        h.wire(seIn.id, ff1.id, 2),
+        h.wire(seIn.id, ff2.id, 2),
+        h.wire(seIn.id, ff3.id, 2),
+        h.wire(seIn.id, ff4.id, 2),
+        h.wire(clk.id, ff1.id, 3, 0, { isClockWire: true }),
+        h.wire(clk.id, ff2.id, 3, 0, { isClockWire: true }),
+        h.wire(clk.id, ff3.id, 3, 0, { isClockWire: true }),
+        h.wire(clk.id, ff4.id, 3, 0, { isClockWire: true }),
+        h.wire(ff4.id, soOut.id, 0),
+        h.wire(ff1.id, q1.id, 0),
+        h.wire(ff2.id, q2.id, 0),
+        h.wire(ff3.id, q3.id, 0),
+        h.wire(ff4.id, q4.id, 0),
+      ],
+    };
+  });
+}
+
 export const QUESTIONS = [
   // ─────────────────────────────────────────────────────────────
   // #6001 — LFSR design (Fibonacci, 4-bit, primitive polynomial)
@@ -2622,6 +2678,7 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
           'parallel chains', 'multiple chains', 'parallel scan',
           'overlap', 'pipeline',
         ],
+        circuit: () => buildScanChainDemo(),
       },
       {
         label: 'ב',
@@ -2689,67 +2746,7 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
           'first bit', 'last',
           'four', '4',
         ],
-        circuit: () => build(() => {
-          // 4 Scan-FFs in a chain. SE common, CLK common, SI from
-          // INPUT pad, SO out via OUTPUT pad. Functional D of each
-          // FF tied to a dedicated INPUT pad (default 0) so the
-          // capture phase has predictable behaviour and the student
-          // can experiment freely.
-          const clk  = h.clock(80, 600);
-          const seIn = h.input(80, 480, 'SE');
-          const siIn = h.input(80, 120, 'SI');
-
-          const d1 = h.input(220, 320, 'D1');
-          const d2 = h.input(420, 320, 'D2');
-          const d3 = h.input(620, 320, 'D3');
-          const d4 = h.input(820, 320, 'D4');
-
-          const ff1 = h.block('SCAN_FF', 280, 180, { label: 'FF1', initialQ: 0 });
-          const ff2 = h.block('SCAN_FF', 480, 180, { label: 'FF2', initialQ: 0 });
-          const ff3 = h.block('SCAN_FF', 680, 180, { label: 'FF3', initialQ: 0 });
-          const ff4 = h.block('SCAN_FF', 880, 180, { label: 'FF4', initialQ: 0 });
-
-          const soOut = h.output(1060, 180, 'SO');
-
-          // Per-FF Q observation pads (so the student sees state)
-          const q1 = h.output(280, 60, 'Q1');
-          const q2 = h.output(480, 60, 'Q2');
-          const q3 = h.output(680, 60, 'Q3');
-          const q4 = h.output(880, 60, 'Q4');
-
-          return {
-            nodes: [clk, seIn, siIn, d1, d2, d3, d4, ff1, ff2, ff3, ff4, soOut, q1, q2, q3, q4],
-            wires: [
-              // Functional D of each FF (pin 0)
-              h.wire(d1.id, ff1.id, 0),
-              h.wire(d2.id, ff2.id, 0),
-              h.wire(d3.id, ff3.id, 0),
-              h.wire(d4.id, ff4.id, 0),
-              // Scan chain via TI (pin 1)
-              h.wire(siIn.id, ff1.id, 1),
-              h.wire(ff1.id,  ff2.id, 1),
-              h.wire(ff2.id,  ff3.id, 1),
-              h.wire(ff3.id,  ff4.id, 1),
-              // SE common to all (pin 2)
-              h.wire(seIn.id, ff1.id, 2),
-              h.wire(seIn.id, ff2.id, 2),
-              h.wire(seIn.id, ff3.id, 2),
-              h.wire(seIn.id, ff4.id, 2),
-              // CLK common (pin 3)
-              h.wire(clk.id, ff1.id, 3, 0, { isClockWire: true }),
-              h.wire(clk.id, ff2.id, 3, 0, { isClockWire: true }),
-              h.wire(clk.id, ff3.id, 3, 0, { isClockWire: true }),
-              h.wire(clk.id, ff4.id, 3, 0, { isClockWire: true }),
-              // Scan-out
-              h.wire(ff4.id, soOut.id, 0),
-              // Q observation pads
-              h.wire(ff1.id, q1.id, 0),
-              h.wire(ff2.id, q2.id, 0),
-              h.wire(ff3.id, q3.id, 0),
-              h.wire(ff4.id, q4.id, 0),
-            ],
-          };
-        }),
+        circuit: () => buildScanChainDemo(),
       },
     ],
     source: 'יסוד ב-DFT — flow של scan test',
