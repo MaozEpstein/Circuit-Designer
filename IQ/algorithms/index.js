@@ -134,16 +134,16 @@ function _registersSvg({ state, changes = {}, instr, phase, formula, done }) {
         <rect x="${x}" y="${cardsY}" width="${cardW}" height="${cardH}" rx="12"
               fill="${fill}" stroke="${stroke}" stroke-width="${isChanged || isAnswer ? 3 : 1.5}" ${filter}/>
         <text x="${x + cardW / 2}" y="${cardsY + 24}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="22" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
               fill="${roleColor}">${reg}</text>
         <text x="${x + cardW / 2}" y="${cardsY + 42}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="10"
+              font-family="'JetBrains Mono', monospace" font-size="16"
               fill="#5a7090" letter-spacing="1">${role[reg]?.label || ''}</text>
         <text x="${x + cardW / 2}" y="${cardsY + 78}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="36" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="32" font-weight="bold"
               fill="${valColor}">${v}</text>
         <text x="${x + cardW / 2}" y="${cardsY + 100}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#5a7090">${bin}</text>
         ${isChanged ? `
           <g>
@@ -152,7 +152,7 @@ function _registersSvg({ state, changes = {}, instr, phase, formula, done }) {
                   stroke="${delta > 0 ? '#39ff80' : '#ff8060'}" stroke-width="2"
                   filter="${D.glowCyan}"/>
             <text x="${x + cardW - 15}" y="${cardsY + 3}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="14" font-weight="bold"
+                  font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
                   fill="${delta > 0 ? '#80f0a0' : '#ff9a70'}">${delta > 0 ? '+' : ''}${delta}</text>
           </g>` : ''}
       </g>`;
@@ -178,7 +178,7 @@ function _registersSvg({ state, changes = {}, instr, phase, formula, done }) {
       <rect x="${W/2 - 70}" y="74" width="140" height="28" rx="14"
             fill="#0e1a2a" stroke="#3a5575" stroke-width="1"/>
       <text x="${W/2}" y="93" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="14"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#80a0c0" font-weight="bold" letter-spacing="2">phase: ${phase}</text>
     </g>` : '';
 
@@ -231,7 +231,7 @@ function _twoPointerSvg({ state, i, j, swapped, done }) {
     return `
       <g style="animation: ${D.animPop} 260ms ${k * 35}ms both;">
         <text x="${left + k * CELL + CELL / 2}" y="${rowY - 18}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0" font-weight="bold">[${k}]</text>
         <rect x="${left + k * CELL}" y="${rowY}" width="${CELL - 6}" height="${CELL_H}" rx="8"
               fill="${fill}" stroke="${stroke}" stroke-width="${hot ? 2.4 : 1.2}" ${filter}/>
@@ -249,7 +249,7 @@ function _twoPointerSvg({ state, i, j, swapped, done }) {
     return `
       <g style="animation: ${D.animFade} 320ms 200ms both;">
         <text x="${cx}" y="${rowY - 38}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="22"
+              font-family="'JetBrains Mono', monospace" font-size="24"
               fill="${pointerColor}" font-weight="bold">${label}</text>
         <path d="M ${cx} ${rowY - 30} L ${cx - 6} ${rowY - 16} L ${cx + 6} ${rowY - 16} z"
               fill="${pointerColor}"/>
@@ -275,7 +275,7 @@ function _twoPointerSvg({ state, i, j, swapped, done }) {
               style="animation: ${D.animDash} 1.2s linear infinite;"
               marker-end="${done ? D.arrowGold : D.arrowCyan}"/>
         <text x="${(xi + xj) / 2}" y="${arcY + 18}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="15"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">swap</text>
       </g>`;
   }
@@ -291,7 +291,7 @@ function _twoPointerSvg({ state, i, j, swapped, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + bannerText : bannerText}
       </text>
@@ -359,7 +359,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
           filter="${isSuspect ? D.glowGold : D.glowCyan}"
           style="animation: ${D.animFade} 320ms both;"/>
     <text x="${wX + wW / 2}" y="${axisY - 66}" text-anchor="middle"
-          font-family="'JetBrains Mono', monospace" font-size="13"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="${isSuspect ? '#ffd060' : '#80f0a0'}" font-weight="bold">
       sliding window (${WINDOW}s)
     </text>`;
@@ -371,7 +371,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
     ticks.push(`
       <line x1="${x}" y1="${axisY}" x2="${x}" y2="${axisY + 5}" stroke="#4a6080" stroke-width="1"/>
       <text x="${x}" y="${axisY + 22}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="12"
+            font-family="'JetBrains Mono', monospace" font-size="16"
             fill="#7090b0">${t}s</text>`);
   }
   const axisLine = `<line x1="${axisLeft}" y1="${axisY}" x2="${axisRight}" y2="${axisY}" stroke="#4a6080" stroke-width="2"/>`;
@@ -380,7 +380,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
       <line x1="${xOf(now)}" y1="${axisY - 70}" x2="${xOf(now)}" y2="${axisY + 30}"
             stroke="${isSuspect ? '#ffd060' : '#39ff80'}" stroke-width="2.5" stroke-dasharray="4 3"/>
       <text x="${xOf(now)}" y="${axisY + 44}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="14"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${isSuspect ? '#ffd060' : '#80f0a0'}" font-weight="bold">now=${now}s</text>
     </g>`;
 
@@ -401,7 +401,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
                        stroke="#ffd060" stroke-width="2" opacity="0.6"
                        style="animation: ${D.animFade} 600ms both;"/>
                <text x="${x}" y="${axisY - 46}" text-anchor="middle"
-                     font-family="'JetBrains Mono', monospace" font-size="13"
+                     font-family="'JetBrains Mono', monospace" font-size="18"
                      fill="#ffd060" font-weight="bold">+req</text>`;
     } else if (dropped) {
       r = 6;
@@ -409,7 +409,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
       extra = `<line x1="${x - 7}" y1="${axisY - 27}" x2="${x + 7}" y2="${axisY - 13}"
                      stroke="#a05050" stroke-width="2"/>
                <text x="${x}" y="${axisY - 36}" text-anchor="middle"
-                     font-family="'JetBrains Mono', monospace" font-size="11"
+                     font-family="'JetBrains Mono', monospace" font-size="16"
                      fill="#a05050">expired</text>`;
     } else if (inside) {
       color = isSuspect ? '#ffd060' : '#80f0a0';
@@ -436,13 +436,13 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
   // History dict header
   const historyHeader = `
     <text x="${blockX + 14}" y="${dictY + 24}" font-family="'JetBrains Mono', monospace"
-          font-size="15" fill="#80c0e0" font-weight="bold">history =</text>
+          font-size="18" fill="#80c0e0" font-weight="bold">history =</text>
     <text x="${blockX + 14 + 100}" y="${dictY + 24}" font-family="'JetBrains Mono', monospace"
-          font-size="15" fill="#a0c8e0">{</text>
+          font-size="18" fill="#a0c8e0">{</text>
     <text x="${blockX + 14 + 116}" y="${dictY + 24}" font-family="'JetBrains Mono', monospace"
-          font-size="15" fill="#ffb060" font-weight="bold">${ipKey}</text>
+          font-size="18" fill="#ffb060" font-weight="bold">${ipKey}</text>
     <text x="${blockX + 14 + 116 + 150}" y="${dictY + 24}" font-family="'JetBrains Mono', monospace"
-          font-size="15" fill="#a0c8e0">: deque[</text>`;
+          font-size="18" fill="#a0c8e0">: deque[</text>`;
 
   // Chips for the deque values — placed on a second line.
   const chipsY = dictY + 42;
@@ -454,7 +454,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
   // expires the head — exactly what the user needs to see.
   const chipsHtml = inWindow.length === 0
     ? `<text x="${chipsLeft}" y="${chipsY + 26}" font-family="'JetBrains Mono', monospace"
-            font-size="16" fill="#5a7090" font-style="italic">(empty)</text>`
+            font-size="18" fill="#5a7090" font-style="italic">(empty)</text>`
     : inWindow.map((t, i) => {
         const x = chipsLeft + i * (chipW + 4);
         const isNew = arrivedSet.has(t);
@@ -466,7 +466,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
         return `
           <g style="animation: ${D.animSlide} 280ms ${i * 35}ms both;">
             <text x="${x + chipW / 2}" y="${chipsY - 6}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="11"
+                  font-family="'JetBrains Mono', monospace" font-size="16"
                   fill="${isNew ? '#ffd060' : '#7090b0'}" font-weight="bold">
               ${isNew ? 'NEW' : `[${i}]`}
             </text>
@@ -474,16 +474,16 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
                   fill="${isNew ? D.matchGrad : D.chipGrad}" stroke="${stroke}" stroke-width="${isNew ? 2.8 : 1.6}"
                   ${filter}/>
             <text x="${x + chipW / 2}" y="${chipsY + 26}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold"
+                  font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
                   fill="${isNew ? '#fff0c0' : (isSuspect ? '#fff0c0' : '#a8e0b8')}">${t}s</text>
             <text x="${x + chipW / 2}" y="${chipsY + 53}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="10"
+                  font-family="'JetBrains Mono', monospace" font-size="16"
                   fill="#6a8090">age ${age}s</text>
             ${isHead && !isNew ? `<text x="${x + chipW / 2}" y="${chipsY + 67}" text-anchor="middle"
-                                         font-family="'JetBrains Mono', monospace" font-size="10"
+                                         font-family="'JetBrains Mono', monospace" font-size="16"
                                          fill="#80c0a0" font-weight="bold">← head</text>` : ''}
             ${isTail && !isNew && inWindow.length > 1 ? `<text x="${x + chipW / 2}" y="${chipsY + 67}" text-anchor="middle"
-                                                              font-family="'JetBrains Mono', monospace" font-size="10"
+                                                              font-family="'JetBrains Mono', monospace" font-size="16"
                                                               fill="#80c0a0" font-weight="bold">tail →</text>` : ''}
           </g>`;
       }).join('');
@@ -494,7 +494,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
   const summaryY = chipsY + 84;
   const summaryHtml = `
     <text x="${chipsLeft}" y="${summaryY}" font-family="'JetBrains Mono', monospace"
-          font-size="15" fill="#a0c8e0">] }
+          font-size="18" fill="#a0c8e0">] }
       <tspan fill="#5a7090"># window = (${cutoff}s, ${now}s]   →   ${count} entr${count === 1 ? 'y' : 'ies'}${inWindow.length ? `, oldest=${inWindow[0]}s, newest=${inWindow[inWindow.length-1]}s` : ''}</tspan>
     </text>`;
 
@@ -503,7 +503,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
   const drops = droppedSet.size > 0
     ? `<g style="animation: ${D.animFade} 360ms both;">
          <text x="${chipsLeft}" y="${dropsY}" font-family="'JetBrains Mono', monospace"
-               font-size="13" fill="#a05050">expired this step:
+               font-size="18" fill="#a05050">expired this step:
            <tspan fill="#a05050" font-weight="bold"> [${Array.from(droppedSet).map(t => `${t}s`).join(', ')}]</tspan>
          </text>
        </g>`
@@ -513,23 +513,23 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
   const susY = summaryY + (droppedSet.size > 0 ? 50 : 26);
   const susHtml = `
     <text x="${chipsLeft}" y="${susY}" font-family="'JetBrains Mono', monospace"
-          font-size="15" fill="#80c0e0" font-weight="bold">suspicious =</text>
+          font-size="18" fill="#80c0e0" font-weight="bold">suspicious =</text>
     <text x="${chipsLeft + 118}" y="${susY}" font-family="'JetBrains Mono', monospace"
-          font-size="15" fill="#a0c8e0">{${isSuspect ? '' : ' '}</text>
+          font-size="18" fill="#a0c8e0">{${isSuspect ? '' : ' '}</text>
     ${isSuspect ? `
       <g style="animation: ${D.animPop} 360ms both;">
         <rect x="${chipsLeft + 132}" y="${susY - 16}" width="170" height="22" rx="11"
               fill="${D.matchGrad}" stroke="#ffd060" stroke-width="1.6"
               filter="${D.glowGold}"/>
         <text x="${chipsLeft + 217}" y="${susY}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
               fill="#fff0c0">${ipKey}</text>
       </g>
       <text x="${chipsLeft + 312}" y="${susY}" font-family="'JetBrains Mono', monospace"
-            font-size="15" fill="#a0c8e0"> }</text>
+            font-size="18" fill="#a0c8e0"> }</text>
     ` : `
       <text x="${chipsLeft + 134}" y="${susY}" font-family="'JetBrains Mono', monospace"
-            font-size="15" fill="#5a7090">}  <tspan font-style="italic">(empty)</tspan></text>
+            font-size="18" fill="#5a7090">}  <tspan font-style="italic">(empty)</tspan></text>
     `}`;
 
   // The block frame around the dict state
@@ -539,7 +539,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
           fill="#06121e" stroke="#1e3850" stroke-width="1.5"
           style="animation: ${D.animFade} 320ms both;"/>
     <text x="${blockX + 14}" y="${dictY - 12}" font-family="'JetBrains Mono', monospace"
-          font-size="13" fill="#7090b0" font-weight="bold" letter-spacing="2">DICT STATE</text>`;
+          font-size="18" fill="#7090b0" font-weight="bold" letter-spacing="2">DICT STATE</text>`;
 
   // Counter card — moved to under the timeline area now so it doesn't
   // collide with the bigger dict block below. Right-aligned, small.
@@ -551,7 +551,7 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
             stroke="${isSuspect ? '#ffd060' : '#3a5575'}" stroke-width="${isSuspect ? 3 : 1.5}"
             ${isSuspect ? `filter="${D.glowGold}"` : ''}/>
       <text x="${cardX + 60}" y="${cardY + 18}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="12"
+            font-family="'JetBrains Mono', monospace" font-size="16"
             fill="${isSuspect ? '#ffd060' : '#80a0c0'}" font-weight="bold" letter-spacing="2">COUNT</text>
       <text x="${cardX + 60}" y="${cardY + 47}" text-anchor="middle"
             font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
@@ -566,14 +566,14 @@ function _rateLimiterSvg({ now, requests, suspect, subtitle, justArrived, justDr
             stroke="${isSuspect ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${isSuspect ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="19"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${isSuspect ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${banner}
       </text>
     </g>`;
   const sub = subtitle ? `
     <text x="${W/2}" y="80" text-anchor="middle"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="#80a0c0" font-style="italic">${subtitle}</text>` : '';
 
   // Total SVG height grows with the dict block.
@@ -635,7 +635,7 @@ function _reverseSentenceSvg({ before, after, hlLo, hlHi, opLabel, done }) {
           <rect x="${left + i * CELL}" y="${y}" width="${CELL - 3}" height="${CELL_H}" rx="5"
                 fill="${fill}" stroke="${stroke}" stroke-width="${isHl ? 2.4 : 1}" ${filter}/>
           <text x="${left + i * CELL + (CELL - 3) / 2}" y="${y + 27}" text-anchor="middle"
-                font-family="'JetBrains Mono', monospace" font-size="22" font-weight="bold"
+                font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
                 fill="${txtFill}">${isSpace ? '·' : ch}</text>
         </g>`;
     }).join('');
@@ -680,11 +680,11 @@ function _reverseSentenceSvg({ before, after, hlLo, hlHi, opLabel, done }) {
 
   const beforeLabel = before ? `
     <text x="${left - 14}" y="${rowsTop + 26}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="#80a0c0" font-weight="bold">לפני</text>` : '';
   const afterLabel = `
     <text x="${left - 14}" y="${(before ? rowsTop + rowGap : rowsTop) + 26}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">${done ? 'תוקן' : 'אחרי'}</text>`;
 
   // Header banner
@@ -695,7 +695,7 @@ function _reverseSentenceSvg({ before, after, hlLo, hlHi, opLabel, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="38" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="19"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + opLabel : opLabel}
       </text>
@@ -790,7 +790,7 @@ function _powersetTreeSvg(arr, activeIds, highlightId, done) {
               fill="#0a1828" stroke="${e.bit === '1' ? '#39ff80' : '#3a5575'}" stroke-width="1"
               opacity="0.92"/>
         <text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 + 4}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="17"
+              font-family="'JetBrains Mono', monospace" font-size="20"
               fill="${e.bit === '1' ? '#80f0a0' : '#a0b8d0'}" font-weight="bold">
           ${e.bit === '1' ? `+${arr[e.from.length]}` : '−'}
         </text>
@@ -832,7 +832,7 @@ function _powersetTreeSvg(arr, activeIds, highlightId, done) {
   const resolvedLeaves = activeIds.filter(id => id.length === n);
   const accY = leafY + 70;
   const accLabel = `<text x="${W / 2}" y="${accY - 10}" text-anchor="middle"
-                          font-family="'JetBrains Mono', monospace" font-size="19"
+                          font-family="'JetBrains Mono', monospace" font-size="20"
                           fill="#a0c0e0" font-weight="bold" letter-spacing="2">
                        SUBSETS COLLECTED  (${resolvedLeaves.length} / ${1 << n})
                     </text>`;
@@ -912,12 +912,12 @@ function _twoSumSvg(arr, cur, seen, need, found, matchIdx) {
     return `
       <g style="animation: ${D.animPop} 360ms ${i * 40}ms both;">
         <text x="${x + (CELL - 10) / 2}" y="${arrY - 18}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="14"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0" font-weight="bold">[${i}]</text>
         <rect x="${x}" y="${arrY}" width="${CELL - 10}" height="60" rx="8"
               fill="${fill}" stroke="${stroke}" stroke-width="${isCur || isMatch ? 3 : 1.5}" ${filter}/>
         <text x="${x + (CELL - 10) / 2}" y="${arrY + 38}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
               fill="#e8f0fa">${v}</text>
       </g>`;
   }).join('');
@@ -927,7 +927,7 @@ function _twoSumSvg(arr, cur, seen, need, found, matchIdx) {
   const seenLeft = (W - seenKeys.length * seenW) / 2;
   const seenRow = seenKeys.length === 0
     ? `<text x="${W / 2}" y="${seenY + 38}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="#5a7090" font-style="italic"
             style="animation: ${D.animFade} 260ms both;">
          seen = { }
@@ -943,16 +943,16 @@ function _twoSumSvg(arr, cur, seen, need, found, matchIdx) {
             <rect x="${x}" y="${seenY}" width="${seenW - 12}" height="56" rx="10"
                   fill="${fill}" stroke="${stroke}" stroke-width="${isMatch ? 3 : 1.5}" ${filter}/>
             <text x="${x + (seenW - 12) / 2}" y="${seenY + 28}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="19" font-weight="bold"
+                  font-family="'JetBrains Mono', monospace" font-size="20" font-weight="bold"
                   fill="${isMatch ? '#fff0c0' : '#a8e0b8'}">${k} → ${seen[k]}</text>
             <text x="${x + (seenW - 12) / 2}" y="${seenY + 46}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="11"
+                  font-family="'JetBrains Mono', monospace" font-size="16"
                   fill="${isMatch ? '#c0a060' : '#5a7090'}">val → idx</text>
           </g>`;
       }).join('');
 
   const seenLabel = `<text x="${W / 2}" y="${seenY - 12}" text-anchor="middle"
-                           font-family="'JetBrains Mono', monospace" font-size="16"
+                           font-family="'JetBrains Mono', monospace" font-size="18"
                            fill="#80a0c0" font-weight="bold" letter-spacing="2">SEEN (hash map)</text>`;
 
   const needFill = found ? '#ffd060' : '#80d4ff';
@@ -987,7 +987,7 @@ function _twoSumSvg(arr, cur, seen, need, found, matchIdx) {
               stroke-dasharray="8 4"
               style="animation: ${D.animDash} 1.2s linear infinite;"/>
         <text x="${(curX + chipX) / 2}" y="${midY - 6}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="14"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#ffd060" font-weight="bold"
               style="animation: ${D.animFade} 600ms 300ms both;">
           match!
@@ -1036,7 +1036,7 @@ function _binStrMinSvg({ s, idx, stack, action, done }) {
     return `
       <g style="animation: ${D.animPop} 240ms ${i * 20}ms both;">
         <text x="${left + i * CELL + CELL / 2}" y="${strY - 16}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0">[${i}]</text>
         <rect x="${left + i * CELL + 3}" y="${strY}" width="${CELL - 6}" height="${CELL_H}" rx="8"
               fill="${fill}" stroke="${stroke}" stroke-width="${isCur ? 2.6 : 1.4}" ${filter}/>
@@ -1050,7 +1050,7 @@ function _binStrMinSvg({ s, idx, stack, action, done }) {
   const stackLeft = W - 200;
   const stackHtml = stack.length === 0
     ? `<text x="${stackLeft + 70}" y="${stackBottomY - 16}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="16"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#5a7090" font-style="italic">(empty)</text>`
     : stack.map((c, i) => {
         const y = stackBottomY - (i + 1) * (stackCellH + 4);
@@ -1070,7 +1070,7 @@ function _binStrMinSvg({ s, idx, stack, action, done }) {
       }).join('');
 
   const stackLabel = `<text x="${stackLeft + 70}" y="${stackBottomY + 22}" text-anchor="middle"
-                           font-family="'JetBrains Mono', monospace" font-size="14"
+                           font-family="'JetBrains Mono', monospace" font-size="18"
                            fill="#80a0c0" font-weight="bold" letter-spacing="2">RESULT STACK</text>
                      <line x1="${stackLeft - 8}" y1="${stackBottomY}" x2="${stackLeft + 148}" y2="${stackBottomY}"
                            stroke="#3a5575" stroke-width="2"/>`;
@@ -1089,7 +1089,7 @@ function _binStrMinSvg({ s, idx, stack, action, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
@@ -1125,12 +1125,12 @@ function _msbExtractSvg({ bits, label, prev, done }) {
     return `
       <g style="animation: ${D.animPop} 220ms ${i * 18}ms both;">
         <text x="${left + i * CELL + CELL / 2}" y="${rowY - 12}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="12"
+              font-family="'JetBrains Mono', monospace" font-size="16"
               fill="#7090b0">[${7 - i}]</text>
         <rect x="${left + i * CELL + 4}" y="${rowY}" width="${CELL - 8}" height="${CELL_H}" rx="7"
               fill="${fill}" stroke="${stroke}" stroke-width="${bit ? 2.4 : 1.2}" ${filter}/>
         <text x="${left + i * CELL + CELL / 2}" y="${rowY + 38}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
               fill="${bit ? (changed ? '#fff0c0' : '#c8f8d0') : '#5a7090'}">${bit}</text>
       </g>`;
   }).join('');
@@ -1142,7 +1142,7 @@ function _msbExtractSvg({ bits, label, prev, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${label}</text>
     </g>`;
 
@@ -1172,10 +1172,10 @@ function _bitAddSvg({ a, b, sumXor, carry, action, done }) {
 
   const renderRow = (bits, y, lab, accent, glow) => `
     <text x="${left - 14}" y="${y + CELL_H / 2 + 5}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="15"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="${accent}" font-weight="bold">${lab}</text>
     <text x="${left + width * CELL + 14}" y="${y + CELL_H / 2 + 5}"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="#7090b0">= ${parseInt(bits.join(''), 2)}</text>
     ${bits.map((bit, i) => `
       <g style="animation: ${D.animPop} 200ms ${i * 14}ms both;">
@@ -1183,7 +1183,7 @@ function _bitAddSvg({ a, b, sumXor, carry, action, done }) {
               fill="${bit && glow ? D.matchGrad : D.idleGrad}" stroke="${bit ? accent : '#3a5575'}" stroke-width="${bit ? 2 : 1.2}"
               ${bit && glow ? `filter="${D.glowGold}"` : ''}/>
         <text x="${left + i * CELL + CELL / 2}" y="${y + 32}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="22" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
               fill="${bit ? (glow ? '#fff0c0' : accent) : '#5a7090'}">${bit}</text>
       </g>`).join('')}`;
 
@@ -1194,7 +1194,7 @@ function _bitAddSvg({ a, b, sumXor, carry, action, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${action}</text>
     </g>`;
 
@@ -1236,7 +1236,7 @@ function _twoStacksSvg({ arr, top0, top1, action, target, val, done }) {
     return `
       <g style="animation: ${D.animPop} 240ms ${i * 25}ms both;">
         <text x="${left + i * CELL + CELL / 2}" y="${rowY - 16}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="14"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0" font-weight="bold">[${i}]</text>
         <rect x="${left + i * CELL + 5}" y="${rowY}" width="${CELL - 10}" height="${CELL_H}" rx="10"
               fill="${fill}" stroke="${stroke}" stroke-width="${isAction ? 3 : (inStack0 || inStack1 ? 2 : 1.2)}" ${filter}/>
@@ -1253,7 +1253,7 @@ function _twoStacksSvg({ arr, top0, top1, action, target, val, done }) {
     return `
       <g style="animation: ${D.animFade} 320ms 200ms both;">
         <text x="${cx}" y="${rowY + CELL_H + 38}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="18"
+              font-family="'JetBrains Mono', monospace" font-size="20"
               fill="${color}" font-weight="bold">${label}</text>
         <path d="M ${cx} ${rowY + CELL_H + 6} L ${cx - 7} ${rowY + CELL_H + 22} L ${cx + 7} ${rowY + CELL_H + 22} z"
               fill="${color}" transform="rotate(180 ${cx} ${rowY + CELL_H + 14})"/>
@@ -1279,7 +1279,7 @@ function _twoStacksSvg({ arr, top0, top1, action, target, val, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
@@ -1287,10 +1287,10 @@ function _twoStacksSvg({ arr, top0, top1, action, target, val, done }) {
   const legend = `
     <g style="animation: ${D.animFade} 360ms both;">
       <rect x="40" y="80" width="120" height="22" rx="11" fill="${D.curGrad}" stroke="#39ff80" stroke-width="1.5"/>
-      <text x="100" y="96" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13"
+      <text x="100" y="96" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#c8f8d0" font-weight="bold">stack 0 →</text>
       <rect x="${W - 160}" y="80" width="120" height="22" rx="11" fill="${D.matchGrad}" stroke="#ffd060" stroke-width="1.5"/>
-      <text x="${W - 100}" y="96" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13"
+      <text x="${W - 100}" y="96" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#fff0c0" font-weight="bold">← stack 1</text>
     </g>`;
 
@@ -1328,7 +1328,7 @@ function _transposeSvg({ matrix, swapPair, done }) {
           <rect x="${left + j * CELL + 4}" y="${top + i * CELL + 4}" width="${CELL - 8}" height="${CELL - 8}" rx="8"
                 fill="${fill}" stroke="${stroke}" stroke-width="${isSwap ? 3 : (isDiag ? 1.6 : 1.2)}" ${filter}/>
           <text x="${left + j * CELL + CELL / 2}" y="${top + i * CELL + CELL / 2 + 9}" text-anchor="middle"
-                font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+                font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
                 fill="${valColor}">${matrix[i][j]}</text>
         </g>`);
     }
@@ -1338,10 +1338,10 @@ function _transposeSvg({ matrix, swapPair, done }) {
   const labels = [];
   for (let k = 0; k < n; k++) {
     labels.push(`<text x="${left + k * CELL + CELL / 2}" y="${top - 12}" text-anchor="middle"
-                       font-family="'JetBrains Mono', monospace" font-size="14"
+                       font-family="'JetBrains Mono', monospace" font-size="18"
                        fill="#7090b0" font-weight="bold">j=${k}</text>`);
     labels.push(`<text x="${left - 14}" y="${top + k * CELL + CELL / 2 + 5}" text-anchor="end"
-                       font-family="'JetBrains Mono', monospace" font-size="14"
+                       font-family="'JetBrains Mono', monospace" font-size="18"
                        fill="#7090b0" font-weight="bold">i=${k}</text>`);
   }
 
@@ -1364,7 +1364,7 @@ function _transposeSvg({ matrix, swapPair, done }) {
               marker-end="${done ? D.arrowGold : D.arrowCyan}"
               style="animation: ${D.animDash} 1.3s linear infinite;"/>
         <text x="${midX + 8}" y="${midY + 5}"
-              font-family="'JetBrains Mono', monospace" font-size="14"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">swap</text>
       </g>`;
   }
@@ -1381,14 +1381,14 @@ function _transposeSvg({ matrix, swapPair, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
   // Note about diagonal — diagonal cells are invariant under transpose
   const note = `
     <text x="${W/2}" y="${top + n * CELL + 30}" text-anchor="middle"
-          font-family="'JetBrains Mono', monospace" font-size="13"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="#a080ff" font-style="italic">(diagonal cells — invariant under transpose)</text>`;
 
   const H = top + n * CELL + 60;
@@ -1422,14 +1422,14 @@ function _lowOnesSvg({ v, label, valid }) {
 
   const renderRow = (bits, y, lab, accent) => `
     <text x="${left - 14}" y="${y + CELL_H / 2 + 5}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="16"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="${accent}" font-weight="bold">${lab}</text>
     ${bits.map((bit, i) => `
       <g style="animation: ${D.animPop} 200ms ${i * 12}ms both;">
         <rect x="${left + i * CELL + 2}" y="${y}" width="${CELL - 4}" height="${CELL_H}" rx="5"
               fill="${D.idleGrad}" stroke="${bit ? accent : '#3a5575'}" stroke-width="${bit ? 2 : 1.2}"/>
         <text x="${left + i * CELL + CELL / 2}" y="${y + 26}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="22" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
               fill="${bit ? accent : '#5a7090'}">${bit}</text>
       </g>`).join('')}`;
 
@@ -1439,10 +1439,10 @@ function _lowOnesSvg({ v, label, valid }) {
             fill="${valid ? D.matchGrad : '#2a1010'}" stroke="${valid ? '#ffd060' : '#ff6060'}" stroke-width="3"
             filter="${D.glowGold}"/>
       <text x="${W - 120}" y="124" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${valid ? '#ffd060' : '#ff6060'}" font-weight="bold" letter-spacing="2">RESULT</text>
       <text x="${W - 120}" y="150" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="22" font-weight="bold"
+            font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
             fill="${valid ? '#fff0c0' : '#ffa0a0'}">${valid ? 'True' : 'False'}</text>
     </g>` : '';
 
@@ -1453,7 +1453,7 @@ function _lowOnesSvg({ v, label, valid }) {
             stroke="${done ? (valid ? '#ffd060' : '#ff6060') : '#80d4ff'}" stroke-width="2"
             filter="${D.glowGold}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? (valid ? '#ffd060' : '#ff6060') : '#80d4ff'}" font-weight="bold" letter-spacing="1">${label}</text>
     </g>`;
 
@@ -1481,7 +1481,7 @@ function _flipSvg({ x, sub, xor, done }) {
             stroke="${accent}" stroke-width="${glow ? 3 : 1.6}"
             ${glow ? `filter="${D.glowGold}"` : ''}/>
       <text x="${x0 + 80}" y="${y + 22}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${accent}" font-weight="bold" letter-spacing="2">${lab}</text>
       <text x="${x0 + 80}" y="${y + 60}" text-anchor="middle"
             font-family="'JetBrains Mono', monospace" font-size="32" font-weight="bold"
@@ -1501,7 +1501,7 @@ function _flipSvg({ x, sub, xor, done }) {
             marker-end="${D.arrowCyan}"
             style="animation: ${D.animDash} 1.4s linear infinite;"/>
       <text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 6}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="14"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${color}" font-weight="bold">${txt}</text>
     </g>`;
 
@@ -1516,7 +1516,7 @@ function _flipSvg({ x, sub, xor, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         flip(${x})  →  ${sub}   ${done ? '✓' : ''}
       </text>
@@ -1567,7 +1567,7 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
           filter="${isFaulty ? D.glowGold : D.glowCyan}"
           style="animation: ${D.animFade} 320ms both;"/>
     <text x="${wX + wW / 2}" y="${axisY - 66}" text-anchor="middle"
-          font-family="'JetBrains Mono', monospace" font-size="13"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="${isFaulty ? '#ffd060' : '#80f0a0'}" font-weight="bold">
       sliding window (1000ms)
     </text>`;
@@ -1581,7 +1581,7 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
       <line x1="${x}" y1="${axisY}" x2="${x}" y2="${axisY + (big ? 8 : 4)}"
             stroke="${big ? '#7090b0' : '#4a6080'}" stroke-width="1"/>
       ${big ? `<text x="${x}" y="${axisY + 24}" text-anchor="middle"
-                     font-family="'JetBrains Mono', monospace" font-size="12"
+                     font-family="'JetBrains Mono', monospace" font-size="16"
                      fill="#7090b0">${t}ms</text>` : ''}`);
   }
   const axisLine = `<line x1="${axisLeft}" y1="${axisY}" x2="${axisRight}" y2="${axisY}" stroke="#4a6080" stroke-width="2"/>`;
@@ -1590,7 +1590,7 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
       <line x1="${xOf(nowMs)}" y1="${axisY - 70}" x2="${xOf(nowMs)}" y2="${axisY + 30}"
             stroke="${isFaulty ? '#ffd060' : '#39ff80'}" stroke-width="2.5" stroke-dasharray="4 3"/>
       <text x="${xOf(nowMs)}" y="${axisY + 44}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="14"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${isFaulty ? '#ffd060' : '#80f0a0'}" font-weight="bold">now=${nowMs}ms</text>
     </g>`;
 
@@ -1607,7 +1607,7 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
       color = '#ffd060';
       filterAttr = `filter="${D.glowGold}"`;
       extra = `<text x="${x}" y="${axisY - 46}" text-anchor="middle"
-                     font-family="'JetBrains Mono', monospace" font-size="13"
+                     font-family="'JetBrains Mono', monospace" font-size="18"
                      fill="#ffd060" font-weight="bold">+err</text>`;
     } else if (dropped) {
       color = '#5a3030';
@@ -1633,7 +1633,7 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
             stroke="${isFaulty ? '#ffd060' : '#3a5575'}" stroke-width="${isFaulty ? 3 : 1.5}"
             ${isFaulty ? `filter="${D.glowGold}"` : ''}/>
       <text x="${cardX + 60}" y="${cardY + 18}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="12"
+            font-family="'JetBrains Mono', monospace" font-size="16"
             fill="${isFaulty ? '#ffd060' : '#80a0c0'}" font-weight="bold" letter-spacing="2">ERRORS</text>
       <text x="${cardX + 60}" y="${cardY + 47}" text-anchor="middle"
             font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
@@ -1647,7 +1647,7 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
   const chipW = Math.max(46, Math.min(78, availW / Math.max(1, inWindow.length)));
   const chipsHtml = inWindow.length === 0
     ? `<text x="${chipsLeft}" y="${dequeY + 30}" font-family="'JetBrains Mono', monospace"
-            font-size="16" fill="#5a7090" font-style="italic">(empty)</text>`
+            font-size="18" fill="#5a7090" font-style="italic">(empty)</text>`
     : inWindow.map((t, i) => {
         const x = chipsLeft + i * (chipW + 4);
         const isNew = arrivedSet.has(t);
@@ -1655,7 +1655,7 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
         return `
           <g style="animation: ${D.animSlide} 280ms ${i * 30}ms both;">
             <text x="${x + chipW / 2}" y="${dequeY - 6}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="11"
+                  font-family="'JetBrains Mono', monospace" font-size="16"
                   fill="${isNew ? '#ffd060' : '#7090b0'}" font-weight="bold">
               ${isNew ? 'NEW' : `[${i}]`}
             </text>
@@ -1664,20 +1664,20 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
                   stroke="${stroke}" stroke-width="${isNew ? 2.8 : 1.5}"
                   ${isNew || isFaulty ? `filter="${D.glowGold}"` : ''}/>
             <text x="${x + chipW / 2}" y="${dequeY + 25}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="15" font-weight="bold"
+                  font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
                   fill="${isNew ? '#fff0c0' : (isFaulty ? '#fff0c0' : '#ffb8a8')}">${t}ms</text>
           </g>`;
       }).join('');
 
   const dequeLabel = `<text x="40" y="${dequeY + 25}"
-                           font-family="'JetBrains Mono', monospace" font-size="14"
+                           font-family="'JetBrains Mono', monospace" font-size="18"
                            fill="#80a0c0" font-weight="bold" letter-spacing="1">deque →</text>`;
 
   // Drops note (separate row beneath the deque)
   const dropsY = dequeY + 60;
   const drops = droppedSet.size > 0
     ? `<text x="${chipsLeft}" y="${dropsY}" font-family="'JetBrains Mono', monospace"
-             font-size="13" fill="#a05050">expired this step:
+             font-size="18" fill="#a05050">expired this step:
         <tspan fill="#a05050" font-weight="bold"> [${Array.from(droppedSet).map(t => `${t}ms`).join(', ')}]</tspan>
        </text>`
     : '';
@@ -1690,12 +1690,12 @@ function _errorMonitorSvg({ nowMs, errors, faulty, justArrived, justDropped, sub
             stroke="${isFaulty ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${isFaulty ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="19"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${isFaulty ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${banner}</text>
     </g>`;
   const sub = subtitle ? `
     <text x="${W/2}" y="80" text-anchor="middle"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="#80a0c0" font-style="italic">${subtitle}</text>` : '';
 
   return `<svg viewBox="0 0 ${W} ${H + 30}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px">
@@ -1738,12 +1738,12 @@ function _cyclicShiftSvg({ arr, hlLo, hlHi, label, done }) {
     return `
       <g style="animation: ${D.animPop} 240ms ${i * 25}ms both;">
         <text x="${left + i * CELL + CELL / 2}" y="${rowY - 14}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0">[${i}]</text>
         <rect x="${left + i * CELL + 4}" y="${rowY}" width="${CELL - 8}" height="${CELL_H}" rx="10"
               fill="${fill}" stroke="${stroke}" stroke-width="${inHl ? 2.6 : 1.4}" ${filter}/>
         <text x="${left + i * CELL + CELL / 2}" y="${rowY + 42}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
               fill="${valColor}">${v}</text>
       </g>`;
   }).join('');
@@ -1764,7 +1764,7 @@ function _cyclicShiftSvg({ arr, hlLo, hlHi, label, done }) {
               style="animation: ${D.animDash} 1.4s linear infinite;"
               marker-end="${done ? D.arrowGold : D.arrowCyan}"/>
         <text x="${(xL + xR) / 2}" y="${arcY + 26}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="15"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">reverse [${hlLo}, ${hlHi})</text>
       </g>`;
   }
@@ -1776,7 +1776,7 @@ function _cyclicShiftSvg({ arr, hlLo, hlHi, label, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + label : label}
       </text>
@@ -1831,13 +1831,13 @@ function _maxProfitSvg({ prices, day, minSoFar, minIdx, best, bestBuy, bestSell,
         <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3"
               fill="${fill}" stroke="${stroke}" stroke-width="${(isCur || isBuy || isSell) ? 2.6 : 1.4}" ${filter}/>
         <text x="${x + barW / 2}" y="${y - 8}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
               fill="${isBuy ? '#80f0a0' : (isSell ? '#ffd060' : (isCur ? '#80d4ff' : '#a0c0d0'))}">${p}</text>
         <text x="${x + barW / 2}" y="${chartTop + chartH + 18}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="12"
+              font-family="'JetBrains Mono', monospace" font-size="16"
               fill="#7090b0">day ${i}</text>
         ${label ? `<text x="${x + barW / 2}" y="${chartTop + chartH + 36}" text-anchor="middle"
-                         font-family="'JetBrains Mono', monospace" font-size="13" font-weight="bold"
+                         font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
                          fill="${isBuy ? '#80f0a0' : '#ffd060'}">${label}</text>` : ''}
       </g>`;
   }).join('');
@@ -1848,7 +1848,7 @@ function _maxProfitSvg({ prices, day, minSoFar, minIdx, best, bestBuy, bestSell,
       <line x1="${chartLeft}" y1="${yOf(minSoFar)}" x2="${chartRight}" y2="${yOf(minSoFar)}"
             stroke="#a060ff" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.7"/>
       <text x="${chartLeft - 8}" y="${yOf(minSoFar) + 5}" text-anchor="end"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#c090ff" font-weight="bold">min = ${minSoFar}</text>
     </g>` : '';
 
@@ -1861,10 +1861,10 @@ function _maxProfitSvg({ prices, day, minSoFar, minIdx, best, bestBuy, bestSell,
             stroke="${done ? '#ffd060' : '#3a5575'}" stroke-width="${done ? 3 : 1.5}"
             ${done ? `filter="${D.glowGold}"` : ''}/>
       <text x="${cardX + 80}" y="${cardY + 22}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${done ? '#ffd060' : '#80a0c0'}" font-weight="bold" letter-spacing="2">BEST PROFIT</text>
       <text x="${cardX + 80}" y="${cardY + 56}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="30" font-weight="bold"
+            font-family="'JetBrains Mono', monospace" font-size="32" font-weight="bold"
             fill="${done ? '#ffd060' : '#80f0a0'}">$${best}</text>
     </g>`;
 
@@ -1878,7 +1878,7 @@ function _maxProfitSvg({ prices, day, minSoFar, minIdx, best, bestBuy, bestSell,
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
@@ -1992,25 +1992,25 @@ function _reverseLoopSvg({ original, iter, done, stepLabel }) {
   // Row labels (b, result)
   const rowLabels = `
     <text x="${left - 18}" y="${topB + rowH * 0.7}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="17"
+          font-family="'JetBrains Mono', monospace" font-size="20"
           fill="#80c0f0" font-weight="bold">b</text>
     <text x="${left - 18}" y="${bottomR + rowH * 0.7}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="15"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">result</text>`;
 
   // MSB / LSB ticks above b row
   const sideTicks = `
     <text x="${left + CELL/2}" y="${topB - 26}" text-anchor="middle"
-          font-family="'JetBrains Mono', monospace" font-size="10" fill="#7090b0">MSB</text>
+          font-family="'JetBrains Mono', monospace" font-size="16" fill="#7090b0">MSB</text>
     <text x="${left + (n-1)*CELL + CELL/2}" y="${topB - 26}" text-anchor="middle"
-          font-family="'JetBrains Mono', monospace" font-size="10" fill="#7090b0">LSB</text>`;
+          font-family="'JetBrains Mono', monospace" font-size="16" fill="#7090b0">LSB</text>`;
 
   // Shift-right indicator above b: a dashed arrow showing the
   // direction the bits drift between frames.
   const shiftArrow = iter >= 1 ? `
     <g style="animation: ${D.animFade} 360ms 220ms both;">
       <text x="${left - 18}" y="${topB - 22}" text-anchor="end"
-            font-family="'JetBrains Mono', monospace" font-size="10" fill="#5a7090">b &gt;&gt;= 1</text>
+            font-family="'JetBrains Mono', monospace" font-size="16" fill="#5a7090">b &gt;&gt;= 1</text>
       <path d="M ${left} ${topB - 18} L ${left + totalW - 12} ${topB - 18}"
             stroke="#3a5575" stroke-width="1.4" fill="none" stroke-dasharray="3 4"
             marker-end="${D.arrowCyan}" opacity="0.55"/>
@@ -2038,10 +2038,10 @@ function _reverseLoopSvg({ original, iter, done, stepLabel }) {
                 fill="${grad}" stroke="${accent}" stroke-width="1.8"
                 filter="${glow}"/>
         <text x="${ax + 26}" y="${midY + 5}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
               fill="#fff0c0">${movingBit}</text>
         <text x="${ax + 26}" y="${midY - 18}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="9"
+              font-family="'JetBrains Mono', monospace" font-size="16"
               fill="${accent}">b &amp; 1</text>
       </g>`;
   }
@@ -2054,7 +2054,7 @@ function _reverseLoopSvg({ original, iter, done, stepLabel }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="40" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="16"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + stepLabel : stepLabel}
       </text>
@@ -2069,15 +2069,15 @@ function _reverseLoopSvg({ original, iter, done, stepLabel }) {
       <rect x="${W/2 - 230}" y="${stripY}" width="460" height="38" rx="19"
             fill="${D.idleGrad}" stroke="#3a5575" stroke-width="1.4"/>
       <text x="${W/2 - 200}" y="${stripY + 24}" text-anchor="start"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${done ? '#ffd060' : '#c8d8f0'}" font-weight="bold">
         iter ${iter}/${n}
       </text>
       <text x="${W/2 - 60}" y="${stripY + 24}" text-anchor="start"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#80c0f0">b = 0x${bHex}</text>
       <text x="${W/2 + 80}" y="${stripY + 24}" text-anchor="start"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="${done ? '#ffd060' : '#80f0a0'}">result = 0x${resHex}</text>
     </g>`;
 
@@ -2160,10 +2160,10 @@ function _bitsReverseSvg({ bitsBefore, bitsAfter, swaps = [], stepLabel, done })
 
   const labels = `
     <text x="${left - 20}" y="${top + CELL_H * 0.7}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="#80a0c0" font-weight="bold">${bitsBefore ? 'לפני' : ''}</text>
     ${bitsAfter ? `<text x="${left - 20}" y="${bottomY + CELL_H * 0.7}" text-anchor="end"
-                       font-family="'JetBrains Mono', monospace" font-size="14"
+                       font-family="'JetBrains Mono', monospace" font-size="18"
                        fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">${done ? 'מוכן' : 'אחרי'}</text>` : ''}`;
 
   const banner = `
@@ -2173,7 +2173,7 @@ function _bitsReverseSvg({ bitsBefore, bitsAfter, swaps = [], stepLabel, done })
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + stepLabel : stepLabel}
       </text>
@@ -2268,7 +2268,7 @@ function _bitsReverseDcSvg({ bitsBefore, bitsAfter, groupSize, stepLabel, done }
               style="animation: ${D.animFade} 320ms ${b * 35}ms both;"/>
         ${groupSize >= 4 ? `
         <text x="${(x0 + x1) / 2}" y="${yT - 4}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold"
               fill="${p.label}" opacity="0.9"
               style="animation: ${D.animFade} 320ms ${b * 35 + 60}ms both;">
           ${groupSize} bits</text>` : ''}
@@ -2321,10 +2321,10 @@ function _bitsReverseDcSvg({ bitsBefore, bitsAfter, groupSize, stepLabel, done }
   // Row labels
   const labels = `
     <text x="${left - 18}" y="${top + CELL_H * 0.7}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="#80a0c0" font-weight="bold">לפני</text>
     <text x="${left - 18}" y="${bottomY + CELL_H * 0.7}" text-anchor="end"
-          font-family="'JetBrains Mono', monospace" font-size="14"
+          font-family="'JetBrains Mono', monospace" font-size="18"
           fill="${done ? '#ffd060' : '#80f0a0'}" font-weight="bold">${done ? 'מוכן' : 'אחרי'}</text>`;
 
   // Banner
@@ -2348,7 +2348,7 @@ function _bitsReverseDcSvg({ bitsBefore, bitsAfter, groupSize, stepLabel, done }
       <rect x="${W/2 - 200}" y="${chipY}" width="400" height="34" rx="17"
             fill="${D.idleGrad}" stroke="#3a5575" stroke-width="1.3"/>
       <text x="${W/2}" y="${chipY + 22}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="12"
+            font-family="'JetBrains Mono', monospace" font-size="16"
             fill="#c8d8f0">
         block size = <tspan fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold">${groupSize}</tspan>
         &#160;·&#160; ${blocks} blocks &#160;·&#160;
@@ -2404,10 +2404,10 @@ function _random7GridSvg({ pickA, pickB, accepted, returnedVal, done }) {
           <rect x="${x + 4}" y="${y + 4}" width="${CELL - 8}" height="${CELL - 8}" rx="10"
                 fill="${fill}" stroke="${stroke}" stroke-width="${isPick ? 3 : 1.4}" ${filter}/>
           <text x="${x + CELL / 2}" y="${y + 26}" text-anchor="middle"
-                font-family="'JetBrains Mono', monospace" font-size="13"
+                font-family="'JetBrains Mono', monospace" font-size="18"
                 fill="#5a7090">${idx}</text>
           <text x="${x + CELL / 2}" y="${y + CELL / 2 + 14}" text-anchor="middle"
-                font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+                font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
                 fill="${valColor}">${val}</text>
         </g>`);
     }
@@ -2418,12 +2418,12 @@ function _random7GridSvg({ pickA, pickB, accepted, returnedVal, done }) {
   for (let i = 0; i < 5; i++) {
     // top labels (b)
     headers.push(`<text x="${gridLeft + i * CELL + CELL / 2}" y="${top - 14}" text-anchor="middle"
-                       font-family="'JetBrains Mono', monospace" font-size="16"
+                       font-family="'JetBrains Mono', monospace" font-size="18"
                        fill="${pickB === i + 1 ? '#39ff80' : '#7090b0'}"
                        font-weight="bold">b=${i + 1}</text>`);
     // left labels (a)
     headers.push(`<text x="${gridLeft - 14}" y="${top + i * CELL + CELL / 2 + 5}" text-anchor="end"
-                       font-family="'JetBrains Mono', monospace" font-size="16"
+                       font-family="'JetBrains Mono', monospace" font-size="18"
                        fill="${pickA === i + 1 ? '#39ff80' : '#7090b0'}"
                        font-weight="bold">a=${i + 1}</text>`);
   }
@@ -2435,10 +2435,10 @@ function _random7GridSvg({ pickA, pickB, accepted, returnedVal, done }) {
             fill="${D.matchGrad}" stroke="#ffd060" stroke-width="3"
             filter="${D.glowGold}"/>
       <text x="${W - 130}" y="105" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="13"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#ffd060" font-weight="bold" letter-spacing="2">RETURN</text>
       <text x="${W - 130}" y="132" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="30" font-weight="bold"
+            font-family="'JetBrains Mono', monospace" font-size="32" font-weight="bold"
             fill="#fff0c0">${returnedVal}</text>
     </g>` : '';
 
@@ -2456,7 +2456,7 @@ function _random7GridSvg({ pickA, pickB, accepted, returnedVal, done }) {
             fill="${bannerFill}" stroke="${bannerColor}" stroke-width="2"
             filter="${done && accepted ? D.glowGold : (accepted === false ? D.glowGold : D.glowCyan)}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${bannerColor}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
@@ -2536,10 +2536,10 @@ function _topoGraphSvg({ inDegree, removed, queue, result, highlight, done }) {
       <g style="animation: ${D.animPop} 320ms both;">
         <circle cx="${p.x}" cy="${p.y}" r="36" fill="${fill}" stroke="${stroke}" stroke-width="${isHl || isRemoved ? 3 : 1.8}" ${filter}/>
         <text x="${p.x}" y="${p.y + 9}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
               fill="${textColor}">${id}</text>
         <text x="${p.x}" y="${p.y - 48}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0" font-weight="bold">in-deg: ${inDeg}</text>
       </g>`;
   }).join('');
@@ -2548,7 +2548,7 @@ function _topoGraphSvg({ inDegree, removed, queue, result, highlight, done }) {
   const panelX = 40, panelTopY = H - 110;
   const queueChips = (queue || []).length === 0
     ? `<text x="${panelX + 90}" y="${panelTopY + 25}" font-family="'JetBrains Mono', monospace"
-            font-size="16" fill="#5a7090" font-style="italic">(empty)</text>`
+            font-size="18" fill="#5a7090" font-style="italic">(empty)</text>`
     : (queue || []).map((id, i) => `
         <g style="animation: ${D.animSlide} 260ms ${i * 40}ms both;">
           <rect x="${panelX + 90 + i * 56}" y="${panelTopY}" width="46" height="38" rx="10"
@@ -2559,13 +2559,13 @@ function _topoGraphSvg({ inDegree, removed, queue, result, highlight, done }) {
                 fill="#a8e0b8">${id}</text>
         </g>`).join('');
   const queueLabel = `<text x="${panelX + 80}" y="${panelTopY + 25}" text-anchor="end"
-                            font-family="'JetBrains Mono', monospace" font-size="15"
+                            font-family="'JetBrains Mono', monospace" font-size="18"
                             fill="#80c0e0" font-weight="bold" letter-spacing="2">QUEUE →</text>`;
 
   const resultY = panelTopY + 55;
   const resultChips = (result || []).length === 0
     ? `<text x="${panelX + 90}" y="${resultY + 25}" font-family="'JetBrains Mono', monospace"
-            font-size="16" fill="#5a7090" font-style="italic">(empty)</text>`
+            font-size="18" fill="#5a7090" font-style="italic">(empty)</text>`
     : (result || []).map((id, i) => `
         <g style="animation: ${D.animSlide} 260ms ${i * 40}ms both;">
           <rect x="${panelX + 90 + i * 56}" y="${resultY}" width="46" height="38" rx="10"
@@ -2576,7 +2576,7 @@ function _topoGraphSvg({ inDegree, removed, queue, result, highlight, done }) {
                 fill="#c8f8d0">${id}</text>
         </g>`).join('');
   const resultLabel = `<text x="${panelX + 80}" y="${resultY + 25}" text-anchor="end"
-                             font-family="'JetBrains Mono', monospace" font-size="15"
+                             font-family="'JetBrains Mono', monospace" font-size="18"
                              fill="#80f0a0" font-weight="bold" letter-spacing="2">RESULT →</text>`;
 
   // Banner
@@ -2588,7 +2588,7 @@ function _topoGraphSvg({ inDegree, removed, queue, result, highlight, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
@@ -2640,10 +2640,10 @@ function _bitMultiplySvg({ a, b, result, bitTested, action, done }) {
         <rect x="${x}" y="${cardY}" width="${cardW}" height="${cardH}" rx="12"
               fill="${fill}" stroke="${stroke}" stroke-width="${isHl ? 3 : 1.6}" ${filter}/>
         <text x="${x + 14}" y="${cardY + 22}"
-              font-family="'JetBrains Mono', monospace" font-size="16"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="${isHl ? '#c8f8d0' : '#80a0c0'}" font-weight="bold" letter-spacing="2">${name}</text>
         <text x="${x + cardW - 14}" y="${cardY + 22}" text-anchor="end"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#5a7090" font-style="italic">${desc}</text>
         <text x="${x + cardW / 2}" y="${cardY + 56}" text-anchor="middle"
               font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
@@ -2662,7 +2662,7 @@ function _bitMultiplySvg({ a, b, result, bitTested, action, done }) {
                   fill="${bitFill}" stroke="${bitStroke}" stroke-width="${lsb ? 2 : 1}"
                   ${lsb ? `filter="${D.glowGold}"` : ''}/>
             <text x="${cx + (cell - 4) / 2}" y="${cardY + cardH + 24}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="14" font-weight="bold"
+                  font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold"
                   fill="${bitColor}">${b}</text>`;
         }).join('')}
       </g>`;
@@ -2683,7 +2683,7 @@ function _bitMultiplySvg({ a, b, result, bitTested, action, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' : ''}${actionMap[action] || ''}
       </text>
@@ -2726,12 +2726,12 @@ function _parensSvg({ s, idx, stack, action, valid }) {
     return `
       <g style="animation: ${D.animPop} 260ms ${i * 25}ms both;">
         <text x="${x + CELL / 2}" y="${strY - 18}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0" font-weight="bold">[${i}]</text>
         <rect x="${x + 3}" y="${strY}" width="${CELL - 6}" height="${CELL_H}" rx="8"
               fill="${fill}" stroke="${stroke}" stroke-width="${isCur ? 2.6 : 1.4}" ${filter}/>
         <text x="${x + CELL / 2}" y="${strY + 42}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="30" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="32" font-weight="bold"
               fill="${isCur ? '#e8f0fa' : (isPast ? '#7090a8' : '#c0d0e0')}">${ch}</text>
       </g>`;
   }).join('');
@@ -2740,7 +2740,7 @@ function _parensSvg({ s, idx, stack, action, valid }) {
   const stackLeft = W - 200;
   const stackHtml = stack.length === 0
     ? `<text x="${stackLeft + 70}" y="${stackBottomY - 20}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="16"
+            font-family="'JetBrains Mono', monospace" font-size="18"
             fill="#5a7090" font-style="italic">(empty)</text>`
     : stack.map((c, i) => {
         const y = stackBottomY - (i + 1) * (stackCellH + 4);
@@ -2758,13 +2758,13 @@ function _parensSvg({ s, idx, stack, action, valid }) {
             <rect x="${stackLeft}" y="${y}" width="140" height="${stackCellH}" rx="8"
                   fill="${fill}" stroke="${stroke}" stroke-width="${isAction ? 2.6 : 1.4}" ${filter}/>
             <text x="${stackLeft + 70}" y="${y + 31}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+                  font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
                   fill="${isAction ? '#c8f8d0' : '#a0c0d0'}">${c}</text>
           </g>`;
       }).join('');
 
   const stackLabel = `<text x="${stackLeft + 70}" y="${stackBottomY + 22}" text-anchor="middle"
-                           font-family="'JetBrains Mono', monospace" font-size="14"
+                           font-family="'JetBrains Mono', monospace" font-size="18"
                            fill="#80a0c0" font-weight="bold" letter-spacing="2">STACK</text>
                      <line x1="${stackLeft - 8}" y1="${stackBottomY}" x2="${stackLeft + 148}" y2="${stackBottomY}"
                            stroke="#3a5575" stroke-width="2"/>`;
@@ -2792,7 +2792,7 @@ function _parensSvg({ s, idx, stack, action, valid }) {
               style="animation: ${D.animDash} 1.2s linear infinite;"
               marker-end="${action === 'mismatch' ? D.arrowGold : D.arrowCyan}"/>
         <text x="${midX}" y="${(strY + CELL_H + targetY) / 2 - 6}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="16"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="${labelColor}" font-weight="bold">${labelText}</text>
       </g>`;
   }
@@ -2814,7 +2814,7 @@ function _parensSvg({ s, idx, stack, action, valid }) {
             stroke="${bannerColor}" stroke-width="2"
             filter="${done && !valid ? D.glowGold : (done ? D.glowGold : D.glowCyan)}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${bannerColor}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
@@ -2867,7 +2867,7 @@ function _palindromeMergeSvg({ arr, consumed, i, j, mergeFrom, mergeInto, merges
     return `
       <g opacity="${opacity}" style="animation: ${D.animPop} 280ms ${k * 35}ms both;">
         <text x="${x + CELL / 2}" y="${rowY - 22}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="${isConsumed ? '#4a3818' : '#7090b0'}" font-weight="bold">[${k}]</text>
         <rect x="${x + 6}" y="${rowY}" width="${CELL - 12}" height="${CELL_H}" rx="10"
               fill="${fill}" stroke="${stroke}" stroke-width="${isHot || isMergeInto ? 3 : 1.4}" ${filter}/>
@@ -2915,7 +2915,7 @@ function _palindromeMergeSvg({ arr, consumed, i, j, mergeFrom, mergeInto, merges
               style="animation: ${D.animDash} 1.4s linear infinite;"
               marker-end="${D.arrowGold}"/>
         <text x="${(xFrom + xInto) / 2}" y="${arcY + 24}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="16"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#ffd060" font-weight="bold">merge ⤴</text>
       </g>`;
   }
@@ -2929,7 +2929,7 @@ function _palindromeMergeSvg({ arr, consumed, i, j, mergeFrom, mergeInto, merges
             stroke="${done ? '#ffd060' : '#3a5575'}" stroke-width="${done ? 3 : 1.5}"
             ${done ? `filter="${D.glowGold}"` : ''}/>
       <text x="${cardX + 70}" y="${cardY + 22}" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="12"
+            font-family="'JetBrains Mono', monospace" font-size="16"
             fill="${done ? '#ffd060' : '#80a0c0'}" font-weight="bold" letter-spacing="2">MERGES</text>
       <text x="${cardX + 70}" y="${cardY + 50}" text-anchor="middle"
             font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
@@ -2947,7 +2947,7 @@ function _palindromeMergeSvg({ arr, consumed, i, j, mergeFrom, mergeInto, merges
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="18"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">${bannerText}</text>
     </g>`;
 
@@ -2994,7 +2994,7 @@ function _dutchFlagSvg({ arr, low, mid, high, swapped, done }) {
     return `
       <g style="animation: ${D.animPop} 280ms ${i * 30}ms both;">
         <text x="${cx}" y="${rowY - 42}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#7090b0" font-weight="bold">[${i}]</text>
         <circle cx="${cx}" cy="${rowY}" r="${R}"
                 fill="${colorOf[c] || '#888'}"
@@ -3011,7 +3011,7 @@ function _dutchFlagSvg({ arr, low, mid, high, swapped, done }) {
     return `
       <g style="animation: ${D.animFade} 320ms 200ms both;">
         <text x="${cx}" y="${rowY - 70 + yOff}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="18"
+              font-family="'JetBrains Mono', monospace" font-size="20"
               fill="${ptrColor}" font-weight="bold">${label}</text>
         <path d="M ${cx} ${rowY - 60 + yOff} L ${cx - 6} ${rowY - 46 + yOff} L ${cx + 6} ${rowY - 46 + yOff} z"
               fill="${ptrColor}"/>
@@ -3045,7 +3045,7 @@ function _dutchFlagSvg({ arr, low, mid, high, swapped, done }) {
                   filter="${done ? D.glowGold : D.glowCyan}"
                   style="animation: ${D.animDash} 1.4s linear infinite;"/>
           <text x="${xa + 22}" y="${rowY - 66}"
-                font-family="'JetBrains Mono', monospace" font-size="13"
+                font-family="'JetBrains Mono', monospace" font-size="18"
                 fill="${ptrColor}">self-swap (no-op)</text>
         </g>`;
     } else {
@@ -3082,7 +3082,7 @@ function _dutchFlagSvg({ arr, low, mid, high, swapped, done }) {
                   fill="${D.matchGrad}" stroke="${ptrColor}" stroke-width="1.8"
                   filter="${done ? D.glowGold : D.glowCyan}"/>
             <text x="${(xa + xb) / 2}" y="${arcDown + 29}" text-anchor="middle"
-                  font-family="'JetBrains Mono', monospace" font-size="16"
+                  font-family="'JetBrains Mono', monospace" font-size="18"
                   fill="${ptrColor}" font-weight="bold">↔ swap</text>
           </g>
         </g>`;
@@ -3098,7 +3098,7 @@ function _dutchFlagSvg({ arr, low, mid, high, swapped, done }) {
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="19"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + bannerText : bannerText}
       </text>
@@ -3140,12 +3140,12 @@ function _arrayRowSvg({ arr, pointers = {}, highlights = [], label, done, subtit
     return `
       <g style="animation: ${D.animPop} 220ms ${i * 16}ms both;">
         <text x="${left + i * CELL + CELL / 2}" y="${top - 10}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="11"
+              font-family="'JetBrains Mono', monospace" font-size="16"
               fill="#7090b0">[${i}]</text>
         <rect x="${left + i * CELL + 2}" y="${top}" width="${CELL - 4}" height="${CELL_H}" rx="6"
               fill="${fill}" stroke="${stroke}" stroke-width="${isHl ? 2.4 : 1.2}" ${filter}/>
         <text x="${left + i * CELL + CELL / 2}" y="${top + CELL_H * 0.66}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="22" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="24" font-weight="bold"
               fill="${txt}">${v}</text>
       </g>`;
   }).join('');
@@ -3156,10 +3156,10 @@ function _arrayRowSvg({ arr, pointers = {}, highlights = [], label, done, subtit
     return `
       <g style="animation: ${D.animFade} 260ms both;">
         <text x="${x}" y="${top + CELL_H + 28}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="14"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#ffd060" font-weight="bold">▲</text>
         <text x="${x}" y="${top + CELL_H + 46}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="12"
+              font-family="'JetBrains Mono', monospace" font-size="16"
               fill="#ffd060">${name}</text>
       </g>`;
   }).join('');
@@ -3171,13 +3171,13 @@ function _arrayRowSvg({ arr, pointers = {}, highlights = [], label, done, subtit
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + label : label}
       </text>
     </g>`;
   const sub = subtitle ? `<text x="${W/2}" y="78" text-anchor="middle"
-        font-family="'JetBrains Mono', monospace" font-size="13"
+        font-family="'JetBrains Mono', monospace" font-size="18"
         fill="#80a0c0">${subtitle}</text>` : '';
 
   const H = top + CELL_H + 80;
@@ -3234,13 +3234,13 @@ function _bitRowSvg({ bits, hlIdx = [], cleared = [], label, sub, done, showPos 
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + label : label}
       </text>
     </g>`;
   const subEl = sub ? `<text x="${W/2}" y="76" text-anchor="middle"
-        font-family="'JetBrains Mono', monospace" font-size="14"
+        font-family="'JetBrains Mono', monospace" font-size="18"
         fill="#80a0c0">${sub}</text>` : '';
   const accum = accumStr ? `<g style="animation: ${D.animFade} 280ms both;">
         <text x="${W/2}" y="${top + CELL_H + 40}" text-anchor="middle"
@@ -3277,7 +3277,7 @@ function _twoBoxSvg({ a, b, aName = 'a', bName = 'b', op, done, result, resultNa
     return `
       <g style="animation: ${D.animPop} 260ms both;">
         <text x="${x + boxW/2}" y="${top - 10}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="14"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#80a0c0" font-weight="bold">${name}</text>
         <rect x="${x}" y="${top}" width="${boxW}" height="${boxH}" rx="10"
               fill="${fill}" stroke="${stroke}" stroke-width="${hl ? 2.6 : 1.4}" ${filter}/>
@@ -3294,7 +3294,7 @@ function _twoBoxSvg({ a, b, aName = 'a', bName = 'b', op, done, result, resultNa
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="17"
+            font-family="'JetBrains Mono', monospace" font-size="20"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + op : op}
       </text>
@@ -3303,12 +3303,12 @@ function _twoBoxSvg({ a, b, aName = 'a', bName = 'b', op, done, result, resultNa
   const resBox = result != null ? `
       <g style="animation: ${D.animPop} 320ms 120ms both;">
         <text x="${W/2}" y="${top + boxH + 50}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="13"
+              font-family="'JetBrains Mono', monospace" font-size="18"
               fill="#ffd060" font-weight="bold">${resultName || 'result'}</text>
         <rect x="${W/2 - boxW/2}" y="${top + boxH + 60}" width="${boxW}" height="${boxH * 0.7}" rx="10"
               fill="${D.matchGrad}" stroke="#ffd060" stroke-width="2.6" filter="${D.glowGold}"/>
         <text x="${W/2}" y="${top + boxH + 60 + boxH * 0.5}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="26" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="28" font-weight="bold"
               fill="#ffd060">${result}</text>
       </g>` : '';
 
@@ -6654,7 +6654,7 @@ v & (v+1) = 1010 1000   ← ביטים גבוהים שורדים → != 0 → Fa
 איך תזהו ש**יותר מ-10 שגיאות הצטברו בחלון של 1 שנייה האחרונה**?`,
     schematic: `
 <svg viewBox="0 0 760 230" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img"
      aria-label="clk and indicator waveforms over 10 samples; errors at samples 4, 6 and 10">
   <defs>
     <linearGradient id="emTitleBg" x1="0" y1="0" x2="0" y2="1">
@@ -6668,7 +6668,7 @@ v & (v+1) = 1010 1000   ← ביטים גבוהים שורדים → != 0 → Fa
 
   <!-- Title strip -->
   <rect x="0" y="0" width="760" height="36" fill="url(#emTitleBg)"/>
-  <text direction="ltr" x="380" y="23" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">
+  <text direction="ltr" x="380" y="23" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     sampled every 1 ms — clk + indicator (1 = error, 0 = OK)
   </text>
 
@@ -6677,12 +6677,12 @@ v & (v+1) = 1010 1000   ← ביטים גבוהים שורדים → != 0 → Fa
     const x = 80 + i * 60;
     return `
       <line x1="${x}" y1="52" x2="${x}" y2="200" stroke="#2a3a55" stroke-width="0.7" stroke-dasharray="2 4"/>
-      ${i < 10 ? `<text direction="ltr" x="${x + 30}" y="62" text-anchor="middle" fill="#5a7090" font-size="10">${i + 1} ms</text>` : ''}
+      ${i < 10 ? `<text direction="ltr" x="${x + 30}" y="62" text-anchor="middle" fill="#5a7090" font-size="16">${i + 1} ms</text>` : ''}
     `;
   }).join('')}
 
   <!-- clk waveform (10 cycles, low→high→low per cycle) -->
-  <text direction="ltr" x="68" y="100" text-anchor="end" fill="#c8d8f0" font-weight="bold" font-size="13">clk</text>
+  <text direction="ltr" x="68" y="100" text-anchor="end" fill="#c8d8f0" font-weight="bold" font-size="18">clk</text>
   <path d="M 80 108 ${Array.from({ length: 10 }, () => 'v -26 h 30 v 26 h 30').join(' ')}"
         stroke="#f0d080" stroke-width="2" fill="none" stroke-linejoin="miter"/>
 
@@ -6690,11 +6690,11 @@ v & (v+1) = 1010 1000   ← ביטים גבוהים שורדים → != 0 → Fa
   ${[0, 0, 0, 1, 0, 1, 0, 0, 0, 1].map((b, i) => {
     const x = 80 + i * 60 + 30;
     return `<text direction="ltr" x="${x}" y="142" text-anchor="middle"
-                  fill="${b ? '#ff7060' : '#5a7090'}" font-weight="bold" font-size="14">${b}</text>`;
+                  fill="${b ? '#ff7060' : '#5a7090'}" font-weight="bold" font-size="18">${b}</text>`;
   }).join('')}
 
   <!-- indicator waveform (rectangular, hi on the three 1-samples) -->
-  <text direction="ltr" x="68" y="170" text-anchor="end" fill="#c8d8f0" font-weight="bold" font-size="13">indicator</text>
+  <text direction="ltr" x="68" y="170" text-anchor="end" fill="#c8d8f0" font-weight="bold" font-size="18">indicator</text>
   ${(() => {
     const bits = [0, 0, 0, 1, 0, 1, 0, 0, 0, 1];
     const loY = 178, hiY = 152;
@@ -6714,7 +6714,7 @@ v & (v+1) = 1010 1000   ← ביטים גבוהים שורדים → != 0 → Fa
     return `
       <line x1="${x}" y1="200" x2="${x}" y2="186" stroke="#ff7060" stroke-width="1.8" filter="url(#emGlowRed)"/>
       <polygon points="${x},184 ${x - 5},192 ${x + 5},192" fill="#ff7060" filter="url(#emGlowRed)"/>
-      <text direction="ltr" x="${x}" y="218" text-anchor="middle" fill="#ff7060" font-size="11" font-weight="bold">error</text>
+      <text direction="ltr" x="${x}" y="218" text-anchor="middle" fill="#ff7060" font-size="16" font-weight="bold">error</text>
     `;
   }).join('')}
 </svg>`,

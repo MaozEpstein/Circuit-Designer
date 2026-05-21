@@ -21,7 +21,7 @@ function _tx(kind, x, y, label) {
       <rect x="-8" y="-14" width="16" height="28" fill="#0a1520" stroke="${c}" stroke-width="1.6" rx="2"/>
       <line x1="-22" y1="0" x2="${kind === 'p' ? -13 : -8}" y2="0" stroke="${c}" stroke-width="1.5"/>
       ${kind === 'p' ? `<circle cx="-11" cy="0" r="2.5" fill="#0a1520" stroke="${c}" stroke-width="1.4"/>` : ''}
-      ${label ? `<text x="14" y="4" fill="${c}" font-size="11" font-weight="bold">${label}</text>` : ''}
+      ${label ? `<text x="14" y="4" fill="${c}" font-size="16" font-weight="bold">${label}</text>` : ''}
     </g>`;
 }
 function _pmos(x, y, label) { return _tx('p', x, y, label); }
@@ -30,14 +30,14 @@ function _nmos(x, y, label) { return _tx('n', x, y, label); }
 function _vdd(cx, y) {
   return `
     <line x1="${cx - 20}" y1="${y}" x2="${cx + 20}" y2="${y}" stroke="${_WIRE}" stroke-width="2"/>
-    <text x="${cx - 12}" y="${y - 6}" fill="${_LABEL}" font-size="11" font-weight="bold">Vdd</text>`;
+    <text x="${cx - 12}" y="${y - 6}" fill="${_LABEL}" font-size="16" font-weight="bold">Vdd</text>`;
 }
 function _vss(cx, y) {
   return `
     <line x1="${cx - 18}" y1="${y}"      x2="${cx + 18}" y2="${y}"      stroke="${_WIRE}" stroke-width="2"/>
     <line x1="${cx - 12}" y1="${y + 6}"  x2="${cx + 12}" y2="${y + 6}"  stroke="${_WIRE}" stroke-width="1.4"/>
     <line x1="${cx - 6}"  y1="${y + 12}" x2="${cx + 6}"  y2="${y + 12}" stroke="${_WIRE}" stroke-width="1.4"/>
-    <text x="${cx - 8}"   y="${y + 28}" fill="${_LABEL}" font-size="11" font-weight="bold">Vss</text>`;
+    <text x="${cx - 8}"   y="${y + 28}" fill="${_LABEL}" font-size="16" font-weight="bold">Vss</text>`;
 }
 function _dot(x, y, color = _WIRE) {
   return `<circle cx="${x}" cy="${y}" r="2.6" fill="${color}"/>`;
@@ -45,7 +45,7 @@ function _dot(x, y, color = _WIRE) {
 
 // ─── reference inverter — shown as the question's `schematic` ───
 const NOT_INVERTER_SVG = `
-<svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="CMOS inverter (NOT gate)">
+<svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS inverter (NOT gate)">
   ${_vdd(140, 20)}
   <line x1="140" y1="20" x2="140" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
   ${_pmos(140, 70, 'P')}
@@ -69,24 +69,24 @@ const NOT_INVERTER_SVG = `
 
 // ─── FA K-maps (SUM + COUT) ─────────────────────────────────────
 const FA_KMAP_SVG = `
-<svg viewBox="0 0 940 540" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="14" role="img" aria-label="K-maps for FA SUM and COUT">
+<svg viewBox="0 0 940 540" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="K-maps for FA SUM and COUT">
   <text x="470" y="30" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">K-maps עבור FA</text>
 
   <!-- ===== SUM K-map (left) =====
        grid origin: (110, 110). Cells 60×60. Inner axis labels at top/left. -->
-  <text x="245" y="70" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">SUM = A ⊕ B ⊕ Cin</text>
-  <text x="245" y="98" text-anchor="middle" fill="#80b0e0" font-size="14" font-weight="bold">B, Cin</text>
-  <text x="70"  y="200" fill="#80b0e0" font-size="16" font-weight="bold">A</text>
+  <text x="245" y="70" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">SUM = A ⊕ B ⊕ Cin</text>
+  <text x="245" y="98" text-anchor="middle" fill="#80b0e0" font-size="18" font-weight="bold">B, Cin</text>
+  <text x="70"  y="200" fill="#80b0e0" font-size="18" font-weight="bold">A</text>
 
   <!-- column headers -->
-  <g fill="#c8d8f0" font-size="14" text-anchor="middle">
+  <g fill="#c8d8f0" font-size="18" text-anchor="middle">
     <text x="140" y="125">00</text>
     <text x="200" y="125">01</text>
     <text x="260" y="125">11</text>
     <text x="320" y="125">10</text>
   </g>
   <!-- row labels -->
-  <g fill="#c8d8f0" font-size="16" text-anchor="end" font-weight="bold">
+  <g fill="#c8d8f0" font-size="18" text-anchor="end" font-weight="bold">
     <text x="100" y="178">0</text>
     <text x="100" y="238">1</text>
   </g>
@@ -101,7 +101,7 @@ const FA_KMAP_SVG = `
   </g>
 
   <!-- cell values — ones are bright, zeros are dim -->
-  <g font-size="22" text-anchor="middle" font-weight="bold">
+  <g font-size="24" text-anchor="middle" font-weight="bold">
     <text x="140" y="180" fill="#3a4a60">0</text>
     <text x="200" y="180" fill="#ffe080">1</text>
     <text x="260" y="180" fill="#3a4a60">0</text>
@@ -112,21 +112,21 @@ const FA_KMAP_SVG = `
     <text x="320" y="240" fill="#3a4a60">0</text>
   </g>
 
-  <text x="245" y="295" text-anchor="middle" fill="#c8d8f0" font-size="14">תבנית "שחמט" — אף שתי משבצות סמוכות אינן שתיהן 1</text>
-  <text x="245" y="318" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">⟹ אין קבוצות → SUM = A ⊕ B ⊕ Cin</text>
+  <text x="245" y="295" text-anchor="middle" fill="#c8d8f0" font-size="18">תבנית "שחמט" — אף שתי משבצות סמוכות אינן שתיהן 1</text>
+  <text x="245" y="318" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">⟹ אין קבוצות → SUM = A ⊕ B ⊕ Cin</text>
 
   <!-- ===== COUT K-map (right) ===== -->
-  <text x="715" y="70" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">COUT = AB + A·Cin + B·Cin</text>
-  <text x="715" y="98" text-anchor="middle" fill="#80b0e0" font-size="14" font-weight="bold">B, Cin</text>
-  <text x="540" y="200" fill="#80b0e0" font-size="16" font-weight="bold">A</text>
+  <text x="715" y="70" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">COUT = AB + A·Cin + B·Cin</text>
+  <text x="715" y="98" text-anchor="middle" fill="#80b0e0" font-size="18" font-weight="bold">B, Cin</text>
+  <text x="540" y="200" fill="#80b0e0" font-size="18" font-weight="bold">A</text>
 
-  <g fill="#c8d8f0" font-size="14" text-anchor="middle">
+  <g fill="#c8d8f0" font-size="18" text-anchor="middle">
     <text x="610" y="125">00</text>
     <text x="670" y="125">01</text>
     <text x="730" y="125">11</text>
     <text x="790" y="125">10</text>
   </g>
-  <g fill="#c8d8f0" font-size="16" text-anchor="end" font-weight="bold">
+  <g fill="#c8d8f0" font-size="18" text-anchor="end" font-weight="bold">
     <text x="570" y="178">0</text>
     <text x="570" y="238">1</text>
   </g>
@@ -139,7 +139,7 @@ const FA_KMAP_SVG = `
     <line x1="580" y1="200" x2="820" y2="200"/>
   </g>
 
-  <g font-size="22" text-anchor="middle" font-weight="bold">
+  <g font-size="24" text-anchor="middle" font-weight="bold">
     <text x="610" y="180" fill="#3a4a60">0</text>
     <text x="670" y="180" fill="#3a4a60">0</text>
     <text x="730" y="180" fill="#ffe080">1</text>
@@ -152,42 +152,42 @@ const FA_KMAP_SVG = `
 
   <!-- B·Cin group (vertical, column = BC=11) — covers (0,11) + (1,11) -->
   <rect x="708" y="148" width="44" height="104" rx="18" fill="none" stroke="#40d0f0" stroke-width="3"/>
-  <text x="730" y="345" text-anchor="middle" fill="#40d0f0" font-size="16" font-weight="bold">B·Cin</text>
+  <text x="730" y="345" text-anchor="middle" fill="#40d0f0" font-size="18" font-weight="bold">B·Cin</text>
 
   <!-- A·Cin group (row A=1, BC=01 + BC=11) -->
   <rect x="648" y="216" width="104" height="36" rx="16" fill="none" stroke="#f0a040" stroke-width="3"/>
-  <text x="700" y="378" text-anchor="middle" fill="#f0a040" font-size="16" font-weight="bold">A·Cin</text>
+  <text x="700" y="378" text-anchor="middle" fill="#f0a040" font-size="18" font-weight="bold">A·Cin</text>
 
   <!-- A·B group (row A=1, BC=11 + BC=10) -->
   <rect x="712" y="222" width="104" height="28" rx="14" fill="none" stroke="#39ff80" stroke-width="3"/>
-  <text x="764" y="412" text-anchor="middle" fill="#39ff80" font-size="16" font-weight="bold">A·B</text>
+  <text x="764" y="412" text-anchor="middle" fill="#39ff80" font-size="18" font-weight="bold">A·B</text>
 
-  <text x="715" y="450" text-anchor="middle" fill="#c8d8f0" font-size="14">3 קבוצות-2 חופפות ⟹ COUT = AB + A·Cin + B·Cin</text>
-  <text x="715" y="478" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">אופטימיזציה: COUT = AB + (A⊕B)·Cin — חולק XOR עם SUM</text>
-  <text x="715" y="502" text-anchor="middle" fill="#c8d8f0" font-size="13">("רוב 1 מתוך 3" — COUT=1 כשרוב הקלטים = 1)</text>
+  <text x="715" y="450" text-anchor="middle" fill="#c8d8f0" font-size="18">3 קבוצות-2 חופפות ⟹ COUT = AB + A·Cin + B·Cin</text>
+  <text x="715" y="478" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">אופטימיזציה: COUT = AB + (A⊕B)·Cin — חולק XOR עם SUM</text>
+  <text x="715" y="502" text-anchor="middle" fill="#c8d8f0" font-size="18">("רוב 1 מתוך 3" — COUT=1 כשרוב הקלטים = 1)</text>
 </svg>
 `;
 
 // ─── 2:4 Decoder K-maps + schematic ─────────────────────────────
 const DEC24_KMAP_SVG = `
-<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="K-maps for 2:4 decoder">
-  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">K-maps עבור Decoder 2:4</text>
+<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="K-maps for 2:4 decoder">
+  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">K-maps עבור Decoder 2:4</text>
 
   <!-- 4 small K-maps, 2x2 each. Layout: 4 columns. -->
   <!-- Generic axes label -->
-  <text x="280" y="40" text-anchor="middle" fill="#c8d8f0" font-size="10">שורות = A1, עמודות = A0</text>
+  <text x="280" y="40" text-anchor="middle" fill="#c8d8f0" font-size="16">שורות = A1, עמודות = A0</text>
 
   <!-- Y0 -->
   <g transform="translate(40,60)">
     <text x="55" y="0" text-anchor="middle" fill="#80f0a0" font-weight="bold">Y0 = A1'·A0'</text>
-    <g fill="#c8d8f0" font-size="10" text-anchor="middle">
+    <g fill="#c8d8f0" font-size="16" text-anchor="middle">
       <text x="40" y="22">0</text><text x="80" y="22">1</text>
     </g>
-    <g fill="#c8d8f0" font-size="10" text-anchor="end">
+    <g fill="#c8d8f0" font-size="16" text-anchor="end">
       <text x="18" y="50">0</text><text x="18" y="80">1</text>
     </g>
     <g stroke="#506080" fill="none"><rect x="25" y="30" width="80" height="60"/><line x1="65" y1="30" x2="65" y2="90"/><line x1="25" y1="60" x2="105" y2="60"/></g>
-    <g fill="#c8d8f0" font-size="13" text-anchor="middle" font-weight="bold">
+    <g fill="#c8d8f0" font-size="18" text-anchor="middle" font-weight="bold">
       <text x="40" y="52">1</text><text x="80" y="52" fill="#506080">0</text>
       <text x="40" y="82" fill="#506080">0</text><text x="80" y="82" fill="#506080">0</text>
     </g>
@@ -197,10 +197,10 @@ const DEC24_KMAP_SVG = `
   <!-- Y1 -->
   <g transform="translate(170,60)">
     <text x="55" y="0" text-anchor="middle" fill="#80f0a0" font-weight="bold">Y1 = A1'·A0</text>
-    <g fill="#c8d8f0" font-size="10" text-anchor="middle"><text x="40" y="22">0</text><text x="80" y="22">1</text></g>
-    <g fill="#c8d8f0" font-size="10" text-anchor="end"><text x="18" y="50">0</text><text x="18" y="80">1</text></g>
+    <g fill="#c8d8f0" font-size="16" text-anchor="middle"><text x="40" y="22">0</text><text x="80" y="22">1</text></g>
+    <g fill="#c8d8f0" font-size="16" text-anchor="end"><text x="18" y="50">0</text><text x="18" y="80">1</text></g>
     <g stroke="#506080" fill="none"><rect x="25" y="30" width="80" height="60"/><line x1="65" y1="30" x2="65" y2="90"/><line x1="25" y1="60" x2="105" y2="60"/></g>
-    <g fill="#c8d8f0" font-size="13" text-anchor="middle" font-weight="bold">
+    <g fill="#c8d8f0" font-size="18" text-anchor="middle" font-weight="bold">
       <text x="40" y="52" fill="#506080">0</text><text x="80" y="52">1</text>
       <text x="40" y="82" fill="#506080">0</text><text x="80" y="82" fill="#506080">0</text>
     </g>
@@ -210,10 +210,10 @@ const DEC24_KMAP_SVG = `
   <!-- Y2 -->
   <g transform="translate(300,60)">
     <text x="55" y="0" text-anchor="middle" fill="#80f0a0" font-weight="bold">Y2 = A1·A0'</text>
-    <g fill="#c8d8f0" font-size="10" text-anchor="middle"><text x="40" y="22">0</text><text x="80" y="22">1</text></g>
-    <g fill="#c8d8f0" font-size="10" text-anchor="end"><text x="18" y="50">0</text><text x="18" y="80">1</text></g>
+    <g fill="#c8d8f0" font-size="16" text-anchor="middle"><text x="40" y="22">0</text><text x="80" y="22">1</text></g>
+    <g fill="#c8d8f0" font-size="16" text-anchor="end"><text x="18" y="50">0</text><text x="18" y="80">1</text></g>
     <g stroke="#506080" fill="none"><rect x="25" y="30" width="80" height="60"/><line x1="65" y1="30" x2="65" y2="90"/><line x1="25" y1="60" x2="105" y2="60"/></g>
-    <g fill="#c8d8f0" font-size="13" text-anchor="middle" font-weight="bold">
+    <g fill="#c8d8f0" font-size="18" text-anchor="middle" font-weight="bold">
       <text x="40" y="52" fill="#506080">0</text><text x="80" y="52" fill="#506080">0</text>
       <text x="40" y="82">1</text><text x="80" y="82" fill="#506080">0</text>
     </g>
@@ -223,10 +223,10 @@ const DEC24_KMAP_SVG = `
   <!-- Y3 -->
   <g transform="translate(430,60)">
     <text x="55" y="0" text-anchor="middle" fill="#80f0a0" font-weight="bold">Y3 = A1·A0</text>
-    <g fill="#c8d8f0" font-size="10" text-anchor="middle"><text x="40" y="22">0</text><text x="80" y="22">1</text></g>
-    <g fill="#c8d8f0" font-size="10" text-anchor="end"><text x="18" y="50">0</text><text x="18" y="80">1</text></g>
+    <g fill="#c8d8f0" font-size="16" text-anchor="middle"><text x="40" y="22">0</text><text x="80" y="22">1</text></g>
+    <g fill="#c8d8f0" font-size="16" text-anchor="end"><text x="18" y="50">0</text><text x="18" y="80">1</text></g>
     <g stroke="#506080" fill="none"><rect x="25" y="30" width="80" height="60"/><line x1="65" y1="30" x2="65" y2="90"/><line x1="25" y1="60" x2="105" y2="60"/></g>
-    <g fill="#c8d8f0" font-size="13" text-anchor="middle" font-weight="bold">
+    <g fill="#c8d8f0" font-size="18" text-anchor="middle" font-weight="bold">
       <text x="40" y="52" fill="#506080">0</text><text x="80" y="52" fill="#506080">0</text>
       <text x="40" y="82" fill="#506080">0</text><text x="80" y="82">1</text>
     </g>
@@ -234,17 +234,17 @@ const DEC24_KMAP_SVG = `
   </g>
 
   <!-- Interpretation -->
-  <text x="280" y="200" text-anchor="middle" fill="#c8d8f0" font-size="11">פירוש: לכל פלט יש בדיוק minterm אחד = "1" — אין מה לאחד.</text>
-  <text x="280" y="218" text-anchor="middle" fill="#c8d8f0" font-size="11">כל Yi מקבל את הקומבינציה הייחודית של A1,A0 שמייצגת את i בבינארי.</text>
-  <text x="280" y="248" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">Y0=A1'A0' ,  Y1=A1'A0 ,  Y2=A1A0' ,  Y3=A1A0</text>
-  <text x="280" y="278" text-anchor="middle" fill="#c8d8f0" font-size="11">מימוש: 2 NOT (ל-A1', A0') + 4 AND דו-קלטיים.</text>
-  <text x="280" y="296" text-anchor="middle" fill="#c8d8f0" font-size="11">סה"כ: 6 שערים. עם Enable: הופכים את 4 ה-AND ל-3 קלטיים (AND עם EN).</text>
+  <text x="280" y="200" text-anchor="middle" fill="#c8d8f0" font-size="16">פירוש: לכל פלט יש בדיוק minterm אחד = "1" — אין מה לאחד.</text>
+  <text x="280" y="218" text-anchor="middle" fill="#c8d8f0" font-size="16">כל Yi מקבל את הקומבינציה הייחודית של A1,A0 שמייצגת את i בבינארי.</text>
+  <text x="280" y="248" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">Y0=A1'A0' ,  Y1=A1'A0 ,  Y2=A1A0' ,  Y3=A1A0</text>
+  <text x="280" y="278" text-anchor="middle" fill="#c8d8f0" font-size="16">מימוש: 2 NOT (ל-A1', A0') + 4 AND דו-קלטיים.</text>
+  <text x="280" y="296" text-anchor="middle" fill="#c8d8f0" font-size="16">סה"כ: 6 שערים. עם Enable: הופכים את 4 ה-AND ל-3 קלטיים (AND עם EN).</text>
 </svg>
 `;
 
 // ─── NOR (answer א) ─────────────────────────────────────────────
 const NOR_SVG = `
-<svg viewBox="0 0 380 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="CMOS NOR gate">
+<svg viewBox="0 0 380 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS NOR gate">
   ${_vdd(180, 20)}
   <line x1="180" y1="20" x2="180" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
   ${_pmos(180, 70, 'P1')}
@@ -281,7 +281,7 @@ const NOR_SVG = `
 
 // ─── NAND (answer ב) ─────────────────────────────────────────────
 const NAND_SVG = `
-<svg viewBox="0 0 380 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="CMOS NAND gate">
+<svg viewBox="0 0 380 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS NAND gate">
   ${_vdd(180, 20)}
   <line x1="130" y1="20" x2="230" y2="20" stroke="${_WIRE}" stroke-width="1.4"/>
   <line x1="130" y1="20" x2="130" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
@@ -318,7 +318,7 @@ const NAND_SVG = `
 
 // ─── (C + B·A)' complex gate (answer ג) ─────────────────────────
 const CBA_SVG = `
-<svg viewBox="0 0 440 460" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="CMOS implementation of Y = (C + B·A)'">
+<svg viewBox="0 0 440 460" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS implementation of Y = (C + B·A)'">
   ${_vdd(210, 20)}
   <line x1="210" y1="20" x2="210" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
   ${_pmos(210, 70, 'PC')}
@@ -646,16 +646,16 @@ NAND הוא ה-dual של NOR (טור↔מקביל). ב-ASIC מעדיפים NAND 
 
 כל minterm מכוסה. אין קבוצה גדולה יותר ולא ניתן לאחד.`,
         answerSchematic: `
-<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Karnaugh map for F(A,B,C,D) with three groups colored">
+<svg viewBox="0 0 360 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Karnaugh map for F(A,B,C,D) with three groups colored">
   <!-- Title -->
-  <text x="180" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">K-map: F(A,B,C,D)</text>
+  <text x="180" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">K-map: F(A,B,C,D)</text>
 
   <!-- Axis labels -->
-  <text x="180" y="50" text-anchor="middle" fill="#80b0e0" font-size="10" font-weight="bold">CD</text>
-  <text x="60" y="155" fill="#80b0e0" font-size="10" font-weight="bold">AB</text>
+  <text x="180" y="50" text-anchor="middle" fill="#80b0e0" font-size="16" font-weight="bold">CD</text>
+  <text x="60" y="155" fill="#80b0e0" font-size="16" font-weight="bold">AB</text>
 
   <!-- Column headers -->
-  <g fill="#c8d8f0" font-size="10" text-anchor="middle">
+  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
     <text x="115" y="68">00</text>
     <text x="165" y="68">01</text>
     <text x="215" y="68">11</text>
@@ -663,7 +663,7 @@ NAND הוא ה-dual של NOR (טור↔מקביל). ב-ASIC מעדיפים NAND 
   </g>
 
   <!-- Row headers -->
-  <g fill="#c8d8f0" font-size="10" text-anchor="end">
+  <g fill="#c8d8f0" font-size="16" text-anchor="end">
     <text x="78" y="100">00</text>
     <text x="78" y="150">01</text>
     <text x="78" y="200">11</text>
@@ -683,24 +683,24 @@ NAND הוא ה-dual של NOR (טור↔מקביל). ב-ASIC מעדיפים NAND 
 
   <!-- Group 1: A'B — solid row AB=01 (green) -->
   <rect x="96" y="136" width="188" height="38" rx="18" fill="none" stroke="#39ff80" stroke-width="2.5"/>
-  <text x="296" y="158" fill="#39ff80" font-size="11" font-weight="bold">A'B</text>
+  <text x="296" y="158" fill="#39ff80" font-size="16" font-weight="bold">A'B</text>
 
   <!-- Group 2: B'D' — corners wrap-around (orange). Left two cells + right two cells. -->
   <rect x="96" y="86" width="42" height="38" rx="18" fill="none" stroke="#f0a040" stroke-width="2.5"/>
   <rect x="246" y="86" width="42" height="38" rx="18" fill="none" stroke="#f0a040" stroke-width="2.5"/>
   <rect x="96" y="236" width="42" height="38" rx="18" fill="none" stroke="#f0a040" stroke-width="2.5"/>
   <rect x="246" y="236" width="42" height="38" rx="18" fill="none" stroke="#f0a040" stroke-width="2.5"/>
-  <text x="20" y="100" fill="#f0a040" font-size="11" font-weight="bold">B'D'</text>
+  <text x="20" y="100" fill="#f0a040" font-size="16" font-weight="bold">B'D'</text>
   <!-- Hint dashed lines showing wrap-around -->
   <path d="M 138 95 L 144 95" stroke="#f0a040" stroke-width="1" stroke-dasharray="3 2"/>
   <path d="M 240 95 L 246 95" stroke="#f0a040" stroke-width="1" stroke-dasharray="3 2"/>
 
   <!-- Group 3: BD — vertical pair of columns 01, 11 across rows 01, 11 (cyan) -->
   <rect x="146" y="136" width="88" height="88" rx="18" fill="none" stroke="#40d0f0" stroke-width="2.5"/>
-  <text x="296" y="208" fill="#40d0f0" font-size="11" font-weight="bold">BD</text>
+  <text x="296" y="208" fill="#40d0f0" font-size="16" font-weight="bold">BD</text>
 
   <!-- Cell values -->
-  <g fill="#c8d8f0" font-size="13" text-anchor="middle" font-weight="bold">
+  <g fill="#c8d8f0" font-size="18" text-anchor="middle" font-weight="bold">
     <!-- AB=00 row: m0,m1,m3,m2 = 1,0,0,1 -->
     <text x="115" y="110">1</text>
     <text x="165" y="110" fill="#506080">0</text>
@@ -724,7 +724,7 @@ NAND הוא ה-dual של NOR (טור↔מקביל). ב-ASIC מעדיפים NAND 
   </g>
 
   <!-- Final expression -->
-  <text x="180" y="305" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">F = A'B + B'D' + BD</text>
+  <text x="180" y="305" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">F = A'B + B'D' + BD</text>
 </svg>
 `,
         interviewerMindset:
@@ -1010,8 +1010,8 @@ carry = a·b + c·(a ⊕ b)
 - ל-FA יש **2 פלטים** (\`sum\` ו-\`carry\`), כל אחד תלוי בכל 3 הקלטים \`a,b,c\`.
 - אם נשתמש רק ב-MUX אחד, יש לנו פלט יחיד. שני MUXes — שני פלטים, אבל **שניהם** נדרשים להיות פונקציה מלאה של 3 משתנים. ה-fan-in המוגבל של MUX 2:1 (3 sources) מחייב לפחות שכבה אחת של "הכנה" — לכן MUX3 הכרחי.`,
         answerSchematic: `
-<svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Full Adder built from 3 2:1 MUXes">
-  <text x="330" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">FA = 3 × MUX 2:1</text>
+<svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Full Adder built from 3 2:1 MUXes">
+  <text x="330" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">FA = 3 × MUX 2:1</text>
 
   <!-- MUX1: T = a XOR b -->
   <g>
@@ -1058,7 +1058,7 @@ carry = a·b + c·(a ⊕ b)
     <line x1="410" y1="260" x2="500" y2="260" stroke="#80f0a0" stroke-width="1.8"/>
   </g>
 
-  <text x="330" y="305" text-anchor="middle" fill="#c8d8f0" font-size="10">קווים ירוקים מקווקווים = T (אות עזר משותף).</text>
+  <text x="330" y="305" text-anchor="middle" fill="#c8d8f0" font-size="16">קווים ירוקים מקווקווים = T (אות עזר משותף).</text>
 </svg>
 `,
         interviewerMindset:
@@ -1181,20 +1181,20 @@ endmodule
 
 **רמז ראשון:** מאחר ש-\`(X+1) = (X + (X+2)) / 2\` (ממוצע), הפתרון הוא חישוב הממוצע בצורה ביטית — אבל **ללא חיבור**.`,
     schematic: `
-<svg viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="BlackBox with X and X+2 inputs, X+1 output">
+<svg viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="BlackBox with X and X+2 inputs, X+1 output">
   <!-- BlackBox body -->
   <rect x="140" y="50" width="160" height="100" rx="6" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8" stroke-dasharray="6 3"/>
-  <text x="220" y="106" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">BlackBox</text>
+  <text x="220" y="106" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">BlackBox</text>
 
   <!-- X input (top) -->
   <text x="80" y="76" text-anchor="middle" fill="#f0d080" font-weight="bold">X</text>
-  <text x="80" y="92" text-anchor="middle" fill="#a09080" font-size="10">(4-bit)</text>
+  <text x="80" y="92" text-anchor="middle" fill="#a09080" font-size="16">(4-bit)</text>
   <line x1="100" y1="80" x2="140" y2="80" stroke="#f0d080" stroke-width="1.6"/>
   <polygon points="140,80 134,76 134,84" fill="#f0d080"/>
 
   <!-- X+2 input (bottom) -->
   <text x="80" y="124" text-anchor="middle" fill="#f0d080" font-weight="bold">X+2</text>
-  <text x="80" y="140" text-anchor="middle" fill="#a09080" font-size="10">(4-bit)</text>
+  <text x="80" y="140" text-anchor="middle" fill="#a09080" font-size="16">(4-bit)</text>
   <line x1="100" y1="128" x2="140" y2="128" stroke="#f0d080" stroke-width="1.6"/>
   <polygon points="140,128 134,124 134,132" fill="#f0d080"/>
 
@@ -1202,7 +1202,7 @@ endmodule
   <line x1="300" y1="100" x2="360" y2="100" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="360,100 354,96 354,104" fill="#80f0a0"/>
   <text x="380" y="98" text-anchor="middle" fill="#80f0a0" font-weight="bold">X+1</text>
-  <text x="380" y="114" text-anchor="middle" fill="#80a080" font-size="10">(4-bit)</text>
+  <text x="380" y="114" text-anchor="middle" fill="#80a080" font-size="16">(4-bit)</text>
 </svg>`,
     circuitRevealsAnswer: true,
     parts: [
@@ -1218,7 +1218,7 @@ endmodule
         ],
         answerSchematic: `
 <svg viewBox="0 0 800 640" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', 'Consolas', monospace" font-size="12"
+     font-family="'JetBrains Mono', 'Consolas', monospace" font-size="16"
      role="img" aria-label="1 NOT + 3 MUX 2:1 implementing X+1 from X and X+2">
   <defs>
     <linearGradient id="bbMuxGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1252,10 +1252,10 @@ endmodule
 
   <!-- ─── Title banner ─── -->
   <rect x="0" y="0" width="800" height="64" fill="url(#bbTitleGrad)"/>
-  <text direction="ltr" x="400" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="400" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     (X+1)[0] = ¬X[0]
   </text>
-  <text direction="ltr" x="400" y="48" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="400" y="48" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     (X+1)[i] = MUX(sel = X[0], in0 = X[i], in1 = (X+2)[i])    for i = 1, 2, 3
   </text>
 
@@ -1266,10 +1266,10 @@ endmodule
   <rect x="0" y="440" width="800" height="160" fill="#0a1420" opacity="0.55"/>
 
   <!-- Row labels (LTR) -->
-  <text direction="ltr" x="40" y="146" text-anchor="middle" fill="#7090b0" font-size="11">bit 0</text>
-  <text direction="ltr" x="40" y="266" text-anchor="middle" fill="#7090b0" font-size="11">bit 1</text>
-  <text direction="ltr" x="40" y="386" text-anchor="middle" fill="#7090b0" font-size="11">bit 2</text>
-  <text direction="ltr" x="40" y="516" text-anchor="middle" fill="#7090b0" font-size="11">bit 3</text>
+  <text direction="ltr" x="40" y="146" text-anchor="middle" fill="#7090b0" font-size="16">bit 0</text>
+  <text direction="ltr" x="40" y="266" text-anchor="middle" fill="#7090b0" font-size="16">bit 1</text>
+  <text direction="ltr" x="40" y="386" text-anchor="middle" fill="#7090b0" font-size="16">bit 2</text>
+  <text direction="ltr" x="40" y="516" text-anchor="middle" fill="#7090b0" font-size="16">bit 3</text>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
        Bit 0 row:  X[0] enters from far left, branches at junction P0:
@@ -1277,98 +1277,98 @@ endmodule
          (b) DOWN   →  sel rail for bits 1, 2, 3
        ═══════════════════════════════════════════════════════════════════════ -->
   <!-- X[0] input label -->
-  <text direction="ltr" x="106" y="142" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="14">X[0]</text>
+  <text direction="ltr" x="106" y="142" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">X[0]</text>
   <!-- X[0] data wire from label to junction -->
   <line x1="138" y1="146" x2="230" y2="146" stroke="#ff8060" stroke-width="1.8"/>
   <!-- Junction P0 — the fan-out point (this is the KEY visual) -->
   <circle cx="230" cy="146" r="6" fill="#ff8060" filter="url(#bbGlowO)"/>
-  <text direction="ltr" x="230" y="124" text-anchor="middle" fill="#ff8060" font-size="10" font-weight="bold">fan-out</text>
+  <text direction="ltr" x="230" y="124" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">fan-out</text>
   <!-- Branch (a): junction → NOT (right) -->
   <line x1="230" y1="146" x2="380" y2="146" stroke="#ff8060" stroke-width="1.8"/>
   <!-- NOT triangle + bubble -->
   <polygon points="380,124 380,168 426,146" fill="url(#bbNotGrad)" stroke="#80d4ff" stroke-width="1.8"/>
   <circle cx="434" cy="146" r="6" fill="#0a1420" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="400" y="151" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="12">NOT</text>
+  <text direction="ltr" x="400" y="151" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">NOT</text>
   <!-- NOT output → (X+1)[0] -->
   <line x1="440" y1="146" x2="650" y2="146" stroke="#80f0a0" stroke-width="2" marker-end="url(#bbArrG)"/>
-  <text direction="ltr" x="720" y="142" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">(X+1)[0]</text>
+  <text direction="ltr" x="720" y="142" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">(X+1)[0]</text>
 
   <!-- Branch (b): junction P0 → DOWN as the shared sel rail -->
   <line x1="230" y1="146" x2="230" y2="572" stroke="#ff8060" stroke-width="2.4" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="246" y="182" fill="#ff8060" font-size="11" font-weight="bold">sel rail (X[0])</text>
+  <text direction="ltr" x="246" y="182" fill="#ff8060" font-size="16" font-weight="bold">sel rail (X[0])</text>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
        Bit 1 row (y centre ≈ 260)
        ═══════════════════════════════════════════════════════════════════════ -->
-  <text direction="ltr" x="106" y="246" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">X[1]</text>
+  <text direction="ltr" x="106" y="246" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">X[1]</text>
   <line x1="138" y1="250" x2="378" y2="250" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#bbArrB)"/>
-  <text direction="ltr" x="326" y="244" text-anchor="middle" fill="#a0c0e0" font-size="10">in0</text>
+  <text direction="ltr" x="326" y="244" text-anchor="middle" fill="#a0c0e0" font-size="16">in0</text>
 
-  <text direction="ltr" x="106" y="294" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">(X+2)[1]</text>
+  <text direction="ltr" x="106" y="294" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">(X+2)[1]</text>
   <line x1="160" y1="298" x2="378" y2="298" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#bbArrB)"/>
-  <text direction="ltr" x="326" y="292" text-anchor="middle" fill="#a0c0e0" font-size="10">in1</text>
+  <text direction="ltr" x="326" y="292" text-anchor="middle" fill="#a0c0e0" font-size="16">in1</text>
 
   <!-- MUX trapezoid for bit 1 -->
   <polygon points="380,232 446,250 446,298 380,316" fill="url(#bbMuxGrad)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="413" y="278" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">MUX</text>
+  <text direction="ltr" x="413" y="278" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">MUX</text>
 
   <!-- sel tap: from rail (x=230) to MUX bottom (x=413, y=316) → up to bottom edge -->
   <line x1="230" y1="316" x2="413" y2="316" stroke="#ff8060" stroke-width="1.6"/>
   <circle cx="230" cy="316" r="4" fill="#ff8060"/>
   <line x1="413" y1="316" x2="413" y2="307" stroke="#ff8060" stroke-width="1.6" marker-end="url(#bbArrO)"/>
-  <text direction="ltr" x="430" y="322" fill="#ff8060" font-size="10">sel</text>
+  <text direction="ltr" x="430" y="322" fill="#ff8060" font-size="16">sel</text>
 
   <!-- output -->
   <line x1="446" y1="274" x2="650" y2="274" stroke="#80f0a0" stroke-width="2" marker-end="url(#bbArrG)"/>
-  <text direction="ltr" x="720" y="270" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">(X+1)[1]</text>
+  <text direction="ltr" x="720" y="270" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">(X+1)[1]</text>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
        Bit 2 row (y centre ≈ 380)
        ═══════════════════════════════════════════════════════════════════════ -->
-  <text direction="ltr" x="106" y="366" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">X[2]</text>
+  <text direction="ltr" x="106" y="366" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">X[2]</text>
   <line x1="138" y1="370" x2="378" y2="370" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#bbArrB)"/>
-  <text direction="ltr" x="326" y="364" text-anchor="middle" fill="#a0c0e0" font-size="10">in0</text>
+  <text direction="ltr" x="326" y="364" text-anchor="middle" fill="#a0c0e0" font-size="16">in0</text>
 
-  <text direction="ltr" x="106" y="414" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">(X+2)[2]</text>
+  <text direction="ltr" x="106" y="414" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">(X+2)[2]</text>
   <line x1="160" y1="418" x2="378" y2="418" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#bbArrB)"/>
-  <text direction="ltr" x="326" y="412" text-anchor="middle" fill="#a0c0e0" font-size="10">in1</text>
+  <text direction="ltr" x="326" y="412" text-anchor="middle" fill="#a0c0e0" font-size="16">in1</text>
 
   <polygon points="380,352 446,370 446,418 380,436" fill="url(#bbMuxGrad)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="413" y="398" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">MUX</text>
+  <text direction="ltr" x="413" y="398" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">MUX</text>
 
   <line x1="230" y1="436" x2="413" y2="436" stroke="#ff8060" stroke-width="1.6"/>
   <circle cx="230" cy="436" r="4" fill="#ff8060"/>
   <line x1="413" y1="436" x2="413" y2="427" stroke="#ff8060" stroke-width="1.6" marker-end="url(#bbArrO)"/>
-  <text direction="ltr" x="430" y="442" fill="#ff8060" font-size="10">sel</text>
+  <text direction="ltr" x="430" y="442" fill="#ff8060" font-size="16">sel</text>
 
   <line x1="446" y1="394" x2="650" y2="394" stroke="#80f0a0" stroke-width="2" marker-end="url(#bbArrG)"/>
-  <text direction="ltr" x="720" y="390" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">(X+1)[2]</text>
+  <text direction="ltr" x="720" y="390" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">(X+1)[2]</text>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
        Bit 3 row (y centre ≈ 510; extra spacing so sel doesn't overlap (X+2)[3])
        ═══════════════════════════════════════════════════════════════════════ -->
-  <text direction="ltr" x="106" y="486" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">X[3]</text>
+  <text direction="ltr" x="106" y="486" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">X[3]</text>
   <line x1="138" y1="490" x2="378" y2="490" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#bbArrB)"/>
-  <text direction="ltr" x="326" y="484" text-anchor="middle" fill="#a0c0e0" font-size="10">in0</text>
+  <text direction="ltr" x="326" y="484" text-anchor="middle" fill="#a0c0e0" font-size="16">in0</text>
 
-  <text direction="ltr" x="106" y="538" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">(X+2)[3]</text>
+  <text direction="ltr" x="106" y="538" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">(X+2)[3]</text>
   <line x1="160" y1="542" x2="378" y2="542" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#bbArrB)"/>
-  <text direction="ltr" x="326" y="536" text-anchor="middle" fill="#a0c0e0" font-size="10">in1</text>
+  <text direction="ltr" x="326" y="536" text-anchor="middle" fill="#a0c0e0" font-size="16">in1</text>
 
   <polygon points="380,472 446,490 446,542 380,560" fill="url(#bbMuxGrad)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="413" y="520" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">MUX</text>
+  <text direction="ltr" x="413" y="520" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">MUX</text>
 
   <!-- sel for bit 3: rail endpoint at (230, 572), curls right under the MUX -->
   <line x1="230" y1="572" x2="413" y2="572" stroke="#ff8060" stroke-width="1.6"/>
   <circle cx="230" cy="572" r="4" fill="#ff8060"/>
   <line x1="413" y1="572" x2="413" y2="563" stroke="#ff8060" stroke-width="1.6" marker-end="url(#bbArrO)"/>
-  <text direction="ltr" x="430" y="578" fill="#ff8060" font-size="10">sel</text>
+  <text direction="ltr" x="430" y="578" fill="#ff8060" font-size="16">sel</text>
 
   <line x1="446" y1="516" x2="650" y2="516" stroke="#80f0a0" stroke-width="2" marker-end="url(#bbArrG)"/>
-  <text direction="ltr" x="720" y="512" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">(X+1)[3]</text>
+  <text direction="ltr" x="720" y="512" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">(X+1)[3]</text>
 
   <!-- ─── Footer: total gate count ─── -->
-  <text direction="ltr" x="400" y="616" text-anchor="middle" fill="#a0a0c0" font-size="12" font-style="italic">
+  <text direction="ltr" x="400" y="616" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Total:  1 NOT  +  3 MUX 2:1   (sel shared across all 3 MUXes)
   </text>
 </svg>`,
@@ -1489,7 +1489,7 @@ endmodule
 
 מאחר ש-\`NAND\` הוא **functionally complete** (אפשר לבנות כל פונקציה לוגית ממנו בלבד), הטריק כאן הוא להגיע למינימום.`,
     schematic: `
-<svg viewBox="0 0 360 180" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="XOR gate with A, B inputs and Y output">
+<svg viewBox="0 0 360 180" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="XOR gate with A, B inputs and Y output">
   <!-- A input -->
   <text x="40" y="64" text-anchor="middle" fill="#f0d080" font-weight="bold">A</text>
   <line x1="60" y1="60" x2="130" y2="60" stroke="#f0d080" stroke-width="1.6"/>
@@ -1499,7 +1499,7 @@ endmodule
   <!-- XOR shape: D-shape body with extra curved input bar in front -->
   <path d="M 120 40 Q 145 90 120 140" stroke="#80d4ff" stroke-width="1.6" fill="none"/>
   <path d="M 130 40 Q 175 60 220 90 Q 175 120 130 140 Q 155 90 130 40 Z" fill="#0a1825" stroke="#80d4ff" stroke-width="1.6"/>
-  <text x="166" y="96" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">⊕</text>
+  <text x="166" y="96" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">⊕</text>
   <!-- Y output -->
   <line x1="220" y1="90" x2="290" y2="90" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="290,90 284,86 284,94" fill="#80f0a0"/>
@@ -1519,38 +1519,38 @@ endmodule
           'סה"כ: **4 שערי NAND**.',
         ],
         answerSchematic: `
-<svg viewBox="0 0 600 360" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="XOR built from 4 NAND gates">
+<svg viewBox="0 0 600 360" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="XOR built from 4 NAND gates">
   <!-- helper: NAND symbol = AND-shape body + bubble at output -->
   <!-- N1: NAND(A, B) — center-left -->
   <g>
     <path d="M 160 130 L 200 130 Q 240 130 240 160 Q 240 190 200 190 L 160 190 Z" fill="#0a1825" stroke="#80d4ff" stroke-width="1.4"/>
     <circle cx="250" cy="160" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.4"/>
-    <text x="195" y="164" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="12">N1</text>
-    <text x="195" y="180" text-anchor="middle" fill="#a0c0e0" font-size="9">NAND</text>
+    <text x="195" y="164" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">N1</text>
+    <text x="195" y="180" text-anchor="middle" fill="#a0c0e0" font-size="16">NAND</text>
   </g>
 
   <!-- N2: NAND(A, N1) — top-right -->
   <g>
     <path d="M 380 50 L 420 50 Q 460 50 460 80 Q 460 110 420 110 L 380 110 Z" fill="#0a1825" stroke="#80d4ff" stroke-width="1.4"/>
     <circle cx="470" cy="80" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.4"/>
-    <text x="415" y="84" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="12">N2</text>
-    <text x="415" y="100" text-anchor="middle" fill="#a0c0e0" font-size="9">NAND</text>
+    <text x="415" y="84" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">N2</text>
+    <text x="415" y="100" text-anchor="middle" fill="#a0c0e0" font-size="16">NAND</text>
   </g>
 
   <!-- N3: NAND(B, N1) — bottom-right -->
   <g>
     <path d="M 380 210 L 420 210 Q 460 210 460 240 Q 460 270 420 270 L 380 270 Z" fill="#0a1825" stroke="#80d4ff" stroke-width="1.4"/>
     <circle cx="470" cy="240" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.4"/>
-    <text x="415" y="244" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="12">N3</text>
-    <text x="415" y="260" text-anchor="middle" fill="#a0c0e0" font-size="9">NAND</text>
+    <text x="415" y="244" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">N3</text>
+    <text x="415" y="260" text-anchor="middle" fill="#a0c0e0" font-size="16">NAND</text>
   </g>
 
   <!-- N4: NAND(N2, N3) — far-right (final) -->
   <g>
     <path d="M 510 130 L 550 130 Q 575 130 575 160 Q 575 190 550 190 L 510 190 Z" fill="#0a1825" stroke="#ffd060" stroke-width="1.8"/>
     <circle cx="585" cy="160" r="5" fill="#0a1825" stroke="#ffd060" stroke-width="1.8"/>
-    <text x="545" y="164" text-anchor="middle" fill="#ffd060" font-weight="bold" font-size="12">N4</text>
-    <text x="545" y="180" text-anchor="middle" fill="#e0c060" font-size="9">NAND</text>
+    <text x="545" y="164" text-anchor="middle" fill="#ffd060" font-weight="bold" font-size="16">N4</text>
+    <text x="545" y="180" text-anchor="middle" fill="#e0c060" font-size="16">NAND</text>
   </g>
 
   <!-- inputs A and B -->
@@ -1579,7 +1579,7 @@ endmodule
 
   <!-- N1 output → N2 (in1) and N3 (in1) -->
   <line x1="255" y1="160" x2="290" y2="160" stroke="#80d4ff" stroke-width="1.4"/>
-  <text x="270" y="154" fill="#80d4ff" font-size="10">N1</text>
+  <text x="270" y="154" fill="#80d4ff" font-size="16">N1</text>
   <line x1="290" y1="160" x2="290" y2="98" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="290" y1="98" x2="380" y2="98" stroke="#80d4ff" stroke-width="1.4"/>
   <circle cx="290" cy="160" r="3" fill="#80d4ff"/>
@@ -1590,20 +1590,20 @@ endmodule
   <line x1="475" y1="80" x2="498" y2="80" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="498" y1="80" x2="498" y2="142" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="498" y1="142" x2="510" y2="142" stroke="#80d4ff" stroke-width="1.4"/>
-  <text x="495" y="74" fill="#80d4ff" font-size="10">N2</text>
+  <text x="495" y="74" fill="#80d4ff" font-size="16">N2</text>
 
   <!-- N3 output → N4 (in1) -->
   <line x1="475" y1="240" x2="498" y2="240" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="498" y1="240" x2="498" y2="178" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="498" y1="178" x2="510" y2="178" stroke="#80d4ff" stroke-width="1.4"/>
-  <text x="495" y="254" fill="#80d4ff" font-size="10">N3</text>
+  <text x="495" y="254" fill="#80d4ff" font-size="16">N3</text>
 
   <!-- N4 output → Y -->
   <line x1="590" y1="160" x2="600" y2="160" stroke="#ffd060" stroke-width="1.6"/>
   <polygon points="600,160 594,156 594,164" fill="#ffd060"/>
 
   <!-- Output label below -->
-  <text x="585" y="200" text-anchor="middle" fill="#ffd060" font-weight="bold" font-size="13">Y = A ⊕ B</text>
+  <text x="585" y="200" text-anchor="middle" fill="#ffd060" font-weight="bold" font-size="18">Y = A ⊕ B</text>
 </svg>`,
         answer:
 `**4 שערי NAND** (ראה הסכמה למעלה).
@@ -1704,31 +1704,31 @@ endmodule
 **ב.** ממש \`barrel shifter\` של 4-bit (shift-right לוגי, 0..3 מקומות) באמצעות **MUXים 2:1 בלבד**.`,
     schematic: `
 <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12"
+     font-family="'JetBrains Mono', monospace" font-size="16"
      role="img" aria-label="Barrel shifter: 4-bit X input + 2-bit S amount → 4-bit Y output">
   <!-- Body -->
   <rect x="220" y="50" width="280" height="120" rx="10" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="360" y="92" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">Barrel Shifter</text>
-  <text direction="ltr" x="360" y="116" text-anchor="middle" fill="#80a0c0" font-size="11">(combinational, 1 cycle)</text>
-  <text direction="ltr" x="360" y="138" text-anchor="middle" fill="#a0c0e0" font-size="11">Y = X &gt;&gt; S</text>
+  <text direction="ltr" x="360" y="92" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Barrel Shifter</text>
+  <text direction="ltr" x="360" y="116" text-anchor="middle" fill="#80a0c0" font-size="16">(combinational, 1 cycle)</text>
+  <text direction="ltr" x="360" y="138" text-anchor="middle" fill="#a0c0e0" font-size="16">Y = X &gt;&gt; S</text>
 
   <!-- X input (top-left) -->
-  <text direction="ltr" x="120" y="98" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">X</text>
-  <text direction="ltr" x="120" y="114" text-anchor="middle" fill="#a09080" font-size="10">(4-bit)</text>
+  <text direction="ltr" x="120" y="98" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">X</text>
+  <text direction="ltr" x="120" y="114" text-anchor="middle" fill="#a09080" font-size="16">(4-bit)</text>
   <line x1="150" y1="100" x2="220" y2="100" stroke="#f0d080" stroke-width="1.8"/>
   <polygon points="220,100 214,96 214,104" fill="#f0d080"/>
 
   <!-- S input (bottom-left) — shift amount -->
-  <text direction="ltr" x="120" y="148" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="14">S</text>
-  <text direction="ltr" x="120" y="164" text-anchor="middle" fill="#806040" font-size="10">(2-bit amount)</text>
+  <text direction="ltr" x="120" y="148" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">S</text>
+  <text direction="ltr" x="120" y="164" text-anchor="middle" fill="#806040" font-size="16">(2-bit amount)</text>
   <line x1="150" y1="150" x2="220" y2="150" stroke="#ff8060" stroke-width="1.8"/>
   <polygon points="220,150 214,146 214,154" fill="#ff8060"/>
 
   <!-- Y output -->
   <line x1="500" y1="110" x2="580" y2="110" stroke="#80f0a0" stroke-width="1.8"/>
   <polygon points="580,110 574,106 574,114" fill="#80f0a0"/>
-  <text direction="ltr" x="620" y="106" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">Y</text>
-  <text direction="ltr" x="620" y="122" text-anchor="middle" fill="#80a080" font-size="10">(4-bit)</text>
+  <text direction="ltr" x="620" y="106" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y</text>
+  <text direction="ltr" x="620" y="122" text-anchor="middle" fill="#80a080" font-size="16">(4-bit)</text>
 </svg>`,
     circuitRevealsAnswer: true,
     parts: [
@@ -1777,7 +1777,7 @@ endmodule
         ],
         answerSchematic: `
 <svg viewBox="0 0 920 520" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', 'Consolas', monospace" font-size="11"
+     font-family="'JetBrains Mono', 'Consolas', monospace" font-size="16"
      role="img" aria-label="4-bit barrel shifter: 2 layers of 4 MUXes each">
   <defs>
     <linearGradient id="bsMux" x1="0" y1="0" x2="0" y2="1">
@@ -1795,7 +1795,7 @@ endmodule
 
   <!-- Title -->
   <rect x="0" y="0" width="920" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="460" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="460" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     4-bit Barrel Shift-Right:  2 layers × 4 MUX 2:1 = 8 MUXes total
   </text>
 
@@ -1809,7 +1809,7 @@ endmodule
   ${[
     { i: 0, y: 130 }, { i: 1, y: 220 }, { i: 2, y: 310 }, { i: 3, y: 400 },
   ].map(({ i, y }) => `
-    <text direction="ltr" x="80" y="${y - 14}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">X[${i}]</text>
+    <text direction="ltr" x="80" y="${y - 14}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">X[${i}]</text>
     <circle cx="80" cy="${y}" r="3.5" fill="#f0d080"/>
     <line x1="80" y1="${y}" x2="${i === 3 ? 230 : 260}" y2="${y}" stroke="#f0d080" stroke-width="1.4"/>
   `).join('')}
@@ -1825,15 +1825,15 @@ endmodule
     return `
       <polygon points="260,${muxTop} 310,${y - 10} 310,${y + 26} 260,${muxBot}"
                fill="url(#bsMux)" stroke="#80d4ff" stroke-width="1.4"/>
-      <text direction="ltr" x="285" y="${y + 12}" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="11">M0${i}</text>
-      <text direction="ltr" x="270" y="${y - 1}" fill="#a0c0e0" font-size="8">in0</text>
-      <text direction="ltr" x="270" y="${y + 22}" fill="#a0c0e0" font-size="8">in1</text>
+      <text direction="ltr" x="285" y="${y + 12}" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">M0${i}</text>
+      <text direction="ltr" x="270" y="${y - 1}" fill="#a0c0e0" font-size="16">in0</text>
+      <text direction="ltr" x="270" y="${y + 22}" fill="#a0c0e0" font-size="16">in1</text>
       <!-- in1 input: either from X[i+1] (one row below) or '0' literal -->
       ${in1FromY != null
         ? `<line x1="${i === 3 ? 230 : 260}" y1="${y}" x2="${i === 3 ? 230 : 260}" y2="${y}" stroke="#f0d080"/>
            <line x1="240" y1="${in1FromY}" x2="240" y2="${y + 16}" stroke="#f0d080" stroke-width="1.4"/>
            <line x1="240" y1="${y + 16}" x2="260" y2="${y + 16}" stroke="#f0d080" stroke-width="1.4" marker-end="url(#bsArrY)"/>`
-        : `<text direction="ltr" x="240" y="${y + 19}" text-anchor="middle" fill="#806040" font-size="11" font-weight="bold">0</text>
+        : `<text direction="ltr" x="240" y="${y + 19}" text-anchor="middle" fill="#806040" font-size="16" font-weight="bold">0</text>
            <line x1="248" y1="${y + 16}" x2="260" y2="${y + 16}" stroke="#806040" stroke-width="1.2" marker-end="url(#bsArrY)"/>`
       }
       <!-- in0 arrow from X[i] direct -->
@@ -1845,7 +1845,7 @@ endmodule
   }).join('')}
 
   <!-- S[0] sel rail running across all 4 Layer-0 MUXes -->
-  <text direction="ltr" x="285" y="478" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="13">S[0]</text>
+  <text direction="ltr" x="285" y="478" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">S[0]</text>
   <line x1="285" y1="160" x2="285" y2="462" stroke="#ff8060" stroke-width="2" stroke-dasharray="4 2"/>
   ${[130, 220, 310, 400].map(y => `
     <line x1="285" y1="${y + 38}" x2="285" y2="${y + 28}" stroke="#ff8060" stroke-width="1.4" marker-end="url(#bsArrO)"/>
@@ -1861,23 +1861,23 @@ endmodule
   ].map(({ i, y, in1FromY }) => `
     <polygon points="520,${y - 22} 570,${y - 10} 570,${y + 26} 520,${y + 38}"
              fill="url(#bsMux)" stroke="#80d4ff" stroke-width="1.4"/>
-    <text direction="ltr" x="545" y="${y + 12}" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="11">M1${i}</text>
-    <text direction="ltr" x="530" y="${y - 1}" fill="#a0c0e0" font-size="8">in0</text>
-    <text direction="ltr" x="530" y="${y + 22}" fill="#a0c0e0" font-size="8">in1</text>
+    <text direction="ltr" x="545" y="${y + 12}" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">M1${i}</text>
+    <text direction="ltr" x="530" y="${y - 1}" fill="#a0c0e0" font-size="16">in0</text>
+    <text direction="ltr" x="530" y="${y + 22}" fill="#a0c0e0" font-size="16">in1</text>
     <line x1="500" y1="${y + 8}" x2="520" y2="${y}" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#bsArrB)"/>
     ${in1FromY != null
       ? `<line x1="500" y1="${in1FromY + 8}" x2="500" y2="${y + 16}" stroke="#80d4ff" stroke-width="1.4"/>
          <line x1="500" y1="${y + 16}" x2="520" y2="${y + 16}" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#bsArrB)"/>`
-      : `<text direction="ltr" x="500" y="${y + 19}" text-anchor="middle" fill="#806040" font-size="11" font-weight="bold">0</text>
+      : `<text direction="ltr" x="500" y="${y + 19}" text-anchor="middle" fill="#806040" font-size="16" font-weight="bold">0</text>
          <line x1="508" y1="${y + 16}" x2="520" y2="${y + 16}" stroke="#806040" stroke-width="1.2" marker-end="url(#bsArrB)"/>`
     }
     <!-- Layer 1 output → Y[i] -->
     <line x1="570" y1="${y + 8}" x2="800" y2="${y + 8}" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#bsArrG)"/>
-    <text direction="ltr" x="850" y="${y + 12}" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">Y[${i}]</text>
+    <text direction="ltr" x="850" y="${y + 12}" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[${i}]</text>
   `).join('')}
 
   <!-- S[1] sel rail across all 4 Layer-1 MUXes -->
-  <text direction="ltr" x="545" y="478" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="13">S[1]</text>
+  <text direction="ltr" x="545" y="478" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">S[1]</text>
   <line x1="545" y1="160" x2="545" y2="462" stroke="#ff8060" stroke-width="2" stroke-dasharray="4 2"/>
   ${[130, 220, 310, 400].map(y => `
     <line x1="545" y1="${y + 38}" x2="545" y2="${y + 28}" stroke="#ff8060" stroke-width="1.4" marker-end="url(#bsArrO)"/>
@@ -1885,7 +1885,7 @@ endmodule
   `).join('')}
 
   <!-- Footer -->
-  <text direction="ltr" x="460" y="504" text-anchor="middle" fill="#a0a0c0" font-size="12" font-style="italic">
+  <text direction="ltr" x="460" y="504" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Total: 8 MUX 2:1   (4-bit input × log₂4 layers).  S = (S[1] S[0]) selects shift amount 0..3.
   </text>
 </svg>`,
@@ -2028,10 +2028,10 @@ endmodule
 \`\`\``,
     schematic: `
 <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="3-bit black box: 5↔7 swap, others identity">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="3-bit black box: 5↔7 swap, others identity">
   <rect x="160" y="50" width="160" height="100" rx="8" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="240" y="86" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">Swap 5↔7</text>
-  <text direction="ltr" x="240" y="110" text-anchor="middle" fill="#a0c0e0" font-size="11">others unchanged</text>
+  <text direction="ltr" x="240" y="86" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Swap 5↔7</text>
+  <text direction="ltr" x="240" y="110" text-anchor="middle" fill="#a0c0e0" font-size="16">others unchanged</text>
 
   <text direction="ltr" x="80" y="84" text-anchor="middle" fill="#f0d080" font-weight="bold">in (3 bits)</text>
   <line x1="120" y1="80" x2="160" y2="80" stroke="#f0d080" stroke-width="1.6"/>
@@ -2136,10 +2136,10 @@ B1_out = B1 ⊕ (B2 ∧ B0)             ← הפיכה בתנאי
 הרכיב מקבל \`X\` ו-\`Y\` (4 ביט כל אחד = שתי ספרות בנות 2 ביט), ופלט בן 3 ביטים.`,
     schematic: `
 <svg viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Component A: 2-bit comparator with three outputs GT, EQ, LT">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Component A: 2-bit comparator with three outputs GT, EQ, LT">
   <rect x="170" y="50" width="160" height="100" rx="8" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="250" y="92" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">A</text>
-  <text direction="ltr" x="250" y="114" text-anchor="middle" fill="#a0c0e0" font-size="11">2-bit comparator</text>
+  <text direction="ltr" x="250" y="92" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="20">A</text>
+  <text direction="ltr" x="250" y="114" text-anchor="middle" fill="#a0c0e0" font-size="16">2-bit comparator</text>
 
   <text direction="ltr" x="100" y="80" text-anchor="middle" fill="#f0d080" font-weight="bold">X (2-bit)</text>
   <line x1="140" y1="76" x2="170" y2="76" stroke="#f0d080" stroke-width="1.6"/>
@@ -2215,7 +2215,7 @@ LT = (¬X[1] ∧ Y[1])                              ← סימטרי ל-GT
         ],
         answerSchematic: `
 <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Cascaded comparator B: 2 A modules + cascade logic for GT/EQ/LT">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Cascaded comparator B: 2 A modules + cascade logic for GT/EQ/LT">
   <defs>
     <linearGradient id="ccBody" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -2228,19 +2228,19 @@ LT = (¬X[1] ∧ Y[1])                              ← סימטרי ל-GT
 
   <!-- Title -->
   <rect x="0" y="0" width="720" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="360" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="360" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Cascade:  high digits decide first; low digits break ties
   </text>
 
   <!-- A_hi module -->
   <rect x="200" y="70" width="120" height="80" rx="6" fill="url(#ccBody)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="260" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">A_hi</text>
-  <text direction="ltr" x="260" y="120" text-anchor="middle" fill="#a0c0e0" font-size="10">compare hi digits</text>
+  <text direction="ltr" x="260" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">A_hi</text>
+  <text direction="ltr" x="260" y="120" text-anchor="middle" fill="#a0c0e0" font-size="16">compare hi digits</text>
 
   <!-- A_lo module -->
   <rect x="200" y="220" width="120" height="80" rx="6" fill="url(#ccBody)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="260" y="250" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">A_lo</text>
-  <text direction="ltr" x="260" y="270" text-anchor="middle" fill="#a0c0e0" font-size="10">compare lo digits</text>
+  <text direction="ltr" x="260" y="250" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">A_lo</text>
+  <text direction="ltr" x="260" y="270" text-anchor="middle" fill="#a0c0e0" font-size="16">compare lo digits</text>
 
   <!-- Inputs -->
   <text direction="ltr" x="80" y="94" fill="#f0d080" font-weight="bold">X_hi</text>
@@ -2255,31 +2255,31 @@ LT = (¬X[1] ∧ Y[1])                              ← סימטרי ל-GT
 
   <!-- A_hi outputs labelled -->
   <line x1="320" y1="85" x2="400" y2="85" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="360" y="78" text-anchor="middle" fill="#80d4ff" font-size="10">A_hi.GT</text>
+  <text direction="ltr" x="360" y="78" text-anchor="middle" fill="#80d4ff" font-size="16">A_hi.GT</text>
   <line x1="320" y1="110" x2="400" y2="110" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="360" y="104" text-anchor="middle" fill="#80d4ff" font-size="10">A_hi.EQ</text>
+  <text direction="ltr" x="360" y="104" text-anchor="middle" fill="#80d4ff" font-size="16">A_hi.EQ</text>
   <line x1="320" y1="135" x2="400" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="360" y="128" text-anchor="middle" fill="#80d4ff" font-size="10">A_hi.LT</text>
+  <text direction="ltr" x="360" y="128" text-anchor="middle" fill="#80d4ff" font-size="16">A_hi.LT</text>
 
   <!-- A_lo outputs labelled -->
   <line x1="320" y1="235" x2="400" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="360" y="228" text-anchor="middle" fill="#80d4ff" font-size="10">A_lo.GT</text>
+  <text direction="ltr" x="360" y="228" text-anchor="middle" fill="#80d4ff" font-size="16">A_lo.GT</text>
   <line x1="320" y1="260" x2="400" y2="260" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="360" y="254" text-anchor="middle" fill="#80d4ff" font-size="10">A_lo.EQ</text>
+  <text direction="ltr" x="360" y="254" text-anchor="middle" fill="#80d4ff" font-size="16">A_lo.EQ</text>
   <line x1="320" y1="285" x2="400" y2="285" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="360" y="278" text-anchor="middle" fill="#80d4ff" font-size="10">A_lo.LT</text>
+  <text direction="ltr" x="360" y="278" text-anchor="middle" fill="#80d4ff" font-size="16">A_lo.LT</text>
 
   <!-- Cascade logic block -->
   <rect x="420" y="80" width="180" height="220" rx="8" fill="#0a1420" stroke="#ff8060" stroke-width="1.6" stroke-dasharray="4 2"/>
-  <text direction="ltr" x="510" y="100" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="13">cascade logic</text>
+  <text direction="ltr" x="510" y="100" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">cascade logic</text>
 
-  <text direction="ltr" x="510" y="140" text-anchor="middle" fill="#c0c0e0" font-size="11">GT = A_hi.GT</text>
-  <text direction="ltr" x="510" y="156" text-anchor="middle" fill="#c0c0e0" font-size="11">∨ (A_hi.EQ · A_lo.GT)</text>
+  <text direction="ltr" x="510" y="140" text-anchor="middle" fill="#c0c0e0" font-size="16">GT = A_hi.GT</text>
+  <text direction="ltr" x="510" y="156" text-anchor="middle" fill="#c0c0e0" font-size="16">∨ (A_hi.EQ · A_lo.GT)</text>
 
-  <text direction="ltr" x="510" y="190" text-anchor="middle" fill="#c0c0e0" font-size="11">EQ = A_hi.EQ · A_lo.EQ</text>
+  <text direction="ltr" x="510" y="190" text-anchor="middle" fill="#c0c0e0" font-size="16">EQ = A_hi.EQ · A_lo.EQ</text>
 
-  <text direction="ltr" x="510" y="234" text-anchor="middle" fill="#c0c0e0" font-size="11">LT = A_hi.LT</text>
-  <text direction="ltr" x="510" y="250" text-anchor="middle" fill="#c0c0e0" font-size="11">∨ (A_hi.EQ · A_lo.LT)</text>
+  <text direction="ltr" x="510" y="234" text-anchor="middle" fill="#c0c0e0" font-size="16">LT = A_hi.LT</text>
+  <text direction="ltr" x="510" y="250" text-anchor="middle" fill="#c0c0e0" font-size="16">∨ (A_hi.EQ · A_lo.LT)</text>
 
   <!-- Final outputs -->
   <line x1="600" y1="140" x2="660" y2="140" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#ccArrG)"/>
@@ -2291,7 +2291,7 @@ LT = (¬X[1] ∧ Y[1])                              ← סימטרי ל-GT
   <line x1="600" y1="240" x2="660" y2="240" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#ccArrG)"/>
   <text direction="ltr" x="690" y="244" text-anchor="middle" fill="#80f0a0" font-weight="bold">X &lt; Y</text>
 
-  <text direction="ltr" x="360" y="340" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="360" y="340" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     2 × A modules  +  3 ANDs + 2 ORs  =  cascade for any width with N×A modules
   </text>
 </svg>`,
@@ -2412,7 +2412,7 @@ LT_total = A_hi.LT ∨ (A_hi.EQ ∧ A_lo.LT)
         ],
         answerSchematic: `
 <svg viewBox="0 0 840 460" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13"
+     font-family="'JetBrains Mono', monospace" font-size="18"
      role="img" aria-label="4:1 MUX from 2:4 decoder + 4 ANDs + 4-input OR">
   <defs>
     <linearGradient id="muxDecGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2428,33 +2428,33 @@ LT_total = A_hi.LT ∨ (A_hi.EQ ∧ A_lo.LT)
 
   <!-- Title -->
   <rect x="0" y="0" width="840" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="420" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="420" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁ S₀) == k
   </text>
 
   <!-- Decoder block -->
   <rect x="140" y="100" width="140" height="280" rx="10" fill="url(#muxDecGrad)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="210" y="142" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">Decoder</text>
-  <text direction="ltr" x="210" y="166" text-anchor="middle" fill="#a0c0e0" font-size="12">2 : 4</text>
+  <text direction="ltr" x="210" y="142" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Decoder</text>
+  <text direction="ltr" x="210" y="166" text-anchor="middle" fill="#a0c0e0" font-size="16">2 : 4</text>
 
   <!-- S1, S0 inputs -->
-  <text direction="ltr" x="60" y="214" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="14">S₁</text>
+  <text direction="ltr" x="60" y="214" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">S₁</text>
   <line x1="84" y1="210" x2="140" y2="210" stroke="#ff8060" stroke-width="1.8" marker-end="url(#muxArrY)"/>
-  <text direction="ltr" x="60" y="270" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="14">S₀</text>
+  <text direction="ltr" x="60" y="270" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">S₀</text>
   <line x1="84" y1="266" x2="140" y2="266" stroke="#ff8060" stroke-width="1.8" marker-end="url(#muxArrY)"/>
 
   <!-- D3, D2, D1, D0 outputs (top to bottom) -->
   <line x1="280" y1="130" x2="370" y2="130" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="324" y="124" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">D₃</text>
+  <text direction="ltr" x="324" y="124" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">D₃</text>
 
   <line x1="280" y1="210" x2="370" y2="210" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="324" y="204" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">D₂</text>
+  <text direction="ltr" x="324" y="204" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">D₂</text>
 
   <line x1="280" y1="290" x2="370" y2="290" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="324" y="284" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">D₁</text>
+  <text direction="ltr" x="324" y="284" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">D₁</text>
 
   <line x1="280" y1="370" x2="370" y2="370" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="324" y="364" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">D₀</text>
+  <text direction="ltr" x="324" y="364" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">D₀</text>
 
   <!-- AND gates (D-shape) -->
   ${[
@@ -2465,10 +2465,10 @@ LT_total = A_hi.LT ∨ (A_hi.EQ ∧ A_lo.LT)
   ].map(({ y, k }) => `
     <path d="M 370 ${y - 16} L 400 ${y - 16} Q 422 ${y - 16} 422 ${y} Q 422 ${y + 16} 400 ${y + 16} L 370 ${y + 16} Z"
           fill="${'url(#muxDecGrad)'}" stroke="#80d4ff" stroke-width="1.6"/>
-    <text direction="ltr" x="395" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="11">AND</text>
+    <text direction="ltr" x="395" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">AND</text>
     <!-- I_k input arrow from below -->
     <line x1="385" y1="${y + 36}" x2="385" y2="${y + 16}" stroke="#f0d080" stroke-width="1.4" marker-end="url(#muxArrY)"/>
-    <text direction="ltr" x="385" y="${y + 52}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="12">I${'₀₁₂₃'[k]}</text>
+    <text direction="ltr" x="385" y="${y + 52}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="16">I${'₀₁₂₃'[k]}</text>
     <!-- Output to OR -->
     <line x1="422" y1="${y}" x2="540" y2="${y}" stroke="#80d4ff" stroke-width="1.4"/>
   `).join('')}
@@ -2476,15 +2476,15 @@ LT_total = A_hi.LT ∨ (A_hi.EQ ∧ A_lo.LT)
   <!-- OR-4 gate (large D-shape) -->
   <path d="M 540 110 Q 590 130 590 250 Q 590 370 540 390 Q 565 250 540 110 Z M 540 110 L 600 110 Q 660 200 660 250 Q 660 300 600 390 L 540 390 Q 565 250 540 110 Z"
         fill="url(#muxDecGrad)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="610" y="246" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">OR-4</text>
-  <text direction="ltr" x="610" y="266" text-anchor="middle" fill="#a0c0e0" font-size="10">(or tree of 3 OR-2)</text>
+  <text direction="ltr" x="610" y="246" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">OR-4</text>
+  <text direction="ltr" x="610" y="266" text-anchor="middle" fill="#a0c0e0" font-size="16">(or tree of 3 OR-2)</text>
 
   <!-- Final output -->
   <line x1="660" y1="250" x2="760" y2="250" stroke="#80f0a0" stroke-width="2" marker-end="url(#muxArrG)"/>
-  <text direction="ltr" x="800" y="246" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y</text>
+  <text direction="ltr" x="800" y="246" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">Y</text>
 
   <!-- Legend at bottom -->
-  <text direction="ltr" x="420" y="432" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="420" y="432" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     1 decoder 2:4  +  4 AND-2  +  3 OR-2 (or 1 OR-4)   •   exactly one Dₖ = 1 selects I_k
   </text>
 </svg>`,
@@ -2600,11 +2600,11 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
 **המימוש צריך להיות פשוט ככל שניתן (שימוש במספר קטן ככל האפשר של יחידות).**`,
     schematic: `
 <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Sort-2 and Sort-4 components">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Sort-2 and Sort-4 components">
   <!-- Sort-2 box -->
   <rect x="80"  y="60"  width="120" height="100" rx="8" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="140" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">Sort-2</text>
-  <text direction="ltr" x="140" y="120" text-anchor="middle" fill="#a0c0e0" font-size="10">2 in → 2 out</text>
+  <text direction="ltr" x="140" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Sort-2</text>
+  <text direction="ltr" x="140" y="120" text-anchor="middle" fill="#a0c0e0" font-size="16">2 in → 2 out</text>
 
   <text direction="ltr" x="40" y="86" fill="#f0d080" font-weight="bold">a</text>
   <line x1="56" y1="82" x2="80" y2="82" stroke="#f0d080" stroke-width="1.6"/>
@@ -2615,16 +2615,16 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
 
   <line x1="200" y1="82" x2="240" y2="82" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="240,82 234,78 234,86" fill="#80f0a0"/>
-  <text direction="ltr" x="278" y="86" text-anchor="middle" fill="#80f0a0" font-size="12">max(a,b)</text>
+  <text direction="ltr" x="278" y="86" text-anchor="middle" fill="#80f0a0" font-size="16">max(a,b)</text>
 
   <line x1="200" y1="132" x2="240" y2="132" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="240,132 234,128 234,136" fill="#80f0a0"/>
-  <text direction="ltr" x="278" y="136" text-anchor="middle" fill="#80f0a0" font-size="12">min(a,b)</text>
+  <text direction="ltr" x="278" y="136" text-anchor="middle" fill="#80f0a0" font-size="16">min(a,b)</text>
 
   <!-- Sort-4 box -->
   <rect x="430" y="40" width="180" height="160" rx="8" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="520" y="106" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Sort-4</text>
-  <text direction="ltr" x="520" y="128" text-anchor="middle" fill="#a0c0e0" font-size="11">4 in → 4 out (sorted)</text>
+  <text direction="ltr" x="520" y="106" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="20">Sort-4</text>
+  <text direction="ltr" x="520" y="128" text-anchor="middle" fill="#a0c0e0" font-size="16">4 in → 4 out (sorted)</text>
 
   <text direction="ltr" x="390" y="68" fill="#f0d080" font-weight="bold">a</text>
   <line x1="406" y1="64" x2="430" y2="64" stroke="#f0d080" stroke-width="1.6"/>
@@ -2641,19 +2641,19 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
 
   <line x1="610" y1="64" x2="650" y2="64" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="650,64 644,60 644,68" fill="#80f0a0"/>
-  <text direction="ltr" x="684" y="68" text-anchor="middle" fill="#80f0a0" font-size="11">Max</text>
+  <text direction="ltr" x="684" y="68" text-anchor="middle" fill="#80f0a0" font-size="16">Max</text>
 
   <line x1="610" y1="104" x2="650" y2="104" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="650,104 644,100 644,108" fill="#80f0a0"/>
-  <text direction="ltr" x="684" y="108" text-anchor="middle" fill="#80f0a0" font-size="11">M₂</text>
+  <text direction="ltr" x="684" y="108" text-anchor="middle" fill="#80f0a0" font-size="16">M₂</text>
 
   <line x1="610" y1="144" x2="650" y2="144" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="650,144 644,140 644,148" fill="#80f0a0"/>
-  <text direction="ltr" x="684" y="148" text-anchor="middle" fill="#80f0a0" font-size="11">M₁</text>
+  <text direction="ltr" x="684" y="148" text-anchor="middle" fill="#80f0a0" font-size="16">M₁</text>
 
   <line x1="610" y1="184" x2="650" y2="184" stroke="#80f0a0" stroke-width="1.6"/>
   <polygon points="650,184 644,180 644,188" fill="#80f0a0"/>
-  <text direction="ltr" x="684" y="188" text-anchor="middle" fill="#80f0a0" font-size="11">Min</text>
+  <text direction="ltr" x="684" y="188" text-anchor="middle" fill="#80f0a0" font-size="16">Min</text>
 </svg>`,
     circuitRevealsAnswer: true,
     parts: [
@@ -2669,7 +2669,7 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
         ],
         answerSchematic: `
 <svg viewBox="0 0 880 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Sort-4 from 5 Sort-2 modules in 3 stages">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Sort-4 from 5 Sort-2 modules in 3 stages">
   <defs>
     <linearGradient id="s2Body" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -2682,75 +2682,75 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
 
   <!-- Title -->
   <rect x="0" y="0" width="880" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="440" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="440" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Sort-4 = 5 × Sort-2  (3 stages, optimal sorting network for n=4)
   </text>
 
   <!-- Stage column headers -->
   <text direction="ltr" x="190" y="74" text-anchor="middle" fill="#a0c0e0" font-weight="bold">Stage 1</text>
-  <text direction="ltr" x="190" y="88" text-anchor="middle" fill="#a0c0e0" font-size="10">sort pairs</text>
+  <text direction="ltr" x="190" y="88" text-anchor="middle" fill="#a0c0e0" font-size="16">sort pairs</text>
   <text direction="ltr" x="440" y="74" text-anchor="middle" fill="#a0c0e0" font-weight="bold">Stage 2</text>
-  <text direction="ltr" x="440" y="88" text-anchor="middle" fill="#a0c0e0" font-size="10">find extremes</text>
+  <text direction="ltr" x="440" y="88" text-anchor="middle" fill="#a0c0e0" font-size="16">find extremes</text>
   <text direction="ltr" x="690" y="74" text-anchor="middle" fill="#a0c0e0" font-weight="bold">Stage 3</text>
-  <text direction="ltr" x="690" y="88" text-anchor="middle" fill="#a0c0e0" font-size="10">sort middles</text>
+  <text direction="ltr" x="690" y="88" text-anchor="middle" fill="#a0c0e0" font-size="16">sort middles</text>
 
   <!-- ── Stage 1: S1 (a,b) and S2 (c,d) ── -->
   <rect x="140" y="120" width="100" height="80" rx="8" fill="url(#s2Body)" stroke="#80d4ff" stroke-width="1.6"/>
   <text direction="ltr" x="190" y="150" text-anchor="middle" fill="#80d4ff" font-weight="bold">S1</text>
-  <text direction="ltr" x="190" y="170" text-anchor="middle" fill="#a0c0e0" font-size="10">Sort-2</text>
+  <text direction="ltr" x="190" y="170" text-anchor="middle" fill="#a0c0e0" font-size="16">Sort-2</text>
 
   <rect x="140" y="240" width="100" height="80" rx="8" fill="url(#s2Body)" stroke="#80d4ff" stroke-width="1.6"/>
   <text direction="ltr" x="190" y="270" text-anchor="middle" fill="#80d4ff" font-weight="bold">S2</text>
-  <text direction="ltr" x="190" y="290" text-anchor="middle" fill="#a0c0e0" font-size="10">Sort-2</text>
+  <text direction="ltr" x="190" y="290" text-anchor="middle" fill="#a0c0e0" font-size="16">Sort-2</text>
 
   <!-- Stage 1 inputs -->
-  <text direction="ltr" x="60" y="144" fill="#f0d080" font-weight="bold" font-size="14">a</text>
+  <text direction="ltr" x="60" y="144" fill="#f0d080" font-weight="bold" font-size="18">a</text>
   <line x1="80" y1="140" x2="140" y2="140" stroke="#f0d080" stroke-width="1.6" marker-end="url(#srtArrB)"/>
-  <text direction="ltr" x="60" y="184" fill="#f0d080" font-weight="bold" font-size="14">b</text>
+  <text direction="ltr" x="60" y="184" fill="#f0d080" font-weight="bold" font-size="18">b</text>
   <line x1="80" y1="180" x2="140" y2="180" stroke="#f0d080" stroke-width="1.6" marker-end="url(#srtArrB)"/>
-  <text direction="ltr" x="60" y="264" fill="#f0d080" font-weight="bold" font-size="14">c</text>
+  <text direction="ltr" x="60" y="264" fill="#f0d080" font-weight="bold" font-size="18">c</text>
   <line x1="80" y1="260" x2="140" y2="260" stroke="#f0d080" stroke-width="1.6" marker-end="url(#srtArrB)"/>
-  <text direction="ltr" x="60" y="304" fill="#f0d080" font-weight="bold" font-size="14">d</text>
+  <text direction="ltr" x="60" y="304" fill="#f0d080" font-weight="bold" font-size="18">d</text>
   <line x1="80" y1="300" x2="140" y2="300" stroke="#f0d080" stroke-width="1.6" marker-end="url(#srtArrB)"/>
 
   <!-- ── Stage 2: S3 (a₁,c₁) and S4 (b₁,d₁) ── -->
   <rect x="390" y="120" width="100" height="80" rx="8" fill="url(#s2Body)" stroke="#80d4ff" stroke-width="1.6"/>
   <text direction="ltr" x="440" y="150" text-anchor="middle" fill="#80d4ff" font-weight="bold">S3</text>
-  <text direction="ltr" x="440" y="170" text-anchor="middle" fill="#a0c0e0" font-size="10">sort min-of-pairs</text>
+  <text direction="ltr" x="440" y="170" text-anchor="middle" fill="#a0c0e0" font-size="16">sort min-of-pairs</text>
 
   <rect x="390" y="240" width="100" height="80" rx="8" fill="url(#s2Body)" stroke="#80d4ff" stroke-width="1.6"/>
   <text direction="ltr" x="440" y="270" text-anchor="middle" fill="#80d4ff" font-weight="bold">S4</text>
-  <text direction="ltr" x="440" y="290" text-anchor="middle" fill="#a0c0e0" font-size="10">sort max-of-pairs</text>
+  <text direction="ltr" x="440" y="290" text-anchor="middle" fill="#a0c0e0" font-size="16">sort max-of-pairs</text>
 
   <!-- Stage 1 → Stage 2 wiring -->
   <!-- S1 max (b₁) at output top → S4 input top -->
   <line x1="240" y1="140" x2="320" y2="140" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="280" y="134" text-anchor="middle" fill="#80d4ff" font-size="10">b₁=max(a,b)</text>
+  <text direction="ltr" x="280" y="134" text-anchor="middle" fill="#80d4ff" font-size="16">b₁=max(a,b)</text>
   <line x1="320" y1="140" x2="320" y2="260" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="320" y1="260" x2="390" y2="260" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#srtArrB)"/>
 
   <!-- S1 min (a₁) at output bottom → S3 input top -->
   <line x1="240" y1="180" x2="320" y2="180" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="280" y="196" text-anchor="middle" fill="#80d4ff" font-size="10">a₁=min(a,b)</text>
+  <text direction="ltr" x="280" y="196" text-anchor="middle" fill="#80d4ff" font-size="16">a₁=min(a,b)</text>
   <line x1="320" y1="180" x2="320" y2="140" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="320" y1="140" x2="390" y2="140" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#srtArrB)"/>
 
   <!-- S2 max (d₁) → S4 input bottom -->
   <line x1="240" y1="260" x2="350" y2="260" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="290" y="254" text-anchor="middle" fill="#80d4ff" font-size="10">d₁=max(c,d)</text>
+  <text direction="ltr" x="290" y="254" text-anchor="middle" fill="#80d4ff" font-size="16">d₁=max(c,d)</text>
   <line x1="350" y1="260" x2="350" y2="300" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="350" y1="300" x2="390" y2="300" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#srtArrB)"/>
 
   <!-- S2 min (c₁) → S3 input bottom -->
   <line x1="240" y1="300" x2="350" y2="300" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="290" y="316" text-anchor="middle" fill="#80d4ff" font-size="10">c₁=min(c,d)</text>
+  <text direction="ltr" x="290" y="316" text-anchor="middle" fill="#80d4ff" font-size="16">c₁=min(c,d)</text>
   <line x1="350" y1="300" x2="350" y2="180" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="350" y1="180" x2="390" y2="180" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#srtArrB)"/>
 
   <!-- ── Stage 3: S5 (m₁, m₂) ── -->
   <rect x="640" y="180" width="100" height="80" rx="8" fill="url(#s2Body)" stroke="#80d4ff" stroke-width="1.6"/>
   <text direction="ltr" x="690" y="210" text-anchor="middle" fill="#80d4ff" font-weight="bold">S5</text>
-  <text direction="ltr" x="690" y="230" text-anchor="middle" fill="#a0c0e0" font-size="10">sort middles</text>
+  <text direction="ltr" x="690" y="230" text-anchor="middle" fill="#a0c0e0" font-size="16">sort middles</text>
 
   <!-- S3 max → Min global -->
   <line x1="490" y1="140" x2="800" y2="140" stroke="#80f0a0" stroke-width="1.6" marker-end="url(#srtArrG)"/>
@@ -2758,7 +2758,7 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
 
   <!-- S3 min (= median-low) → S5 input top -->
   <line x1="490" y1="180" x2="580" y2="180" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="540" y="174" text-anchor="middle" fill="#80d4ff" font-size="10">m₁</text>
+  <text direction="ltr" x="540" y="174" text-anchor="middle" fill="#80d4ff" font-size="16">m₁</text>
   <line x1="580" y1="180" x2="580" y2="200" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="580" y1="200" x2="640" y2="200" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#srtArrB)"/>
 
@@ -2768,7 +2768,7 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
 
   <!-- S4 min (= median-high) → S5 input bottom -->
   <line x1="490" y1="260" x2="580" y2="260" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="540" y="276" text-anchor="middle" fill="#80d4ff" font-size="10">m₂</text>
+  <text direction="ltr" x="540" y="276" text-anchor="middle" fill="#80d4ff" font-size="16">m₂</text>
   <line x1="580" y1="260" x2="580" y2="240" stroke="#80d4ff" stroke-width="1.4"/>
   <line x1="580" y1="240" x2="640" y2="240" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#srtArrB)"/>
 
@@ -2779,10 +2779,10 @@ Y = Σₖ (Dₖ · Iₖ)    ,   Dₖ = 1 ⇔ (S₁S₀) = k
   <text direction="ltr" x="850" y="244" text-anchor="middle" fill="#80f0a0" font-weight="bold">M₁</text>
 
   <!-- Footer -->
-  <text direction="ltr" x="440" y="430" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="440" y="430" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     5 Sort-2 modules.  Depth = 3 stages.  Optimal for n=4 (proven).
   </text>
-  <text direction="ltr" x="440" y="452" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="440" y="452" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Output order: Min &lt; M₁ &lt; M₂ &lt; Max  ✓
   </text>
 </svg>`,
@@ -2861,10 +2861,10 @@ Min  <  M₁  <  M₂  <  Max
 **ג.** ממש באמצעות רכיב זה רכיב המחזיר \`1\` אם **לפחות 2** כניסות הן \`1\`.`,
     schematic: `
 <svg viewBox="0 0 460 180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Majority 3-of-4 component">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Majority 3-of-4 component">
   <rect x="170" y="40" width="140" height="100" rx="8" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="240" y="78" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">M₃-of-4</text>
-  <text direction="ltr" x="240" y="100" text-anchor="middle" fill="#a0c0e0" font-size="11">≥ 3 of 4 inputs = 1</text>
+  <text direction="ltr" x="240" y="78" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">M₃-of-4</text>
+  <text direction="ltr" x="240" y="100" text-anchor="middle" fill="#a0c0e0" font-size="16">≥ 3 of 4 inputs = 1</text>
 
   <text direction="ltr" x="120" y="64" text-anchor="middle" fill="#f0d080" font-weight="bold">a</text>
   <line x1="140" y1="60" x2="170" y2="60" stroke="#f0d080" stroke-width="1.6"/>
@@ -2933,7 +2933,7 @@ Y = ab(c + d) + cd(a + b)
         ],
         answerSchematic: `
 <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="M3-of-4 implementation: 4 AND-3 + 1 OR-4">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="M3-of-4 implementation: 4 AND-3 + 1 OR-4">
   <defs>
     <linearGradient id="m3g" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -2943,7 +2943,7 @@ Y = ab(c + d) + cd(a + b)
   </defs>
 
   <rect x="0" y="0" width="760" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="380" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="380" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Y = abc + abd + acd + bcd   (4 × AND-3 + 1 × OR-4)
   </text>
 
@@ -2951,7 +2951,7 @@ Y = ab(c + d) + cd(a + b)
   ${['a', 'b', 'c', 'd'].map((name, i) => {
     const y = 80 + i * 60;
     return `
-      <text direction="ltr" x="40" y="${y + 4}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">${name}</text>
+      <text direction="ltr" x="40" y="${y + 4}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">${name}</text>
       <circle cx="80" cy="${y}" r="3" fill="#f0d080"/>
       <line x1="80" y1="${y}" x2="200" y2="${y}" stroke="#f0d080" stroke-width="1.4"/>
     `;
@@ -2966,8 +2966,8 @@ Y = ab(c + d) + cd(a + b)
   ].map(({ y, label, ins }, i) => `
     <path d="M 280 ${y - 22} L 320 ${y - 22} Q 360 ${y - 22} 360 ${y} Q 360 ${y + 22} 320 ${y + 22} L 280 ${y + 22} Z"
           fill="url(#m3g)" stroke="#80d4ff" stroke-width="1.6"/>
-    <text direction="ltr" x="320" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">AND</text>
-    <text direction="ltr" x="280" y="${y - 30}" text-anchor="start" fill="#a0c0e0" font-size="10">${label}</text>
+    <text direction="ltr" x="320" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">AND</text>
+    <text direction="ltr" x="280" y="${y - 30}" text-anchor="start" fill="#a0c0e0" font-size="16">${label}</text>
     <!-- 3 input lines from the input rails -->
     ${ins.map((x, k) => `
       <line x1="${x}" y1="${ins.length === 3 ? (y - 16 + k * 16) : y}" x2="280" y2="${y - 16 + k * 16}" stroke="#80d4ff" stroke-width="1.2" opacity="0.6"/>
@@ -2980,11 +2980,11 @@ Y = ab(c + d) + cd(a + b)
   <!-- OR-4 gate -->
   <path d="M 500 60 Q 555 200 500 340 Q 530 340 580 280 Q 620 200 580 120 Q 530 60 500 60 Z"
         fill="url(#m3g)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="555" y="204" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">OR-4</text>
+  <text direction="ltr" x="555" y="204" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">OR-4</text>
 
   <!-- Final output -->
   <line x1="620" y1="200" x2="700" y2="200" stroke="#80f0a0" stroke-width="2" marker-end="url(#m3arr)"/>
-  <text direction="ltr" x="730" y="206" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y</text>
+  <text direction="ltr" x="730" y="206" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">Y</text>
 </svg>`,
         answer:
 `**מימוש ישיר: 4 × AND-3 + 1 × OR-4 = 5 שערים.**
@@ -3177,15 +3177,15 @@ M₂(x, y, z) ⇔ M₃(x, y, z, 1)
 כמה רכיבים נדרשים, ובאיזה צירוף?`,
     schematic: `
 <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Goal: 100ns symmetric delay built from buffer and inverter">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Goal: 100ns symmetric delay built from buffer and inverter">
 
   <!-- ── Row 1: goal — signal in → black-box → signal out ─────────────── -->
-  <text direction="ltr" x="100" y="50" text-anchor="start" fill="#80a0c0" font-size="11"
+  <text direction="ltr" x="100" y="50" text-anchor="start" fill="#80a0c0" font-size="16"
         letter-spacing="2" font-weight="bold">GOAL</text>
 
   <!-- input port -->
   <circle cx="105" cy="100" r="6" fill="#80f0a0" stroke="#80f0a0" stroke-width="1.5"/>
-  <text direction="ltr" x="105" y="82" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">in</text>
+  <text direction="ltr" x="105" y="82" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">in</text>
 
   <!-- wire in → box -->
   <line x1="111" y1="100" x2="240" y2="100" stroke="#506080" stroke-width="2"/>
@@ -3194,9 +3194,9 @@ M₂(x, y, z) ⇔ M₃(x, y, z, 1)
   <rect x="240" y="65" width="220" height="70" rx="10"
         fill="#1a0e08" stroke="#ff8060" stroke-width="2.4" stroke-dasharray="6 4"/>
   <text direction="ltr" x="350" y="95" text-anchor="middle" fill="#ff8060"
-        font-weight="bold" font-size="16">100 ns delay</text>
+        font-weight="bold" font-size="18">100 ns delay</text>
   <text direction="ltr" x="350" y="120" text-anchor="middle" fill="#ffb088"
-        font-size="11" font-style="italic">symmetric · non-inverting</text>
+        font-size="16" font-style="italic">symmetric · non-inverting</text>
 
   <!-- wire box → out -->
   <line x1="460" y1="100" x2="595" y2="100" stroke="#506080" stroke-width="2"/>
@@ -3205,45 +3205,45 @@ M₂(x, y, z) ⇔ M₃(x, y, z, 1)
 
   <!-- output port -->
   <circle cx="615" cy="100" r="6" fill="#80f0a0" stroke="#80f0a0" stroke-width="1.5"/>
-  <text direction="ltr" x="615" y="82" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">out</text>
+  <text direction="ltr" x="615" y="82" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">out</text>
 
   <!-- divider between "goal" row and "parts" row -->
   <line x1="60" y1="185" x2="660" y2="185" stroke="#2a4060" stroke-width="1" stroke-dasharray="3 5"/>
 
   <!-- ── Row 2: available primitives (buffer + inverter) ──────────────── -->
-  <text direction="ltr" x="100" y="215" text-anchor="start" fill="#80a0c0" font-size="11"
+  <text direction="ltr" x="100" y="215" text-anchor="start" fill="#80a0c0" font-size="16"
         letter-spacing="2" font-weight="bold">AVAILABLE PARTS</text>
 
   <!-- Buffer card -->
   <rect x="100" y="235" width="240" height="105" rx="8" fill="#0a1520" stroke="#2a4060" stroke-width="1"/>
   <text direction="ltr" x="220" y="258" text-anchor="middle" fill="#a0c0e0"
-        font-size="12" font-weight="bold">Buffer</text>
+        font-size="16" font-weight="bold">Buffer</text>
   <!-- triangle -->
   <polygon points="135,275 135,325 185,300" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="158" y="304" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">BUF</text>
+  <text direction="ltr" x="158" y="304" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">BUF</text>
   <!-- pin stubs -->
   <line x1="120" y1="300" x2="135" y2="300" stroke="#80d4ff" stroke-width="1.6"/>
   <line x1="185" y1="300" x2="200" y2="300" stroke="#80d4ff" stroke-width="1.6"/>
   <!-- timing block -->
-  <text direction="ltr" x="280" y="285" text-anchor="middle" fill="#f0d080" font-size="12">rise: 12 ns</text>
-  <text direction="ltr" x="280" y="305" text-anchor="middle" fill="#f0d080" font-size="12">fall: &nbsp; 8 ns</text>
-  <text direction="ltr" x="280" y="325" text-anchor="middle" fill="#ff8080" font-size="10" font-style="italic">⚠ asymmetric</text>
+  <text direction="ltr" x="280" y="285" text-anchor="middle" fill="#f0d080" font-size="16">rise: 12 ns</text>
+  <text direction="ltr" x="280" y="305" text-anchor="middle" fill="#f0d080" font-size="16">fall: &nbsp; 8 ns</text>
+  <text direction="ltr" x="280" y="325" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">⚠ asymmetric</text>
 
   <!-- Inverter card -->
   <rect x="380" y="235" width="240" height="105" rx="8" fill="#0a1520" stroke="#2a4060" stroke-width="1"/>
   <text direction="ltr" x="500" y="258" text-anchor="middle" fill="#a0c0e0"
-        font-size="12" font-weight="bold">Inverter</text>
+        font-size="16" font-weight="bold">Inverter</text>
   <!-- triangle + bubble -->
   <polygon points="415,275 415,325 465,300" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
   <circle cx="473" cy="300" r="6" fill="#0a1825" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="440" y="304" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">NOT</text>
+  <text direction="ltr" x="440" y="304" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">NOT</text>
   <!-- pin stubs -->
   <line x1="400" y1="300" x2="415" y2="300" stroke="#80d4ff" stroke-width="1.6"/>
   <line x1="479" y1="300" x2="495" y2="300" stroke="#80d4ff" stroke-width="1.6"/>
   <!-- timing block -->
-  <text direction="ltr" x="560" y="285" text-anchor="middle" fill="#80f0a0" font-size="12">rise: 5 ns</text>
-  <text direction="ltr" x="560" y="305" text-anchor="middle" fill="#80f0a0" font-size="12">fall: &nbsp;5 ns</text>
-  <text direction="ltr" x="560" y="325" text-anchor="middle" fill="#80f0a0" font-size="10" font-style="italic">✓ symmetric</text>
+  <text direction="ltr" x="560" y="285" text-anchor="middle" fill="#80f0a0" font-size="16">rise: 5 ns</text>
+  <text direction="ltr" x="560" y="305" text-anchor="middle" fill="#80f0a0" font-size="16">fall: &nbsp;5 ns</text>
+  <text direction="ltr" x="560" y="325" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">✓ symmetric</text>
 </svg>`,
     circuitRevealsAnswer: true,
     parts: [
@@ -3386,7 +3386,7 @@ out:   0 → 1 → 0 → 0 → 0 → 0 → 0 → 0
         ],
         answerSchematic: `
 <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="MSB-first leading-1 detector: 1 D-FF + AND + OR + NOT">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="MSB-first leading-1 detector: 1 D-FF + AND + OR + NOT">
   <defs>
     <marker id="ld1Arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80d4ff"/></marker>
@@ -3395,12 +3395,12 @@ out:   0 → 1 → 0 → 0 → 0 → 0 → 0 → 0
   </defs>
 
   <rect x="0" y="0" width="760" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="380" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="380" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Leading-1 detector — 1 D-FF + AND + OR + NOT
   </text>
 
   <!-- ── Input X ─────────────────────────────────────────────────────── -->
-  <text direction="ltr" x="50" y="174" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="13">X</text>
+  <text direction="ltr" x="50" y="174" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">X</text>
   <line x1="70" y1="170" x2="180" y2="170" stroke="#f0d080" stroke-width="2"/>
   <circle cx="180" cy="170" r="3" fill="#f0d080"/>
 
@@ -3411,7 +3411,7 @@ out:   0 → 1 → 0 → 0 → 0 → 0 → 0 → 0
   <!-- ── NOT gate on seen ───────────────────────────────────────────── -->
   <polygon points="240,100 240,140 280,120" fill="#0a1825" stroke="#ff8060" stroke-width="1.8"/>
   <circle cx="286" cy="120" r="5" fill="#0a1825" stroke="#ff8060" stroke-width="1.8"/>
-  <text direction="ltr" x="260" y="124" text-anchor="middle" fill="#ff8060" font-size="10" font-weight="bold">NOT</text>
+  <text direction="ltr" x="260" y="124" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">NOT</text>
 
   <!-- wire NOT → AND input -->
   <line x1="291" y1="120" x2="330" y2="120" stroke="#ff8060" stroke-width="1.8"/>
@@ -3424,27 +3424,27 @@ out:   0 → 1 → 0 → 0 → 0 → 0 → 0 → 0
   <line x1="370" y1="170" x2="370" y2="180" stroke="#f0d080" stroke-width="2"/>
   <line x1="370" y1="180" x2="370" y2="180"/>
   <path d="M 370 145 L 370 195 L 405 195 A 25 25 0 0 0 405 145 Z" fill="#102818" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="390" y="174" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">AND</text>
+  <text direction="ltr" x="390" y="174" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">AND</text>
 
   <!-- wire AND → Y -->
   <line x1="430" y1="170" x2="540" y2="170" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#ld1ArrG)"/>
-  <text direction="ltr" x="570" y="174" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">Y</text>
-  <text direction="ltr" x="570" y="190" text-anchor="middle" fill="#a0a0c0" font-size="9" font-style="italic">(leading-1 pulse)</text>
+  <text direction="ltr" x="570" y="174" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y</text>
+  <text direction="ltr" x="570" y="190" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">(leading-1 pulse)</text>
 
   <!-- ── OR gate (next-state = seen ∨ X) ────────────────────────────── -->
   <path d="M 330 270 Q 350 290 330 310 L 365 310 Q 395 290 365 270 Z" fill="#1a1430" stroke="#c080ff" stroke-width="2"/>
-  <text direction="ltr" x="350" y="294" text-anchor="middle" fill="#c080ff" font-size="11" font-weight="bold">OR</text>
+  <text direction="ltr" x="350" y="294" text-anchor="middle" fill="#c080ff" font-size="16" font-weight="bold">OR</text>
 
   <!-- wire OR → D-FF -->
   <line x1="380" y1="290" x2="450" y2="290" stroke="#c080ff" stroke-width="2" marker-end="url(#ld1Arr)"/>
 
   <!-- ── D-FF (seen) ─────────────────────────────────────────────────── -->
   <rect x="450" y="250" width="100" height="80" rx="6" fill="#0a1825" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="500" y="265" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">D-FF</text>
-  <text direction="ltr" x="500" y="282" text-anchor="middle" fill="#a0c0e0" font-size="10">seen</text>
-  <text direction="ltr" x="468" y="298" fill="#80d4ff" font-size="11" font-weight="bold">D</text>
-  <text direction="ltr" x="533" y="298" fill="#80d4ff" font-size="11" font-weight="bold">Q</text>
-  <text direction="ltr" x="500" y="324" text-anchor="middle" fill="#a060ff" font-size="9">▷ clk</text>
+  <text direction="ltr" x="500" y="265" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">D-FF</text>
+  <text direction="ltr" x="500" y="282" text-anchor="middle" fill="#a0c0e0" font-size="16">seen</text>
+  <text direction="ltr" x="468" y="298" fill="#80d4ff" font-size="16" font-weight="bold">D</text>
+  <text direction="ltr" x="533" y="298" fill="#80d4ff" font-size="16" font-weight="bold">Q</text>
+  <text direction="ltr" x="500" y="324" text-anchor="middle" fill="#a060ff" font-size="16">▷ clk</text>
 
   <!-- Feedback Q → OR (top input) + Q → NOT -->
   <line x1="550" y1="290" x2="600" y2="290" stroke="#80d4ff" stroke-width="2"/>
@@ -3458,11 +3458,11 @@ out:   0 → 1 → 0 → 0 → 0 → 0 → 0 → 0
   <line x1="200" y1="120" x2="240" y2="120" stroke="#80d4ff" stroke-width="2"/>
 
   <!-- Labels -->
-  <text direction="ltr" x="148" y="262" text-anchor="middle" fill="#80d4ff" font-size="10" font-style="italic">seen</text>
-  <text direction="ltr" x="226" y="108" text-anchor="middle" fill="#80d4ff" font-size="10" font-style="italic">seen</text>
+  <text direction="ltr" x="148" y="262" text-anchor="middle" fill="#80d4ff" font-size="16" font-style="italic">seen</text>
+  <text direction="ltr" x="226" y="108" text-anchor="middle" fill="#80d4ff" font-size="16" font-style="italic">seen</text>
 
   <!-- Boolean summary -->
-  <text direction="ltr" x="380" y="405" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="380" y="405" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Y = X · ¬seen  &nbsp;|&nbsp;  seen_d = seen + X  &nbsp;|&nbsp;  init: seen = 0
   </text>
 </svg>`,
@@ -3659,7 +3659,7 @@ next:     seen_d = seen + X            ← נדבק ל-1 ברגע שראינו 1
         ],
         answerSchematic: `
 <svg viewBox="0 0 760 460" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="8-bit priority encoder for floor(log2)">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="8-bit priority encoder for floor(log2)">
   <defs>
     <linearGradient id="peBody" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -3669,7 +3669,7 @@ next:     seen_d = seen + X            ← נדבק ל-1 ברגע שראינו 1
   </defs>
 
   <rect x="0" y="0" width="760" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="380" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="380" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Priority encoder 8 → 3:  find position of MSB (highest set bit)
   </text>
 
@@ -3677,7 +3677,7 @@ next:     seen_d = seen + X            ← נדבק ל-1 ברגע שראינו 1
   ${[7,6,5,4,3,2,1,0].map((bit, idx) => {
     const y = 80 + idx * 36;
     return `
-      <text direction="ltr" x="60" y="${y + 4}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="12">X[${bit}]</text>
+      <text direction="ltr" x="60" y="${y + 4}" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="16">X[${bit}]</text>
       <line x1="100" y1="${y}" x2="240" y2="${y}" stroke="#f0d080" stroke-width="1.4"/>
       <circle cx="240" cy="${y}" r="3" fill="#f0d080"/>
     `;
@@ -3685,34 +3685,34 @@ next:     seen_d = seen + X            ← נדבק ל-1 ברגע שראינו 1
 
   <!-- Priority encoder block -->
   <rect x="240" y="60" width="280" height="320" rx="10" fill="url(#peBody)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="380" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">Priority Encoder</text>
-  <text direction="ltr" x="380" y="124" text-anchor="middle" fill="#a0c0e0" font-size="11">8-to-3</text>
+  <text direction="ltr" x="380" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Priority Encoder</text>
+  <text direction="ltr" x="380" y="124" text-anchor="middle" fill="#a0c0e0" font-size="16">8-to-3</text>
 
   <!-- Boolean formulas inside -->
-  <text direction="ltr" x="380" y="170" text-anchor="middle" fill="#c0c0e0" font-size="11">Y[2] = OR(X[7..4])</text>
-  <text direction="ltr" x="380" y="195" text-anchor="middle" fill="#c0c0e0" font-size="11">Y[1] = ...</text>
-  <text direction="ltr" x="380" y="220" text-anchor="middle" fill="#c0c0e0" font-size="11">Y[0] = ...</text>
-  <text direction="ltr" x="380" y="252" text-anchor="middle" fill="#a08060" font-size="10">(see answer for full SOP)</text>
+  <text direction="ltr" x="380" y="170" text-anchor="middle" fill="#c0c0e0" font-size="16">Y[2] = OR(X[7..4])</text>
+  <text direction="ltr" x="380" y="195" text-anchor="middle" fill="#c0c0e0" font-size="16">Y[1] = ...</text>
+  <text direction="ltr" x="380" y="220" text-anchor="middle" fill="#c0c0e0" font-size="16">Y[0] = ...</text>
+  <text direction="ltr" x="380" y="252" text-anchor="middle" fill="#a08060" font-size="16">(see answer for full SOP)</text>
 
   <!-- valid flag for X=0 case -->
-  <text direction="ltr" x="380" y="300" text-anchor="middle" fill="#ff8060" font-size="11">valid = OR(X[7..0])</text>
-  <text direction="ltr" x="380" y="318" text-anchor="middle" fill="#a08060" font-size="10">(= 0 only if X = 0)</text>
+  <text direction="ltr" x="380" y="300" text-anchor="middle" fill="#ff8060" font-size="16">valid = OR(X[7..0])</text>
+  <text direction="ltr" x="380" y="318" text-anchor="middle" fill="#a08060" font-size="16">(= 0 only if X = 0)</text>
 
   <!-- 3-bit output -->
   <line x1="520" y1="160" x2="620" y2="160" stroke="#80f0a0" stroke-width="2" marker-end="url(#peArr)"/>
-  <text direction="ltr" x="660" y="164" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Y[2]</text>
+  <text direction="ltr" x="660" y="164" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[2]</text>
 
   <line x1="520" y1="200" x2="620" y2="200" stroke="#80f0a0" stroke-width="2" marker-end="url(#peArr)"/>
-  <text direction="ltr" x="660" y="204" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Y[1]</text>
+  <text direction="ltr" x="660" y="204" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[1]</text>
 
   <line x1="520" y1="240" x2="620" y2="240" stroke="#80f0a0" stroke-width="2" marker-end="url(#peArr)"/>
-  <text direction="ltr" x="660" y="244" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Y[0]</text>
+  <text direction="ltr" x="660" y="244" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[0]</text>
 
   <!-- valid output -->
   <line x1="520" y1="305" x2="620" y2="305" stroke="#ff8060" stroke-width="2" marker-end="url(#peArr)"/>
-  <text direction="ltr" x="660" y="309" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="13">valid</text>
+  <text direction="ltr" x="660" y="309" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">valid</text>
 
-  <text direction="ltr" x="380" y="440" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="380" y="440" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Output: 3-bit position of MSB.  valid=0 indicates undefined (X=0).
   </text>
 </svg>`,

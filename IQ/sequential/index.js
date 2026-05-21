@@ -11,9 +11,9 @@ import { build, h } from '../../js/interview/circuitHelpers.js';
 // Timing: input rises at x=125 (low→high), falls at x=375 (high→low);
 // output is high for one clock period (x=375..400) right after input falls.
 const FALLING_EDGE_SVG = `
-<svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="clk, input, and output waveforms">
+<svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="clk, input, and output waveforms">
   <!-- t=0 start-of-time marker -->
-  <text x="36" y="12" fill="#f0d080" font-size="10" font-weight="bold">t=0</text>
+  <text x="36" y="12" fill="#f0d080" font-size="16" font-weight="bold">t=0</text>
   <line x1="50" y1="16" x2="50" y2="190" stroke="#806040" stroke-width="0.6" stroke-dasharray="2 3"/>
   <polygon points="50,22 46,14 54,14" fill="#f0d080"/>
 
@@ -206,8 +206,8 @@ endmodule
 
 **חפיפה (overlap):** מ-\`S3\` עם \`X=1\` עוברים ל-\`S1\` (ולא ל-\`S0\`) כי ה-"1" של "101" הוא גם תחילת רצף חדש. עם \`X=0\` מ-\`S3\` עוברים ל-\`S2\` (כי "10" כבר ראינו).`,
         answerSchematic: `
-<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Moore FSM state diagram for 101 detector">
-  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Moore FSM — "101" Detector</text>
+<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Moore FSM state diagram for 101 detector">
+  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Moore FSM — "101" Detector</text>
   <g stroke="#80b0e0" stroke-width="1.8" fill="#0a1520">
     <circle cx="80"  cy="180" r="34"/>
     <circle cx="220" cy="180" r="34"/>
@@ -215,11 +215,11 @@ endmodule
     <circle cx="500" cy="180" r="34"/>
     <circle cx="500" cy="180" r="40" fill="none" stroke="#39ff80" stroke-width="1.4"/>
   </g>
-  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="12">
+  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="16">
     <text x="80"  y="178">S0</text><text x="220" y="178">S1</text>
     <text x="360" y="178">S2</text><text x="500" y="178">S3</text>
   </g>
-  <g fill="#80b0e0" text-anchor="middle" font-size="10">
+  <g fill="#80b0e0" text-anchor="middle" font-size="16">
     <text x="80"  y="194">Y=0</text><text x="220" y="194">Y=0</text>
     <text x="360" y="194">Y=0</text><text x="500" y="194" fill="#39ff80" font-weight="bold">Y=1</text>
   </g>
@@ -247,7 +247,7 @@ endmodule
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#39ff80"/>
     </marker>
   </defs>
-  <text x="280" y="305" text-anchor="middle" fill="#c8d8f0" font-size="10">המעבר S2→S3 (ירוק) הוא הרגע שבו רצף "101" הושלם → Y=1 ב-cycle הבא.</text>
+  <text x="280" y="305" text-anchor="middle" fill="#c8d8f0" font-size="16">המעבר S2→S3 (ירוק) הוא הרגע שבו רצף "101" הושלם → Y=1 ב-cycle הבא.</text>
 </svg>
 `,
         interviewerMindset:
@@ -718,49 +718,49 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
 
 **שערים:** 2 NOT, 2 AND-2, 1 AND-3, 1 OR-2 (פלוס 2 D-FFים).`,
         answerSchematic: `
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="State diagram and K-maps for 11 detector FSM">
+<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="State diagram and K-maps for 11 detector FSM">
   <!-- State diagram -->
-  <text x="120" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="12">State Diagram</text>
+  <text x="120" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">State Diagram</text>
 
   <!-- S0 -->
   <circle cx="60" cy="120" r="28" fill="#0a1520" stroke="#80f0a0" stroke-width="1.8"/>
   <text x="60" y="118" text-anchor="middle" fill="#80f0a0" font-weight="bold">S0</text>
-  <text x="60" y="132" text-anchor="middle" fill="#80f0a0" font-size="9">y=0</text>
+  <text x="60" y="132" text-anchor="middle" fill="#80f0a0" font-size="16">y=0</text>
 
   <!-- S1 -->
   <circle cx="180" cy="120" r="28" fill="#0a1520" stroke="#80f0a0" stroke-width="1.8"/>
   <text x="180" y="118" text-anchor="middle" fill="#80f0a0" font-weight="bold">S1</text>
-  <text x="180" y="132" text-anchor="middle" fill="#80f0a0" font-size="9">y=0</text>
+  <text x="180" y="132" text-anchor="middle" fill="#80f0a0" font-size="16">y=0</text>
 
   <!-- S2 -->
   <circle cx="180" cy="240" r="28" fill="#0a1520" stroke="#f0a040" stroke-width="2"/>
   <text x="180" y="238" text-anchor="middle" fill="#f0a040" font-weight="bold">S2</text>
-  <text x="180" y="252" text-anchor="middle" fill="#f0a040" font-size="9">y=1</text>
+  <text x="180" y="252" text-anchor="middle" fill="#f0a040" font-size="16">y=1</text>
 
   <!-- Transitions -->
   <!-- S0 -> S1, x=1 -->
   <path d="M 92 115 Q 120 100 152 115" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="120" y="92" text-anchor="middle" fill="#c8d8f0" font-size="10">x=1</text>
+  <text x="120" y="92" text-anchor="middle" fill="#c8d8f0" font-size="16">x=1</text>
 
   <!-- S1 -> S0, x=0 -->
   <path d="M 152 130 Q 120 145 92 130" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="120" y="158" text-anchor="middle" fill="#c8d8f0" font-size="10">x=0</text>
+  <text x="120" y="158" text-anchor="middle" fill="#c8d8f0" font-size="16">x=0</text>
 
   <!-- S1 -> S2, x=1 -->
   <path d="M 180 148 L 180 212" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="190" y="184" fill="#c8d8f0" font-size="10">x=1</text>
+  <text x="190" y="184" fill="#c8d8f0" font-size="16">x=1</text>
 
   <!-- S2 -> S0, x=0 -->
   <path d="M 156 230 Q 100 200 60 152" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="86" y="195" fill="#c8d8f0" font-size="10">x=0</text>
+  <text x="86" y="195" fill="#c8d8f0" font-size="16">x=0</text>
 
   <!-- S2 -> S2, x=1 (self-loop) -->
   <path d="M 200 268 Q 240 280 230 250 Q 220 224 200 240" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="240" y="265" fill="#c8d8f0" font-size="10">x=1</text>
+  <text x="240" y="265" fill="#c8d8f0" font-size="16">x=1</text>
 
   <!-- S0 self-loop, x=0 -->
   <path d="M 40 95 Q 8 75 18 110 Q 28 145 50 145" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="0" y="100" fill="#c8d8f0" font-size="10">x=0</text>
+  <text x="0" y="100" fill="#c8d8f0" font-size="16">x=0</text>
 
   <!-- Arrow marker -->
   <defs>
@@ -770,13 +770,13 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
   </defs>
 
   <!-- K-maps -->
-  <text x="500" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="12">K-maps</text>
+  <text x="500" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">K-maps</text>
 
   <!-- D1 K-map -->
   <text x="380" y="55" fill="#80f0a0" font-weight="bold">D1 = x·(Q1+Q0)</text>
-  <text x="430" y="78" text-anchor="middle" fill="#80b0e0" font-size="10">x</text>
-  <text x="395" y="98" text-anchor="middle" fill="#80b0e0" font-size="9">Q1Q0</text>
-  <g fill="#c8d8f0" font-size="10" text-anchor="middle">
+  <text x="430" y="78" text-anchor="middle" fill="#80b0e0" font-size="16">x</text>
+  <text x="395" y="98" text-anchor="middle" fill="#80b0e0" font-size="16">Q1Q0</text>
+  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
     <text x="425" y="95">0</text>
     <text x="455" y="95">1</text>
     <text x="395" y="115">00</text>
@@ -797,8 +797,8 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
 
   <!-- D0 K-map -->
   <text x="510" y="220" fill="#80f0a0" font-weight="bold">D0 = ¬Q1·¬Q0·x</text>
-  <text x="430" y="245" text-anchor="middle" fill="#80b0e0" font-size="10">x</text>
-  <g fill="#c8d8f0" font-size="10" text-anchor="middle">
+  <text x="430" y="245" text-anchor="middle" fill="#80b0e0" font-size="16">x</text>
+  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
     <text x="425" y="262">0</text>
     <text x="455" y="262">1</text>
     <text x="395" y="282">00</text>
@@ -818,9 +818,9 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
 
   <!-- y K-map -->
   <text x="640" y="55" fill="#80f0a0" font-weight="bold">y = Q1</text>
-  <text x="640" y="78" text-anchor="middle" fill="#80b0e0" font-size="10">x</text>
-  <text x="610" y="98" text-anchor="middle" fill="#80b0e0" font-size="9">Q1Q0</text>
-  <g fill="#c8d8f0" font-size="10" text-anchor="middle">
+  <text x="640" y="78" text-anchor="middle" fill="#80b0e0" font-size="16">x</text>
+  <text x="610" y="98" text-anchor="middle" fill="#80b0e0" font-size="16">Q1Q0</text>
+  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
     <text x="635" y="95">0</text>
     <text x="665" y="95">1</text>
     <text x="610" y="115">00</text>
@@ -980,13 +980,13 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
 
 **חפיפה (overlap):** מ-\`S1\` עם X=1 חוזרים ל-\`S1\` (לא מאופסים ל-S0) — ולכן רצף "111" נותן Y=1 בשני ה-cycles האחרונים. ב-S1 כל "1" נוסף מייד מפיק זיהוי.`,
         answerSchematic: `
-<svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Mealy FSM state diagram for 11 detector">
-  <text x="210" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Mealy FSM — "11" Detector</text>
+<svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Mealy FSM state diagram for 11 detector">
+  <text x="210" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Mealy FSM — "11" Detector</text>
   <g stroke="#80b0e0" stroke-width="1.8" fill="#0a1520">
     <circle cx="120" cy="140" r="36"/>
     <circle cx="300" cy="140" r="36"/>
   </g>
-  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="13">
+  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="18">
     <text x="120" y="145">S0</text>
     <text x="300" y="145">S1</text>
   </g>
@@ -1015,8 +1015,8 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
     </marker>
   </defs>
 
-  <text x="210" y="220" text-anchor="middle" fill="#c8d8f0" font-size="10">החץ הירוק (S1→S1, X=1) הוא הרגע שבו רצף "11" מזוהה.</text>
-  <text x="210" y="238" text-anchor="middle" fill="#c8d8f0" font-size="10">בגלל החפיפה — נשארים ב-S1, ולכן "111" → 2 זיהויים רצופים.</text>
+  <text x="210" y="220" text-anchor="middle" fill="#c8d8f0" font-size="16">החץ הירוק (S1→S1, X=1) הוא הרגע שבו רצף "11" מזוהה.</text>
+  <text x="210" y="238" text-anchor="middle" fill="#c8d8f0" font-size="16">בגלל החפיפה — נשארים ב-S1, ולכן "111" → 2 זיהויים רצופים.</text>
 </svg>
 `,
         expectedAnswers: [
@@ -1188,8 +1188,8 @@ Y = Q · X
 
 **מספר FFs:** \`⌈log₂4⌉ = 2\`. קידוד נוח: \`S0=00, S1=01, S2=10, S3=11\`.`,
         answerSchematic: `
-<svg viewBox="0 0 600 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Mealy FSM state diagram for 1011 detector">
-  <text x="300" y="22" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Mealy FSM — "1011" Detector (4 states)</text>
+<svg viewBox="0 0 600 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Mealy FSM state diagram for 1011 detector">
+  <text x="300" y="22" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Mealy FSM — "1011" Detector (4 states)</text>
 
   <g stroke="#80b0e0" stroke-width="1.8" fill="#0a1520">
     <circle cx="80"  cy="200" r="34"/>
@@ -1197,13 +1197,13 @@ Y = Q · X
     <circle cx="380" cy="200" r="34"/>
     <circle cx="520" cy="200" r="34"/>
   </g>
-  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="12">
+  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="16">
     <text x="80"  y="198">S0</text>
     <text x="220" y="198">S1</text>
     <text x="380" y="198">S2</text>
     <text x="520" y="198">S3</text>
   </g>
-  <g fill="#80b0e0" text-anchor="middle" font-size="9">
+  <g fill="#80b0e0" text-anchor="middle" font-size="16">
     <text x="80"  y="212">""</text>
     <text x="220" y="212">"1"</text>
     <text x="380" y="212">"10"</text>
@@ -1247,7 +1247,7 @@ Y = Q · X
     </marker>
   </defs>
 
-  <text x="300" y="340" text-anchor="middle" fill="#c8d8f0" font-size="10">החץ הירוק (S3 → S1, X=1) הוא הרגע שבו "1011" זוהה — וחוזרים ל-S1 (לא S0!) כי ה-"1" האחרון מתחיל רצף חדש.</text>
+  <text x="300" y="340" text-anchor="middle" fill="#c8d8f0" font-size="16">החץ הירוק (S3 → S1, X=1) הוא הרגע שבו "1011" זוהה — וחוזרים ל-S1 (לא S0!) כי ה-"1" האחרון מתחיל רצף חדש.</text>
 </svg>
 `,
         interviewerMindset:
@@ -1559,11 +1559,11 @@ LT  = (cnt_M <  cnt_F)   →  Red     (יותר נשים)
 **אופטימיזציה (state-collapse) — לסיום הראיון:**
 3 הנורות תלויות **רק** בסימן של \`M − F\`, אז ניתן להחליף את שני המונים ברגיסטר חתום אחד \`diff = M − F\`. עליות ב-Min ו-Fout, ירידות ב-Mout ו-Fin. Yellow=\`diff==0\`, Red=\`diff[MSB]\`, Green=\`¬Red ∧ ¬Yellow\`. חוסך כ-N ביטי FFs + comparator → במחיר adder signed יחיד. **גרסת ה-canvas שלמטה משתמשת בגרסת 2-המונים** כי היא קריאה יותר.`,
         answerSchematic: `
-<svg viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Block diagram: two counters + comparator">
-  <text x="450" y="28" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="17">בלוק-דיאגרמה: 2 מונים + COMPARATOR</text>
+<svg viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Block diagram: two counters + comparator">
+  <text x="450" y="28" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">בלוק-דיאגרמה: 2 מונים + COMPARATOR</text>
 
   <!-- ─── Inputs (left column) ─────────────────────────────── -->
-  <g font-weight="bold" font-size="13">
+  <g font-weight="bold" font-size="18">
     <text x="50" y="110" fill="#80b0e0">Min</text>
     <text x="50" y="170" fill="#80b0e0">Mout</text>
     <text x="50" y="290" fill="#80b0e0">Fin</text>
@@ -1573,76 +1573,76 @@ LT  = (cnt_M <  cnt_F)   →  Red     (יותר נשים)
   <!-- ─── cnt_M block (top) ────────────────────────────────── -->
   <rect x="200" y="80"  width="180" height="120" rx="4"
         fill="#0a1520" stroke="#80f0a0" stroke-width="2.4"/>
-  <text x="290" y="125" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">cnt_M</text>
-  <text x="290" y="150" text-anchor="middle" fill="#c8d8f0" font-size="12">N-bit up/down counter</text>
-  <text x="290" y="172" text-anchor="middle" fill="#c8d8f0" font-size="12">reset: 0</text>
-  <text x="290" y="192" text-anchor="middle" fill="#80b0e0" font-size="11">+1 on Min, −1 on Mout</text>
+  <text x="290" y="125" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">cnt_M</text>
+  <text x="290" y="150" text-anchor="middle" fill="#c8d8f0" font-size="16">N-bit up/down counter</text>
+  <text x="290" y="172" text-anchor="middle" fill="#c8d8f0" font-size="16">reset: 0</text>
+  <text x="290" y="192" text-anchor="middle" fill="#80b0e0" font-size="16">+1 on Min, −1 on Mout</text>
 
   <!-- Wires Min → cnt_M (UP), Mout → cnt_M (DOWN) -->
   <line x1="90"  y1="106" x2="200" y2="106" stroke="#39ff80" stroke-width="1.8"/>
-  <text x="155" y="100" fill="#39ff80" font-size="11">UP</text>
+  <text x="155" y="100" fill="#39ff80" font-size="16">UP</text>
   <line x1="90"  y1="166" x2="200" y2="166" stroke="#ff7070" stroke-width="1.8"/>
-  <text x="145" y="160" fill="#ff7070" font-size="11">DOWN</text>
+  <text x="145" y="160" fill="#ff7070" font-size="16">DOWN</text>
 
   <!-- ─── cnt_F block (bottom) ─────────────────────────────── -->
   <rect x="200" y="260" width="180" height="120" rx="4"
         fill="#0a1520" stroke="#80f0a0" stroke-width="2.4"/>
-  <text x="290" y="305" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">cnt_F</text>
-  <text x="290" y="330" text-anchor="middle" fill="#c8d8f0" font-size="12">N-bit up/down counter</text>
-  <text x="290" y="352" text-anchor="middle" fill="#c8d8f0" font-size="12">reset: 0</text>
-  <text x="290" y="372" text-anchor="middle" fill="#80b0e0" font-size="11">+1 on Fin, −1 on Fout</text>
+  <text x="290" y="305" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">cnt_F</text>
+  <text x="290" y="330" text-anchor="middle" fill="#c8d8f0" font-size="16">N-bit up/down counter</text>
+  <text x="290" y="352" text-anchor="middle" fill="#c8d8f0" font-size="16">reset: 0</text>
+  <text x="290" y="372" text-anchor="middle" fill="#80b0e0" font-size="16">+1 on Fin, −1 on Fout</text>
 
   <!-- Wires Fin → cnt_F (UP), Fout → cnt_F (DOWN) -->
   <line x1="90"  y1="286" x2="200" y2="286" stroke="#39ff80" stroke-width="1.8"/>
-  <text x="155" y="280" fill="#39ff80" font-size="11">UP</text>
+  <text x="155" y="280" fill="#39ff80" font-size="16">UP</text>
   <line x1="90"  y1="346" x2="200" y2="346" stroke="#ff7070" stroke-width="1.8"/>
-  <text x="145" y="340" fill="#ff7070" font-size="11">DOWN</text>
+  <text x="145" y="340" fill="#ff7070" font-size="16">DOWN</text>
 
   <!-- ─── Comparator block (middle-right) ──────────────────── -->
   <rect x="510" y="160" width="180" height="160" rx="4"
         fill="#0a1520" stroke="#f0d080" stroke-width="2.4"/>
-  <text x="600" y="200" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="16">COMPARATOR</text>
-  <text x="600" y="225" text-anchor="middle" fill="#c8d8f0" font-size="12">A vs B → EQ / GT / LT</text>
-  <text x="530" y="260" fill="#c8d8f0" font-size="12" font-weight="bold">A</text>
-  <text x="530" y="300" fill="#c8d8f0" font-size="12" font-weight="bold">B</text>
+  <text x="600" y="200" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">COMPARATOR</text>
+  <text x="600" y="225" text-anchor="middle" fill="#c8d8f0" font-size="16">A vs B → EQ / GT / LT</text>
+  <text x="530" y="260" fill="#c8d8f0" font-size="16" font-weight="bold">A</text>
+  <text x="530" y="300" fill="#c8d8f0" font-size="16" font-weight="bold">B</text>
 
   <!-- cnt_M output → CMP.A -->
   <line x1="380" y1="140" x2="445" y2="140" stroke="#80c8ff" stroke-width="2"/>
   <line x1="445" y1="140" x2="445" y2="255" stroke="#80c8ff" stroke-width="2"/>
   <line x1="445" y1="255" x2="510" y2="255" stroke="#80c8ff" stroke-width="2"/>
-  <text x="395" y="132" fill="#80c8ff" font-size="11" font-weight="bold">M</text>
+  <text x="395" y="132" fill="#80c8ff" font-size="16" font-weight="bold">M</text>
 
   <!-- cnt_F output → CMP.B -->
   <line x1="380" y1="320" x2="445" y2="320" stroke="#80c8ff" stroke-width="2"/>
   <line x1="445" y1="320" x2="445" y2="295" stroke="#80c8ff" stroke-width="2"/>
   <line x1="445" y1="295" x2="510" y2="295" stroke="#80c8ff" stroke-width="2"/>
-  <text x="395" y="314" fill="#80c8ff" font-size="11" font-weight="bold">F</text>
+  <text x="395" y="314" fill="#80c8ff" font-size="16" font-weight="bold">F</text>
 
   <!-- ─── Three lamps (right) ──────────────────────────────── -->
-  <g font-size="13" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <!-- GT → Green -->
     <line x1="690" y1="195" x2="770" y2="195" stroke="#39ff80" stroke-width="2"/>
-    <text x="700" y="187" fill="#39ff80" font-size="11">GT</text>
+    <text x="700" y="187" fill="#39ff80" font-size="16">GT</text>
     <circle cx="800" cy="195" r="20" fill="#39ff80" stroke="#c8d8f0" stroke-width="1.4"/>
     <text x="830" y="200" fill="#39ff80">Green</text>
-    <text x="830" y="216" fill="#80b0e0" font-size="11">M &gt; F</text>
+    <text x="830" y="216" fill="#80b0e0" font-size="16">M &gt; F</text>
 
     <!-- EQ → Yellow -->
     <line x1="690" y1="240" x2="770" y2="240" stroke="#f0d050" stroke-width="2"/>
-    <text x="700" y="232" fill="#f0d050" font-size="11">EQ</text>
+    <text x="700" y="232" fill="#f0d050" font-size="16">EQ</text>
     <circle cx="800" cy="240" r="20" fill="#f0d050" stroke="#c8d8f0" stroke-width="1.4"/>
     <text x="830" y="245" fill="#f0d050">Yellow</text>
-    <text x="830" y="261" fill="#80b0e0" font-size="11">M = F</text>
+    <text x="830" y="261" fill="#80b0e0" font-size="16">M = F</text>
 
     <!-- LT → Red -->
     <line x1="690" y1="285" x2="770" y2="285" stroke="#ff5555" stroke-width="2"/>
-    <text x="700" y="277" fill="#ff5555" font-size="11">LT</text>
+    <text x="700" y="277" fill="#ff5555" font-size="16">LT</text>
     <circle cx="800" cy="285" r="20" fill="#ff5555" stroke="#c8d8f0" stroke-width="1.4"/>
     <text x="830" y="290" fill="#ff5555">Red</text>
-    <text x="830" y="306" fill="#80b0e0" font-size="11">M &lt; F</text>
+    <text x="830" y="306" fill="#80b0e0" font-size="16">M &lt; F</text>
   </g>
 
-  <text x="450" y="420" text-anchor="middle" fill="#c8d8f0" font-size="12">
+  <text x="450" y="420" text-anchor="middle" fill="#c8d8f0" font-size="16">
     שני מונים בלתי-תלויים (M, F) → comparator יחיד מפיק את 3 הסיגנלים EQ / GT / LT → 3 נורות.
   </text>
 </svg>
@@ -1987,8 +1987,8 @@ S0→(0)→S0→(0)→S0→(0)→S0→(1)→S1→(1)→S0→(0)→S1→(1)→S0�
 - mod 3 של כל אחד: 0, 0, 0, 1, 0, 0, 1, 0. סוף = **0** → \`Y=1\` ✓.
 - שגיאתי במעבר. נריץ שוב: S0→0→S0→0→S0→0→S0→1→S1→1→**S0** (mod=3=0)→0→S1 (mod=6→0? לא: 2·0+0=0 → **S0**, mod=0). תיקון: \`S0→(0)→S0\`. כלומר אחרי "000110" אנחנו ב-S0 (mod 0). ממשיכים: \`S0→(1)→S1\`, \`S1→(1)→S0\`. סוף: **S0 → Y=1** ✓.`,
         answerSchematic: `
-<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Moore FSM state diagram for divisibility-by-3">
-  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Moore FSM — Divisible by 3</text>
+<svg viewBox="0 0 560 320" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Moore FSM state diagram for divisibility-by-3">
+  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Moore FSM — Divisible by 3</text>
 
   <g stroke="#80b0e0" stroke-width="1.8" fill="#0a1520">
     <circle cx="100" cy="180" r="40"/>
@@ -1996,17 +1996,17 @@ S0→(0)→S0→(0)→S0→(0)→S0→(1)→S1→(1)→S0→(0)→S1→(1)→S0�
     <circle cx="280" cy="180" r="40"/>
     <circle cx="460" cy="180" r="40"/>
   </g>
-  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="13">
+  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="18">
     <text x="100" y="178">S0</text>
     <text x="280" y="178">S1</text>
     <text x="460" y="178">S2</text>
   </g>
-  <g fill="#80b0e0" text-anchor="middle" font-size="10">
+  <g fill="#80b0e0" text-anchor="middle" font-size="16">
     <text x="100" y="195">mod=0</text>
     <text x="280" y="195">mod=1</text>
     <text x="460" y="195">mod=2</text>
   </g>
-  <g text-anchor="middle" font-size="10">
+  <g text-anchor="middle" font-size="16">
     <text x="100" y="212" fill="#39ff80" font-weight="bold">Y=1</text>
     <text x="280" y="212" fill="#c8d8f0">Y=0</text>
     <text x="460" y="212" fill="#c8d8f0">Y=0</text>
@@ -2045,7 +2045,7 @@ S0→(0)→S0→(0)→S0→(0)→S0→(1)→S1→(1)→S0→(0)→S1→(1)→S0�
     </marker>
   </defs>
 
-  <text x="280" y="308" text-anchor="middle" fill="#c8d8f0" font-size="10">חוק המעבר אחיד: new_mod = (2·old_mod + X) mod 3.</text>
+  <text x="280" y="308" text-anchor="middle" fill="#c8d8f0" font-size="16">חוק המעבר אחיד: new_mod = (2·old_mod + X) mod 3.</text>
 </svg>
 `,
         interviewerMindset:
@@ -2262,8 +2262,8 @@ S2 →(0)→ S1 →(0)→ S2 →(0)→ S1 → … — תקוע באוסילצי�
 
 אחות-תאומה של \`falling-edge-detector\` (2001), הפעם הצד השני של ה-edge.`,
     schematic: `
-<svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="clk, input, output (rising-edge detector)">
-  <text x="36" y="12" fill="#f0d080" font-size="10" font-weight="bold">t=0</text>
+<svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="clk, input, output (rising-edge detector)">
+  <text x="36" y="12" fill="#f0d080" font-size="16" font-weight="bold">t=0</text>
   <line x1="50" y1="16" x2="50" y2="190" stroke="#806040" stroke-width="0.6" stroke-dasharray="2 3"/>
   <polygon points="50,22 46,14 54,14" fill="#f0d080"/>
 
@@ -2355,20 +2355,20 @@ S2 →(0)→ S1 →(0)→ S2 →(0)→ S1 → … — תקוע באוסילצי�
     intro:
 `נתון שעון בעל תדר כלשהו. בנו רכיב — באמצעות **D-FF** ושערים לוגיים — שמייצר שעון חדש בעל **חצי מהתדר** ו-**50% duty cycle**.`,
     schematic: `
-<svg viewBox="0 0 480 160" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="clk_in and clk_out waveforms (clock divided by 2)">
-  <text x="36" y="14" fill="#f0d080" font-size="10" font-weight="bold">t=0</text>
+<svg viewBox="0 0 480 160" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="clk_in and clk_out waveforms (clock divided by 2)">
+  <text x="36" y="14" fill="#f0d080" font-size="16" font-weight="bold">t=0</text>
   <line x1="50" y1="18" x2="50" y2="150" stroke="#806040" stroke-width="0.6" stroke-dasharray="2 3"/>
   <polygon points="50,24 46,16 54,16" fill="#f0d080"/>
 
   <text x="0" y="50" fill="#c8d8f0">clk_in</text>
   <path d="M 50 62 v -20 h 25 v 20 h 25 v -20 h 25 v 20 h 25 v -20 h 25 v 20 h 25 v -20 h 25 v 20 h 25 v -20 h 25 v 20 h 25 v -20 h 25 v 20 h 25 v -20 h 25 v 20 h 25 v -20 h 25 v 20 h 25"
         stroke="#f0d080" stroke-width="1.6" fill="none"/>
-  <text x="410" y="50" fill="#c8a060" font-size="10">תדר f</text>
+  <text x="410" y="50" fill="#c8a060" font-size="16">תדר f</text>
 
   <text x="0" y="110" fill="#c8d8f0">clk_out</text>
   <path d="M 50 122 v -20 h 50 v 20 h 50 v -20 h 50 v 20 h 50 v -20 h 50 v 20 h 50 v -20 h 50 v 20 h 30"
         stroke="#80f0a0" stroke-width="1.6" fill="none"/>
-  <text x="410" y="110" fill="#80f0a0" font-size="10">תדר f/2</text>
+  <text x="410" y="110" fill="#80f0a0" font-size="16">תדר f/2</text>
 
   <!-- marker lines showing each clk_out period spans 2 clk_in periods -->
   <line x1="100" y1="76" x2="100" y2="100" stroke="#a0a0c0" stroke-width="0.5" stroke-dasharray="1 2"/>
@@ -2388,7 +2388,7 @@ S2 →(0)→ S1 →(0)→ S2 →(0)→ S1 → … — תקוע באוסילצי�
         ],
         answerSchematic: `
 <svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', 'Consolas', monospace" font-size="13"
+     font-family="'JetBrains Mono', 'Consolas', monospace" font-size="18"
      role="img" aria-label="D-FF with Q-bar feedback to D: clk divider by 2">
   <defs>
     <linearGradient id="dffBody" x1="0" y1="0" x2="0" y2="1">
@@ -2408,13 +2408,13 @@ S2 →(0)→ S1 →(0)→ S2 →(0)→ S1 → … — תקוע באוסילצי�
 
   <!-- Title banner -->
   <rect x="0" y="0" width="720" height="46" fill="#0c1a28"/>
-  <text direction="ltr" x="360" y="29" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="360" y="29" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     D = ¬Q  ⇒  Q toggles every clk_in edge  ⇒  clk_out has half the frequency
   </text>
 
   <!-- D-FF body -->
   <rect x="280" y="120" width="220" height="180" rx="10" fill="url(#dffBody)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="390" y="110" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">D-FF</text>
+  <text direction="ltr" x="390" y="110" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">D-FF</text>
 
   <!-- Pin labels inside the box (LTR-safe) -->
   <text direction="ltr" x="295" y="174" fill="#c8d8f0" font-weight="bold">D</text>
@@ -2426,13 +2426,13 @@ S2 →(0)→ S1 →(0)→ S2 →(0)→ S1 → … — תקוע באוסילצי�
   <polygon points="280,256 290,260 280,264" fill="#0a1825" stroke="#80d4ff" stroke-width="1.4"/>
 
   <!-- ── clk_in → CLK ── -->
-  <text direction="ltr" x="100" y="256" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">clk_in</text>
+  <text direction="ltr" x="100" y="256" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">clk_in</text>
   <line x1="160" y1="260" x2="278" y2="260" stroke="#f0d080" stroke-width="1.8" marker-end="url(#dffArrY)"/>
 
   <!-- ── Q → clk_out ── -->
   <line x1="500" y1="170" x2="610" y2="170" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#dffArrG)"/>
-  <text direction="ltr" x="660" y="166" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">clk_out</text>
-  <text direction="ltr" x="660" y="182" text-anchor="middle" fill="#80a080" font-size="10">(= Q)</text>
+  <text direction="ltr" x="660" y="166" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">clk_out</text>
+  <text direction="ltr" x="660" y="182" text-anchor="middle" fill="#80a080" font-size="16">(= Q)</text>
 
   <!-- ── Feedback path: Q' → down → left → up → D ──
        Q' at (500,260) → right (560,260) → down (560,350) →
@@ -2445,7 +2445,7 @@ S2 →(0)→ S1 →(0)→ S2 →(0)→ S1 → … — תקוע באוסילצי�
   <line x1="220" y1="170" x2="278" y2="170" stroke="#ff8060" stroke-width="1.8" marker-end="url(#dffArrO)"/>
 
   <!-- Feedback callout -->
-  <text direction="ltr" x="390" y="378" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="13">
+  <text direction="ltr" x="390" y="378" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">
     feedback wire:  Q'  →  D
   </text>
 </svg>`,
@@ -2626,7 +2626,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
 **ג.** מה יקרה אם יהיה רכיב **דיליי** במוצא?`,
     schematic: `
 <svg viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12"
+     font-family="'JetBrains Mono', monospace" font-size="16"
      role="img" aria-label="XOR + D-FF circuit with self-feedback: D = a XOR Q">
   <defs>
     <linearGradient id="fbBody" x1="0" y1="0" x2="0" y2="1">
@@ -2641,22 +2641,22 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   </defs>
 
   <!-- a input -->
-  <text direction="ltr" x="40" y="86" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">a</text>
+  <text direction="ltr" x="40" y="86" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">a</text>
   <line x1="60" y1="90" x2="160" y2="90" stroke="#f0d080" stroke-width="1.8" marker-end="url(#fbArrB)"/>
 
   <!-- XOR gate (D-shape, AND with bulge + curve) -->
   <path d="M 155 50 Q 175 90 155 130" stroke="#80d4ff" stroke-width="1.6" fill="none"/>
   <path d="M 165 50 Q 205 65 240 90 Q 205 115 165 130 Q 188 90 165 50 Z"
         fill="url(#fbBody)" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="194" y="96" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">⊕</text>
+  <text direction="ltr" x="194" y="96" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">⊕</text>
 
   <!-- XOR output → D-FF.D -->
   <line x1="240" y1="90" x2="340" y2="90" stroke="#80d4ff" stroke-width="1.8" marker-end="url(#fbArrB)"/>
-  <text direction="ltr" x="290" y="84" text-anchor="middle" fill="#80d4ff" font-size="10">D</text>
+  <text direction="ltr" x="290" y="84" text-anchor="middle" fill="#80d4ff" font-size="16">D</text>
 
   <!-- D-FF body -->
   <rect x="340" y="50" width="140" height="120" rx="8" fill="url(#fbBody)" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="410" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">D-FF</text>
+  <text direction="ltr" x="410" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">D-FF</text>
   <text direction="ltr" x="354" y="96" fill="#c8d8f0" font-weight="bold">D</text>
   <text direction="ltr" x="354" y="146" fill="#c8d8f0" font-weight="bold">CLK</text>
   <text direction="ltr" x="466" y="96" text-anchor="end" fill="#c8d8f0" font-weight="bold">Q</text>
@@ -2664,7 +2664,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
 
   <!-- Q → output -->
   <line x1="480" y1="90" x2="580" y2="90" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#fbArrG)"/>
-  <text direction="ltr" x="610" y="86" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">Q</text>
+  <text direction="ltr" x="610" y="86" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Q</text>
 
   <!-- clk input -->
   <text direction="ltr" x="340" y="220" text-anchor="middle" fill="#f0d080" font-weight="bold">clk</text>
@@ -2675,10 +2675,10 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <line x1="500" y1="240" x2="140" y2="240" stroke="#ff8060" stroke-width="1.8"/>
   <line x1="140" y1="240" x2="140" y2="110" stroke="#ff8060" stroke-width="1.8"/>
   <line x1="140" y1="110" x2="160" y2="110" stroke="#ff8060" stroke-width="1.8" marker-end="url(#fbArrO)"/>
-  <text direction="ltr" x="320" y="258" text-anchor="middle" fill="#ff8060" font-size="11" font-weight="bold">feedback: Q → XOR.in1</text>
+  <text direction="ltr" x="320" y="258" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">feedback: Q → XOR.in1</text>
 
   <!-- "D = a XOR Q" annotation -->
-  <text direction="ltr" x="290" y="22" text-anchor="middle" fill="#a0c0e0" font-size="11" font-style="italic">D = a ⊕ Q</text>
+  <text direction="ltr" x="290" y="22" text-anchor="middle" fill="#a0c0e0" font-size="16" font-style="italic">D = a ⊕ Q</text>
 </svg>`,
     circuitRevealsAnswer: true,
     parts: [
@@ -2848,7 +2848,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="mod-8 counter built from mod-6 + extra D-FF — gate-level diagram + state cycle table">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="mod-8 counter built from mod-6 + extra D-FF — gate-level diagram + state cycle table">
   <defs>
     <linearGradient id="m8Body" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -2866,45 +2866,45 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
 
   <!-- ─── Title ─── -->
   <rect x="0" y="0" width="1080" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="540" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="540" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     mod-8  =  mod-6 (given)  +  1 D-FF (E)  +  detect &amp; force-clear logic
   </text>
 
   <!-- ──────────── mod-6 box (top-left) ──────────── -->
   <rect x="60" y="80" width="160" height="110" rx="10" fill="url(#m8Body)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="140" y="120" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="16">mod-6</text>
-  <text direction="ltr" x="140" y="140" text-anchor="middle" fill="#a0c0e0" font-size="11">counter (given)</text>
-  <text direction="ltr" x="140" y="160" text-anchor="middle" fill="#a0c0e0" font-size="10">3-bit  Q = c[2:0]</text>
-  <text direction="ltr" x="140" y="180" text-anchor="middle" fill="#ff8060" font-size="10">CLR ← force_clr</text>
+  <text direction="ltr" x="140" y="120" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">mod-6</text>
+  <text direction="ltr" x="140" y="140" text-anchor="middle" fill="#a0c0e0" font-size="16">counter (given)</text>
+  <text direction="ltr" x="140" y="160" text-anchor="middle" fill="#a0c0e0" font-size="16">3-bit  Q = c[2:0]</text>
+  <text direction="ltr" x="140" y="180" text-anchor="middle" fill="#ff8060" font-size="16">CLR ← force_clr</text>
 
   <!-- Three explicit c[i] output wires -->
   <!-- c[2] -->
   <line x1="220" y1="100" x2="380" y2="100" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="240" y="94" fill="#80d4ff" font-size="11" font-weight="bold">c[2]</text>
+  <text direction="ltr" x="240" y="94" fill="#80d4ff" font-size="16" font-weight="bold">c[2]</text>
   <circle cx="380" cy="100" r="3.5" fill="#80d4ff"/>
   <!-- c[1] -->
   <line x1="220" y1="135" x2="380" y2="135" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="240" y="129" fill="#80d4ff" font-size="11" font-weight="bold">c[1]</text>
+  <text direction="ltr" x="240" y="129" fill="#80d4ff" font-size="16" font-weight="bold">c[1]</text>
   <circle cx="380" cy="135" r="3.5" fill="#80d4ff"/>
   <!-- c[0] -->
   <line x1="220" y1="170" x2="380" y2="170" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="240" y="164" fill="#80d4ff" font-size="11" font-weight="bold">c[0]</text>
+  <text direction="ltr" x="240" y="164" fill="#80d4ff" font-size="16" font-weight="bold">c[0]</text>
   <circle cx="380" cy="170" r="3.5" fill="#80d4ff"/>
 
   <!-- ──────────── E (D-FF) box (middle-left) ──────────── -->
   <rect x="60" y="260" width="160" height="80" rx="10" fill="url(#m8Body)" stroke="#ff8060" stroke-width="2"/>
-  <text direction="ltr" x="140" y="294" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="16">E (D-FF)</text>
-  <text direction="ltr" x="140" y="316" text-anchor="middle" fill="#806040" font-size="10">extra MSB-like state</text>
+  <text direction="ltr" x="140" y="294" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">E (D-FF)</text>
+  <text direction="ltr" x="140" y="316" text-anchor="middle" fill="#806040" font-size="16">extra MSB-like state</text>
 
   <!-- E output -->
   <line x1="220" y1="290" x2="380" y2="290" stroke="#ff8060" stroke-width="1.8"/>
-  <text direction="ltr" x="240" y="284" fill="#ff8060" font-size="12" font-weight="bold">E</text>
+  <text direction="ltr" x="240" y="284" fill="#ff8060" font-size="16" font-weight="bold">E</text>
   <circle cx="380" cy="290" r="4" fill="#ff8060"/>
 
   <!-- ──────────── DETECT BLOCK (explicit gates) ──────────── -->
   <!-- c==5 detector: AND of c[2], ¬c[1], c[0] -->
-  <text direction="ltr" x="440" y="76" text-anchor="middle" fill="#a0c0e0" font-size="11" font-weight="bold">c == 5</text>
-  <text direction="ltr" x="440" y="90" text-anchor="middle" fill="#80a0c0" font-size="10">(101)</text>
+  <text direction="ltr" x="440" y="76" text-anchor="middle" fill="#a0c0e0" font-size="16" font-weight="bold">c == 5</text>
+  <text direction="ltr" x="440" y="90" text-anchor="middle" fill="#80a0c0" font-size="16">(101)</text>
   <!-- NOT bubble on c[1] for "c==5" detector -->
   <line x1="380" y1="135" x2="404" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
   <circle cx="410" cy="135" r="5" fill="#0a1420" stroke="#80d4ff" stroke-width="1.4"/>
@@ -2912,18 +2912,18 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <!-- AND gate -->
   <path d="M 430 100 L 460 100 Q 490 100 490 135 Q 490 170 460 170 L 430 170 Z"
         fill="url(#m8GateGrad)" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="455" y="139" text-anchor="middle" fill="#80d4ff" font-size="10" font-weight="bold">AND</text>
+  <text direction="ltr" x="455" y="139" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">AND</text>
   <!-- c[2] going into AND -->
   <line x1="380" y1="100" x2="430" y2="100" stroke="#80d4ff" stroke-width="1.4"/>
   <!-- c[0] going into AND -->
   <line x1="380" y1="170" x2="430" y2="170" stroke="#80d4ff" stroke-width="1.4"/>
   <!-- AND output → "is5" -->
   <line x1="490" y1="135" x2="540" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="510" y="129" fill="#80d4ff" font-size="10">is5</text>
+  <text direction="ltr" x="510" y="129" fill="#80d4ff" font-size="16">is5</text>
 
   <!-- c==1 detector: AND of ¬c[2], ¬c[1], c[0] (tap c[2] and c[1] further right) -->
-  <text direction="ltr" x="440" y="216" text-anchor="middle" fill="#a0c0e0" font-size="11" font-weight="bold">c == 1</text>
-  <text direction="ltr" x="440" y="230" text-anchor="middle" fill="#80a0c0" font-size="10">(001)</text>
+  <text direction="ltr" x="440" y="216" text-anchor="middle" fill="#a0c0e0" font-size="16" font-weight="bold">c == 1</text>
+  <text direction="ltr" x="440" y="230" text-anchor="middle" fill="#80a0c0" font-size="16">(001)</text>
 
   <!-- c[2] tap going DOWN to c==1 detector -->
   <line x1="380" y1="100" x2="380" y2="220" stroke="#80d4ff" stroke-width="1.4"/>
@@ -2934,7 +2934,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <!-- AND gate for c==1 -->
   <path d="M 430 220 L 460 220 Q 490 220 490 235 Q 490 250 460 250 L 430 250 Z"
         fill="url(#m8GateGrad)" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="455" y="240" text-anchor="middle" fill="#80d4ff" font-size="10" font-weight="bold">AND</text>
+  <text direction="ltr" x="455" y="240" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">AND</text>
 
   <!-- c[1] tap to NOT bubble for c==1 -->
   <line x1="380" y1="135" x2="380" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
@@ -2949,7 +2949,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
 
   <!-- c==1 AND output → "is1" -->
   <line x1="490" y1="235" x2="540" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="510" y="229" fill="#80d4ff" font-size="10">is1</text>
+  <text direction="ltr" x="510" y="229" fill="#80d4ff" font-size="16">is1</text>
 
   <!-- ── a = is5 ∧ ¬E (AND gate at x=600 y=160) ── -->
   <line x1="540" y1="135" x2="560" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
@@ -2961,10 +2961,10 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <!-- AND for a -->
   <path d="M 560 130 L 590 130 Q 620 130 620 155 Q 620 180 590 180 L 560 180 Z"
         fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="585" y="158" text-anchor="middle" fill="#ff8060" font-size="10" font-weight="bold">a</text>
+  <text direction="ltr" x="585" y="158" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">a</text>
   <!-- a output -->
   <line x1="620" y1="155" x2="680" y2="155" stroke="#ff8060" stroke-width="1.4"/>
-  <text direction="ltr" x="640" y="149" fill="#ff8060" font-size="10">a</text>
+  <text direction="ltr" x="640" y="149" fill="#ff8060" font-size="16">a</text>
 
   <!-- ── b = is1 ∧ E (AND gate) ── -->
   <line x1="540" y1="235" x2="560" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
@@ -2975,28 +2975,28 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <!-- AND for b -->
   <path d="M 560 220 L 590 220 Q 620 220 620 245 Q 620 270 590 270 L 560 270 Z"
         fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="585" y="248" text-anchor="middle" fill="#ff8060" font-size="10" font-weight="bold">b</text>
+  <text direction="ltr" x="585" y="248" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">b</text>
   <!-- b output -->
   <line x1="620" y1="245" x2="680" y2="245" stroke="#ff8060" stroke-width="1.4"/>
-  <text direction="ltr" x="640" y="259" fill="#ff8060" font-size="10">b</text>
+  <text direction="ltr" x="640" y="259" fill="#ff8060" font-size="16">b</text>
 
   <!-- ── OR: force_clr = a ∨ b ── -->
   <path d="M 680 130 Q 705 200 680 270 Q 700 270 720 250 Q 740 200 720 150 Q 700 130 680 130 Z"
         fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="708" y="204" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="11">OR</text>
+  <text direction="ltr" x="708" y="204" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="16">OR</text>
   <line x1="680" y1="155" x2="688" y2="155" stroke="#ff8060" stroke-width="1.4"/>
   <line x1="680" y1="245" x2="688" y2="245" stroke="#ff8060" stroke-width="1.4"/>
 
   <!-- force_clr output -->
   <line x1="740" y1="200" x2="810" y2="200" stroke="#ff8060" stroke-width="2" marker-end="url(#m8ArrO)"/>
-  <text direction="ltr" x="775" y="194" text-anchor="middle" fill="#ff8060" font-size="11" font-weight="bold">force_clr</text>
+  <text direction="ltr" x="775" y="194" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">force_clr</text>
 
   <!-- ── force_clr feedback loop → mod-6.CLR ── -->
   <line x1="775" y1="200" x2="775" y2="60" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
   <line x1="775" y1="60" x2="30" y2="60" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
   <line x1="30" y1="60" x2="30" y2="180" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
   <line x1="30" y1="180" x2="60" y2="180" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3" marker-end="url(#m8ArrO)"/>
-  <text direction="ltr" x="400" y="54" text-anchor="middle" fill="#ff8060" font-size="11" font-weight="bold">force_clr → mod-6.CLR</text>
+  <text direction="ltr" x="400" y="54" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">force_clr → mod-6.CLR</text>
 
   <!-- ── XOR: E_next = E ⊕ force_clr ── -->
   <!-- E tap for XOR -->
@@ -3007,32 +3007,32 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <path d="M 778 280 Q 798 320 778 360" fill="none" stroke="#ff8060" stroke-width="1.4"/>
   <path d="M 786 280 Q 818 300 838 320 Q 818 340 786 360 Q 806 320 786 280 Z"
         fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="810" y="326" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="12">⊕</text>
+  <text direction="ltr" x="810" y="326" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="16">⊕</text>
   <!-- force_clr tap (from force_clr line) into XOR -->
   <circle cx="775" cy="280" r="4" fill="#ff8060"/>
   <line x1="775" y1="280" x2="786" y2="280" stroke="#ff8060" stroke-width="1.4"/>
   <!-- XOR output: E_next → loops back to E.D -->
   <line x1="838" y1="320" x2="870" y2="320" stroke="#ff8060" stroke-width="2"/>
-  <text direction="ltr" x="855" y="314" text-anchor="middle" fill="#ff8060" font-size="11" font-weight="bold">E_next</text>
+  <text direction="ltr" x="855" y="314" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">E_next</text>
   <!-- E_next loop -->
   <line x1="870" y1="320" x2="870" y2="400" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
   <line x1="870" y1="400" x2="30" y2="400" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
   <line x1="30" y1="400" x2="30" y2="290" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
   <line x1="30" y1="290" x2="60" y2="290" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3" marker-end="url(#m8ArrO)"/>
-  <text direction="ltr" x="440" y="416" text-anchor="middle" fill="#ff8060" font-size="11" font-weight="bold">E_next → E.D</text>
+  <text direction="ltr" x="440" y="416" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">E_next → E.D</text>
 
   <!-- ──────────── OUTPUT COMBINE — explicit OR gates ──────────── -->
-  <text direction="ltr" x="970" y="78" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">output combine</text>
+  <text direction="ltr" x="970" y="78" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">output combine</text>
 
   <!-- Y[0] = c[0] direct -->
   <line x1="380" y1="170" x2="900" y2="170" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#m8ArrG)"/>
-  <text direction="ltr" x="930" y="166" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Y[0]</text>
+  <text direction="ltr" x="930" y="166" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[0]</text>
 
   <!-- Y[1] = c[1] ∨ E -->
   <!-- OR gate for Y[1] -->
   <path d="M 820 100 Q 845 130 820 160 Q 840 160 855 145 Q 875 130 855 115 Q 840 100 820 100 Z"
         fill="url(#m8GateGrad)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="848" y="135" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">OR</text>
+  <text direction="ltr" x="848" y="135" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">OR</text>
   <!-- c[1] → OR.in0 (tap from c[1] line at x=380) -->
   <circle cx="380" cy="135" r="0" fill="#80d4ff"/>
   <line x1="380" y1="135" x2="800" y2="135" stroke="#80d4ff" stroke-width="1.4" stroke-dasharray="4 2"/>
@@ -3044,7 +3044,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <line x1="800" y1="145" x2="820" y2="145" stroke="#ff8060" stroke-width="1.4"/>
   <!-- OR output → Y[1] -->
   <line x1="875" y1="130" x2="900" y2="130" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#m8ArrG)"/>
-  <text direction="ltr" x="930" y="126" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Y[1]</text>
+  <text direction="ltr" x="930" y="126" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[1]</text>
 
   <!-- Y[2] = c[2] ∨ E (OR gate higher up) -->
   <path d="M 820 80 Q 845 105 820 130 Q 840 130 855 115 Q 875 100 855 88 Q 840 80 820 80 Z"
@@ -3059,10 +3059,10 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <line x1="804" y1="115" x2="804" y2="290" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="4 2"/>
   <!-- OR output → Y[2] -->
   <line x1="875" y1="103" x2="900" y2="103" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#m8ArrG)"/>
-  <text direction="ltr" x="930" y="100" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">Y[2]</text>
+  <text direction="ltr" x="930" y="100" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[2]</text>
 
   <!-- ──────────── STATE CYCLE TABLE ──────────── -->
-  <text direction="ltr" x="540" y="460" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">
+  <text direction="ltr" x="540" y="460" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     state cycle:  8 unique configurations of (E, c) → Y
   </text>
 
@@ -3070,7 +3070,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   <rect x="80" y="476" width="920" height="32" fill="#0c1a28" stroke="#3a5575" stroke-width="1"/>
   ${['step','E','c[2]','c[1]','c[0]','c (dec)','Y','transition'].map((h, i) => {
     const x = [120, 220, 290, 350, 410, 490, 580, 760][i];
-    return `<text direction="ltr" x="${x}" y="498" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">${h}</text>`;
+    return `<text direction="ltr" x="${x}" y="498" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">${h}</text>`;
   }).join('')}
 
   <!-- Table rows -->
@@ -3091,19 +3091,19 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
     const Yhl = r.Y === 6 || r.Y === 7;
     return `
       <rect x="80" y="${y - 14}" width="920" height="19" fill="${fill}" opacity="0.7"/>
-      <text direction="ltr" x="120" y="${y}" text-anchor="middle" fill="#a0c0e0" font-size="11">${r.step}</text>
-      <text direction="ltr" x="220" y="${y}" text-anchor="middle" fill="${r.E === 1 ? '#ff8060' : '#80a0c0'}" font-size="11" font-weight="${r.E === 1 ? 'bold' : 'normal'}">${r.E}</text>
-      <text direction="ltr" x="290" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="11">${r.c2}</text>
-      <text direction="ltr" x="350" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="11">${r.c1}</text>
-      <text direction="ltr" x="410" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="11">${r.c0}</text>
-      <text direction="ltr" x="490" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="11">${r.dec}</text>
-      <text direction="ltr" x="580" y="${y}" text-anchor="middle" fill="${Yhl ? '#ffd060' : '#80f0a0'}" font-size="13" font-weight="bold">${r.Y}</text>
-      <text direction="ltr" x="760" y="${y}" text-anchor="middle" fill="${isWrap ? '#ff8060' : '#a0a0c0'}" font-size="10" font-style="italic">${r.trans}</text>
+      <text direction="ltr" x="120" y="${y}" text-anchor="middle" fill="#a0c0e0" font-size="16">${r.step}</text>
+      <text direction="ltr" x="220" y="${y}" text-anchor="middle" fill="${r.E === 1 ? '#ff8060' : '#80a0c0'}" font-size="16" font-weight="${r.E === 1 ? 'bold' : 'normal'}">${r.E}</text>
+      <text direction="ltr" x="290" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.c2}</text>
+      <text direction="ltr" x="350" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.c1}</text>
+      <text direction="ltr" x="410" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.c0}</text>
+      <text direction="ltr" x="490" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.dec}</text>
+      <text direction="ltr" x="580" y="${y}" text-anchor="middle" fill="${Yhl ? '#ffd060' : '#80f0a0'}" font-size="18" font-weight="bold">${r.Y}</text>
+      <text direction="ltr" x="760" y="${y}" text-anchor="middle" fill="${isWrap ? '#ff8060' : '#a0a0c0'}" font-size="16" font-style="italic">${r.trans}</text>
     `;
   }).join('')}
 
   <!-- Footer -->
-  <text direction="ltr" x="540" y="688" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">
+  <text direction="ltr" x="540" y="688" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
     Total extra components beyond mod-6:  1 D-FF (E)  +  ~8 gates  (2 detect ANDs, 2 inner ANDs, 1 OR, 1 XOR, 2 OR for Y[1]/Y[2])
   </text>
 </svg>`,
@@ -3199,7 +3199,7 @@ Y[2] = c[2] ∨ E                              (לערכים 6,7 מקבל 1 מ-E
         ],
         answerSchematic: `
 <svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="DFA divisibility-by-5 state diagram, 5 states">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="DFA divisibility-by-5 state diagram, 5 states">
   <defs>
     <marker id="d5arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80d4ff"/>
@@ -3211,7 +3211,7 @@ Y[2] = c[2] ∨ E                              (לערכים 6,7 מקבל 1 מ-E
 
   <!-- Title -->
   <rect x="0" y="0" width="720" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="360" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="360" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     DFA mod-5:  new_state = (2 · state + bit) mod 5
   </text>
 
@@ -3219,36 +3219,36 @@ Y[2] = c[2] ∨ E                              (לערכים 6,7 מקבל 1 מ-E
   <!-- S0 at top -->
   <circle cx="360" cy="110" r="36" fill="#143830" stroke="#80f0a0" stroke-width="2.4"/>
   <circle cx="360" cy="110" r="30" fill="none" stroke="#80f0a0" stroke-width="1"/>
-  <text direction="ltr" x="360" y="106" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">S0</text>
-  <text direction="ltr" x="360" y="124" text-anchor="middle" fill="#80f0a0" font-size="10">Y=1</text>
+  <text direction="ltr" x="360" y="106" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">S0</text>
+  <text direction="ltr" x="360" y="124" text-anchor="middle" fill="#80f0a0" font-size="16">Y=1</text>
 
   <!-- S1 top-right -->
   <circle cx="560" cy="200" r="34" fill="#143049" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="560" y="206" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">S1</text>
+  <text direction="ltr" x="560" y="206" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">S1</text>
 
   <!-- S2 bottom-right -->
   <circle cx="490" cy="370" r="34" fill="#143049" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="490" y="376" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">S2</text>
+  <text direction="ltr" x="490" y="376" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">S2</text>
 
   <!-- S3 bottom-left -->
   <circle cx="230" cy="370" r="34" fill="#143049" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="230" y="376" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">S3</text>
+  <text direction="ltr" x="230" y="376" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">S3</text>
 
   <!-- S4 top-left -->
   <circle cx="160" cy="200" r="34" fill="#143049" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="160" y="206" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">S4</text>
+  <text direction="ltr" x="160" y="206" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">S4</text>
 
   <!-- start arrow into S0 -->
   <line x1="360" y1="40" x2="360" y2="72" stroke="#f0d080" stroke-width="2" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="380" y="56" fill="#f0d080" font-size="10">start</text>
+  <text direction="ltr" x="380" y="56" fill="#f0d080" font-size="16">start</text>
 
   <!-- Self-loop on S0: x=0 → S0 -->
   <path d="M 340 80 Q 320 50 340 70 Q 360 80 340 80" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5self)"/>
-  <text direction="ltr" x="316" y="62" fill="#80d4ff" font-size="11" font-weight="bold">0</text>
+  <text direction="ltr" x="316" y="62" fill="#80d4ff" font-size="16" font-weight="bold">0</text>
 
   <!-- S0 → S1 (x=1) -->
   <path d="M 394 122 Q 480 150 530 188" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="470" y="148" fill="#80d4ff" font-size="11" font-weight="bold">1</text>
+  <text direction="ltr" x="470" y="148" fill="#80d4ff" font-size="16" font-weight="bold">1</text>
 
   <!-- S1 → S2 (x=1: (2+1)%5=3 — wait, S1 = 1, x=1 → (2*1+1)=3 mod5 = 3 = S3. Let me re-verify.
        S1=1, x=0 → (2*1+0)%5 = 2 = S2.
@@ -3256,38 +3256,38 @@ Y[2] = c[2] ∨ E                              (לערכים 6,7 מקבל 1 מ-E
 
   <!-- S1 → S2 (bit=0): 1 → 2 -->
   <path d="M 555 234 Q 540 320 510 340" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="560" y="290" fill="#80d4ff" font-size="11" font-weight="bold">0</text>
+  <text direction="ltr" x="560" y="290" fill="#80d4ff" font-size="16" font-weight="bold">0</text>
 
   <!-- S1 → S3 (bit=1): 1 → 3 -->
   <path d="M 532 215 Q 380 280 256 360" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="380" y="280" fill="#80d4ff" font-size="11" font-weight="bold">1</text>
+  <text direction="ltr" x="380" y="280" fill="#80d4ff" font-size="16" font-weight="bold">1</text>
 
   <!-- S2 → S4 (bit=0): (2*2+0)%5 = 4 -->
   <path d="M 460 360 Q 280 320 188 218" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="280" y="310" fill="#80d4ff" font-size="11" font-weight="bold">0</text>
+  <text direction="ltr" x="280" y="310" fill="#80d4ff" font-size="16" font-weight="bold">0</text>
 
   <!-- S2 → S0 (bit=1): (2*2+1)%5 = 0 -->
   <path d="M 484 336 Q 430 220 386 138" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="450" y="244" fill="#80d4ff" font-size="11" font-weight="bold">1</text>
+  <text direction="ltr" x="450" y="244" fill="#80d4ff" font-size="16" font-weight="bold">1</text>
 
   <!-- S3 → S1 (bit=0): (2*3+0)%5 = 1 -->
   <path d="M 254 348 Q 420 220 530 215" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="376" y="252" fill="#80d4ff" font-size="11" font-weight="bold">0</text>
+  <text direction="ltr" x="376" y="252" fill="#80d4ff" font-size="16" font-weight="bold">0</text>
 
   <!-- S3 → S2 (bit=1): (2*3+1)%5 = 2 -->
   <path d="M 264 370 Q 360 380 458 370" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="360" y="396" fill="#80d4ff" font-size="11" font-weight="bold">1</text>
+  <text direction="ltr" x="360" y="396" fill="#80d4ff" font-size="16" font-weight="bold">1</text>
 
   <!-- S4 → S3 (bit=0): (2*4+0)%5 = 3 -->
   <path d="M 175 232 Q 170 320 200 350" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5arrow)"/>
-  <text direction="ltr" x="150" y="288" fill="#80d4ff" font-size="11" font-weight="bold">0</text>
+  <text direction="ltr" x="150" y="288" fill="#80d4ff" font-size="16" font-weight="bold">0</text>
 
   <!-- S4 → S4 self-loop (bit=1): (2*4+1)%5 = 4 -->
   <path d="M 140 178 Q 100 150 130 178 Q 160 200 140 178" fill="none" stroke="#80d4ff" stroke-width="1.4" marker-end="url(#d5self)"/>
-  <text direction="ltr" x="100" y="170" fill="#80d4ff" font-size="11" font-weight="bold">1</text>
+  <text direction="ltr" x="100" y="170" fill="#80d4ff" font-size="16" font-weight="bold">1</text>
 
   <!-- Legend -->
-  <text direction="ltr" x="360" y="436" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="360" y="436" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     S0 = accepting (mod 5 == 0).  Transitions labeled by input bit (0 or 1).
   </text>
 </svg>`,
@@ -3538,7 +3538,7 @@ Output encoding:
         ],
         answerSchematic: `
 <svg viewBox="0 0 1000 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Marathon priority latch with explicit gates and visible wires">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Marathon priority latch with explicit gates and visible wires">
   <defs>
     <linearGradient id="ml2FF" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -3552,7 +3552,7 @@ Output encoding:
 
   <!-- Title -->
   <rect x="0" y="0" width="1000" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="500" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="500" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     F_i.D = F_i.Q ∨ (b_i ∧ ¬F_j.Q ∧ ¬F_k.Q)   ⇒   only the first press latches
   </text>
 
@@ -3567,32 +3567,32 @@ Output encoding:
     <rect x="0" y="${y - 50}" width="1000" height="100" fill="#0a1420" opacity="0.4"/>
 
     <!-- b_i input -->
-    <text direction="ltr" x="40" y="${y + 4}" text-anchor="middle" fill="${color}" font-weight="bold" font-size="14">${b}</text>
+    <text direction="ltr" x="40" y="${y + 4}" text-anchor="middle" fill="${color}" font-weight="bold" font-size="18">${b}</text>
     <line x1="60" y1="${y}" x2="240" y2="${y}" stroke="${color}" stroke-width="1.6"/>
     <circle cx="240" cy="${y}" r="3" fill="${color}"/>
 
     <!-- AND-3 gate: b_i ∧ ¬F_j ∧ ¬F_k -->
     <path d="M 240 ${y - 25} L 280 ${y - 25} Q 320 ${y - 25} 320 ${y} Q 320 ${y + 25} 280 ${y + 25} L 240 ${y + 25} Z"
           fill="url(#ml2Gate)" stroke="${color}" stroke-width="1.6"/>
-    <text direction="ltr" x="280" y="${y + 4}" text-anchor="middle" fill="${color}" font-size="11" font-weight="bold">AND</text>
-    <text direction="ltr" x="280" y="${y - 32}" text-anchor="middle" fill="${color}" font-size="9">b_i ∧ ¬F_j ∧ ¬F_k</text>
+    <text direction="ltr" x="280" y="${y + 4}" text-anchor="middle" fill="${color}" font-size="16" font-weight="bold">AND</text>
+    <text direction="ltr" x="280" y="${y - 32}" text-anchor="middle" fill="${color}" font-size="16">b_i ∧ ¬F_j ∧ ¬F_k</text>
 
     <!-- OR-2: F_i.Q ∨ (AND output) -->
     <path d="M 360 ${y - 25} Q 380 ${y} 360 ${y + 25} Q 380 ${y + 25} 405 ${y + 12} Q 420 ${y} 405 ${y - 12} Q 380 ${y - 25} 360 ${y - 25} Z"
           fill="url(#ml2Gate)" stroke="${color}" stroke-width="1.6"/>
-    <text direction="ltr" x="385" y="${y + 4}" text-anchor="middle" fill="${color}" font-size="11" font-weight="bold">OR</text>
+    <text direction="ltr" x="385" y="${y + 4}" text-anchor="middle" fill="${color}" font-size="16" font-weight="bold">OR</text>
     <line x1="320" y1="${y}" x2="358" y2="${y}" stroke="${color}" stroke-width="1.4"/>
 
     <!-- D-FF -->
     <rect x="460" y="${y - 30}" width="100" height="60" rx="6" fill="url(#ml2FF)" stroke="${color}" stroke-width="1.8"/>
-    <text direction="ltr" x="510" y="${y - 6}" text-anchor="middle" fill="${color}" font-weight="bold" font-size="14">${name}</text>
-    <text direction="ltr" x="510" y="${y + 14}" text-anchor="middle" fill="#a0c0e0" font-size="9">D-FF</text>
+    <text direction="ltr" x="510" y="${y - 6}" text-anchor="middle" fill="${color}" font-weight="bold" font-size="18">${name}</text>
+    <text direction="ltr" x="510" y="${y + 14}" text-anchor="middle" fill="#a0c0e0" font-size="16">D-FF</text>
     <line x1="420" y1="${y}" x2="460" y2="${y}" stroke="${color}" stroke-width="1.4"/>
-    <text direction="ltr" x="440" y="${y - 6}" text-anchor="middle" fill="${color}" font-size="9">D</text>
+    <text direction="ltr" x="440" y="${y - 6}" text-anchor="middle" fill="${color}" font-size="16">D</text>
 
     <!-- F_i.Q output -->
     <line x1="560" y1="${y}" x2="640" y2="${y}" stroke="${color}" stroke-width="1.8"/>
-    <text direction="ltr" x="600" y="${y - 6}" text-anchor="middle" fill="${color}" font-size="11" font-weight="bold">${name}.Q</text>
+    <text direction="ltr" x="600" y="${y - 6}" text-anchor="middle" fill="${color}" font-size="16" font-weight="bold">${name}.Q</text>
     <circle cx="640" cy="${y}" r="4" fill="${color}"/>
 
     <!-- Self-latch loop: F.Q → OR.in0 (loops up and back) -->
@@ -3605,7 +3605,7 @@ Output encoding:
   <!-- y[1] = F₂ ∨ F₃ -->
   <path d="M 740 90 Q 770 140 740 190 Q 770 190 800 165 Q 820 140 800 115 Q 770 90 740 90 Z"
         fill="url(#ml2Gate)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="772" y="144" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="11">OR</text>
+  <text direction="ltr" x="772" y="144" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">OR</text>
   <!-- F2.Q wire to OR -->
   <line x1="640" y1="240" x2="700" y2="240" stroke="#f0d080" stroke-width="1.2" stroke-dasharray="3 2"/>
   <line x1="700" y1="240" x2="700" y2="125" stroke="#f0d080" stroke-width="1.2" stroke-dasharray="3 2"/>
@@ -3616,13 +3616,13 @@ Output encoding:
   <line x1="720" y1="155" x2="740" y2="155" stroke="#80f0a0" stroke-width="1.2"/>
   <!-- y[1] output -->
   <line x1="820" y1="140" x2="900" y2="140" stroke="#80f0a0" stroke-width="2" marker-end="url(#ml2Arr)"/>
-  <text direction="ltr" x="940" y="144" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">y[1]</text>
-  <text direction="ltr" x="850" y="125" text-anchor="middle" fill="#80f0a0" font-size="9">= F₂ ∨ F₃</text>
+  <text direction="ltr" x="940" y="144" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">y[1]</text>
+  <text direction="ltr" x="850" y="125" text-anchor="middle" fill="#80f0a0" font-size="16">= F₂ ∨ F₃</text>
 
   <!-- y[0] = F₁ ∨ F₃ -->
   <path d="M 740 290 Q 770 340 740 390 Q 770 390 800 365 Q 820 340 800 315 Q 770 290 740 290 Z"
         fill="url(#ml2Gate)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="772" y="344" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="11">OR</text>
+  <text direction="ltr" x="772" y="344" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">OR</text>
   <!-- F1.Q wire to OR -->
   <line x1="640" y1="100" x2="680" y2="100" stroke="#ff8060" stroke-width="1.2" stroke-dasharray="3 2"/>
   <line x1="680" y1="100" x2="680" y2="325" stroke="#ff8060" stroke-width="1.2" stroke-dasharray="3 2"/>
@@ -3632,17 +3632,17 @@ Output encoding:
   <line x1="720" y1="355" x2="740" y2="355" stroke="#80f0a0" stroke-width="1.2"/>
   <!-- y[0] output -->
   <line x1="820" y1="340" x2="900" y2="340" stroke="#80f0a0" stroke-width="2" marker-end="url(#ml2Arr)"/>
-  <text direction="ltr" x="940" y="344" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">y[0]</text>
-  <text direction="ltr" x="850" y="325" text-anchor="middle" fill="#80f0a0" font-size="9">= F₁ ∨ F₃</text>
+  <text direction="ltr" x="940" y="344" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">y[0]</text>
+  <text direction="ltr" x="850" y="325" text-anchor="middle" fill="#80f0a0" font-size="16">= F₁ ∨ F₃</text>
 
   <!-- rest input + CLR rail -->
-  <text direction="ltr" x="40" y="490" text-anchor="middle" fill="#80a0c0" font-weight="bold" font-size="13">rest</text>
+  <text direction="ltr" x="40" y="490" text-anchor="middle" fill="#80a0c0" font-weight="bold" font-size="18">rest</text>
   <line x1="60" y1="486" x2="500" y2="486" stroke="#80a0c0" stroke-width="1.4"/>
   <line x1="500" y1="486" x2="500" y2="80" stroke="#80a0c0" stroke-width="1.4" stroke-dasharray="6 3"/>
-  <text direction="ltr" x="280" y="482" fill="#80a0c0" font-size="11" font-style="italic">rest → CLR of all 3 D-FFs</text>
+  <text direction="ltr" x="280" y="482" fill="#80a0c0" font-size="16" font-style="italic">rest → CLR of all 3 D-FFs</text>
 
   <!-- Footer -->
-  <text direction="ltr" x="500" y="524" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="500" y="524" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Per F_i:  AND-3 + OR-2 + D-FF.  Total: 3 D-FFs + 3 AND + 3 OR + 2 OR (encoder) = 11 components.
   </text>
 </svg>`,
@@ -3835,21 +3835,21 @@ y[0] = F₁ ∨ F₃          (low bit = 1 if F1 or F3 won)
 - יציאה: \`B → A\` (פנים אז חוץ) → counter--`,
     schematic: `
 <svg viewBox="0 0 540 240" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="2 sensors A, B + room">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="2 sensors A, B + room">
   <rect x="260" y="60" width="220" height="160" rx="8" fill="#0a1825" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="370" y="150" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">ROOM</text>
+  <text direction="ltr" x="370" y="150" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">ROOM</text>
 
   <text direction="ltr" x="160" y="90" text-anchor="middle" fill="#f0d080" font-weight="bold">detector A</text>
-  <text direction="ltr" x="160" y="106" text-anchor="middle" fill="#806040" font-size="10">(outside)</text>
+  <text direction="ltr" x="160" y="106" text-anchor="middle" fill="#806040" font-size="16">(outside)</text>
   <line x1="200" y1="80" x2="260" y2="80" stroke="#f0d080" stroke-width="1.4" stroke-dasharray="3 3"/>
 
   <text direction="ltr" x="160" y="190" text-anchor="middle" fill="#80f0a0" font-weight="bold">detector B</text>
-  <text direction="ltr" x="160" y="206" text-anchor="middle" fill="#608060" font-size="10">(inside, at door)</text>
+  <text direction="ltr" x="160" y="206" text-anchor="middle" fill="#608060" font-size="16">(inside, at door)</text>
   <line x1="200" y1="180" x2="260" y2="180" stroke="#80f0a0" stroke-width="1.4" stroke-dasharray="3 3"/>
 
   <!-- arrows showing direction logic -->
-  <text direction="ltr" x="100" y="140" text-anchor="middle" fill="#a0c0e0" font-size="11">A→B = enter (++)</text>
-  <text direction="ltr" x="100" y="156" text-anchor="middle" fill="#a0c0e0" font-size="11">B→A = exit  (−−)</text>
+  <text direction="ltr" x="100" y="140" text-anchor="middle" fill="#a0c0e0" font-size="16">A→B = enter (++)</text>
+  <text direction="ltr" x="100" y="156" text-anchor="middle" fill="#a0c0e0" font-size="16">B→A = exit  (−−)</text>
 </svg>`,
     circuitRevealsAnswer: true,
     parts: [
@@ -3865,7 +3865,7 @@ y[0] = F₁ ∨ F₃          (low bit = 1 if F1 or F3 won)
         ],
         answerSchematic: `
 <svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="People counter FSM with clear state transitions">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="People counter FSM with clear state transitions">
   <defs>
     <marker id="pc2Arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80d4ff"/></marker>
@@ -3883,67 +3883,67 @@ y[0] = F₁ ∨ F₃          (low bit = 1 if F1 or F3 won)
 
   <!-- Title -->
   <rect x="0" y="0" width="900" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="450" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="450" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     FSM:  3 states  •  Direction inferred from order of A and B pulses
   </text>
 
   <!-- ─── 3 state circles with EXTERNAL labels for clarity ─── -->
   <!-- SAW_A — top-left -->
   <circle cx="180" cy="180" r="60" fill="#143824" stroke="#f0d080" stroke-width="2.4" filter="url(#pc2Glow)"/>
-  <text direction="ltr" x="180" y="186" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">SAW_A</text>
-  <text direction="ltr" x="180" y="98" text-anchor="middle" fill="#a09060" font-size="11" font-style="italic">"saw A first, waiting for B"</text>
+  <text direction="ltr" x="180" y="186" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="20">SAW_A</text>
+  <text direction="ltr" x="180" y="98" text-anchor="middle" fill="#a09060" font-size="16" font-style="italic">"saw A first, waiting for B"</text>
 
   <!-- IDLE — center -->
   <circle cx="450" cy="320" r="60" fill="#143049" stroke="#80d4ff" stroke-width="2.4" filter="url(#pc2Glow)"/>
   <text direction="ltr" x="450" y="326" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="20">IDLE</text>
-  <text direction="ltr" x="450" y="408" text-anchor="middle" fill="#80a0c0" font-size="11" font-style="italic">"no activity, ready to detect"</text>
+  <text direction="ltr" x="450" y="408" text-anchor="middle" fill="#80a0c0" font-size="16" font-style="italic">"no activity, ready to detect"</text>
 
   <!-- SAW_B — top-right -->
   <circle cx="720" cy="180" r="60" fill="#142824" stroke="#80f0a0" stroke-width="2.4" filter="url(#pc2Glow)"/>
-  <text direction="ltr" x="720" y="186" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">SAW_B</text>
-  <text direction="ltr" x="720" y="98" text-anchor="middle" fill="#608060" font-size="11" font-style="italic">"saw B first, waiting for A"</text>
+  <text direction="ltr" x="720" y="186" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">SAW_B</text>
+  <text direction="ltr" x="720" y="98" text-anchor="middle" fill="#608060" font-size="16" font-style="italic">"saw B first, waiting for A"</text>
 
   <!-- Start arrow into IDLE from below -->
   <line x1="450" y1="450" x2="450" y2="384" stroke="#80d4ff" stroke-width="2" marker-end="url(#pc2Arr)"/>
-  <text direction="ltr" x="478" y="438" fill="#80d4ff" font-size="11">start</text>
+  <text direction="ltr" x="478" y="438" fill="#80d4ff" font-size="16">start</text>
 
   <!-- ─── 4 transitions, clearly labeled ─── -->
 
   <!-- IDLE → SAW_A on A=1 -->
   <path d="M 396 286 Q 280 250 230 220" fill="none" stroke="#80d4ff" stroke-width="1.8" marker-end="url(#pc2Arr)"/>
-  <text direction="ltr" x="290" y="244" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">A=1</text>
+  <text direction="ltr" x="290" y="244" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">A=1</text>
 
   <!-- IDLE → SAW_B on B=1 -->
   <path d="M 504 286 Q 620 250 670 220" fill="none" stroke="#80d4ff" stroke-width="1.8" marker-end="url(#pc2Arr)"/>
-  <text direction="ltr" x="610" y="244" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">B=1</text>
+  <text direction="ltr" x="610" y="244" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">B=1</text>
 
   <!-- SAW_A → IDLE on B=1, count++ (GREEN) -->
   <path d="M 222 224 Q 320 300 396 326" fill="none" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#pc2ArrG)"/>
-  <text direction="ltr" x="270" y="290" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">B=1  ⟹  count++</text>
+  <text direction="ltr" x="270" y="290" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">B=1  ⟹  count++</text>
 
   <!-- SAW_B → IDLE on A=1, count-- (RED) -->
   <path d="M 678 224 Q 580 300 504 326" fill="none" stroke="#ff8060" stroke-width="2.4" marker-end="url(#pc2ArrR)"/>
-  <text direction="ltr" x="640" y="290" text-anchor="middle" fill="#ff8060" font-size="13" font-weight="bold">A=1  ⟹  count−−</text>
+  <text direction="ltr" x="640" y="290" text-anchor="middle" fill="#ff8060" font-size="18" font-weight="bold">A=1  ⟹  count−−</text>
 
   <!-- ─── COUNTER block below (separated cleanly) ─── -->
   <rect x="200" y="480" width="500" height="90" rx="10" fill="#0a1825" stroke="#f0d080" stroke-width="2"/>
-  <text direction="ltr" x="450" y="504" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">UP/DOWN COUNTER</text>
-  <text direction="ltr" x="240" y="528" fill="#80f0a0" font-size="12">UP   = (state == SAW_A) ∧ B</text>
-  <text direction="ltr" x="240" y="546" fill="#ff8060" font-size="12">DOWN = (state == SAW_B) ∧ A</text>
-  <text direction="ltr" x="450" y="566" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">Q = people currently in room</text>
+  <text direction="ltr" x="450" y="504" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">UP/DOWN COUNTER</text>
+  <text direction="ltr" x="240" y="528" fill="#80f0a0" font-size="16">UP   = (state == SAW_A) ∧ B</text>
+  <text direction="ltr" x="240" y="546" fill="#ff8060" font-size="16">DOWN = (state == SAW_B) ∧ A</text>
+  <text direction="ltr" x="450" y="566" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">Q = people currently in room</text>
 
   <!-- Legend at right -->
   <rect x="740" y="320" width="150" height="160" rx="8" fill="#0c1a28" stroke="#5a7090" stroke-width="1"/>
-  <text direction="ltr" x="815" y="340" text-anchor="middle" fill="#80a0c0" font-size="11" font-weight="bold">legend</text>
+  <text direction="ltr" x="815" y="340" text-anchor="middle" fill="#80a0c0" font-size="16" font-weight="bold">legend</text>
   <line x1="752" y1="356" x2="780" y2="356" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="790" y="360" fill="#80d4ff" font-size="11">state transition</text>
+  <text direction="ltr" x="790" y="360" fill="#80d4ff" font-size="16">state transition</text>
   <line x1="752" y1="378" x2="780" y2="378" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="790" y="382" fill="#80f0a0" font-size="11">+1 (entry)</text>
+  <text direction="ltr" x="790" y="382" fill="#80f0a0" font-size="16">+1 (entry)</text>
   <line x1="752" y1="400" x2="780" y2="400" stroke="#ff8060" stroke-width="2"/>
-  <text direction="ltr" x="790" y="404" fill="#ff8060" font-size="11">−1 (exit)</text>
-  <text direction="ltr" x="815" y="436" text-anchor="middle" fill="#a0a0c0" font-size="10" font-style="italic">2 D-FFs +</text>
-  <text direction="ltr" x="815" y="452" text-anchor="middle" fill="#a0a0c0" font-size="10" font-style="italic">UP/DOWN cnt</text>
-  <text direction="ltr" x="815" y="468" text-anchor="middle" fill="#a0a0c0" font-size="10" font-style="italic">+ next-state logic</text>
+  <text direction="ltr" x="790" y="404" fill="#ff8060" font-size="16">−1 (exit)</text>
+  <text direction="ltr" x="815" y="436" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">2 D-FFs +</text>
+  <text direction="ltr" x="815" y="452" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">UP/DOWN cnt</text>
+  <text direction="ltr" x="815" y="468" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">+ next-state logic</text>
 </svg>`,
         answer:
 `**FSM 3-מצבים + UP/DOWN counter.**
@@ -4062,7 +4062,7 @@ Output: 1, 4, 9, 16, 25, 36, ..., 100, ...
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 520" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Stream of squares: 3 ALU pipeline implementing S_new = S + 2k + 1">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Stream of squares: 3 ALU pipeline implementing S_new = S + 2k + 1">
   <defs>
     <linearGradient id="sqBody" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -4077,63 +4077,63 @@ Output: 1, 4, 9, 16, 25, 36, ..., 100, ...
 
   <!-- Title -->
   <rect x="0" y="0" width="1080" height="50" fill="#0c1a28"/>
-  <text direction="ltr" x="540" y="22" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="540" y="22" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Identity:  (k+1)² − k² = 2k + 1   ⇒   S_new = S + 2k + 1
   </text>
-  <text direction="ltr" x="540" y="40" text-anchor="middle" fill="#80a0c0" font-size="11">
+  <text direction="ltr" x="540" y="40" text-anchor="middle" fill="#80a0c0" font-size="16">
     Implementation:  3 ALU stages (because ALU has 2 operands; the "+1" is its own stage)
   </text>
 
   <!-- ── COUNTER k (top-left) ── -->
   <rect x="80" y="100" width="140" height="80" rx="8" fill="url(#sqBody)" stroke="#f0d080" stroke-width="2"/>
-  <text direction="ltr" x="150" y="136" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="14">COUNTER k</text>
-  <text direction="ltr" x="150" y="156" text-anchor="middle" fill="#a08040" font-size="10">EN=1, auto +1</text>
-  <text direction="ltr" x="150" y="172" text-anchor="middle" fill="#a08040" font-size="10">init = 1</text>
+  <text direction="ltr" x="150" y="136" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">COUNTER k</text>
+  <text direction="ltr" x="150" y="156" text-anchor="middle" fill="#a08040" font-size="16">EN=1, auto +1</text>
+  <text direction="ltr" x="150" y="172" text-anchor="middle" fill="#a08040" font-size="16">init = 1</text>
 
   <!-- k output going right -->
   <line x1="220" y1="140" x2="310" y2="140" stroke="#f0d080" stroke-width="1.6" marker-end="url(#sqArrY)"/>
-  <text direction="ltr" x="265" y="132" text-anchor="middle" fill="#f0d080" font-size="11" font-weight="bold">k</text>
+  <text direction="ltr" x="265" y="132" text-anchor="middle" fill="#f0d080" font-size="16" font-weight="bold">k</text>
 
   <!-- ── ALU stage 1: SHL (k << 1 = 2k) ── -->
   <rect x="310" y="100" width="140" height="80" rx="8" fill="url(#sqBody)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="380" y="130" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">ALU SHL</text>
-  <text direction="ltr" x="380" y="150" text-anchor="middle" fill="#a0c0e0" font-size="10">A=k, B=1</text>
-  <text direction="ltr" x="380" y="166" text-anchor="middle" fill="#a0c0e0" font-size="10">OP=SHL → k&lt;&lt;1</text>
+  <text direction="ltr" x="380" y="130" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">ALU SHL</text>
+  <text direction="ltr" x="380" y="150" text-anchor="middle" fill="#a0c0e0" font-size="16">A=k, B=1</text>
+  <text direction="ltr" x="380" y="166" text-anchor="middle" fill="#a0c0e0" font-size="16">OP=SHL → k&lt;&lt;1</text>
 
   <!-- 2k output -->
   <line x1="450" y1="140" x2="540" y2="140" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#sqArrB)"/>
-  <text direction="ltr" x="495" y="132" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">2k</text>
+  <text direction="ltr" x="495" y="132" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">2k</text>
 
   <!-- ── ALU stage 2: ADD (2k + 1) ── -->
   <rect x="540" y="100" width="140" height="80" rx="8" fill="url(#sqBody)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="610" y="130" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="13">ALU ADD</text>
-  <text direction="ltr" x="610" y="150" text-anchor="middle" fill="#a0c0e0" font-size="10">A=2k, B=1</text>
-  <text direction="ltr" x="610" y="166" text-anchor="middle" fill="#a0c0e0" font-size="10">OP=ADD → 2k+1</text>
+  <text direction="ltr" x="610" y="130" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">ALU ADD</text>
+  <text direction="ltr" x="610" y="150" text-anchor="middle" fill="#a0c0e0" font-size="16">A=2k, B=1</text>
+  <text direction="ltr" x="610" y="166" text-anchor="middle" fill="#a0c0e0" font-size="16">OP=ADD → 2k+1</text>
 
   <!-- 2k+1 output -->
   <line x1="680" y1="140" x2="780" y2="140" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="730" y="132" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">2k+1</text>
+  <text direction="ltr" x="730" y="132" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">2k+1</text>
   <line x1="780" y1="140" x2="780" y2="240" stroke="#80d4ff" stroke-width="1.6"/>
   <line x1="780" y1="240" x2="800" y2="240" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#sqArrB)"/>
 
   <!-- ── ALU stage 3: ADD (S + (2k+1)) ── -->
   <rect x="800" y="200" width="160" height="80" rx="8" fill="url(#sqBody)" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="880" y="230" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">ALU ADD</text>
-  <text direction="ltr" x="880" y="250" text-anchor="middle" fill="#a0c0e0" font-size="10">A=S, B=2k+1</text>
-  <text direction="ltr" x="880" y="266" text-anchor="middle" fill="#a0c0e0" font-size="10">OP=ADD → S_new</text>
+  <text direction="ltr" x="880" y="230" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">ALU ADD</text>
+  <text direction="ltr" x="880" y="250" text-anchor="middle" fill="#a0c0e0" font-size="16">A=S, B=2k+1</text>
+  <text direction="ltr" x="880" y="266" text-anchor="middle" fill="#a0c0e0" font-size="16">OP=ADD → S_new</text>
 
   <!-- S input to stage 3 (from REGISTER S) -->
   <line x1="280" y1="360" x2="800" y2="280" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="500" y="324" fill="#80f0a0" font-size="11" font-weight="bold">S</text>
+  <text direction="ltr" x="500" y="324" fill="#80f0a0" font-size="16" font-weight="bold">S</text>
 
   <!-- ── REGISTER S (bottom-left) ── -->
   <rect x="200" y="320" width="160" height="80" rx="8" fill="url(#sqBody)" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="280" y="356" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">REGISTER S</text>
-  <text direction="ltr" x="280" y="378" text-anchor="middle" fill="#608060" font-size="10">init = 1, EN=1</text>
+  <text direction="ltr" x="280" y="356" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">REGISTER S</text>
+  <text direction="ltr" x="280" y="378" text-anchor="middle" fill="#608060" font-size="16">init = 1, EN=1</text>
 
   <!-- S_new feedback loop: ALU3.out → REG.D -->
   <line x1="960" y1="240" x2="1010" y2="240" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="985" y="232" text-anchor="middle" fill="#80f0a0" font-size="10" font-weight="bold">S_new</text>
+  <text direction="ltr" x="985" y="232" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">S_new</text>
   <line x1="1010" y1="240" x2="1010" y2="440" stroke="#80f0a0" stroke-width="1.6" stroke-dasharray="6 3"/>
   <line x1="1010" y1="440" x2="280" y2="440" stroke="#80f0a0" stroke-width="1.6" stroke-dasharray="6 3"/>
   <line x1="280" y1="440" x2="280" y2="400" stroke="#80f0a0" stroke-width="1.6" stroke-dasharray="6 3" marker-end="url(#sqArrG)"/>
@@ -4141,14 +4141,14 @@ Output: 1, 4, 9, 16, 25, 36, ..., 100, ...
   <!-- S → output Y -->
   <circle cx="360" cy="360" r="4" fill="#80f0a0"/>
   <line x1="360" y1="360" x2="960" y2="360" stroke="#80f0a0" stroke-width="2" marker-end="url(#sqArrG)"/>
-  <text direction="ltr" x="1010" y="356" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">Y = k²</text>
+  <text direction="ltr" x="1010" y="356" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y = k²</text>
 
   <!-- Sequence example -->
-  <text direction="ltr" x="540" y="476" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">Sequence after each clock:</text>
-  <text direction="ltr" x="540" y="496" text-anchor="middle" fill="#a0c0e0" font-size="11" font-family="monospace">
+  <text direction="ltr" x="540" y="476" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">Sequence after each clock:</text>
+  <text direction="ltr" x="540" y="496" text-anchor="middle" fill="#a0c0e0" font-size="16" font-family="monospace">
     k:   1    2    3    4    5    6    7    8    9    10
   </text>
-  <text direction="ltr" x="540" y="514" text-anchor="middle" fill="#80f0a0" font-size="11" font-family="monospace">
+  <text direction="ltr" x="540" y="514" text-anchor="middle" fill="#80f0a0" font-size="16" font-family="monospace">
     S:   1    4    9   16   25   36   49   64   81   100
   </text>
 </svg>`,

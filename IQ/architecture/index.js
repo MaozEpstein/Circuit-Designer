@@ -90,7 +90,7 @@ end_mul:
 ואיך מטפלים בהם.`,
     schematic: `
 <svg viewBox="0 0 980 360" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12"
+     font-family="'JetBrains Mono', monospace" font-size="16"
      role="img" aria-label="MIPS 5-stage pipeline: IF, ID, EX, MEM, WB">
   <defs>
     <linearGradient id="mipsStage" x1="0" y1="0" x2="0" y2="1">
@@ -103,7 +103,7 @@ end_mul:
 
   <!-- Title -->
   <rect x="0" y="0" width="980" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="490" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">
+  <text direction="ltr" x="490" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     MIPS 5-Stage Pipeline:  IF  →  ID  →  EX  →  MEM  →  WB
   </text>
 
@@ -116,29 +116,29 @@ end_mul:
     { name: 'WB',  color: '#c080ff', x: 760, fullName: 'Write Back' },
   ].map(({ name, color, x, fullName }) => `
     <rect x="${x}" y="100" width="120" height="160" rx="10" fill="url(#mipsStage)" stroke="${color}" stroke-width="2"/>
-    <text direction="ltr" x="${x + 60}" y="138" text-anchor="middle" fill="${color}" font-weight="bold" font-size="22">${name}</text>
-    <text direction="ltr" x="${x + 60}" y="162" text-anchor="middle" fill="#a0c0e0" font-size="11">${fullName}</text>
+    <text direction="ltr" x="${x + 60}" y="138" text-anchor="middle" fill="${color}" font-weight="bold" font-size="24">${name}</text>
+    <text direction="ltr" x="${x + 60}" y="162" text-anchor="middle" fill="#a0c0e0" font-size="16">${fullName}</text>
   `).join('')}
 
   <!-- Stage roles (inside boxes) -->
-  <text direction="ltr" x="100" y="190" text-anchor="middle" fill="#80a0c0" font-size="10">read PC</text>
-  <text direction="ltr" x="100" y="206" text-anchor="middle" fill="#80a0c0" font-size="10">fetch instr</text>
-  <text direction="ltr" x="100" y="222" text-anchor="middle" fill="#80a0c0" font-size="10">PC += 4</text>
+  <text direction="ltr" x="100" y="190" text-anchor="middle" fill="#80a0c0" font-size="16">read PC</text>
+  <text direction="ltr" x="100" y="206" text-anchor="middle" fill="#80a0c0" font-size="16">fetch instr</text>
+  <text direction="ltr" x="100" y="222" text-anchor="middle" fill="#80a0c0" font-size="16">PC += 4</text>
 
-  <text direction="ltr" x="280" y="190" text-anchor="middle" fill="#80a0c0" font-size="10">decode op</text>
-  <text direction="ltr" x="280" y="206" text-anchor="middle" fill="#80a0c0" font-size="10">read rs, rt</text>
-  <text direction="ltr" x="280" y="222" text-anchor="middle" fill="#80a0c0" font-size="10">sign-extend imm</text>
+  <text direction="ltr" x="280" y="190" text-anchor="middle" fill="#80a0c0" font-size="16">decode op</text>
+  <text direction="ltr" x="280" y="206" text-anchor="middle" fill="#80a0c0" font-size="16">read rs, rt</text>
+  <text direction="ltr" x="280" y="222" text-anchor="middle" fill="#80a0c0" font-size="16">sign-extend imm</text>
 
-  <text direction="ltr" x="460" y="190" text-anchor="middle" fill="#80a0c0" font-size="10">ALU compute</text>
-  <text direction="ltr" x="460" y="206" text-anchor="middle" fill="#80a0c0" font-size="10">branch target</text>
-  <text direction="ltr" x="460" y="222" text-anchor="middle" fill="#80a0c0" font-size="10">addr for ld/st</text>
+  <text direction="ltr" x="460" y="190" text-anchor="middle" fill="#80a0c0" font-size="16">ALU compute</text>
+  <text direction="ltr" x="460" y="206" text-anchor="middle" fill="#80a0c0" font-size="16">branch target</text>
+  <text direction="ltr" x="460" y="222" text-anchor="middle" fill="#80a0c0" font-size="16">addr for ld/st</text>
 
-  <text direction="ltr" x="640" y="190" text-anchor="middle" fill="#80a0c0" font-size="10">DMEM read</text>
-  <text direction="ltr" x="640" y="206" text-anchor="middle" fill="#80a0c0" font-size="10">DMEM write</text>
-  <text direction="ltr" x="640" y="222" text-anchor="middle" fill="#80a0c0" font-size="10">(if ld/st)</text>
+  <text direction="ltr" x="640" y="190" text-anchor="middle" fill="#80a0c0" font-size="16">DMEM read</text>
+  <text direction="ltr" x="640" y="206" text-anchor="middle" fill="#80a0c0" font-size="16">DMEM write</text>
+  <text direction="ltr" x="640" y="222" text-anchor="middle" fill="#80a0c0" font-size="16">(if ld/st)</text>
 
-  <text direction="ltr" x="820" y="190" text-anchor="middle" fill="#80a0c0" font-size="10">write rd</text>
-  <text direction="ltr" x="820" y="206" text-anchor="middle" fill="#80a0c0" font-size="10">in reg file</text>
+  <text direction="ltr" x="820" y="190" text-anchor="middle" fill="#80a0c0" font-size="16">write rd</text>
+  <text direction="ltr" x="820" y="206" text-anchor="middle" fill="#80a0c0" font-size="16">in reg file</text>
 
   <!-- Pipeline registers (between stages) -->
   ${[
@@ -148,18 +148,18 @@ end_mul:
     { x: 705, label: 'MEM/WB' },
   ].map(({ x, label }) => `
     <rect x="${x}" y="120" width="50" height="120" rx="4" fill="url(#mipsPipeReg)" stroke="#f0d080" stroke-width="1.6"/>
-    <text direction="ltr" x="${x + 25}" y="180" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="10">${label}</text>
-    <text direction="ltr" x="${x + 25}" y="194" text-anchor="middle" fill="#a08040" font-size="9">latch</text>
+    <text direction="ltr" x="${x + 25}" y="180" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="16">${label}</text>
+    <text direction="ltr" x="${x + 25}" y="194" text-anchor="middle" fill="#a08040" font-size="16">latch</text>
   `).join('')}
 
   <!-- Footer note -->
-  <text direction="ltr" x="490" y="304" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="490" y="304" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     pipeline registers (IF/ID, ID/EX, EX/MEM, MEM/WB) capture stage outputs on every rising clk edge
   </text>
-  <text direction="ltr" x="490" y="324" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">
+  <text direction="ltr" x="490" y="324" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
     Ideal throughput:  1 instruction / cycle  •  Latency per instr:  5 cycles
   </text>
-  <text direction="ltr" x="490" y="342" text-anchor="middle" fill="#ff8060" font-size="11">
+  <text direction="ltr" x="490" y="342" text-anchor="middle" fill="#ff8060" font-size="16">
     Hazards (RAW data, control, structural) reduce real throughput &lt; 1 IPC unless mitigated.
   </text>
 </svg>`,

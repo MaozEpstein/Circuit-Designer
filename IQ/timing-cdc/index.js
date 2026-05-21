@@ -22,7 +22,7 @@ import { build, h } from '../../js/interview/circuitHelpers.js';
 // Inline SVG of a 3-stage shift register + CLK/INPUT waveforms. Authored
 // from scratch; no copyright concern. Colours pull from the panel palette.
 const SHIFT_REG_SVG = `
-<svg viewBox="0 0 480 240" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="Three-stage shift register with clock and input waveforms">
+<svg viewBox="0 0 480 240" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Three-stage shift register with clock and input waveforms">
   <defs>
     <marker id="ivArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M0,0 L10,5 L0,10 z" fill="#c8d8f0"/>
@@ -45,7 +45,7 @@ const SHIFT_REG_SVG = `
        waveform; arrow points up at the bottom of the rising edge. -->
   <g>
     <line x1="252" y1="105" x2="206" y2="84" stroke="#f08080" stroke-width="1.5" marker-end="url(#ivArrowRed)"/>
-    <text x="258" y="110" fill="#f08080" font-size="11" font-weight="bold">התחלה</text>
+    <text x="258" y="110" fill="#f08080" font-size="16" font-weight="bold">התחלה</text>
   </g>
 
   <!-- Schematic: input → DFF → DFF → DFF → out, all sharing clk -->
@@ -56,9 +56,9 @@ const SHIFT_REG_SVG = `
     <!-- DFF 1 -->
     <rect x="78" y="10" width="80" height="50" fill="#0a1520" stroke="#80f0a0" stroke-width="1.6" rx="3"/>
     <text x="118" y="35" text-anchor="middle" fill="#80f0a0" font-weight="bold">DFF</text>
-    <text x="86"  y="22" fill="#80a0c0" font-size="9">D</text>
-    <text x="148" y="22" text-anchor="end" fill="#80a0c0" font-size="9">Q</text>
-    <text x="118" y="56" text-anchor="middle" fill="#80a0c0" font-size="9">clk</text>
+    <text x="86"  y="22" fill="#80a0c0" font-size="16">D</text>
+    <text x="148" y="22" text-anchor="end" fill="#80a0c0" font-size="16">Q</text>
+    <text x="118" y="56" text-anchor="middle" fill="#80a0c0" font-size="16">clk</text>
 
     <!-- Q1 -> D2 -->
     <line x1="158" y1="32" x2="200" y2="32" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#ivArrow)"/>
@@ -66,9 +66,9 @@ const SHIFT_REG_SVG = `
     <!-- DFF 2 -->
     <rect x="200" y="10" width="80" height="50" fill="#0a1520" stroke="#80f0a0" stroke-width="1.6" rx="3"/>
     <text x="240" y="35" text-anchor="middle" fill="#80f0a0" font-weight="bold">DFF</text>
-    <text x="208" y="22" fill="#80a0c0" font-size="9">D</text>
-    <text x="270" y="22" text-anchor="end" fill="#80a0c0" font-size="9">Q</text>
-    <text x="240" y="56" text-anchor="middle" fill="#80a0c0" font-size="9">clk</text>
+    <text x="208" y="22" fill="#80a0c0" font-size="16">D</text>
+    <text x="270" y="22" text-anchor="end" fill="#80a0c0" font-size="16">Q</text>
+    <text x="240" y="56" text-anchor="middle" fill="#80a0c0" font-size="16">clk</text>
 
     <!-- Q2 -> D3 -->
     <line x1="280" y1="32" x2="322" y2="32" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#ivArrow)"/>
@@ -76,9 +76,9 @@ const SHIFT_REG_SVG = `
     <!-- DFF 3 -->
     <rect x="322" y="10" width="80" height="50" fill="#0a1520" stroke="#80f0a0" stroke-width="1.6" rx="3"/>
     <text x="362" y="35" text-anchor="middle" fill="#80f0a0" font-weight="bold">DFF</text>
-    <text x="330" y="22" fill="#80a0c0" font-size="9">D</text>
-    <text x="392" y="22" text-anchor="end" fill="#80a0c0" font-size="9">Q</text>
-    <text x="362" y="56" text-anchor="middle" fill="#80a0c0" font-size="9">clk</text>
+    <text x="330" y="22" fill="#80a0c0" font-size="16">D</text>
+    <text x="392" y="22" text-anchor="end" fill="#80a0c0" font-size="16">Q</text>
+    <text x="362" y="56" text-anchor="middle" fill="#80a0c0" font-size="16">clk</text>
 
     <!-- Out -->
     <line x1="402" y1="32" x2="448" y2="32" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#ivArrow)"/>
@@ -89,7 +89,7 @@ const SHIFT_REG_SVG = `
     <line x1="240" y1="60" x2="240" y2="78" stroke="#f0d080" stroke-width="1.2"/>
     <line x1="362" y1="60" x2="362" y2="78" stroke="#f0d080" stroke-width="1.2"/>
     <line x1="118" y1="78" x2="362" y2="78" stroke="#f0d080" stroke-width="1.2"/>
-    <text x="370" y="82" fill="#f0d080" font-size="10">clk</text>
+    <text x="370" y="82" fill="#f0d080" font-size="16">clk</text>
   </g>
 </svg>
 `;
@@ -363,7 +363,7 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
 - **ג.** היציאה עולה ל-\`1\` אחרי **ארבעה** מחזורי שעון (לא 3) — איזה תנאי **לא** התקיים?`,
     schematic: `
 <svg viewBox="0 0 660 240" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="3 D-FF chain with shared clock">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="3 D-FF chain with shared clock">
   <defs>
     <linearGradient id="tdBody" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
@@ -375,9 +375,9 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
   <!-- 3 D-FFs -->
   ${[1, 2, 3].map(i => `
     <rect x="${100 + (i - 1) * 160}" y="60" width="110" height="100" rx="8" fill="url(#tdBody)" stroke="#80d4ff" stroke-width="1.8"/>
-    <text direction="ltr" x="${155 + (i - 1) * 160}" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">DFF${i}</text>
-    <text direction="ltr" x="${155 + (i - 1) * 160}" y="120" text-anchor="middle" fill="#a0c0e0" font-size="10">D    Q</text>
-    <text direction="ltr" x="${155 + (i - 1) * 160}" y="148" text-anchor="middle" fill="#80d4ff" font-size="10">↑ clk</text>
+    <text direction="ltr" x="${155 + (i - 1) * 160}" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">DFF${i}</text>
+    <text direction="ltr" x="${155 + (i - 1) * 160}" y="120" text-anchor="middle" fill="#a0c0e0" font-size="16">D    Q</text>
+    <text direction="ltr" x="${155 + (i - 1) * 160}" y="148" text-anchor="middle" fill="#80d4ff" font-size="16">↑ clk</text>
   `).join('')}
 
   <!-- Input arrow -->
@@ -387,12 +387,12 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
 
   <!-- Q1 → DFF2.D -->
   <line x1="210" y1="112" x2="260" y2="112" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="235" y="106" text-anchor="middle" fill="#80d4ff" font-size="10">Q1</text>
+  <text direction="ltr" x="235" y="106" text-anchor="middle" fill="#80d4ff" font-size="16">Q1</text>
   <polygon points="260,112 254,108 254,116" fill="#80d4ff"/>
 
   <!-- Q2 → DFF3.D -->
   <line x1="370" y1="112" x2="420" y2="112" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="395" y="106" text-anchor="middle" fill="#80d4ff" font-size="10">Q2</text>
+  <text direction="ltr" x="395" y="106" text-anchor="middle" fill="#80d4ff" font-size="16">Q2</text>
   <polygon points="420,112 414,108 414,116" fill="#80d4ff"/>
 
   <!-- Q3 → out -->
@@ -428,15 +428,15 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
 זה השימוש הקלאסי של shift register כ-**delay line**.`,
         answerSchematic: `
 <svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="3-DFF chain timing diagram showing 3-cycle delay">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="3-DFF chain timing diagram showing 3-cycle delay">
   <!-- Title -->
   <rect x="0" y="0" width="720" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="360" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="14">
+  <text direction="ltr" x="360" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     3-DFF chain: each clock advances the signal one stage → 3-cycle delay
   </text>
 
   <!-- t=0 marker -->
-  <text direction="ltr" x="106" y="64" fill="#f0d080" font-size="10" font-weight="bold">t=0</text>
+  <text direction="ltr" x="106" y="64" fill="#f0d080" font-size="16" font-weight="bold">t=0</text>
   <line x1="120" y1="68" x2="120" y2="360" stroke="#806040" stroke-width="0.6" stroke-dasharray="2 3"/>
   <polygon points="120,74 116,66 124,66" fill="#f0d080"/>
 
@@ -445,8 +445,8 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
     const x = 180 + i * 100;
     return `
       <line x1="${x}" y1="86" x2="${x}" y2="360" stroke="#806040" stroke-width="0.5" stroke-dasharray="2 4"/>
-      <text direction="ltr" x="${x}" y="80" text-anchor="middle" fill="#ff8060" font-size="11" font-weight="bold">${n}</text>
-      <text direction="ltr" x="${x}" y="68" text-anchor="middle" fill="#ff8060" font-size="10">↑</text>
+      <text direction="ltr" x="${x}" y="80" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">${n}</text>
+      <text direction="ltr" x="${x}" y="68" text-anchor="middle" fill="#ff8060" font-size="16">↑</text>
     `;
   }).join('')}
 
@@ -459,25 +459,25 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
   <text direction="ltr" x="60" y="180" text-anchor="end" fill="#c8d8f0" font-weight="bold">input</text>
   <path d="M 120 190 v -22 h 530"
         stroke="#80b0e0" stroke-width="1.8" fill="none"/>
-  <text direction="ltr" x="680" y="174" text-anchor="middle" fill="#80b0e0" font-size="10" font-style="italic">high from t=0</text>
+  <text direction="ltr" x="680" y="174" text-anchor="middle" fill="#80b0e0" font-size="16" font-style="italic">high from t=0</text>
 
   <!-- Q1 waveform: rises after clk 1 (x=180) -->
   <text direction="ltr" x="60" y="230" text-anchor="end" fill="#c8d8f0" font-weight="bold">Q1</text>
   <path d="M 120 240 h 60 v -22 h 470"
         stroke="#80f0a0" stroke-width="1.8" fill="none"/>
-  <text direction="ltr" x="680" y="224" text-anchor="middle" fill="#80f0a0" font-size="10" font-style="italic">↑ at clk 1</text>
+  <text direction="ltr" x="680" y="224" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">↑ at clk 1</text>
 
   <!-- Q2 waveform: rises after clk 2 (x=280) -->
   <text direction="ltr" x="60" y="280" text-anchor="end" fill="#c8d8f0" font-weight="bold">Q2</text>
   <path d="M 120 290 h 160 v -22 h 370"
         stroke="#80f0a0" stroke-width="1.8" fill="none"/>
-  <text direction="ltr" x="680" y="274" text-anchor="middle" fill="#80f0a0" font-size="10" font-style="italic">↑ at clk 2</text>
+  <text direction="ltr" x="680" y="274" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">↑ at clk 2</text>
 
   <!-- Q3=out waveform: rises after clk 3 (x=380) -->
   <text direction="ltr" x="60" y="330" text-anchor="end" fill="#ffd060" font-weight="bold">Q3=out</text>
   <path d="M 120 340 h 260 v -22 h 270"
         stroke="#ffd060" stroke-width="2.2" fill="none"/>
-  <text direction="ltr" x="680" y="324" text-anchor="middle" fill="#ffd060" font-size="10" font-style="italic">↑ at clk 3</text>
+  <text direction="ltr" x="680" y="324" text-anchor="middle" fill="#ffd060" font-size="16" font-style="italic">↑ at clk 3</text>
 </svg>`,
         expectedAnswers: [
           '3', 'three', 'שלושה',
@@ -652,9 +652,9 @@ Setup violations נגרמות מ:
   {
     id: 'interview-2bit-adder-identification',
     difficulty: 'hard',
-    title: 'שאלת ראיון — זיהוי רכיב מתוך מימוש שערים',
+    title: 'זיהוי רכיב מתוך מימוש שערים — מחבר 2-ביט',
     intro:
-`**שאלה אמיתית מראיון.** ניתן לפניך מימוש gate-level של מעגל קומבינטורי:
+`ניתן לפניך מימוש gate-level של מעגל קומבינטורי:
 
 - **4 כניסות**: \`A0, A1, B0, B1\`
 - **3 יציאות**: \`S0, S1, S2\`
@@ -663,12 +663,12 @@ Setup violations נגרמות מ:
 ה-XORs / ANDs / OR מחוברים ביניהם כפי שמופיע בשרטוט. אין שום תיוג ברמה גבוהה — רק שערים וחוטים.`,
     schematic: `
 <svg viewBox="0 0 1120 740" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Gate-level netlist of seven gates wired together with clear input fan-outs.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Gate-level netlist of seven gates wired together with clear input fan-outs.">
 
   <text x="560" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     מעגל קומבינטורי — 4 כניסות, 3 יציאות, 7 שערים
   </text>
-  <text x="560" y="62" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="560" y="62" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     מה הרכיב המיוצג?
   </text>
 
@@ -720,7 +720,7 @@ Setup violations נגרמות מ:
   <g>
     <path d="M 220 162 Q 245 190, 220 218 L 250 218 Q 290 218, 310 190 Q 290 162, 250 162 Z" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
     <text x="268" y="196" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">⊕</text>
-    <text x="265" y="148" text-anchor="middle" fill="#a0c0d0" font-size="14" font-weight="bold">XOR1</text>
+    <text x="265" y="148" text-anchor="middle" fill="#a0c0d0" font-size="18" font-weight="bold">XOR1</text>
   </g>
   <!-- XOR1 output → S0 (long horizontal to right edge) -->
   <line x1="310" y1="190" x2="1040" y2="190" stroke="#ff9933" stroke-width="2.2"/>
@@ -731,13 +731,13 @@ Setup violations נגרמות מ:
        ================================================= -->
   <g>
     <path d="M 220 240 L 250 240 A 30 30 0 0 1 250 300 L 220 300 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="246" y="276" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND1</text>
+    <text x="246" y="276" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND1</text>
   </g>
 
   <!-- C1 trunk: AND1.out (300, 270) → right to (480, 270),
        then down to (480, 510) splitting into XOR3.in1 and AND3.in1 -->
   <line x1="300" y1="270" x2="480" y2="270" stroke="#cc66ff" stroke-width="2.4"/>
-  <text x="385" y="260" text-anchor="middle" fill="#cc99ff" font-size="14" font-style="italic" font-weight="bold">net C1</text>
+  <text x="385" y="260" text-anchor="middle" fill="#cc99ff" font-size="18" font-style="italic" font-weight="bold">net C1</text>
   <line x1="480" y1="270" x2="480" y2="510" stroke="#cc66ff" stroke-width="2.4"/>
   <!-- T-junction at 480/420 → XOR3.in1 -->
   <circle cx="480" cy="420" r="5" fill="#cc66ff"/>
@@ -780,13 +780,13 @@ Setup violations נגרמות מ:
   <g>
     <path d="M 220 372 Q 245 400, 220 428 L 250 428 Q 290 428, 310 400 Q 290 372, 250 372 Z" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
     <text x="268" y="406" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">⊕</text>
-    <text x="265" y="358" text-anchor="middle" fill="#a0c0d0" font-size="14" font-weight="bold">XOR2</text>
+    <text x="265" y="358" text-anchor="middle" fill="#a0c0d0" font-size="18" font-weight="bold">XOR2</text>
   </g>
 
   <!-- P trunk: XOR2.out (310, 400) → right to (400, 400),
        then up to XOR3.in0 (440, 390) and down to AND3.in0 (440, 490) -->
   <line x1="310" y1="400" x2="400" y2="400" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="355" y="390" text-anchor="middle" fill="#ffc080" font-size="14" font-style="italic" font-weight="bold">net P</text>
+  <text x="355" y="390" text-anchor="middle" fill="#ffc080" font-size="18" font-style="italic" font-weight="bold">net P</text>
   <circle cx="400" cy="400" r="5" fill="#ff9933"/>
   <!-- Up to XOR3.in0 (440, 390) -->
   <line x1="400" y1="400" x2="400" y2="390" stroke="#ff9933" stroke-width="2.4"/>
@@ -800,12 +800,12 @@ Setup violations נגרמות מ:
        ================================================= -->
   <g>
     <path d="M 220 552 L 250 552 A 30 30 0 0 1 250 612 L 220 612 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="246" y="588" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND2</text>
+    <text x="246" y="588" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND2</text>
   </g>
 
   <!-- G trunk: AND2.out (300, 580) → right all the way to OR1.in0 (760, 580 → up to 555) -->
   <line x1="300" y1="580" x2="730" y2="580" stroke="#80c8ff" stroke-width="2.4"/>
-  <text x="500" y="570" text-anchor="middle" fill="#80c8ff" font-size="14" font-style="italic" font-weight="bold">net G</text>
+  <text x="500" y="570" text-anchor="middle" fill="#80c8ff" font-size="18" font-style="italic" font-weight="bold">net G</text>
   <line x1="730" y1="580" x2="730" y2="555" stroke="#80c8ff" stroke-width="2.4"/>
   <line x1="730" y1="555" x2="760" y2="555" stroke="#80c8ff" stroke-width="2.4"/>
 
@@ -816,7 +816,7 @@ Setup violations נגרמות מ:
   <g>
     <path d="M 540 377 Q 565 405, 540 433 L 570 433 Q 610 433, 630 405 Q 610 377, 570 377 Z" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
     <text x="588" y="411" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">⊕</text>
-    <text x="585" y="363" text-anchor="middle" fill="#a0c0d0" font-size="14" font-weight="bold">XOR3</text>
+    <text x="585" y="363" text-anchor="middle" fill="#a0c0d0" font-size="18" font-weight="bold">XOR3</text>
   </g>
   <!-- XOR3 output → S1 -->
   <line x1="630" y1="405" x2="1040" y2="405" stroke="#ff9933" stroke-width="2.2"/>
@@ -827,7 +827,7 @@ Setup violations נגרמות מ:
        ================================================= -->
   <g>
     <path d="M 540 465 L 570 465 A 30 30 0 0 1 570 525 L 540 525 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="566" y="501" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND3</text>
+    <text x="566" y="501" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND3</text>
   </g>
 
   <!-- AND3 out → OR1.in1: (620, 495) → right to (740, 495) → down to (740, 595) → right to OR1.in1 (760, 595) -->
@@ -843,8 +843,8 @@ Setup violations נגרמות מ:
   <g>
     <path d="M 760 540 L 790 540 Q 840 540, 855 575 Q 840 610, 790 610 L 760 610 Q 785 575, 760 540 Z"
           fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
-    <text x="800" y="582" text-anchor="middle" fill="#ffc080" font-size="22" font-weight="bold">≥1</text>
-    <text x="800" y="525" text-anchor="middle" fill="#a0c0d0" font-size="14" font-weight="bold">OR1</text>
+    <text x="800" y="582" text-anchor="middle" fill="#ffc080" font-size="24" font-weight="bold">≥1</text>
+    <text x="800" y="525" text-anchor="middle" fill="#a0c0d0" font-size="18" font-weight="bold">OR1</text>
   </g>
   <!-- OR1 output → S2 -->
   <line x1="855" y1="575" x2="1040" y2="575" stroke="#ff9933" stroke-width="2.2"/>
@@ -862,10 +862,10 @@ Setup violations נגרמות מ:
   </g>
 
   <!-- Legend at the bottom -->
-  <text x="560" y="700" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="560" y="700" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     7 שערים: 3 × XOR (⊕) · 3 × AND · 1 × OR (≥1)
   </text>
-  <text x="560" y="722" text-anchor="middle" fill="#80c8ff" font-size="13">
+  <text x="560" y="722" text-anchor="middle" fill="#80c8ff" font-size="18">
     net C1 ≡ AND1.out   ·   net P ≡ XOR2.out   ·   net G ≡ AND2.out
   </text>
 </svg>`,
@@ -1102,7 +1102,7 @@ Setup violations נגרמות מ:
         question: '**הסבר מה זה setup-time ומה זה hold-time** של flip-flop. מה הם מבטיחים, ומה קורה אם מפרים אותם? מה הקשר של הזמנים האלה לתכנון הקריטיקל-פאת\' של המעגל הקודם (המחבר ה-2-ביט)?',
         answerSchematic: `
 <svg viewBox="0 0 1100 720" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Timing diagram showing setup and hold windows around a clock edge.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Timing diagram showing setup and hold windows around a clock edge.">
 
   <defs>
     <linearGradient id="suFill" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1120,7 +1120,7 @@ Setup violations נגרמות מ:
   </defs>
 
   <!-- ============ HEADER ============ -->
-  <text x="550" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="550" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Setup / Hold — חלון "do not change" סביב קצה ה-clock
   </text>
 
@@ -1131,71 +1131,71 @@ Setup violations נגרמות מ:
 
   <!-- ============ CLOCK EDGE INDICATOR ============ -->
   <line x1="560" y1="80" x2="560" y2="460" stroke="#ff6080" stroke-width="2.4" stroke-dasharray="4,4" opacity="0.85"/>
-  <text x="560" y="74" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">↑ rising edge</text>
+  <text x="560" y="74" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">↑ rising edge</text>
 
   <!-- ============ CLK waveform ============ -->
-  <text x="50" y="158" fill="#cca040" font-size="22" font-weight="bold">CLK</text>
+  <text x="50" y="158" fill="#cca040" font-size="24" font-weight="bold">CLK</text>
   <path d="M 130 175 L 260 175 L 260 130 L 390 130 L 390 175 L 560 175 L 560 130 L 720 130 L 720 175 L 880 175 L 880 130 L 1010 130 L 1010 175 L 1060 175"
         fill="none" stroke="#cca040" stroke-width="2.8" stroke-linejoin="miter"/>
 
   <!-- ============ D waveform ============ -->
-  <text x="50" y="280" fill="#80f0a0" font-size="22" font-weight="bold">D</text>
+  <text x="50" y="280" fill="#80f0a0" font-size="24" font-weight="bold">D</text>
   <!-- D path: LOW → HIGH (OK transition at x=210, far from edge) → LOW (FAIL at x=600, inside hold band) → HIGH (stable) -->
   <path d="M 130 300 L 210 300 L 210 260 L 600 260 L 600 300 L 1060 300"
         fill="none" stroke="#80f0a0" stroke-width="2.8" stroke-linejoin="miter"/>
 
   <!-- OK transition pill (above D, well outside the band) -->
   <rect x="180" y="216" width="180" height="30" rx="6" fill="rgba(128,240,160,0.15)" stroke="#80f0a0" stroke-width="1.4"/>
-  <text x="270" y="237" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">OK — רחוק מ-edge ✓</text>
+  <text x="270" y="237" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">OK — רחוק מ-edge ✓</text>
 
   <!-- FAIL transition pill (above D, inside hold band) -->
   <rect x="640" y="216" width="220" height="30" rx="6" fill="rgba(255,96,96,0.15)" stroke="#ff6060" stroke-width="1.6"/>
-  <text x="750" y="237" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">FAIL — בתוך חלון hold ✗</text>
+  <text x="750" y="237" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">FAIL — בתוך חלון hold ✗</text>
 
   <!-- Arrow from FAIL pill to the offending transition at x=600 -->
   <path d="M 640 234 Q 615 240, 605 256" stroke="#ff8080" stroke-width="1.6" fill="none" opacity="0.75"/>
 
   <!-- ============ Window labels (large, at the bottom of bands) ============ -->
-  <text x="500" y="395" text-anchor="middle" fill="#cc99ff" font-size="19" font-weight="bold">setup</text>
-  <text x="500" y="420" text-anchor="middle" fill="#cca0ff" font-size="22" font-weight="bold">t_su</text>
+  <text x="500" y="395" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">setup</text>
+  <text x="500" y="420" text-anchor="middle" fill="#cca0ff" font-size="24" font-weight="bold">t_su</text>
 
-  <text x="600" y="395" text-anchor="middle" fill="#ff9050" font-size="19" font-weight="bold">hold</text>
-  <text x="600" y="420" text-anchor="middle" fill="#ffb070" font-size="22" font-weight="bold">t_h</text>
+  <text x="600" y="395" text-anchor="middle" fill="#ff9050" font-size="20" font-weight="bold">hold</text>
+  <text x="600" y="420" text-anchor="middle" fill="#ffb070" font-size="24" font-weight="bold">t_h</text>
 
   <!-- "do not change" banner under both bands -->
   <line x1="440" y1="475" x2="640" y2="475" stroke="#ffe080" stroke-width="3"/>
   <line x1="440" y1="468" x2="440" y2="482" stroke="#ffe080" stroke-width="3"/>
   <line x1="640" y1="468" x2="640" y2="482" stroke="#ffe080" stroke-width="3"/>
-  <text x="540" y="505" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">"do not change"</text>
+  <text x="540" y="505" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">"do not change"</text>
 
   <!-- ============ BOTTOM INFO CARDS (two side-by-side) ============ -->
   <!-- Setup violation card -->
   <rect x="40" y="540" width="510" height="160" rx="10"
         fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="295" y="572" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="18">
+  <text x="295" y="572" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">
     הפרת SETUP
   </text>
-  <text x="60" y="606" fill="#c8b090" font-size="15">→ D מתחלף קרוב מדי <tspan font-weight="bold" fill="#cc99ff">לפני</tspan> ה-edge</text>
-  <text x="60" y="632" fill="#c8b090" font-size="15">→ FF נכנס ל-<tspan fill="#ff8080" font-weight="bold">metastable</tspan> או לוכד ערך שגוי</text>
-  <text x="60" y="668" fill="#80f0a0" font-size="15" font-weight="bold">
+  <text x="60" y="606" fill="#c8b090" font-size="18">→ D מתחלף קרוב מדי <tspan font-weight="bold" fill="#cc99ff">לפני</tspan> ה-edge</text>
+  <text x="60" y="632" fill="#c8b090" font-size="18">→ FF נכנס ל-<tspan fill="#ff8080" font-weight="bold">metastable</tspan> או לוכד ערך שגוי</text>
+  <text x="60" y="668" fill="#80f0a0" font-size="18" font-weight="bold">
     T_clk ≥ t_clk-q + T_path + t_su
   </text>
-  <text x="60" y="688" fill="#a0a0c0" font-size="13" font-style="italic">
+  <text x="60" y="688" fill="#a0a0c0" font-size="18" font-style="italic">
     (קובע את ה-Fmax)
   </text>
 
   <!-- Hold violation card -->
   <rect x="570" y="540" width="490" height="160" rx="10"
         fill="rgba(255,144,80,0.06)" stroke="#ff9050" stroke-width="1.8"/>
-  <text x="815" y="572" text-anchor="middle" fill="#ff9050" font-weight="bold" font-size="18">
+  <text x="815" y="572" text-anchor="middle" fill="#ff9050" font-weight="bold" font-size="20">
     הפרת HOLD
   </text>
-  <text x="590" y="606" fill="#c8b090" font-size="15">→ D מתחלף קרוב מדי <tspan font-weight="bold" fill="#ff9050">אחרי</tspan> ה-edge</text>
-  <text x="590" y="632" fill="#c8b090" font-size="15">→ <tspan fill="#ff8080" font-weight="bold">race</tspan>: ערך חדש דחף את הישן לפני הלכידה</text>
-  <text x="590" y="668" fill="#80f0a0" font-size="15" font-weight="bold">
+  <text x="590" y="606" fill="#c8b090" font-size="18">→ D מתחלף קרוב מדי <tspan font-weight="bold" fill="#ff9050">אחרי</tspan> ה-edge</text>
+  <text x="590" y="632" fill="#c8b090" font-size="18">→ <tspan fill="#ff8080" font-weight="bold">race</tspan>: ערך חדש דחף את הישן לפני הלכידה</text>
+  <text x="590" y="668" fill="#80f0a0" font-size="18" font-weight="bold">
     T_path ≥ t_h − t_clk-q
   </text>
-  <text x="590" y="688" fill="#a0a0c0" font-size="13" font-style="italic">
+  <text x="590" y="688" fill="#a0a0c0" font-size="18" font-style="italic">
     (לא תלוי ב-T_clk — הוספת buffers מסייעת)
   </text>
 </svg>`,
@@ -1411,28 +1411,28 @@ T_shortest ≥ t_h − t_clk-q
         ],
         answerSchematic: `
 <svg viewBox="0 0 1140 1520" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Circuit with the two critical paths coloured (SETUP red, HOLD green) at the top; Gantt-style chart of all 6 unique paths at the bottom.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Circuit with the two critical paths coloured (SETUP red, HOLD green) at the top; Gantt-style chart of all 6 unique paths at the bottom.">
 
   <!-- ═══════════════════════════════════════════════════════════
        SECTION 1 — Circuit diagram with the two critical paths
                    colored on the actual gates (top half).
        ═══════════════════════════════════════════════════════════ -->
 
-  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     המעגל עם שני המסלולים הקריטיים
   </text>
 
   <!-- Legend pills (centered) -->
   <rect x="160" y="68" width="370" height="34" rx="8" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.8"/>
   <circle cx="186" cy="85" r="8" fill="#ff6060"/>
-  <text x="206" y="91" fill="#ff8080" font-size="15" font-weight="bold">SETUP critical — נתיב הארוך ביותר</text>
+  <text x="206" y="91" fill="#ff8080" font-size="18" font-weight="bold">SETUP critical — נתיב הארוך ביותר</text>
 
   <rect x="610" y="68" width="370" height="34" rx="8" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.8"/>
   <circle cx="636" cy="85" r="8" fill="#80f0a0"/>
-  <text x="656" y="91" fill="#80f0a0" font-size="15" font-weight="bold">HOLD critical — נתיב הקצר ביותר</text>
+  <text x="656" y="91" fill="#80f0a0" font-size="18" font-weight="bold">HOLD critical — נתיב הקצר ביותר</text>
 
   <!-- ════════ INPUTS (left) ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="60" cy="170" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="60" y="176" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="60" cy="230" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -1500,54 +1500,54 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 280 145 Q 305 170, 280 195 L 310 195 Q 335 195, 350 170 Q 335 145, 310 145 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-    <text x="318" y="166" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR1</text>
-    <text x="318" y="182" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="318" y="166" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
+    <text x="318" y="182" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <!-- AND1 -->
   <g>
     <path d="M 280 205 L 310 205 A 25 25 0 0 1 310 255 L 280 255 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="226" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND1</text>
-    <text x="298" y="242" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="298" y="226" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND1</text>
+    <text x="298" y="242" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
   <!-- XOR2 (SETUP path goes through this) -->
   <g>
     <path d="M 280 355 Q 305 380, 280 405 L 310 405 Q 335 405, 350 380 Q 335 355, 310 355 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-    <text x="318" y="376" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR2</text>
-    <text x="318" y="392" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="318" y="376" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR2</text>
+    <text x="318" y="392" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <!-- AND2 -->
   <g>
     <path d="M 280 415 L 310 415 A 25 25 0 0 1 310 465 L 280 465 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="436" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND2</text>
-    <text x="298" y="452" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="298" y="436" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND2</text>
+    <text x="298" y="452" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
   <!-- XOR3 -->
   <g>
     <path d="M 530 275 Q 555 300, 530 325 L 560 325 Q 585 325, 600 300 Q 585 275, 560 275 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-    <text x="568" y="296" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR3</text>
-    <text x="568" y="312" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="568" y="296" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR3</text>
+    <text x="568" y="312" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <!-- AND3 (SETUP path goes through this) -->
   <g>
     <path d="M 530 395 L 560 395 A 25 25 0 0 1 560 445 L 530 445 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="548" y="416" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND3</text>
-    <text x="548" y="432" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="548" y="416" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND3</text>
+    <text x="548" y="432" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
   <!-- OR1 (SETUP path goes through this) -->
   <g>
     <path d="M 740 415 L 770 415 Q 810 415, 820 440 Q 810 465, 770 465 L 740 465 Q 760 440, 740 415 Z"
           fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
-    <text x="780" y="436" text-anchor="middle" fill="#ffc080" font-size="13" font-weight="bold">OR1</text>
-    <text x="780" y="452" text-anchor="middle" fill="#a0c0d0" font-size="11">100 ps</text>
+    <text x="780" y="436" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">OR1</text>
+    <text x="780" y="452" text-anchor="middle" fill="#a0c0d0" font-size="16">100 ps</text>
   </g>
 
   <!-- ════════ OUTPUTS (right) ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="900" cy="170" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.8"/>
     <text x="900" y="176" text-anchor="middle" fill="#80f0a0">S0</text>
     <circle cx="900" cy="300" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
@@ -1559,19 +1559,19 @@ T_shortest ≥ t_h − t_clk-q
   <!-- ════════ Path-end badges ════════ -->
   <!-- HOLD badge near S0 -->
   <rect x="950" y="140" width="170" height="60" rx="8" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="1035" y="163" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="15">HOLD critical</text>
+  <text x="1035" y="163" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">HOLD critical</text>
   <text x="1035" y="186" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">150 ps</text>
 
   <!-- SETUP badge near S2 -->
   <rect x="950" y="410" width="170" height="60" rx="8" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.8"/>
-  <text x="1035" y="433" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="15">SETUP critical</text>
+  <text x="1035" y="433" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">SETUP critical</text>
   <text x="1035" y="456" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">370 ps</text>
 
   <!-- ════════ Path-description labels ════════ -->
-  <text x="570" y="525" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">
+  <text x="570" y="525" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">
     SETUP:  A1/B1 → XOR2 → AND3 → OR1 → S2  =  150 + 120 + 100 ps
   </text>
-  <text x="570" y="548" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">
+  <text x="570" y="548" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">
     HOLD:   A0/B0 → XOR1 → S0  =  150 ps
   </text>
 
@@ -1584,28 +1584,28 @@ T_shortest ≥ t_h − t_clk-q
        ═══════════════════════════════════════════════════════════ -->
   <g transform="translate(0, 600)">
 
-  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     כל 6 המסלולים הייחודיים — Gantt of gate delays
   </text>
-  <text x="570" y="72" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="570" y="72" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     AND 120 ps · OR 100 ps · XOR 150 ps    ·    Scale: 1 ps = 1.5 px
   </text>
 
   <!-- =========== LEGEND (color key) =========== -->
   <g transform="translate(60, 100)">
     <rect x="0" y="0" width="30" height="22" rx="3" fill="rgba(128,200,255,0.4)" stroke="#80c8ff" stroke-width="1.4"/>
-    <text x="40" y="16" fill="#80c8ff" font-size="14" font-weight="bold">AND (120 ps)</text>
+    <text x="40" y="16" fill="#80c8ff" font-size="18" font-weight="bold">AND (120 ps)</text>
     <rect x="200" y="0" width="30" height="22" rx="3" fill="rgba(128,240,160,0.4)" stroke="#80f0a0" stroke-width="1.4"/>
-    <text x="240" y="16" fill="#80f0a0" font-size="14" font-weight="bold">XOR (150 ps)</text>
+    <text x="240" y="16" fill="#80f0a0" font-size="18" font-weight="bold">XOR (150 ps)</text>
     <rect x="400" y="0" width="30" height="22" rx="3" fill="rgba(255,192,128,0.45)" stroke="#ffc080" stroke-width="1.4"/>
-    <text x="440" y="16" fill="#ffc080" font-size="14" font-weight="bold">OR (100 ps)</text>
+    <text x="440" y="16" fill="#ffc080" font-size="18" font-weight="bold">OR (100 ps)</text>
   </g>
 
   <!-- =========== Column headers =========== -->
-  <text x="60" y="172"  fill="#a0a0c0" font-size="13" font-weight="bold">קלטים</text>
-  <text x="190" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">יעד</text>
-  <text x="280" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">שערים בנתיב (רוחב = delay)</text>
-  <text x="940" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">סה"כ</text>
+  <text x="60" y="172"  fill="#a0a0c0" font-size="18" font-weight="bold">קלטים</text>
+  <text x="190" y="172" fill="#a0a0c0" font-size="18" font-weight="bold">יעד</text>
+  <text x="280" y="172" fill="#a0a0c0" font-size="18" font-weight="bold">שערים בנתיב (רוחב = delay)</text>
+  <text x="940" y="172" fill="#a0a0c0" font-size="18" font-weight="bold">סה"כ</text>
   <line x1="50" y1="180" x2="1100" y2="180" stroke="#3a4a5a" stroke-width="1.2"/>
 
   <!-- =========== Path bars (sorted ascending by delay) =========== -->
@@ -1634,8 +1634,8 @@ T_shortest ≥ t_h − t_clk-q
         const w = ms * PX_PER_PS;
         const col = C[kind];
         const seg = `<rect x="${cursorX}" y="${barY}" width="${w}" height="${BAR_H}" rx="4" fill="${col.fill}" stroke="${col.stroke}" stroke-width="1.8"/>
-          <text x="${cursorX + w / 2}" y="${barY + 20}" text-anchor="middle" fill="${col.txt}" font-size="14" font-weight="bold">${name}</text>
-          <text x="${cursorX + w / 2}" y="${barY + 36}" text-anchor="middle" fill="${col.txt}" font-size="12">${ms} ps</text>`;
+          <text x="${cursorX + w / 2}" y="${barY + 20}" text-anchor="middle" fill="${col.txt}" font-size="18" font-weight="bold">${name}</text>
+          <text x="${cursorX + w / 2}" y="${barY + 36}" text-anchor="middle" fill="${col.txt}" font-size="16">${ms} ps</text>`;
         cursorX += w + 3;
         return seg;
       }).join('');
@@ -1643,14 +1643,14 @@ T_shortest ≥ t_h − t_clk-q
       let badge = '';
       if (p.tag === 'shortest') {
         badge = `<rect x="990" y="${barY + 5}" width="110" height="32" rx="6" fill="rgba(128,240,160,0.18)" stroke="#80f0a0" stroke-width="1.6"/>
-                 <text x="1045" y="${barY + 26}" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">✓ shortest</text>`;
+                 <text x="1045" y="${barY + 26}" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">✓ shortest</text>`;
       } else if (p.tag === 'critical') {
         badge = `<rect x="990" y="${barY + 5}" width="110" height="32" rx="6" fill="rgba(255,96,96,0.18)" stroke="#ff6060" stroke-width="1.6"/>
-                 <text x="1045" y="${barY + 26}" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="14">✗ critical</text>`;
+                 <text x="1045" y="${barY + 26}" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">✗ critical</text>`;
       }
       const totalColor = p.tag === 'shortest' ? '#80f0a0' : (p.tag === 'critical' ? '#ff8080' : '#ffc890');
-      return `<text x="60" y="${barY + 26}" fill="#cca040" font-size="15" font-weight="bold">${p.src}</text>
-        <text x="190" y="${barY + 26}" fill="#ff9933" font-size="17" font-weight="bold">→ ${p.dst}</text>
+      return `<text x="60" y="${barY + 26}" fill="#cca040" font-size="18" font-weight="bold">${p.src}</text>
+        <text x="190" y="${barY + 26}" fill="#ff9933" font-size="20" font-weight="bold">→ ${p.dst}</text>
         ${segs}
         <text x="935" y="${barY + 26}" text-anchor="end" fill="${totalColor}" font-size="20" font-weight="bold">${p.total} ps</text>
         ${badge}`;
@@ -1659,23 +1659,23 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- =========== SUMMARY box =========== -->
   <rect x="40" y="610" width="1060" height="280" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="570" y="654" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+  <text x="570" y="654" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="24">
     סיכום timing
   </text>
 
   <!-- Setup card -->
   <rect x="70" y="686" width="490" height="180" rx="8" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.5)" stroke-width="1.6"/>
-  <text x="315" y="718" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="21">Critical path (setup)</text>
-  <text x="90" y="754" fill="#c8b090" font-size="18">A1/B1 → XOR2 → AND3 → OR1 → S2 = <tspan fill="#ff8080" font-weight="bold">370 ps</tspan></text>
-  <text x="90" y="788" fill="#80f0a0" font-size="18" font-weight="bold">T_clk ≥ t_clk-q + 370 + t_su</text>
-  <text x="90" y="822" fill="#a0a0c0" font-size="16" font-style="italic">→ ~450 ps → Fmax ≈ 2.22 GHz</text>
+  <text x="315" y="718" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="24">Critical path (setup)</text>
+  <text x="90" y="754" fill="#c8b090" font-size="20">A1/B1 → XOR2 → AND3 → OR1 → S2 = <tspan fill="#ff8080" font-weight="bold">370 ps</tspan></text>
+  <text x="90" y="788" fill="#80f0a0" font-size="20" font-weight="bold">T_clk ≥ t_clk-q + 370 + t_su</text>
+  <text x="90" y="822" fill="#a0a0c0" font-size="18" font-style="italic">→ ~450 ps → Fmax ≈ 2.22 GHz</text>
 
   <!-- Hold card -->
   <rect x="580" y="686" width="490" height="180" rx="8" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.5)" stroke-width="1.6"/>
-  <text x="825" y="718" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="21">Shortest path (hold)</text>
-  <text x="600" y="754" fill="#c8b090" font-size="18">A0/B0 → XOR1 → S0 = <tspan fill="#80f0a0" font-weight="bold">150 ps</tspan></text>
-  <text x="600" y="788" fill="#80f0a0" font-size="18" font-weight="bold">T_shortest ≥ t_h − t_clk-q</text>
-  <text x="600" y="822" fill="#a0a0c0" font-size="16" font-style="italic">→ 150 ≥ 10 ps ✓ (בטוח מאוד)</text>
+  <text x="825" y="718" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">Shortest path (hold)</text>
+  <text x="600" y="754" fill="#c8b090" font-size="20">A0/B0 → XOR1 → S0 = <tspan fill="#80f0a0" font-weight="bold">150 ps</tspan></text>
+  <text x="600" y="788" fill="#80f0a0" font-size="20" font-weight="bold">T_shortest ≥ t_h − t_clk-q</text>
+  <text x="600" y="822" fill="#a0a0c0" font-size="18" font-style="italic">→ 150 ≥ 10 ps ✓ (בטוח מאוד)</text>
 
   </g><!-- end translate(0, 600) wrapper -->
 </svg>`,
@@ -1784,7 +1784,7 @@ T_shortest ≥ t_h − t_clk-q
 **שאלת המשך מובטחת**: "מה הבעיה החדשה שיצרת?" → ראה סעיף ה.`,
         answerSchematic: `
 <svg viewBox="0 0 1140 660" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Minimal pipelining: a single FF_P on the critical wire between XOR2 and AND3.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Minimal pipelining: a single FF_P on the critical wire between XOR2 and AND3.">
 
   <defs>
     <linearGradient id="pipeBand" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1795,24 +1795,24 @@ T_shortest ≥ t_h − t_clk-q
     </linearGradient>
   </defs>
 
-  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     פתרון מינימלי — FF יחיד על המסלול הקריטי
   </text>
 
   <!-- ════════ Pipeline band (purple, full-height background) ════════ -->
   <rect x="460" y="110" width="140" height="430" rx="10"
         fill="url(#pipeBand)" stroke="#cc66ff" stroke-width="1.8" stroke-dasharray="6,4"/>
-  <text x="530" y="100" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">PIPELINE FF</text>
+  <text x="530" y="100" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">PIPELINE FF</text>
 
   <!-- ════════ Stage headers ════════ -->
   <rect x="50"  y="80" width="410" height="32" rx="6" fill="rgba(128,200,255,0.10)" stroke="#80c8ff" stroke-width="1.4"/>
-  <text x="255" y="102" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">STAGE 1 (XOR2 בלבד, ≤ 150 ps)</text>
+  <text x="255" y="102" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">STAGE 1 (XOR2 בלבד, ≤ 150 ps)</text>
 
   <rect x="600" y="80" width="500" height="32" rx="6" fill="rgba(255,144,80,0.10)" stroke="#ff9050" stroke-width="1.4"/>
-  <text x="850" y="102" text-anchor="middle" fill="#ff9050" font-size="16" font-weight="bold">STAGE 2 (AND3 → OR1, ≤ 220 ps)</text>
+  <text x="850" y="102" text-anchor="middle" fill="#ff9050" font-size="18" font-weight="bold">STAGE 2 (AND3 → OR1, ≤ 220 ps)</text>
 
   <!-- ════════ Inputs (left) ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="70" cy="160" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="70" y="166" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="70" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -1876,57 +1876,57 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 280 185 Q 305 210, 280 235 L 310 235 Q 335 235, 350 210 Q 335 185, 310 185 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="318" y="207" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR1</text>
-    <text x="318" y="223" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="318" y="207" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
+    <text x="318" y="223" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 280 245 L 310 245 A 25 25 0 0 1 310 295 L 280 295 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="267" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND1</text>
-    <text x="298" y="283" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="298" y="267" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND1</text>
+    <text x="298" y="283" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
   <g>
     <path d="M 280 395 Q 305 420, 280 445 L 310 445 Q 335 445, 350 420 Q 335 395, 310 395 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="318" y="417" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR2</text>
-    <text x="318" y="433" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="318" y="417" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR2</text>
+    <text x="318" y="433" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 280 455 L 310 455 A 25 25 0 0 1 310 505 L 280 505 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="477" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND2</text>
-    <text x="298" y="493" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="298" y="477" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND2</text>
+    <text x="298" y="493" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ Single Pipeline FF — FF_P ════════ -->
   <g>
     <rect x="470" y="395" width="120" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
-    <text x="530" y="417" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF_P</text>
-    <text x="530" y="434" text-anchor="middle" fill="#fff080" font-size="11">★ הפתרון המינימלי</text>
+    <text x="530" y="417" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_P</text>
+    <text x="530" y="434" text-anchor="middle" fill="#fff080" font-size="16">★ הפתרון המינימלי</text>
   </g>
 
   <!-- ════════ Stage 2 gates ════════ -->
   <g>
     <path d="M 680 305 Q 705 330, 680 355 L 710 355 Q 735 355, 750 330 Q 735 305, 710 305 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="718" y="327" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR3</text>
-    <text x="718" y="343" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="718" y="327" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR3</text>
+    <text x="718" y="343" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 680 380 L 710 380 A 25 25 0 0 1 710 430 L 680 430 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="698" y="402" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND3</text>
-    <text x="698" y="418" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="698" y="402" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND3</text>
+    <text x="698" y="418" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
   <g>
     <path d="M 840 445 L 870 445 Q 910 445, 920 470 Q 910 495, 870 495 L 840 495 Q 860 470, 840 445 Z"
           fill="#3a2a14" stroke="#ffc080" stroke-width="2"/>
-    <text x="880" y="467" text-anchor="middle" fill="#ffc080" font-size="13" font-weight="bold">OR1</text>
-    <text x="880" y="483" text-anchor="middle" fill="#a0c0d0" font-size="11">100 ps</text>
+    <text x="880" y="467" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">OR1</text>
+    <text x="880" y="483" text-anchor="middle" fill="#a0c0d0" font-size="16">100 ps</text>
   </g>
 
   <!-- ════════ Outputs ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="1030" cy="210" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.2" stroke-dasharray="5,3"/>
     <text x="1030" y="216" text-anchor="middle" fill="#cca040">S0</text>
     <circle cx="1030" cy="330" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
@@ -1937,14 +1937,14 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- Critical-path badge at S2 -->
   <rect x="710" y="510" width="290" height="32" rx="6" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.6"/>
-  <text x="855" y="531" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">SETUP: 150 ps | 220 ps ≤ 300 ✓</text>
+  <text x="855" y="531" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">SETUP: 150 ps | 220 ps ≤ 300 ✓</text>
 
   <!-- Bottom summary -->
   <rect x="40" y="570" width="1060" height="78" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="570" y="600" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="17">
+  <text x="570" y="600" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     FF יחיד (FF_P) שובר את ה-370 ps לשני שלבים: 150 ps + 220 ps ≤ 300 ✓
   </text>
-  <text x="570" y="628" text-anchor="middle" fill="#c8b090" font-size="15" font-style="italic">
+  <text x="570" y="628" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     אבל: שאר המסלולים (קווים מקווקווים) לא פוייפלינו → אי-איזון, מטופל בסעיף ה'
   </text>
 </svg>`,
@@ -2058,7 +2058,7 @@ T_shortest ≥ t_h − t_clk-q
 - **Throughput** **נשמרת** — וקטור חדש בכל clock.`,
         answerSchematic: `
 <svg viewBox="0 0 1140 660" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Balanced pipelined adder: an additional FF on the S0 path so all outputs exit at the same cycle.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Balanced pipelined adder: an additional FF on the S0 path so all outputs exit at the same cycle.">
 
   <defs>
     <linearGradient id="pipeBand2" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -2069,24 +2069,24 @@ T_shortest ≥ t_h − t_clk-q
     </linearGradient>
   </defs>
 
-  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Pipeline מאוזן — 3 FFs נוספים (FF_S0, FF_C1, FF_G)
   </text>
 
   <!-- Pipeline band -->
   <rect x="460" y="110" width="140" height="430" rx="10"
         fill="url(#pipeBand2)" stroke="#cc66ff" stroke-width="1.8" stroke-dasharray="6,4"/>
-  <text x="530" y="100" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">PIPELINE FFs</text>
+  <text x="530" y="100" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">PIPELINE FFs</text>
 
   <!-- Stage headers -->
   <rect x="50"  y="80" width="410" height="32" rx="6" fill="rgba(128,200,255,0.10)" stroke="#80c8ff" stroke-width="1.4"/>
-  <text x="255" y="102" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">STAGE 1 (combinational ≤ 150 ps)</text>
+  <text x="255" y="102" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">STAGE 1 (combinational ≤ 150 ps)</text>
 
   <rect x="600" y="80" width="500" height="32" rx="6" fill="rgba(255,144,80,0.10)" stroke="#ff9050" stroke-width="1.4"/>
-  <text x="850" y="102" text-anchor="middle" fill="#ff9050" font-size="16" font-weight="bold">STAGE 2 (combinational ≤ 220 ps)</text>
+  <text x="850" y="102" text-anchor="middle" fill="#ff9050" font-size="18" font-weight="bold">STAGE 2 (combinational ≤ 220 ps)</text>
 
   <!-- ════════ Inputs ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="70" cy="160" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="70" y="166" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="70" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -2144,26 +2144,26 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 280 185 Q 305 210, 280 235 L 310 235 Q 335 235, 350 210 Q 335 185, 310 185 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="318" y="207" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR1</text>
-    <text x="318" y="223" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="318" y="207" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
+    <text x="318" y="223" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 280 245 L 310 245 A 25 25 0 0 1 310 295 L 280 295 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="267" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND1</text>
-    <text x="298" y="283" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="298" y="267" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND1</text>
+    <text x="298" y="283" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
   <g>
     <path d="M 280 395 Q 305 420, 280 445 L 310 445 Q 335 445, 350 420 Q 335 395, 310 395 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="318" y="417" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR2</text>
-    <text x="318" y="433" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="318" y="417" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR2</text>
+    <text x="318" y="433" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 280 455 L 310 455 A 25 25 0 0 1 310 505 L 280 505 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="477" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND2</text>
-    <text x="298" y="493" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="298" y="477" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND2</text>
+    <text x="298" y="493" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ Pipeline FFs ════════
@@ -2172,49 +2172,49 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <rect x="470" y="185" width="120" height="50" rx="6"
           fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-    <text x="530" y="207" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_S0 ✨</text>
-    <text x="530" y="224" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ה)</text>
+    <text x="530" y="207" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_S0 ✨</text>
+    <text x="530" y="224" text-anchor="middle" fill="#fff080" font-size="16">★ חדש (ה)</text>
   </g>
   <g>
     <rect x="470" y="245" width="120" height="50" rx="6"
           fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-    <text x="530" y="267" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_C1 ✨</text>
-    <text x="530" y="284" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ה)</text>
+    <text x="530" y="267" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_C1 ✨</text>
+    <text x="530" y="284" text-anchor="middle" fill="#fff080" font-size="16">★ חדש (ה)</text>
   </g>
   <g>
     <rect x="470" y="395" width="120" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-    <text x="530" y="417" text-anchor="middle" fill="#cc99ff" font-size="13" font-weight="bold">FF_P</text>
-    <text x="530" y="434" text-anchor="middle" fill="#a0a0c0" font-size="11">מסעיף ד'</text>
+    <text x="530" y="417" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_P</text>
+    <text x="530" y="434" text-anchor="middle" fill="#a0a0c0" font-size="16">מסעיף ד'</text>
   </g>
   <g>
     <rect x="470" y="455" width="120" height="50" rx="6"
           fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-    <text x="530" y="477" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_G ✨</text>
-    <text x="530" y="494" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ה)</text>
+    <text x="530" y="477" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_G ✨</text>
+    <text x="530" y="494" text-anchor="middle" fill="#fff080" font-size="16">★ חדש (ה)</text>
   </g>
 
   <!-- ════════ Stage 2 gates ════════ -->
   <g>
     <path d="M 680 305 Q 705 330, 680 355 L 710 355 Q 735 355, 750 330 Q 735 305, 710 305 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="718" y="327" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR3</text>
-    <text x="718" y="343" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="718" y="327" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR3</text>
+    <text x="718" y="343" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 680 380 L 710 380 A 25 25 0 0 1 710 430 L 680 430 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="698" y="402" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND3</text>
-    <text x="698" y="418" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="698" y="402" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND3</text>
+    <text x="698" y="418" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
   <g>
     <path d="M 840 445 L 870 445 Q 910 445, 920 470 Q 910 495, 870 495 L 840 495 Q 860 470, 840 445 Z"
           fill="#3a2a14" stroke="#ffc080" stroke-width="2"/>
-    <text x="880" y="467" text-anchor="middle" fill="#ffc080" font-size="13" font-weight="bold">OR1</text>
-    <text x="880" y="483" text-anchor="middle" fill="#a0c0d0" font-size="11">100 ps</text>
+    <text x="880" y="467" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">OR1</text>
+    <text x="880" y="483" text-anchor="middle" fill="#a0c0d0" font-size="16">100 ps</text>
   </g>
 
   <!-- ════════ Outputs (all green — synced now) ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="1030" cy="210" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
     <text x="1030" y="216" text-anchor="middle" fill="#80f0a0">S0</text>
     <circle cx="1030" cy="330" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
@@ -2225,14 +2225,14 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- Sync badge -->
   <rect x="720" y="160" width="280" height="32" rx="6" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text x="860" y="181" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">✓ כל הפלטים יוצאים בו-זמנית</text>
+  <text x="860" y="181" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">✓ כל הפלטים יוצאים בו-זמנית</text>
 
   <!-- Bottom summary -->
   <rect x="40" y="570" width="1060" height="78" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="570" y="600" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
+  <text x="570" y="600" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     Latency = 2 cycles · Throughput = 1 vector/clock · Stage 1 ≤ 150 ps · Stage 2 ≤ 220 ps
   </text>
-  <text x="570" y="628" text-anchor="middle" fill="#c8b090" font-size="15" font-style="italic">
+  <text x="570" y="628" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     סה"כ 4 FFs: FF_P מסעיף ד' + 3 חדשים (צהוב) שנוספו בסעיף ה'
   </text>
 </svg>`,
@@ -2411,26 +2411,26 @@ T_shortest ≥ t_h − t_clk-q
 **שאלת bonus 2**: "האם פתרון של ה-buffer יחיד מספיק תמיד?" → לא! ב-CMOS יש process variation — buffer ב-corner מסוים (slow corner) יכול להיות מהיר מדי ב-fast corner. STA tools מתכנן עם margin לכל הקצוות.`,
         answerSchematic: `
 <svg viewBox="0 0 1100 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Before / after panels — adding a buffer on the S0 path to fix hold timing.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Before / after panels — adding a buffer on the S0 path to fix hold timing.">
 
-  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Delay padding — הוספת BUF על המסלול הקצר
   </text>
-  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     אילוץ: T_shortest ≥ 170 ps (t_h = 200, t_clk-q ≈ 30)
   </text>
 
   <!-- ════════════════════ BEFORE panel ════════════════════ -->
   <rect x="30" y="100" width="510" height="340" rx="12"
         fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2"/>
-  <text x="285" y="138" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">לפני — הפרת hold ✗</text>
+  <text x="285" y="138" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="24">לפני — הפרת hold ✗</text>
 
   <!-- A0 input -->
   <circle cx="80" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="80" y="246" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">A0</text>
+  <text x="80" y="246" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">A0</text>
   <!-- B0 input -->
   <circle cx="80" cy="310" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="80" y="316" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">B0</text>
+  <text x="80" y="316" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">B0</text>
 
   <!-- Wires -->
   <line x1="100" y1="240" x2="220" y2="240" stroke="#cca040" stroke-width="2"/>
@@ -2439,34 +2439,34 @@ T_shortest ≥ t_h − t_clk-q
   <!-- XOR1 -->
   <path d="M 220 230 Q 250 275, 220 320 L 260 320 Q 300 320, 320 275 Q 300 230, 260 230 Z"
         fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-  <text x="270" y="270" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR1</text>
-  <text x="270" y="290" text-anchor="middle" fill="#a0c0d0" font-size="13">150 ps</text>
+  <text x="270" y="270" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
+  <text x="270" y="290" text-anchor="middle" fill="#a0c0d0" font-size="18">150 ps</text>
 
   <!-- XOR1 → S0 (long, direct) -->
   <line x1="320" y1="275" x2="470" y2="275" stroke="#ff9933" stroke-width="2.2"/>
 
   <!-- S0 output -->
   <circle cx="490" cy="275" r="22" fill="#0a1825" stroke="#ff6060" stroke-width="2.4"/>
-  <text x="490" y="281" text-anchor="middle" fill="#ff6060" font-size="17" font-weight="bold">S0</text>
+  <text x="490" y="281" text-anchor="middle" fill="#ff6060" font-size="20" font-weight="bold">S0</text>
 
   <!-- Delay annotation -->
-  <text x="395" y="262" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">150 ps total</text>
+  <text x="395" y="262" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">150 ps total</text>
 
   <!-- Violation badge -->
   <rect x="80" y="380" width="410" height="40" rx="8" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.8"/>
-  <text x="285" y="406" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="16">150 &lt; 170 → race condition</text>
+  <text x="285" y="406" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">150 &lt; 170 → race condition</text>
 
   <!-- ════════════════════ AFTER panel ════════════════════ -->
   <rect x="560" y="100" width="510" height="340" rx="12"
         fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
-  <text x="815" y="138" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">אחרי — hold נשמר ✓</text>
+  <text x="815" y="138" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">אחרי — hold נשמר ✓</text>
 
   <!-- A0 input -->
   <circle cx="610" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="610" y="246" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">A0</text>
+  <text x="610" y="246" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">A0</text>
   <!-- B0 input -->
   <circle cx="610" cy="310" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="610" y="316" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">B0</text>
+  <text x="610" y="316" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">B0</text>
 
   <!-- Wires -->
   <line x1="630" y1="240" x2="730" y2="240" stroke="#cca040" stroke-width="2"/>
@@ -2475,30 +2475,30 @@ T_shortest ≥ t_h − t_clk-q
   <!-- XOR1 -->
   <path d="M 730 230 Q 760 275, 730 320 L 770 320 Q 810 320, 830 275 Q 810 230, 770 230 Z"
         fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-  <text x="780" y="270" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR1</text>
-  <text x="780" y="290" text-anchor="middle" fill="#a0c0d0" font-size="13">150 ps</text>
+  <text x="780" y="270" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
+  <text x="780" y="290" text-anchor="middle" fill="#a0c0d0" font-size="18">150 ps</text>
 
   <!-- XOR1 → BUF -->
   <line x1="830" y1="275" x2="880" y2="275" stroke="#ff9933" stroke-width="2.2"/>
 
   <!-- BUF (highlighted yellow) -->
   <rect x="880" y="250" width="80" height="50" rx="8" fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-  <text x="920" y="271" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">BUF</text>
-  <text x="920" y="289" text-anchor="middle" fill="#fff080" font-size="11">+60 ps ★</text>
+  <text x="920" y="271" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">BUF</text>
+  <text x="920" y="289" text-anchor="middle" fill="#fff080" font-size="16">+60 ps ★</text>
 
   <!-- BUF → S0 -->
   <line x1="960" y1="275" x2="1000" y2="275" stroke="#ff9933" stroke-width="2.2"/>
 
   <!-- S0 output (now green = safe) -->
   <circle cx="1020" cy="275" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.4"/>
-  <text x="1020" y="281" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">S0</text>
+  <text x="1020" y="281" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">S0</text>
 
   <!-- Delay annotation -->
-  <text x="895" y="240" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">150 + 60 = 210 ps</text>
+  <text x="895" y="240" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">150 + 60 = 210 ps</text>
 
   <!-- Pass badge -->
   <rect x="610" y="380" width="410" height="40" rx="8" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="815" y="406" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">210 ≥ 170 ✓ (margin 40 ps)</text>
+  <text x="815" y="406" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">210 ≥ 170 ✓ (margin 40 ps)</text>
 </svg>`,
         expectedAnswers: [
           'buffer', 'BUF', 'באפר',
@@ -2650,7 +2650,7 @@ T_shortest ≥ t_h − t_clk-q
         ],
         answerSchematic: `
 <svg viewBox="0 0 1140 740" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Pipelined adder with 4 SCAN_FFs in a daisy-chain — SI on the left, SO on the right, SE common.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Pipelined adder with 4 SCAN_FFs in a daisy-chain — SI on the left, SO on the right, SE common.">
 
   <defs>
     <linearGradient id="pipeBandZ" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -2664,20 +2664,20 @@ T_shortest ≥ t_h − t_clk-q
     </marker>
   </defs>
 
-  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Scan chain — 4 Scan-FFs ב-daisy chain
   </text>
-  <text x="570" y="68" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="570" y="68" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     SE=0 → פונקציונלי   ·   SE=1 → shift mode
   </text>
 
   <!-- ════════ Pipeline band ════════ -->
   <rect x="440" y="110" width="180" height="430" rx="10"
         fill="url(#pipeBandZ)" stroke="#cc66ff" stroke-width="1.8" stroke-dasharray="6,4"/>
-  <text x="530" y="100" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">4 × SCAN-FF</text>
+  <text x="530" y="100" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">4 × SCAN-FF</text>
 
   <!-- ════════ Inputs (left) ════════ -->
-  <g font-size="16" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <circle cx="70" cy="160" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="70" y="166" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="70" cy="220" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -2695,22 +2695,22 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 280 145 Q 305 170, 280 195 L 310 195 Q 335 195, 350 170 Q 335 145, 310 145 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="318" y="172" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">XOR1</text>
+    <text x="318" y="172" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR1</text>
   </g>
   <g>
     <path d="M 280 205 L 310 205 A 25 25 0 0 1 310 255 L 280 255 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="232" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">AND1</text>
+    <text x="298" y="232" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">AND1</text>
   </g>
   <g>
     <path d="M 280 365 Q 305 390, 280 415 L 310 415 Q 335 415, 350 390 Q 335 365, 310 365 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="318" y="392" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">XOR2</text>
+    <text x="318" y="392" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR2</text>
   </g>
   <g>
     <path d="M 280 425 L 310 425 A 25 25 0 0 1 310 475 L 280 475 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="298" y="452" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">AND2</text>
+    <text x="298" y="452" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">AND2</text>
   </g>
 
   <!-- Functional D-input wires (thin grey, going into FFs from the left) -->
@@ -2739,31 +2739,31 @@ T_shortest ≥ t_h − t_clk-q
   <!-- ════════ The 4 Scan-FFs ════════ -->
   <g>
     <rect x="450" y="145" width="170" height="60" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-    <text x="535" y="170" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">SCAN_FF — FF_S0</text>
-    <text x="464" y="194" fill="#a0a0c0" font-size="11">D</text>
-    <text x="464" y="186" fill="#cc66ff" font-size="11">TI</text>
-    <text x="610" y="190" text-anchor="end" fill="#a0a0c0" font-size="11">Q</text>
+    <text x="535" y="170" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">SCAN_FF — FF_S0</text>
+    <text x="464" y="194" fill="#a0a0c0" font-size="16">D</text>
+    <text x="464" y="186" fill="#cc66ff" font-size="16">TI</text>
+    <text x="610" y="190" text-anchor="end" fill="#a0a0c0" font-size="16">Q</text>
   </g>
   <g>
     <rect x="450" y="205" width="170" height="60" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-    <text x="535" y="230" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">SCAN_FF — FF_C1</text>
-    <text x="464" y="254" fill="#a0a0c0" font-size="11">D</text>
-    <text x="464" y="246" fill="#cc66ff" font-size="11">TI</text>
-    <text x="610" y="250" text-anchor="end" fill="#a0a0c0" font-size="11">Q</text>
+    <text x="535" y="230" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">SCAN_FF — FF_C1</text>
+    <text x="464" y="254" fill="#a0a0c0" font-size="16">D</text>
+    <text x="464" y="246" fill="#cc66ff" font-size="16">TI</text>
+    <text x="610" y="250" text-anchor="end" fill="#a0a0c0" font-size="16">Q</text>
   </g>
   <g>
     <rect x="450" y="365" width="170" height="60" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-    <text x="535" y="390" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">SCAN_FF — FF_P</text>
-    <text x="464" y="414" fill="#a0a0c0" font-size="11">D</text>
-    <text x="464" y="406" fill="#cc66ff" font-size="11">TI</text>
-    <text x="610" y="410" text-anchor="end" fill="#a0a0c0" font-size="11">Q</text>
+    <text x="535" y="390" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">SCAN_FF — FF_P</text>
+    <text x="464" y="414" fill="#a0a0c0" font-size="16">D</text>
+    <text x="464" y="406" fill="#cc66ff" font-size="16">TI</text>
+    <text x="610" y="410" text-anchor="end" fill="#a0a0c0" font-size="16">Q</text>
   </g>
   <g>
     <rect x="450" y="425" width="170" height="60" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-    <text x="535" y="450" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">SCAN_FF — FF_G</text>
-    <text x="464" y="474" fill="#a0a0c0" font-size="11">D</text>
-    <text x="464" y="466" fill="#cc66ff" font-size="11">TI</text>
-    <text x="610" y="470" text-anchor="end" fill="#a0a0c0" font-size="11">Q</text>
+    <text x="535" y="450" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">SCAN_FF — FF_G</text>
+    <text x="464" y="474" fill="#a0a0c0" font-size="16">D</text>
+    <text x="464" y="466" fill="#cc66ff" font-size="16">TI</text>
+    <text x="610" y="470" text-anchor="end" fill="#a0a0c0" font-size="16">Q</text>
   </g>
 
   <!-- ════════ Scan daisy chain (purple, prominent) ════════ -->
@@ -2782,7 +2782,7 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- SE broadcast (green dashed line at the bottom) -->
   <line x1="90" y1="660" x2="1050" y2="660" stroke="#80f0a0" stroke-width="2.4" stroke-dasharray="6,4"/>
-  <text x="60" y="665" text-anchor="end" fill="#80f0a0" font-size="16" font-weight="bold">SE</text>
+  <text x="60" y="665" text-anchor="end" fill="#80f0a0" font-size="18" font-weight="bold">SE</text>
   <g stroke="#80f0a0" stroke-width="1.6" fill="none">
     <line x1="535" y1="660" x2="535" y2="495"/>
     <line x1="535" y1="495" x2="535" y2="490"/>
@@ -2792,17 +2792,17 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 680 290 Q 705 315, 680 340 L 710 340 Q 735 340, 750 315 Q 735 290, 710 290 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="718" y="317" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">XOR3</text>
+    <text x="718" y="317" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR3</text>
   </g>
   <g>
     <path d="M 680 360 L 710 360 A 25 25 0 0 1 710 410 L 680 410 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="698" y="388" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">AND3</text>
+    <text x="698" y="388" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">AND3</text>
   </g>
   <g>
     <path d="M 840 415 L 870 415 Q 910 415, 920 440 Q 910 465, 870 465 L 840 465 Q 860 440, 840 415 Z"
           fill="#3a2a14" stroke="#ffc080" stroke-width="2"/>
-    <text x="880" y="442" text-anchor="middle" fill="#ffc080" font-size="12" font-weight="bold">OR1</text>
+    <text x="880" y="442" text-anchor="middle" fill="#ffc080" font-size="16" font-weight="bold">OR1</text>
   </g>
 
   <!-- Stage-2 thin wires -->
@@ -2819,7 +2819,7 @@ T_shortest ≥ t_h − t_clk-q
   </g>
 
   <!-- ════════ Outputs ════════ -->
-  <g font-size="16" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <circle cx="870" cy="175" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
     <text x="870" y="181" text-anchor="middle" fill="#ff9933">S0</text>
     <circle cx="870" cy="315" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
@@ -2833,7 +2833,7 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- ════════ Test cycle count info card ════════ -->
   <rect x="40" y="690" width="1060" height="40" rx="8" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="570" y="716" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="16">
+  <text x="570" y="716" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
     Load (SE=1, 4 cycles)   ·   Capture (SE=0, 1 cycle)   ·   Unload (SE=1, 4 cycles)   =   2N+1 = 9 cycles
   </text>
 </svg>`,
@@ -2951,14 +2951,14 @@ T_shortest ≥ t_h − t_clk-q
         question: 'במעגל ה-pipelined מסעיף ה\' מוזרק **bridge fault** בין שני קווים שכנים בשלב ה-pipeline: הקו \`XOR1.out → FF_S0.D\` והקו \`AND1.out → FF_C1.D\` — מסומנים ב**סגול** בשרטוט. הקצר הוא **wired-AND** — שני הקווים נושאים את ה-AND של ערכיהם המקוריים. **מהו וקטור הקלט המינימלי שמזהה את התקלה?** הסבר מה רואים בפלט.',
         schematic: `
 <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Bridge fault between XOR1→FF_S0 and AND1→FF_C1 wires.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Bridge fault between XOR1→FF_S0 and AND1→FF_C1 wires.">
 
-  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Bridge fault — wired-AND בין שני הקווים השכנים
   </text>
 
   <!-- Inputs -->
-  <g font-size="17" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="60" cy="120" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="60" y="126" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="60" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -2979,13 +2979,13 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 220 115 Q 248 140, 220 165 L 250 165 Q 280 165, 296 140 Q 280 115, 250 115 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="263" y="146" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR1</text>
+    <text x="263" y="146" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
   </g>
   <!-- AND1 -->
   <g>
     <path d="M 220 205 L 250 205 A 25 25 0 0 1 250 265 L 220 265 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="240" y="240" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND1</text>
+    <text x="240" y="240" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND1</text>
   </g>
 
   <!-- ════════ The two BRIDGED wires (purple, highlighted) ════════ -->
@@ -3002,29 +3002,29 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- Bridge label -->
   <rect x="440" y="170" width="280" height="34" rx="8" fill="rgba(204,102,255,0.16)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="580" y="192" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">⚡ BRIDGE — wired-AND</text>
+  <text x="580" y="192" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">⚡ BRIDGE — wired-AND</text>
 
   <!-- FF_S0 -->
   <g>
     <rect x="580" y="110" width="140" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
-    <text x="650" y="135" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">FF_S0</text>
-    <text x="650" y="155" text-anchor="middle" fill="#a0c0d0" font-size="11">latches XOR1.out</text>
+    <text x="650" y="135" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">FF_S0</text>
+    <text x="650" y="155" text-anchor="middle" fill="#a0c0d0" font-size="16">latches XOR1.out</text>
   </g>
   <!-- FF_C1 -->
   <g>
     <rect x="580" y="205" width="140" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
-    <text x="650" y="230" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">FF_C1</text>
-    <text x="650" y="250" text-anchor="middle" fill="#a0c0d0" font-size="11">latches AND1.out</text>
+    <text x="650" y="230" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">FF_C1</text>
+    <text x="650" y="250" text-anchor="middle" fill="#a0c0d0" font-size="16">latches AND1.out</text>
   </g>
 
   <!-- Context note -->
-  <text x="450" y="320" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="450" y="320" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     שני הקווים סמוכים פיזית בלייאאוט → קצר חשמלי ביניהם = wired-AND
   </text>
-  <text x="450" y="346" text-anchor="middle" fill="#ffe080" font-size="14" font-weight="bold">
+  <text x="450" y="346" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">
     כל וקטור שמעניק להם ערכים זהים — לא מגלה את התקלה (קצר שקוף)
   </text>
-  <text x="450" y="370" text-anchor="middle" fill="#a0a0c0" font-size="13">
+  <text x="450" y="370" text-anchor="middle" fill="#a0a0c0" font-size="18">
     Stage 2 (XOR3, AND3, OR1) ממשיך מ-FF_S0 / FF_C1 — לא משורטט כאן
   </text>
 </svg>`,
@@ -3187,14 +3187,14 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
         question: 'במעגל מסעיף ה\' אחד החוטים מוזרק עם תקלת **\`stuck-at-0\`** — הקו \`AND1.out → FF_C1.D\` (כלומר \`C1\` תקוע ב-0), מסומן ב**אדום** בשרטוט. **מהו וקטור הקלט המינימלי שמזהה את התקלה ומאשש שאכן הקו הזה הוא הפגום?** הסבר את ה-trade-off של מינימום וקטור לעומת זיהוי ייחודי של מיקום התקלה.',
         schematic: `
 <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Stuck-at-0 fault on AND1.out → FF_C1.D wire.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Stuck-at-0 fault on AND1.out → FF_C1.D wire.">
 
-  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Stuck-at-0 fault — C1 תקוע ב-0
   </text>
 
   <!-- Inputs -->
-  <g font-size="17" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="60" cy="120" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="60" y="126" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="60" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -3215,13 +3215,13 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <g>
     <path d="M 220 115 Q 248 140, 220 165 L 250 165 Q 280 165, 296 140 Q 280 115, 250 115 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="263" y="146" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR1</text>
+    <text x="263" y="146" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
   </g>
   <!-- AND1 (faulty path source) -->
   <g>
     <path d="M 220 205 L 250 205 A 25 25 0 0 1 250 265 L 220 265 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="240" y="240" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND1</text>
+    <text x="240" y="240" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND1</text>
   </g>
 
   <!-- XOR1.out → FF_S0 (healthy, grey) -->
@@ -3232,30 +3232,30 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <!-- Fault marker — red X on the wire -->
   <g transform="translate(420, 235)">
     <circle r="22" fill="#3a0a14" stroke="#ff6060" stroke-width="3"/>
-    <text y="6" text-anchor="middle" fill="#ff6060" font-size="22" font-weight="bold">✗</text>
+    <text y="6" text-anchor="middle" fill="#ff6060" font-size="24" font-weight="bold">✗</text>
   </g>
   <!-- "stuck-at-0" label -->
   <rect x="440" y="270" width="240" height="34" rx="8" fill="rgba(255,96,96,0.16)" stroke="#ff6060" stroke-width="1.8"/>
-  <text x="560" y="292" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">✗ stuck-at-0</text>
+  <text x="560" y="292" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">✗ stuck-at-0</text>
 
   <!-- FF_S0 -->
   <g>
     <rect x="580" y="110" width="140" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
-    <text x="650" y="135" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">FF_S0</text>
-    <text x="650" y="155" text-anchor="middle" fill="#a0c0d0" font-size="11">latches XOR1.out</text>
+    <text x="650" y="135" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">FF_S0</text>
+    <text x="650" y="155" text-anchor="middle" fill="#a0c0d0" font-size="16">latches XOR1.out</text>
   </g>
   <!-- FF_C1 (faulty input — red) -->
   <g>
     <rect x="580" y="205" width="140" height="60" rx="6" fill="#1a0a0a" stroke="#ff6060" stroke-width="2.4"/>
-    <text x="650" y="230" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">FF_C1</text>
-    <text x="650" y="250" text-anchor="middle" fill="#ff8080" font-size="11">תמיד קולט 0</text>
+    <text x="650" y="230" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">FF_C1</text>
+    <text x="650" y="250" text-anchor="middle" fill="#ff8080" font-size="16">תמיד קולט 0</text>
   </g>
 
   <!-- Context note -->
-  <text x="450" y="346" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="450" y="346" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     הקו תקוע ב-0 ⇒ \`FF_C1\` תמיד יקלוט 0 ב-capture, בלי קשר ל-AND1.out האמיתי
   </text>
-  <text x="450" y="370" text-anchor="middle" fill="#ffe080" font-size="14" font-weight="bold">
+  <text x="450" y="370" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">
     הצפי שכן: \`C1 = 1\` (כשA0=B0=1) — אחרת התקלה שקופה
   </text>
 </svg>`,
@@ -3398,8 +3398,8 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
         }),
       },
     ],
-    source: 'שאלת ראיון אמיתית — תכן לוגי / תזמון וסנכרון',
-    tags: ['interview', 'adder', 'half-adder', 'full-adder', 'gate-level', 'identification', 'combinational', 'timing', 'critical-path'],
+    source: 'תכן לוגי / תזמון וסנכרון — מחבר 2-ביט',
+    tags: ['adder', 'half-adder', 'full-adder', 'gate-level', 'identification', 'combinational', 'timing', 'critical-path'],
     circuitRevealsAnswer: true,
   },
 
@@ -3418,9 +3418,9 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   {
     id: 'interview-2bit-multiplier-identification',
     difficulty: 'hard',
-    title: 'שאלת ראיון — זיהוי רכיב מתוך מימוש שערים (גרסה 2)',
+    title: 'זיהוי רכיב מתוך מימוש שערים — מכפיל 2-ביט',
     intro:
-`**שאלה אמיתית מראיון.** ניתן לפניך מימוש gate-level של מעגל קומבינטורי:
+`ניתן לפניך מימוש gate-level של מעגל קומבינטורי:
 
 - **4 כניסות**: \`A0, A1, B0, B1\`
 - **4 יציאות**: \`Y0, Y1, Y2, Y3\`
@@ -3431,12 +3431,12 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
 > 💡 רמז ראשון בעצמך: **מספר ה-IO שונה משאלה 5004**. מה זה אומר?`,
     schematic: `
 <svg viewBox="0 0 1200 740" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Gate-level netlist of an 8-gate combinational circuit with 4 inputs and 4 outputs.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Gate-level netlist of an 8-gate combinational circuit with 4 inputs and 4 outputs.">
 
   <text x="600" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     מעגל קומבינטורי — 4 כניסות, 4 יציאות, 8 שערים
   </text>
-  <text x="600" y="64" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="600" y="64" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     מה הרכיב המיוצג?
   </text>
 
@@ -3456,22 +3456,22 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <!-- AND1 (A0·B0): top-left -->
   <g>
     <path d="M 250 125 L 280 125 A 30 30 0 0 1 280 185 L 250 185 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="270" y="160" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND1</text>
+    <text x="270" y="160" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND1</text>
   </g>
   <!-- AND2 (A1·B0): upper-middle -->
   <g>
     <path d="M 250 225 L 280 225 A 30 30 0 0 1 280 285 L 250 285 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="270" y="260" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND2</text>
+    <text x="270" y="260" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND2</text>
   </g>
   <!-- AND3 (A0·B1): lower-middle -->
   <g>
     <path d="M 250 325 L 280 325 A 30 30 0 0 1 280 385 L 250 385 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="270" y="360" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND3</text>
+    <text x="270" y="360" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND3</text>
   </g>
   <!-- AND4 (A1·B1): bottom -->
   <g>
     <path d="M 250 425 L 280 425 A 30 30 0 0 1 280 485 L 250 485 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="270" y="460" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND4</text>
+    <text x="270" y="460" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND4</text>
   </g>
 
   <!-- ════════ Input fan-out wires ════════ -->
@@ -3515,12 +3515,12 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <g>
     <path d="M 530 280 Q 558 305, 530 330 L 560 330 Q 590 330, 608 305 Q 590 280, 560 280 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-    <text x="570" y="310" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR1</text>
+    <text x="570" y="310" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
   </g>
   <!-- AND5 -->
   <g>
     <path d="M 530 335 L 560 335 A 25 25 0 0 1 560 385 L 530 385 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="548" y="365" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND5</text>
+    <text x="548" y="365" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND5</text>
   </g>
 
   <!-- XOR1.out → Y1 -->
@@ -3544,7 +3544,7 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <g>
     <path d="M 770 445 Q 798 470, 770 495 L 800 495 Q 830 495, 848 470 Q 830 445, 800 445 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-    <text x="810" y="475" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR2</text>
+    <text x="810" y="475" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR2</text>
   </g>
   <!-- XOR2.out → Y2 -->
   <line x1="848" y1="470" x2="1100" y2="470" stroke="#ff9933" stroke-width="2"/>
@@ -3552,7 +3552,7 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <!-- AND6 -->
   <g>
     <path d="M 950 545 L 980 545 A 30 30 0 0 1 980 605 L 950 605 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="970" y="580" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND6</text>
+    <text x="970" y="580" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND6</text>
   </g>
   <!-- AND6.out → Y3 -->
   <line x1="1010" y1="575" x2="1100" y2="575" stroke="#ff9933" stroke-width="2"/>
@@ -3570,10 +3570,10 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   </g>
 
   <!-- Legend at bottom -->
-  <text x="600" y="700" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="600" y="700" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     8 שערים: 6 × AND · 2 × XOR (⊕) · אין OR
   </text>
-  <text x="600" y="722" text-anchor="middle" fill="#80c8ff" font-size="13">
+  <text x="600" y="722" text-anchor="middle" fill="#80c8ff" font-size="18">
     AND1, AND2, AND3, AND4 → 4 partial products   ·   XOR1+AND5 → HA1   ·   XOR2+AND6 → HA2
   </text>
 </svg>`,
@@ -3842,25 +3842,25 @@ T_shortest ≥ t_h − t_clk-q
         ],
         answerSchematic: `
 <svg viewBox="0 0 1140 1700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Circuit with the two critical paths coloured (SETUP red, HOLD green) at the top; Gantt-style chart of all 9 unique paths at the bottom.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Circuit with the two critical paths coloured (SETUP red, HOLD green) at the top; Gantt-style chart of all 9 unique paths at the bottom.">
 
   <!-- ═══════════════════════════════════════════════════════════
        SECTION 1 — Circuit diagram with the two critical paths
                    colored on the actual gates (top half).
        ═══════════════════════════════════════════════════════════ -->
 
-  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     המעגל עם שני המסלולים הקריטיים
   </text>
 
   <!-- Legend pills (centered) -->
   <rect x="160" y="68" width="370" height="34" rx="8" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.8"/>
   <circle cx="186" cy="85" r="8" fill="#ff6060"/>
-  <text x="206" y="91" fill="#ff8080" font-size="15" font-weight="bold">SETUP critical — נתיב הארוך ביותר</text>
+  <text x="206" y="91" fill="#ff8080" font-size="18" font-weight="bold">SETUP critical — נתיב הארוך ביותר</text>
 
   <rect x="560" y="68" width="370" height="34" rx="8" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.8"/>
   <circle cx="586" cy="85" r="8" fill="#80f0a0"/>
-  <text x="606" y="91" fill="#80f0a0" font-size="15" font-weight="bold">HOLD shortest — נתיב הקצר ביותר</text>
+  <text x="606" y="91" fill="#80f0a0" font-size="18" font-weight="bold">HOLD shortest — נתיב הקצר ביותר</text>
 
   <!-- ════════ SETUP critical path (red, drawn FIRST so gates sit on top) ════════
        A1/B0 → PP10 → AND5 → XOR2 → Y2     (390 ps)
@@ -3896,7 +3896,7 @@ T_shortest ≥ t_h − t_clk-q
   </g>
 
   <!-- ═══ Inputs ═══ -->
-  <g font-size="17" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="120" cy="180" r="14" fill="#1a1f2e" stroke="#cca040" stroke-width="2"/>
     <text x="120" y="186" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="120" cy="260" r="14" fill="#1a1f2e" stroke="#cca040" stroke-width="2"/>
@@ -3908,7 +3908,7 @@ T_shortest ≥ t_h − t_clk-q
   </g>
 
   <!-- ═══ Gates (8 total) ═══ -->
-  <g font-size="14" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <!-- PP layer -->
     <rect x="260" y="118" width="60" height="36" rx="6" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
     <text x="290" y="141" text-anchor="middle" fill="#c0e0ff">PP00</text>
@@ -3963,7 +3963,7 @@ T_shortest ≥ t_h − t_clk-q
   </g>
 
   <!-- ═══ Outputs ═══ -->
-  <g font-size="17" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="1020" cy="130" r="14" fill="#1a1f2e" stroke="#ff9933" stroke-width="2"/>
     <text x="1020" y="136" text-anchor="middle" fill="#ff9933">Y0</text>
     <circle cx="1020" cy="266" r="14" fill="#1a1f2e" stroke="#ff9933" stroke-width="2"/>
@@ -3975,10 +3975,10 @@ T_shortest ≥ t_h − t_clk-q
   </g>
 
   <!-- ═══ Summary banner under top half ═══ -->
-  <text x="570" y="600" text-anchor="middle" fill="#ffc890" font-size="19" font-weight="bold">
+  <text x="570" y="600" text-anchor="middle" fill="#ffc890" font-size="20" font-weight="bold">
     SETUP: A1/B0 (or A0/B1) → PP10/PP01 → AND5 → XOR2 → Y2  =  390 ps     (תאומים)
   </text>
-  <text x="570" y="625" text-anchor="middle" fill="#ffc890" font-size="19" font-weight="bold">
+  <text x="570" y="625" text-anchor="middle" fill="#ffc890" font-size="20" font-weight="bold">
     HOLD:   A0/B0 → PP00 → Y0  =  120 ps
   </text>
 
@@ -3991,26 +3991,26 @@ T_shortest ≥ t_h − t_clk-q
        ═══════════════════════════════════════════════════════════ -->
   <g transform="translate(0, 680)">
 
-  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     כל 9 המסלולים — Gantt of gate delays
   </text>
-  <text x="570" y="72" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="570" y="72" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     AND 120 ps · XOR 150 ps  ·  no OR in this circuit  ·  Scale: 1 ps = 1.5 px
   </text>
 
   <!-- =========== LEGEND (color key) =========== -->
   <g transform="translate(60, 100)">
     <rect x="0" y="0" width="30" height="22" rx="3" fill="rgba(128,200,255,0.4)" stroke="#80c8ff" stroke-width="1.4"/>
-    <text x="40" y="16" fill="#80c8ff" font-size="14" font-weight="bold">AND (120 ps)</text>
+    <text x="40" y="16" fill="#80c8ff" font-size="18" font-weight="bold">AND (120 ps)</text>
     <rect x="200" y="0" width="30" height="22" rx="3" fill="rgba(128,240,160,0.4)" stroke="#80f0a0" stroke-width="1.4"/>
-    <text x="240" y="16" fill="#80f0a0" font-size="14" font-weight="bold">XOR (150 ps)</text>
+    <text x="240" y="16" fill="#80f0a0" font-size="18" font-weight="bold">XOR (150 ps)</text>
   </g>
 
   <!-- =========== Column headers =========== -->
-  <text x="60" y="172"  fill="#a0a0c0" font-size="13" font-weight="bold">קלטים</text>
-  <text x="190" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">יעד</text>
-  <text x="280" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">שערים בנתיב (רוחב = delay)</text>
-  <text x="940" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">סה"כ</text>
+  <text x="60" y="172"  fill="#a0a0c0" font-size="18" font-weight="bold">קלטים</text>
+  <text x="190" y="172" fill="#a0a0c0" font-size="18" font-weight="bold">יעד</text>
+  <text x="280" y="172" fill="#a0a0c0" font-size="18" font-weight="bold">שערים בנתיב (רוחב = delay)</text>
+  <text x="940" y="172" fill="#a0a0c0" font-size="18" font-weight="bold">סה"כ</text>
   <line x1="50" y1="180" x2="1100" y2="180" stroke="#3a4a5a" stroke-width="1.2"/>
 
   <!-- =========== Path bars (sorted ascending by delay) =========== -->
@@ -4041,8 +4041,8 @@ T_shortest ≥ t_h − t_clk-q
         const w = ms * PX_PER_PS;
         const col = C[kind];
         const seg = `<rect x="${cursorX}" y="${barY}" width="${w}" height="${BAR_H}" rx="4" fill="${col.fill}" stroke="${col.stroke}" stroke-width="1.8"/>
-          <text x="${cursorX + w / 2}" y="${barY + 18}" text-anchor="middle" fill="${col.txt}" font-size="13" font-weight="bold">${name}</text>
-          <text x="${cursorX + w / 2}" y="${barY + 34}" text-anchor="middle" fill="${col.txt}" font-size="12">${ms} ps</text>`;
+          <text x="${cursorX + w / 2}" y="${barY + 18}" text-anchor="middle" fill="${col.txt}" font-size="18" font-weight="bold">${name}</text>
+          <text x="${cursorX + w / 2}" y="${barY + 34}" text-anchor="middle" fill="${col.txt}" font-size="16">${ms} ps</text>`;
         cursorX += w + 3;
         return seg;
       }).join('');
@@ -4050,14 +4050,14 @@ T_shortest ≥ t_h − t_clk-q
       let badge = '';
       if (p.tag === 'shortest') {
         badge = `<rect x="990" y="${barY + 5}" width="110" height="30" rx="6" fill="rgba(128,240,160,0.18)" stroke="#80f0a0" stroke-width="1.6"/>
-                 <text x="1045" y="${barY + 25}" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">✓ shortest</text>`;
+                 <text x="1045" y="${barY + 25}" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">✓ shortest</text>`;
       } else if (p.tag === 'critical') {
         badge = `<rect x="990" y="${barY + 5}" width="110" height="30" rx="6" fill="rgba(255,96,96,0.18)" stroke="#ff6060" stroke-width="1.6"/>
-                 <text x="1045" y="${barY + 25}" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="14">✗ critical</text>`;
+                 <text x="1045" y="${barY + 25}" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">✗ critical</text>`;
       }
       const totalColor = p.tag === 'shortest' ? '#80f0a0' : (p.tag === 'critical' ? '#ff8080' : '#ffc890');
-      return `<text x="60" y="${barY + 26}" fill="#cca040" font-size="15" font-weight="bold">${p.src}</text>
-        <text x="190" y="${barY + 26}" fill="#ff9933" font-size="17" font-weight="bold">→ ${p.dst}</text>
+      return `<text x="60" y="${barY + 26}" fill="#cca040" font-size="18" font-weight="bold">${p.src}</text>
+        <text x="190" y="${barY + 26}" fill="#ff9933" font-size="20" font-weight="bold">→ ${p.dst}</text>
         ${segs}
         <text x="935" y="${barY + 26}" text-anchor="end" fill="${totalColor}" font-size="20" font-weight="bold">${p.total} ps</text>
         ${badge}`;
@@ -4066,23 +4066,23 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- =========== SUMMARY box =========== -->
   <rect x="40" y="760" width="1060" height="220" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="570" y="800" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+  <text x="570" y="800" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="24">
     סיכום timing
   </text>
 
   <!-- Setup card -->
   <rect x="70" y="826" width="490" height="140" rx="8" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.5)" stroke-width="1.6"/>
   <text x="315" y="856" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">Critical path (setup)</text>
-  <text x="90" y="890" fill="#c8b090" font-size="17">A1/B0 → PP10 → AND5 → XOR2 → Y2 = <tspan fill="#ff8080" font-weight="bold">390 ps</tspan></text>
-  <text x="90" y="918" fill="#c8b090" font-size="14" font-style="italic">(תאום: דרך PP01 — אותו זמן)</text>
-  <text x="90" y="946" fill="#80f0a0" font-size="17" font-weight="bold">T_clk ≥ 470 ps  ⇒  Fmax ≈ 2.13 GHz</text>
+  <text x="90" y="890" fill="#c8b090" font-size="20">A1/B0 → PP10 → AND5 → XOR2 → Y2 = <tspan fill="#ff8080" font-weight="bold">390 ps</tspan></text>
+  <text x="90" y="918" fill="#c8b090" font-size="18" font-style="italic">(תאום: דרך PP01 — אותו זמן)</text>
+  <text x="90" y="946" fill="#80f0a0" font-size="20" font-weight="bold">T_clk ≥ 470 ps  ⇒  Fmax ≈ 2.13 GHz</text>
 
   <!-- Hold card -->
   <rect x="580" y="826" width="490" height="140" rx="8" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.5)" stroke-width="1.6"/>
   <text x="825" y="856" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">Shortest path (hold)</text>
-  <text x="600" y="890" fill="#c8b090" font-size="17">A0/B0 → PP00 → Y0 = <tspan fill="#80f0a0" font-weight="bold">120 ps</tspan></text>
-  <text x="600" y="918" fill="#c8b090" font-size="14" font-style="italic">(שער יחיד — הקצר ביותר במעגל)</text>
-  <text x="600" y="946" fill="#80f0a0" font-size="17" font-weight="bold">120 ≥ 10 ps ✓ (בטוח)</text>
+  <text x="600" y="890" fill="#c8b090" font-size="20">A0/B0 → PP00 → Y0 = <tspan fill="#80f0a0" font-weight="bold">120 ps</tspan></text>
+  <text x="600" y="918" fill="#c8b090" font-size="18" font-style="italic">(שער יחיד — הקצר ביותר במעגל)</text>
+  <text x="600" y="946" fill="#80f0a0" font-size="20" font-weight="bold">120 ≥ 10 ps ✓ (בטוח)</text>
 
   </g><!-- end translate(0, 680) wrapper -->
 </svg>`,
@@ -4217,7 +4217,7 @@ T_shortest ≥ t_h − t_clk-q
         ],
         answerSchematic: `
 <svg viewBox="0 0 1140 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Minimal pipelining: a single FF_C1 on the C1 wire between AND5 and the consumers XOR2/AND6.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Minimal pipelining: a single FF_C1 on the C1 wire between AND5 and the consumers XOR2/AND6.">
 
   <defs>
     <linearGradient id="pipeBandM" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -4228,24 +4228,24 @@ T_shortest ≥ t_h − t_clk-q
     </linearGradient>
   </defs>
 
-  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     פתרון מינימלי — FF יחיד על C1
   </text>
 
   <!-- ════════ Pipeline band (purple background) ════════ -->
   <rect x="500" y="110" width="140" height="470" rx="10"
         fill="url(#pipeBandM)" stroke="#cc66ff" stroke-width="1.8" stroke-dasharray="6,4"/>
-  <text x="570" y="100" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">PIPELINE FF</text>
+  <text x="570" y="100" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">PIPELINE FF</text>
 
   <!-- ════════ Stage headers ════════ -->
   <rect x="50"  y="80" width="450" height="32" rx="6" fill="rgba(128,200,255,0.10)" stroke="#80c8ff" stroke-width="1.4"/>
-  <text x="275" y="102" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">STAGE 1 (PP + AND5, ≤ 240 ps)</text>
+  <text x="275" y="102" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">STAGE 1 (PP + AND5, ≤ 240 ps)</text>
 
   <rect x="640" y="80" width="460" height="32" rx="6" fill="rgba(255,144,80,0.10)" stroke="#ff9050" stroke-width="1.4"/>
-  <text x="870" y="102" text-anchor="middle" fill="#ff9050" font-size="16" font-weight="bold">STAGE 2 (XOR2 / AND6, ≤ 150 ps)</text>
+  <text x="870" y="102" text-anchor="middle" fill="#ff9050" font-size="18" font-weight="bold">STAGE 2 (XOR2 / AND6, ≤ 150 ps)</text>
 
   <!-- ════════ Inputs (left) ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="70" cy="155" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="70" y="161" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="70" cy="260" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -4316,62 +4316,62 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 250 162 L 280 162 A 22 22 0 0 1 280 208 L 250 208 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="182" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP00</text>
-    <text x="266" y="197" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="182" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP00</text>
+    <text x="266" y="197" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
 
     <path d="M 250 222 L 280 222 A 22 22 0 0 1 280 268 L 250 268 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="242" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP10</text>
-    <text x="266" y="257" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="242" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP10</text>
+    <text x="266" y="257" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
 
     <path d="M 250 322 L 280 322 A 22 22 0 0 1 280 368 L 250 368 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="342" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP01</text>
-    <text x="266" y="357" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="342" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP01</text>
+    <text x="266" y="357" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
 
     <path d="M 250 412 L 280 412 A 22 22 0 0 1 280 458 L 250 458 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="432" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP11</text>
-    <text x="266" y="447" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="432" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP11</text>
+    <text x="266" y="447" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ HA1 — XOR1 (S-side) + AND5 (C1-side, critical) ════════ -->
   <g>
     <path d="M 430 260 Q 455 285, 430 310 L 460 310 Q 485 310, 500 285 Q 485 260, 460 260 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="468" y="282" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR1</text>
-    <text x="468" y="298" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="468" y="282" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
+    <text x="468" y="298" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 440 350 L 470 350 A 25 25 0 0 1 470 400 L 440 400 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="458" y="372" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND5</text>
-    <text x="458" y="388" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="458" y="372" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND5</text>
+    <text x="458" y="388" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ Single Pipeline FF — FF_C1 ════════ -->
   <g>
     <rect x="540" y="350" width="90" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
-    <text x="585" y="372" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF_C1</text>
-    <text x="585" y="389" text-anchor="middle" fill="#fff080" font-size="11">★ הפתרון</text>
+    <text x="585" y="372" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_C1</text>
+    <text x="585" y="389" text-anchor="middle" fill="#fff080" font-size="16">★ הפתרון</text>
   </g>
 
   <!-- ════════ HA2 — XOR2 + AND6 ════════ -->
   <g>
     <path d="M 700 392 Q 725 417, 700 442 L 730 442 Q 755 442, 770 417 Q 755 392, 730 392 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="738" y="414" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR2</text>
-    <text x="738" y="430" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="738" y="414" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR2</text>
+    <text x="738" y="430" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 700 507 L 730 507 A 25 25 0 0 1 730 557 L 700 557 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="718" y="529" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND6</text>
-    <text x="718" y="545" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="718" y="529" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND6</text>
+    <text x="718" y="545" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ Outputs ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="1030" cy="180" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2" stroke-dasharray="5,3"/>
     <text x="1030" y="186" text-anchor="middle" fill="#cca040">Y0</text>
     <circle cx="1030" cy="285" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2" stroke-dasharray="5,3"/>
@@ -4384,11 +4384,11 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- Critical-path badge -->
   <rect x="740" y="585" width="290" height="32" rx="6" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.6"/>
-  <text x="885" y="606" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">SETUP: 240 ps | 150 ps ≤ 300 ✓</text>
+  <text x="885" y="606" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">SETUP: 240 ps | 150 ps ≤ 300 ✓</text>
 
   <!-- Bottom summary -->
   <rect x="40" y="630" width="1060" height="58" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="570" y="660" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="17">
+  <text x="570" y="660" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     FF יחיד (FF_C1) שובר את ה-390 ps לשני שלבים: 240 + 150 ≤ 300 ✓ — אבל Y0,Y1 לא פוייפלינו → מטופל ב-ד'
   </text>
 </svg>`,
@@ -4544,7 +4544,7 @@ T_shortest ≥ t_h − t_clk-q
         ],
         answerSchematic: `
 <svg viewBox="0 0 1140 720" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Balanced pipelined multiplier — 4 FFs total (FF_C1 + 3 added).">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Balanced pipelined multiplier — 4 FFs total (FF_C1 + 3 added).">
 
   <defs>
     <linearGradient id="pipeBand3" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -4555,24 +4555,24 @@ T_shortest ≥ t_h − t_clk-q
     </linearGradient>
   </defs>
 
-  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Pipeline מאוזן — 3 FFs נוספים (FF_PP11, FF_Y0, FF_Y1)
   </text>
 
   <!-- Pipeline band -->
   <rect x="540" y="110" width="140" height="500" rx="10"
         fill="url(#pipeBand3)" stroke="#cc66ff" stroke-width="1.8" stroke-dasharray="6,4"/>
-  <text x="610" y="100" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">PIPELINE FFs</text>
+  <text x="610" y="100" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">PIPELINE FFs</text>
 
   <!-- Stage headers -->
   <rect x="50"  y="80" width="490" height="32" rx="6" fill="rgba(128,200,255,0.10)" stroke="#80c8ff" stroke-width="1.4"/>
-  <text x="295" y="102" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">STAGE 1 (combinational ≤ 270 ps)</text>
+  <text x="295" y="102" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">STAGE 1 (combinational ≤ 270 ps)</text>
 
   <rect x="680" y="80" width="420" height="32" rx="6" fill="rgba(255,144,80,0.10)" stroke="#ff9050" stroke-width="1.4"/>
-  <text x="890" y="102" text-anchor="middle" fill="#ff9050" font-size="16" font-weight="bold">STAGE 2 (combinational ≤ 150 ps)</text>
+  <text x="890" y="102" text-anchor="middle" fill="#ff9050" font-size="18" font-weight="bold">STAGE 2 (combinational ≤ 150 ps)</text>
 
   <!-- Inputs -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="70" cy="155" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="70" y="161" text-anchor="middle" fill="#cca040">A0</text>
     <circle cx="70" cy="260" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -4640,37 +4640,37 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <path d="M 250 162 L 280 162 A 22 22 0 0 1 280 208 L 250 208 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="182" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP00</text>
-    <text x="266" y="197" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="182" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP00</text>
+    <text x="266" y="197" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
 
     <path d="M 250 222 L 280 222 A 22 22 0 0 1 280 268 L 250 268 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="242" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP10</text>
-    <text x="266" y="257" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="242" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP10</text>
+    <text x="266" y="257" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
 
     <path d="M 250 322 L 280 322 A 22 22 0 0 1 280 368 L 250 368 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="342" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP01</text>
-    <text x="266" y="357" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="342" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP01</text>
+    <text x="266" y="357" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
 
     <path d="M 250 412 L 280 412 A 22 22 0 0 1 280 458 L 250 458 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="266" y="432" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP11</text>
-    <text x="266" y="447" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+    <text x="266" y="432" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP11</text>
+    <text x="266" y="447" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ HA1 (XOR1 + AND5) ════════ -->
   <g>
     <path d="M 430 265 Q 455 290, 430 315 L 460 315 Q 485 315, 500 290 Q 485 265, 460 265 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="468" y="287" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR1</text>
-    <text x="468" y="303" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="468" y="287" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
+    <text x="468" y="303" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 440 345 L 470 345 A 25 25 0 0 1 470 395 L 440 395 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="458" y="367" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND5</text>
-    <text x="458" y="383" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="458" y="367" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND5</text>
+    <text x="458" y="383" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ Pipeline FFs (4 total) ════════
@@ -4679,43 +4679,43 @@ T_shortest ≥ t_h − t_clk-q
   <g>
     <rect x="555" y="160" width="110" height="50" rx="6"
           fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-    <text x="610" y="183" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_Y0 ✨</text>
-    <text x="610" y="200" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ד)</text>
+    <text x="610" y="183" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_Y0 ✨</text>
+    <text x="610" y="200" text-anchor="middle" fill="#fff080" font-size="16">★ חדש (ד)</text>
   </g>
   <g>
     <rect x="555" y="265" width="110" height="50" rx="6"
           fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-    <text x="610" y="288" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_Y1 ✨</text>
-    <text x="610" y="305" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ד)</text>
+    <text x="610" y="288" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_Y1 ✨</text>
+    <text x="610" y="305" text-anchor="middle" fill="#fff080" font-size="16">★ חדש (ד)</text>
   </g>
   <g>
     <rect x="555" y="345" width="110" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-    <text x="610" y="368" text-anchor="middle" fill="#cc99ff" font-size="13" font-weight="bold">FF_C1</text>
-    <text x="610" y="385" text-anchor="middle" fill="#a0a0c0" font-size="11">מסעיף ג'</text>
+    <text x="610" y="368" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_C1</text>
+    <text x="610" y="385" text-anchor="middle" fill="#a0a0c0" font-size="16">מסעיף ג'</text>
   </g>
   <g>
     <rect x="555" y="405" width="110" height="50" rx="6"
           fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-    <text x="610" y="428" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_PP11 ✨</text>
-    <text x="610" y="445" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ד)</text>
+    <text x="610" y="428" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_PP11 ✨</text>
+    <text x="610" y="445" text-anchor="middle" fill="#fff080" font-size="16">★ חדש (ד)</text>
   </g>
 
   <!-- ════════ HA2 (XOR2 + AND6) ════════ -->
   <g>
     <path d="M 740 397 Q 765 422, 740 447 L 770 447 Q 795 447, 810 422 Q 795 397, 770 397 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
-    <text x="778" y="419" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR2</text>
-    <text x="778" y="435" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+    <text x="778" y="419" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR2</text>
+    <text x="778" y="435" text-anchor="middle" fill="#a0c0d0" font-size="16">150 ps</text>
   </g>
   <g>
     <path d="M 740 512 L 770 512 A 25 25 0 0 1 770 562 L 740 562 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="758" y="534" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND6</text>
-    <text x="758" y="550" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+    <text x="758" y="534" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND6</text>
+    <text x="758" y="550" text-anchor="middle" fill="#a0c0d0" font-size="16">120 ps</text>
   </g>
 
   <!-- ════════ Outputs (all green — synced) ════════ -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="1030" cy="185" r="20" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
     <text x="1030" y="191" text-anchor="middle" fill="#80f0a0">Y0</text>
     <circle cx="1030" cy="290" r="20" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
@@ -4728,14 +4728,14 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- Sync badge -->
   <rect x="780" y="150" width="280" height="32" rx="6" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text x="920" y="171" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">✓ Y0..Y3 יוצאים בו-זמנית</text>
+  <text x="920" y="171" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">✓ Y0..Y3 יוצאים בו-זמנית</text>
 
   <!-- Bottom summary -->
   <rect x="40" y="630" width="1060" height="78" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="570" y="660" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
+  <text x="570" y="660" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     Latency = 2 cycles · Throughput = 1 vector/clock · Stage 1 ≤ 270 ps · Stage 2 ≤ 150 ps
   </text>
-  <text x="570" y="688" text-anchor="middle" fill="#c8b090" font-size="15" font-style="italic">
+  <text x="570" y="688" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     סה"כ 4 FFs: FF_C1 מסעיף ג' + 3 חדשים (צהוב) שנוספו בסעיף ד'
   </text>
 </svg>`,
@@ -4908,26 +4908,26 @@ T_shortest ≥ t_h − t_clk-q
 **שאלת bonus 2**: "ה-margin של 10 ps בטוח?" → לא! ב-CMOS יש process variation — buffer ב-corner מסוים (slow corner) יכול להיות מהיר מדי ב-fast corner. STA tools דורשות margin של 50-100 ps לפחות לכל corner. בעיצוב אמיתי נבחר BUF גדול יותר (~100 ps) או נוסיף שני BUFs.`,
         answerSchematic: `
 <svg viewBox="0 0 1100 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Before / after panels — adding a buffer on the Y0 path to fix hold timing in the multiplier.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Before / after panels — adding a buffer on the Y0 path to fix hold timing in the multiplier.">
 
-  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Delay padding — הוספת BUF על המסלול הקצר Y0
   </text>
-  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     אילוץ: T_shortest ≥ 170 ps (t_h = 200, t_clk-q ≈ 30)
   </text>
 
   <!-- ════════════════════ BEFORE panel ════════════════════ -->
   <rect x="30" y="100" width="510" height="340" rx="12"
         fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2"/>
-  <text x="285" y="138" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">לפני — הפרת hold ✗</text>
+  <text x="285" y="138" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="24">לפני — הפרת hold ✗</text>
 
   <!-- A0 input -->
   <circle cx="80" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="80" y="246" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">A0</text>
+  <text x="80" y="246" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">A0</text>
   <!-- B0 input -->
   <circle cx="80" cy="310" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="80" y="316" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">B0</text>
+  <text x="80" y="316" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">B0</text>
 
   <!-- Wires -->
   <line x1="100" y1="240" x2="220" y2="240" stroke="#cca040" stroke-width="2"/>
@@ -4936,34 +4936,34 @@ T_shortest ≥ t_h − t_clk-q
   <!-- PP00 (AND) -->
   <path d="M 220 230 L 280 230 A 50 50 0 0 1 280 320 L 220 320 Z"
         fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-  <text x="260" y="270" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP00</text>
-  <text x="260" y="290" text-anchor="middle" fill="#a0c0d0" font-size="13">AND · 120 ps</text>
+  <text x="260" y="270" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">PP00</text>
+  <text x="260" y="290" text-anchor="middle" fill="#a0c0d0" font-size="18">AND · 120 ps</text>
 
   <!-- PP00 → Y0 (long, direct) -->
   <line x1="330" y1="275" x2="470" y2="275" stroke="#ff9933" stroke-width="2.2"/>
 
   <!-- Y0 output -->
   <circle cx="490" cy="275" r="22" fill="#0a1825" stroke="#ff6060" stroke-width="2.4"/>
-  <text x="490" y="281" text-anchor="middle" fill="#ff6060" font-size="17" font-weight="bold">Y0</text>
+  <text x="490" y="281" text-anchor="middle" fill="#ff6060" font-size="20" font-weight="bold">Y0</text>
 
   <!-- Delay annotation -->
-  <text x="400" y="262" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">120 ps total</text>
+  <text x="400" y="262" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">120 ps total</text>
 
   <!-- Violation badge -->
   <rect x="80" y="380" width="410" height="40" rx="8" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.8"/>
-  <text x="285" y="406" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="16">120 &lt; 170 → race condition</text>
+  <text x="285" y="406" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">120 &lt; 170 → race condition</text>
 
   <!-- ════════════════════ AFTER panel ════════════════════ -->
   <rect x="560" y="100" width="510" height="340" rx="12"
         fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
-  <text x="815" y="138" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">אחרי — hold נשמר ✓</text>
+  <text x="815" y="138" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">אחרי — hold נשמר ✓</text>
 
   <!-- A0 input -->
   <circle cx="610" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="610" y="246" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">A0</text>
+  <text x="610" y="246" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">A0</text>
   <!-- B0 input -->
   <circle cx="610" cy="310" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="610" y="316" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">B0</text>
+  <text x="610" y="316" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">B0</text>
 
   <!-- Wires -->
   <line x1="630" y1="240" x2="730" y2="240" stroke="#cca040" stroke-width="2"/>
@@ -4972,30 +4972,30 @@ T_shortest ≥ t_h − t_clk-q
   <!-- PP00 (AND) -->
   <path d="M 730 230 L 790 230 A 50 50 0 0 1 790 320 L 730 320 Z"
         fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-  <text x="770" y="270" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP00</text>
-  <text x="770" y="290" text-anchor="middle" fill="#a0c0d0" font-size="13">AND · 120 ps</text>
+  <text x="770" y="270" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">PP00</text>
+  <text x="770" y="290" text-anchor="middle" fill="#a0c0d0" font-size="18">AND · 120 ps</text>
 
   <!-- PP00 → BUF -->
   <line x1="840" y1="275" x2="880" y2="275" stroke="#ff9933" stroke-width="2.2"/>
 
   <!-- BUF (highlighted yellow) -->
   <rect x="880" y="250" width="80" height="50" rx="8" fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
-  <text x="920" y="271" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">BUF</text>
-  <text x="920" y="289" text-anchor="middle" fill="#fff080" font-size="11">+60 ps ★</text>
+  <text x="920" y="271" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">BUF</text>
+  <text x="920" y="289" text-anchor="middle" fill="#fff080" font-size="16">+60 ps ★</text>
 
   <!-- BUF → Y0 -->
   <line x1="960" y1="275" x2="1000" y2="275" stroke="#ff9933" stroke-width="2.2"/>
 
   <!-- Y0 output (now green = safe) -->
   <circle cx="1020" cy="275" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.4"/>
-  <text x="1020" y="281" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">Y0</text>
+  <text x="1020" y="281" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">Y0</text>
 
   <!-- Delay annotation -->
-  <text x="895" y="240" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">120 + 60 = 180 ps</text>
+  <text x="895" y="240" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">120 + 60 = 180 ps</text>
 
   <!-- Pass badge -->
   <rect x="610" y="380" width="410" height="40" rx="8" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="815" y="406" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">180 ≥ 170 ✓ (margin 10 ps)</text>
+  <text x="815" y="406" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">180 ≥ 170 ✓ (margin 10 ps)</text>
 </svg>`,
         expectedAnswers: [
           'buffer', 'BUF', 'באפר',
@@ -5090,14 +5090,14 @@ T_shortest ≥ t_h − t_clk-q
         question: 'במעגל מסעיף א\' מוזרק **bridge fault** בין שני קווים שכנים שיוצאים מ-PP layer: הקו \`PP10 → XOR1.in0\` והקו \`PP01 → XOR1.in1\` — מסומנים ב**סגול** בשרטוט. הקצר הוא **wired-AND** — שני הקווים נושאים את ה-AND של ערכיהם המקוריים. **מהו וקטור הקלט המינימלי שמזהה את התקלה?** הסבר מה רואים בפלט.',
         schematic: `
 <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Bridge fault between PP10→XOR1 and PP01→XOR1 wires.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Bridge fault between PP10→XOR1 and PP01→XOR1 wires.">
 
-  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Bridge fault — wired-AND בין שני קווי ה-PP השכנים
   </text>
 
   <!-- Inputs -->
-  <g font-size="17" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="60" cy="100" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="60" y="106" text-anchor="middle" fill="#cca040">A1</text>
     <circle cx="60" cy="170" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -5119,12 +5119,12 @@ T_shortest ≥ t_h − t_clk-q
   <!-- PP10 (AND, top) -->
   <path d="M 220 115 L 250 115 A 25 25 0 0 1 250 165 L 220 165 Z"
         fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-  <text x="240" y="143" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP10</text>
+  <text x="240" y="143" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">PP10</text>
 
   <!-- PP01 (AND, bottom) -->
   <path d="M 220 275 L 250 275 A 25 25 0 0 1 250 325 L 220 325 Z"
         fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-  <text x="240" y="303" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP01</text>
+  <text x="240" y="303" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">PP01</text>
 
   <!-- ════════ The two BRIDGED wires (purple, highlighted) ════════ -->
   <g stroke="#cc66ff" stroke-width="3.6" fill="none">
@@ -5139,19 +5139,19 @@ T_shortest ≥ t_h − t_clk-q
 
   <!-- Bridge label -->
   <rect x="440" y="200" width="280" height="34" rx="8" fill="rgba(204,102,255,0.16)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="580" y="222" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">⚡ BRIDGE — wired-AND</text>
+  <text x="580" y="222" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">⚡ BRIDGE — wired-AND</text>
 
   <!-- XOR1 -->
   <g>
     <path d="M 580 200 Q 610 220, 580 240 L 615 240 Q 645 240, 660 220 Q 645 200, 615 200 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-    <text x="618" y="225" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR1</text>
+    <text x="618" y="225" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR1</text>
   </g>
   <!-- AND5 (also fed by the same two wires) -->
   <g>
     <path d="M 580 270 L 610 270 A 25 25 0 0 1 610 320 L 580 320 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="600" y="298" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND5</text>
+    <text x="600" y="298" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND5</text>
   </g>
   <!-- Wires to XOR1 / AND5 from bridge nets — the bridge is on the segment up to XOR1 -->
   <g stroke="#5a6e80" stroke-width="1.6" fill="none">
@@ -5162,14 +5162,14 @@ T_shortest ≥ t_h − t_clk-q
   </g>
 
   <!-- Outputs of interest -->
-  <text x="720" y="225" fill="#ff9933" font-size="14" font-weight="bold">→ Y1</text>
-  <text x="720" y="299" fill="#ff9933" font-size="14" font-weight="bold">→ C1</text>
+  <text x="720" y="225" fill="#ff9933" font-size="18" font-weight="bold">→ Y1</text>
+  <text x="720" y="299" fill="#ff9933" font-size="18" font-weight="bold">→ C1</text>
 
   <!-- Context note -->
-  <text x="450" y="370" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="450" y="370" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     שני הקווים יוצאים מ-PP10/PP01 וסמוכים פיזית → קצר ביניהם = wired-AND
   </text>
-  <text x="450" y="396" text-anchor="middle" fill="#ffe080" font-size="14" font-weight="bold">
+  <text x="450" y="396" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">
     כל וקטור שמעניק להם ערכים זהים — לא מגלה את התקלה (קצר שקוף)
   </text>
 </svg>`,
@@ -5348,14 +5348,14 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
         question: 'במעגל מסעיף א\' אחד החוטים מוזרק עם תקלת **\`stuck-at-0\`** — הקו \`AND5.out\` (כלומר \`C1\` תקוע ב-0), מסומן ב**אדום** בשרטוט. **מהו וקטור הקלט המינימלי שמזהה את התקלה ומאשש שאכן הקו הזה הוא הפגום?** הסבר את ה-trade-off של מינימום וקטור לעומת זיהוי ייחודי של מיקום התקלה.',
         schematic: `
 <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Stuck-at-0 fault on AND5.out (C1) wire.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Stuck-at-0 fault on AND5.out (C1) wire.">
 
-  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Stuck-at-0 fault — C1 תקוע ב-0
   </text>
 
   <!-- Inputs -->
-  <g font-size="17" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="60" cy="120" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="60" y="126" text-anchor="middle" fill="#cca040">A1</text>
     <circle cx="60" cy="180" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -5377,12 +5377,12 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <!-- PP10 -->
   <path d="M 220 130 L 250 130 A 25 25 0 0 1 250 180 L 220 180 Z"
         fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-  <text x="240" y="158" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP10</text>
+  <text x="240" y="158" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">PP10</text>
 
   <!-- PP01 -->
   <path d="M 220 250 L 250 250 A 25 25 0 0 1 250 300 L 220 300 Z"
         fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-  <text x="240" y="278" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP01</text>
+  <text x="240" y="278" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">PP01</text>
 
   <!-- Wires PP10/PP01 → AND5 -->
   <g stroke="#5a6e80" stroke-width="1.6" fill="none">
@@ -5393,7 +5393,7 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <!-- AND5 -->
   <path d="M 400 185 L 430 185 A 30 30 0 0 1 430 245 L 400 245 Z"
         fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
-  <text x="420" y="218" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND5</text>
+  <text x="420" y="218" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND5</text>
 
   <!-- ════════ The STUCK-AT-0 wire (red, highlighted) ════════ -->
   <g stroke="#ff6060" stroke-width="3.8" fill="none">
@@ -5402,8 +5402,8 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
 
   <!-- "stuck-at-0" label -->
   <rect x="500" y="245" width="180" height="40" rx="8" fill="rgba(255,96,96,0.16)" stroke="#ff6060" stroke-width="1.8"/>
-  <text x="590" y="269" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">✗ stuck-at-0</text>
-  <text x="590" y="207" text-anchor="middle" fill="#ff9999" font-size="13" font-weight="bold" font-style="italic">C1</text>
+  <text x="590" y="269" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">✗ stuck-at-0</text>
+  <text x="590" y="207" text-anchor="middle" fill="#ff9999" font-size="18" font-weight="bold" font-style="italic">C1</text>
 
   <!-- Branches to XOR2 and AND6 -->
   <g stroke="#5a6e80" stroke-width="1.6" fill="none">
@@ -5416,21 +5416,21 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <g>
     <path d="M 780 145 Q 808 165, 780 185 L 815 185 Q 845 185, 858 165 Q 845 145, 815 145 Z"
           fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-    <text x="818" y="170" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR2</text>
+    <text x="818" y="170" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR2</text>
   </g>
   <!-- AND6 -->
   <g>
     <path d="M 780 295 L 815 295 A 25 25 0 0 1 815 345 L 780 345 Z"
           fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
-    <text x="800" y="323" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND6</text>
+    <text x="800" y="323" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND6</text>
   </g>
 
   <!-- Outputs -->
-  <text x="870" y="170" fill="#ff9933" font-size="14" font-weight="bold">→ Y2</text>
-  <text x="870" y="324" fill="#ff9933" font-size="14" font-weight="bold">→ Y3</text>
+  <text x="870" y="170" fill="#ff9933" font-size="18" font-weight="bold">→ Y2</text>
+  <text x="870" y="324" fill="#ff9933" font-size="18" font-weight="bold">→ Y3</text>
 
   <!-- Context note -->
-  <text x="450" y="380" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="450" y="380" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     C1 = AND5.out → צרכנים: XOR2 (Y2) ו-AND6 (Y3). תקלת s-a-0 משפיעה על שניהם.
   </text>
 </svg>`,
@@ -5607,8 +5607,8 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
         }),
       },
     ],
-    source: 'שאלת ראיון אמיתית — תכן לוגי / תזמון וסנכרון (גרסה 2 — multiplier)',
-    tags: ['interview', 'multiplier', 'partial-products', 'gate-level', 'identification', 'combinational', 'timing'],
+    source: 'תכן לוגי / תזמון וסנכרון — מכפיל 2-ביט',
+    tags: ['multiplier', 'partial-products', 'gate-level', 'identification', 'combinational', 'timing'],
     circuitRevealsAnswer: true,
   },
 
@@ -5630,7 +5630,7 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   {
     id: 'interview-cdc-multibit-gray',
     difficulty: 'hard',
-    title: 'שאלת ראיון — CDC: מטא-יציבות, סינכרון רב-ביטי וקוד Gray',
+    title: 'CDC — מטא-יציבות, סינכרון רב-ביטי וקוד Gray',
     intro:
 `שני clock domains אסינכרוניים — \`CLK_A\` (200 MHz) ו-\`CLK_B\` (333 MHz). ה-domain שלך הוא **B**, ואתה מקבל ממנו אותות שמקורם בצד A:
 
@@ -5644,10 +5644,10 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
 <svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" direction="ltr"
      font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Two clock domains with an async boundary; bus crossing with parallel 2-FF synchronizers.">
 
-  <text x="500" y="48" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="30">
+  <text x="500" y="48" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="32">
     CDC — שני clock domains, אות יחיד + bus
   </text>
-  <text x="500" y="80" text-anchor="middle" fill="#a0a0c0" font-size="19" font-style="italic">
+  <text x="500" y="80" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     CLK_A → CLK_B  ·  סינכרון פר-ביט מספיק לאות יחיד; לא מספיק ל-bus
   </text>
 
@@ -5656,23 +5656,23 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <rect x="40"  y="120" width="440" height="580" fill="rgba(255,176,128,0.04)" stroke="none"/>
   <rect x="480" y="120" width="480" height="580" fill="rgba(128,255,176,0.04)" stroke="none"/>
 
-  <text x="260" y="148" text-anchor="middle" fill="#ffb080" font-weight="bold" font-size="22">
+  <text x="260" y="148" text-anchor="middle" fill="#ffb080" font-weight="bold" font-size="24">
     DOMAIN A — CLK_A (200 MHz)
   </text>
-  <text x="720" y="148" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">
+  <text x="720" y="148" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">
     DOMAIN B — CLK_B (333 MHz)
   </text>
 
-  <text x="480" y="184" text-anchor="middle" fill="#ff9999" font-size="17" font-weight="bold">
+  <text x="480" y="184" text-anchor="middle" fill="#ff9999" font-size="20" font-weight="bold">
     ⚠ async boundary
   </text>
 
   <!-- ════════ Single-bit async crossing (top) ════════ -->
   <circle cx="80" cy="250" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="80" y="258" text-anchor="middle" fill="#cca040" font-size="14" font-weight="bold">async_in</text>
+  <text x="80" y="258" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">async_in</text>
 
   <line x1="106" y1="250" x2="560" y2="250" stroke="#cc99ff" stroke-width="3"/>
-  <text x="290" y="232" text-anchor="middle" fill="#cc99ff" font-size="16" font-style="italic">crosses boundary</text>
+  <text x="290" y="232" text-anchor="middle" fill="#cc99ff" font-size="18" font-style="italic">crosses boundary</text>
 
   <!-- 2-FF synchronizer for the single bit -->
   <rect x="560" y="222" width="110" height="56" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
@@ -5685,9 +5685,9 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
   <line x1="810" y1="250" x2="900" y2="250" stroke="#ff9933" stroke-width="2.4"/>
 
   <circle cx="920" cy="250" r="26" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="920" y="258" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">sync_out</text>
+  <text x="920" y="258" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">sync_out</text>
 
-  <text x="685" y="305" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+  <text x="685" y="305" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     2-FF synchronizer (סעיף א')
   </text>
 
@@ -5696,30 +5696,30 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
     const y = 410 + i * 80;
     return `
       <circle cx="80" cy="${y}" r="24" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-      <text x="80" y="${y + 6}" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">bus[${i}]</text>
+      <text x="80" y="${y + 6}" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">bus[${i}]</text>
       <line x1="104" y1="${y}" x2="560" y2="${y}" stroke="#cc99ff" stroke-width="2.4"/>
       <rect x="560" y="${y - 24}" width="100" height="48" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-      <text x="610" y="${y + 6}" text-anchor="middle" fill="#cc99ff" font-size="17" font-weight="bold">FF1_${i}</text>
+      <text x="610" y="${y + 6}" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF1_${i}</text>
       <rect x="690" y="${y - 24}" width="100" height="48" rx="7" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-      <text x="740" y="${y + 6}" text-anchor="middle" fill="#cc99ff" font-size="17" font-weight="bold">FF2_${i}</text>
+      <text x="740" y="${y + 6}" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF2_${i}</text>
       <line x1="660" y1="${y}" x2="690" y2="${y}" stroke="#a0a0c0" stroke-width="2"/>
       <line x1="790" y1="${y}" x2="896" y2="${y}" stroke="#ff9933" stroke-width="2.2"/>
       <circle cx="920" cy="${y}" r="24" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
-      <text x="920" y="${y + 6}" text-anchor="middle" fill="#ff9933" font-size="16" font-weight="bold">q[${i}]</text>
+      <text x="920" y="${y + 6}" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">q[${i}]</text>
     `;
   }).join('')}
 
   <!-- Bus label -->
-  <text x="280" y="390" text-anchor="middle" fill="#ffc890" font-size="18" font-weight="bold">
+  <text x="280" y="390" text-anchor="middle" fill="#ffc890" font-size="20" font-weight="bold">
     bus[2:0] — 3 ביטים מקבילים שצריכים לעבור יחד
   </text>
-  <text x="685" y="660" text-anchor="middle" fill="#ff8080" font-size="17" font-weight="bold" font-style="italic">
+  <text x="685" y="660" text-anchor="middle" fill="#ff8080" font-size="20" font-weight="bold" font-style="italic">
     ⚠ סינכרון פר-ביט אינו מספיק — מטופל בסעיף ב'
   </text>
 
   <!-- CLK_B label at the bottom -->
   <rect x="600" y="700" width="280" height="42" rx="8" fill="rgba(128,240,160,0.10)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="740" y="728" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">
+  <text x="740" y="728" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">
     CLK_B → כל ה-FFs בצד B
   </text>
 </svg>`,
@@ -5874,82 +5874,82 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
 <svg viewBox="0 0 960 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
      font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Single bit through a 2-FF synchronizer; metastability resolves between FF_S1 and FF_S2.">
 
-  <text x="480" y="50" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="30">
+  <text x="480" y="50" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="32">
     2-FF Synchronizer — איך metastability מתיישבת
   </text>
-  <text x="480" y="84" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
+  <text x="480" y="84" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     FF_S1 עלול להיות metastable · ה-cycle עד FF_S2 = זמן הסתגלות t_r
   </text>
 
   <!-- ════════ Cycle 0 panel (red — metastable) ════════ -->
   <rect x="40" y="120" width="880" height="200" rx="14" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2"/>
-  <text x="480" y="156" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">
+  <text x="480" y="156" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="24">
     Cycle 0 — דגימה ראשונה (FF_S1 ייתכן metastable)
   </text>
 
   <!-- async input -->
   <circle cx="100" cy="240" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="100" y="248" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">async</text>
+  <text x="100" y="248" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">async</text>
   <line x1="126" y1="240" x2="290" y2="240" stroke="#cca040" stroke-width="2.4"/>
 
   <!-- FF_S1 with metastable warning -->
   <rect x="290" y="208" width="160" height="70" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.8"/>
-  <text x="370" y="238" text-anchor="middle" fill="#cc99ff" font-size="22" font-weight="bold">FF_S1</text>
-  <text x="370" y="263" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">⚠ metastable?</text>
+  <text x="370" y="238" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF_S1</text>
+  <text x="370" y="263" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">⚠ metastable?</text>
 
   <!-- Undefined wire -->
   <line x1="450" y1="244" x2="610" y2="244" stroke="#ff8080" stroke-width="4" stroke-dasharray="6,4"/>
-  <text x="530" y="230" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">value undefined</text>
+  <text x="530" y="230" text-anchor="middle" fill="#ff8080" font-size="18" font-style="italic">value undefined</text>
 
   <!-- FF_S2 - not sampling yet -->
   <rect x="610" y="208" width="160" height="70" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4" stroke-dasharray="4,3"/>
-  <text x="690" y="238" text-anchor="middle" fill="#cc99ff" font-size="22" font-weight="bold">FF_S2</text>
-  <text x="690" y="263" text-anchor="middle" fill="#a0a0c0" font-size="14">לא דוגם עוד</text>
+  <text x="690" y="238" text-anchor="middle" fill="#cc99ff" font-size="24" font-weight="bold">FF_S2</text>
+  <text x="690" y="263" text-anchor="middle" fill="#a0a0c0" font-size="18">לא דוגם עוד</text>
 
   <!-- Unknown output -->
   <line x1="770" y1="244" x2="860" y2="244" stroke="#a0a0c0" stroke-width="2.4" stroke-dasharray="5,4"/>
   <circle cx="888" cy="244" r="24" fill="#0a1825" stroke="#a0a0c0" stroke-width="2"/>
-  <text x="888" y="252" text-anchor="middle" fill="#a0a0c0" font-size="22" font-weight="bold">?</text>
+  <text x="888" y="252" text-anchor="middle" fill="#a0a0c0" font-size="24" font-weight="bold">?</text>
 
   <!-- ════════ Cycle 1 panel (green — settled) ════════ -->
   <rect x="40" y="350" width="880" height="200" rx="14" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
-  <text x="480" y="386" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">
+  <text x="480" y="386" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">
     Cycle 1 — אחרי זמן הסתגלות t_r (FF_S1 התייצב, FF_S2 דוגם נקי)
   </text>
 
   <!-- async input -->
   <circle cx="100" cy="470" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="100" y="478" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">async</text>
+  <text x="100" y="478" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">async</text>
   <line x1="126" y1="470" x2="290" y2="470" stroke="#cca040" stroke-width="2.4"/>
 
   <!-- FF_S1 settled -->
   <rect x="290" y="438" width="160" height="70" rx="8" fill="#1a1428" stroke="#80f0a0" stroke-width="3"/>
-  <text x="370" y="468" text-anchor="middle" fill="#80f0a0" font-size="22" font-weight="bold">FF_S1</text>
-  <text x="370" y="493" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">✓ settled (0 or 1)</text>
+  <text x="370" y="468" text-anchor="middle" fill="#80f0a0" font-size="24" font-weight="bold">FF_S1</text>
+  <text x="370" y="493" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">✓ settled (0 or 1)</text>
 
   <!-- Stable wire -->
   <line x1="450" y1="474" x2="610" y2="474" stroke="#80f0a0" stroke-width="4"/>
-  <text x="530" y="460" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">stable</text>
+  <text x="530" y="460" text-anchor="middle" fill="#80f0a0" font-size="18" font-style="italic">stable</text>
 
   <!-- FF_S2 samples clean -->
   <rect x="610" y="438" width="160" height="70" rx="8" fill="#1a1428" stroke="#80f0a0" stroke-width="3"/>
-  <text x="690" y="468" text-anchor="middle" fill="#80f0a0" font-size="22" font-weight="bold">FF_S2</text>
-  <text x="690" y="493" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">✓ samples clean</text>
+  <text x="690" y="468" text-anchor="middle" fill="#80f0a0" font-size="24" font-weight="bold">FF_S2</text>
+  <text x="690" y="493" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">✓ samples clean</text>
 
   <!-- sync output -->
   <line x1="770" y1="474" x2="860" y2="474" stroke="#ff9933" stroke-width="3"/>
   <circle cx="888" cy="474" r="24" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="888" y="482" text-anchor="middle" fill="#ff9933" font-size="15" font-weight="bold">sync</text>
+  <text x="888" y="482" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">sync</text>
 
   <!-- ════════ MTBF formula box ════════ -->
   <rect x="40" y="582" width="880" height="100" rx="12" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="2"/>
-  <text x="480" y="614" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="22">
+  <text x="480" y="614" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="24">
     MTBF (2-FF) = exp(2·t_clk / τ) / (T_w · f_clk · f_data)
   </text>
-  <text x="480" y="644" text-anchor="middle" fill="#c8b090" font-size="17">
+  <text x="480" y="644" text-anchor="middle" fill="#c8b090" font-size="20">
     שני שלבים → exponent כפול → MTBF גדל אקספוננציאלית · בעבודה ~10⁴⁰⁺ שנים
   </text>
-  <text x="480" y="670" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="480" y="670" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     ראה #5002 לחישוב מלא של MTBF
   </text>
 </svg>`,
@@ -6030,17 +6030,17 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
         ],
         schematic: `
 <svg viewBox="0 0 1100 600" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Timing-diagram showing three parallel synchronizers settling at different cycles, producing an illegal intermediate codeword.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Timing-diagram showing three parallel synchronizers settling at different cycles, producing an illegal intermediate codeword.">
 
   <text x="550" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Multi-bit bus — settling per bit ⇒ ערך-ביניים לא חוקי
   </text>
-  <text x="550" y="64" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="550" y="64" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     Counter במונה מתעדכן 011 → 100 . שלושת הביטים מתחלפים בו-זמנית.
   </text>
 
   <!-- Cycle headers -->
-  <g font-size="14" font-weight="bold" fill="#a0a0c0">
+  <g font-size="18" font-weight="bold" fill="#a0a0c0">
     <text x="200" y="118">t=0</text>
     <text x="380" y="118">t=1</text>
     <text x="560" y="118">t=2</text>
@@ -6055,7 +6055,7 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
     { name: 'bit 1', y: 250, vals: ['1', '1?', '1', '0', '0'], color: '#80f0a0' },
     { name: 'bit 0', y: 330, vals: ['1', '1?', '0', '0', '0'], color: '#ffc080' },
   ].map(row => `
-    <text x="120" y="${row.y + 5}" fill="${row.color}" font-size="15" font-weight="bold">FF_S2 ${row.name}</text>
+    <text x="120" y="${row.y + 5}" fill="${row.color}" font-size="18" font-weight="bold">FF_S2 ${row.name}</text>
     ${row.vals.map((v, i) => {
       const x = 200 + i * 180;
       const isUnstable = v.includes('?');
@@ -6064,15 +6064,15 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
         <rect x="${x - 22}" y="${row.y - 18}" width="44" height="36" rx="6"
               fill="${isUnstable ? 'rgba(255,128,128,0.15)' : 'rgba(64,80,100,0.2)'}"
               stroke="${valColor}" stroke-width="1.8" ${isUnstable ? 'stroke-dasharray="3,3"' : ''}/>
-        <text x="${x}" y="${row.y + 5}" text-anchor="middle" fill="${valColor}" font-size="16" font-weight="bold">${v}</text>
+        <text x="${x}" y="${row.y + 5}" text-anchor="middle" fill="${valColor}" font-size="18" font-weight="bold">${v}</text>
       `;
     }).join('')}
   `).join('')}
 
   <!-- q[2:0] summary row -->
   <line x1="180" y1="380" x2="1020" y2="380" stroke="#3a4a5a" stroke-width="1.2"/>
-  <text x="120" y="425" fill="#cca040" font-size="15" font-weight="bold">q[2:0]</text>
-  <g font-size="17" font-weight="bold" font-family="'JetBrains Mono', monospace">
+  <text x="120" y="425" fill="#cca040" font-size="18" font-weight="bold">q[2:0]</text>
+  <g font-size="20" font-weight="bold" font-family="'JetBrains Mono', monospace">
     ${[
       { x: 200, v: '011', tag: 'OK', color: '#80f0a0' },
       { x: 380, v: '???', tag: 'מטא', color: '#ff8080' },
@@ -6083,16 +6083,16 @@ MTBF_2FF = exp(t_clk · 2 / τ) / (T_w · f_clk · f_data)
       <rect x="${c.x - 30}" y="408" width="60" height="36" rx="6"
             fill="rgba(64,80,100,0.15)" stroke="${c.color}" stroke-width="2"/>
       <text x="${c.x}" y="430" text-anchor="middle" fill="${c.color}">${c.v}</text>
-      <text x="${c.x}" y="466" text-anchor="middle" fill="${c.color}" font-size="11" font-weight="bold">${c.tag}</text>
+      <text x="${c.x}" y="466" text-anchor="middle" fill="${c.color}" font-size="16" font-weight="bold">${c.tag}</text>
     `).join('')}
   </g>
 
   <!-- Conclusion banner -->
   <rect x="60" y="500" width="980" height="76" rx="10" fill="rgba(255,96,96,0.06)" stroke="#ff6060" stroke-width="1.8"/>
-  <text x="550" y="530" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">
+  <text x="550" y="530" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
     \`110\` הוא ערך שלא היה אף פעם במונה (002, 003, 004 — \`110\` לא חוקי)
   </text>
-  <text x="550" y="556" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="550" y="556" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     Domain B מקבל ערך-ביניים שגוי בסבב המעבר — בעיה לא נראית ב-simulator דטרמיניסטי
   </text>
 </svg>`,
@@ -6205,9 +6205,9 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
         ],
         answerSchematic: `
 <svg viewBox="0 0 1140 600" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Comparison of three multi-bit CDC solutions: FIFO, handshake, Gray code.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Comparison of three multi-bit CDC solutions: FIFO, handshake, Gray code.">
 
-  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     שלוש גישות ל-Multi-bit CDC
   </text>
 
@@ -6256,14 +6256,14 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
     </text>
     <line x1="${panel.x + 20}" y1="158" x2="${panel.x + 300}" y2="158" stroke="${panel.titleColor}" stroke-width="1.4"/>
     ${panel.bullets.map((b, i) => `
-      <text x="${panel.x + 20}" y="${190 + i * 32}" fill="#c8b090" font-size="14">
+      <text x="${panel.x + 20}" y="${190 + i * 32}" fill="#c8b090" font-size="18">
         <tspan fill="${panel.titleColor}" font-weight="bold">▸</tspan>  ${b}
       </text>
     `).join('')}
   `).join('')}
 
   <!-- Connection note -->
-  <text x="570" y="565" text-anchor="middle" fill="#cc99ff" font-size="14" font-style="italic">
+  <text x="570" y="565" text-anchor="middle" fill="#cc99ff" font-size="18" font-style="italic">
     שילוב נפוץ: Async FIFO משתמש ב-Gray code ל-pointers (שיטה 3 בתוך שיטה 1)
   </text>
 </svg>`,
@@ -6358,12 +6358,12 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
         ],
         schematic: `
 <svg viewBox="0 0 960 680" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="19" role="img" aria-label="Gray code 2-bit sequence with annotated single-bit transitions and metastability resolutions.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Gray code 2-bit sequence with annotated single-bit transitions and metastability resolutions.">
 
-  <text x="480" y="50" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="30">
+  <text x="480" y="50" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="32">
     Gray code — אינוואריאנט single-bit-change
   </text>
-  <text x="480" y="84" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
+  <text x="480" y="84" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     סדרה:  00 → 01 → 11 → 10 → 00  ·  כל מעבר משנה בדיוק 1 ביט
   </text>
 
@@ -6375,8 +6375,8 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
     { code: '10', dec: '3', cx: 480, cy: 480 },
   ].map(n => `
     <circle cx="${n.cx}" cy="${n.cy}" r="80" fill="#0a1825" stroke="#80d4ff" stroke-width="3"/>
-    <text x="${n.cx}" y="${n.cy - 6}" text-anchor="middle" fill="#80d4ff" font-size="40" font-weight="bold">${n.code}</text>
-    <text x="${n.cx}" y="${n.cy + 28}" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">(= ${n.dec})</text>
+    <text x="${n.cx}" y="${n.cy - 6}" text-anchor="middle" fill="#80d4ff" font-size="32" font-weight="bold">${n.code}</text>
+    <text x="${n.cx}" y="${n.cy + 28}" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">(= ${n.dec})</text>
   `).join('')}
 
   <!-- Arrows -->
@@ -6401,7 +6401,7 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
     { x: 344, y: 432, label: 'bit 1 משתנה' },
   ].map(l => `
     <rect x="${l.x - 70}" y="${l.y - 18}" width="140" height="28" rx="6" fill="rgba(10,24,37,0.85)" stroke="#80f0a0" stroke-width="1.4"/>
-    <text x="${l.x}" y="${l.y + 2}" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">${l.label}</text>
+    <text x="${l.x}" y="${l.y + 2}" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">${l.label}</text>
   `).join('')}
 
   <!-- Bottom box: the invariant -->
@@ -6409,14 +6409,14 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
   <text x="480" y="612" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">
     בכל מעבר: רק 1 ביט בסיכון metastable, השני stable
   </text>
-  <text x="480" y="644" text-anchor="middle" fill="#c8b090" font-size="17" font-style="italic">
+  <text x="480" y="644" text-anchor="middle" fill="#c8b090" font-size="20" font-style="italic">
     כל settling אפשרי = ערך חוקי בסדרה · אין ערך-ביניים בלתי-חוקי
   </text>
 </svg>`,
       },
     ],
-    source: 'שאלת ראיון אמיתית — CDC מתקדם (multi-bit + Gray code)',
-    tags: ['interview', 'cdc', 'metastability', 'synchronizer', 'gray-code', 'multi-bit-cdc', 'timing'],
+    source: 'CDC מתקדם — multi-bit + Gray code',
+    tags: ['cdc', 'metastability', 'synchronizer', 'gray-code', 'multi-bit-cdc', 'timing'],
     circuitRevealsAnswer: true,
   },
 
@@ -6442,7 +6442,7 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
   {
     id: 'interview-clock-skew-useful-skew',
     difficulty: 'hard',
-    title: 'שאלת ראיון — Clock skew ו-Useful skew',
+    title: 'Clock skew ו-Useful skew',
     intro:
 `נתון pipeline בן 3 FFs: \`in → FF1 → (logic₁) → FF2 → (logic₂) → FF3 → out\`.
 
@@ -6460,12 +6460,12 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
 תזכורת חשובה: \`skew\` הוא **לא** באג. הוא תופעה — לפעמים מזיקה, לפעמים מועילה. למידת skew מועיל (**useful skew**) הוא אומנות STA אמיתית.`,
     schematic: `
 <svg viewBox="0 0 1140 760" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="3-stage pipeline with H-tree clock distribution and unbalanced logic between FFs.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="3-stage pipeline with H-tree clock distribution and unbalanced logic between FFs.">
 
-  <text x="570" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Pipeline 3-FF עם H-tree clock distribution
   </text>
-  <text x="570" y="66" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="570" y="66" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     logic₁ = 150 ps · logic₂ = 260 ps · אזון בלתי-תקין → stage 2 קריטי
   </text>
 
@@ -6486,26 +6486,26 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
 
   <!-- Clock root pad -->
   <circle cx="570" cy="100" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="570" y="105" text-anchor="middle" fill="#cca040" font-size="13" font-weight="bold">CLK</text>
+  <text x="570" y="105" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
 
   <!-- Buffer cells on the H-tree (visual only) -->
   <g>
     <rect x="265" y="225" width="30" height="20" rx="3" fill="#1a2230" stroke="#cca040" stroke-width="1.6"/>
-    <text x="280" y="240" text-anchor="middle" fill="#cca040" font-size="10">B1</text>
+    <text x="280" y="240" text-anchor="middle" fill="#cca040" font-size="16">B1</text>
 
     <rect x="555" y="225" width="30" height="20" rx="3" fill="#1a2230" stroke="#cca040" stroke-width="1.6"/>
-    <text x="570" y="240" text-anchor="middle" fill="#cca040" font-size="10">B2</text>
+    <text x="570" y="240" text-anchor="middle" fill="#cca040" font-size="16">B2</text>
 
     <rect x="845" y="225" width="30" height="20" rx="3" fill="#1a2230" stroke="#cca040" stroke-width="1.6"/>
-    <text x="860" y="240" text-anchor="middle" fill="#cca040" font-size="10">B3</text>
+    <text x="860" y="240" text-anchor="middle" fill="#cca040" font-size="16">B3</text>
   </g>
 
   <!-- Skew annotations -->
-  <text x="280" y="280" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">t_sk1 = 0</text>
-  <text x="570" y="280" text-anchor="middle" fill="#ff8080" font-size="13" font-weight="bold">t_sk2 = ?</text>
-  <text x="860" y="280" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">t_sk3 = 0</text>
+  <text x="280" y="280" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">t_sk1 = 0</text>
+  <text x="570" y="280" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">t_sk2 = ?</text>
+  <text x="860" y="280" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">t_sk3 = 0</text>
 
-  <text x="570" y="312" text-anchor="middle" fill="#a0a0c0" font-size="12" font-style="italic">
+  <text x="570" y="312" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     skew = סטיה של זמן הגעת ה-clock מ-FF ל-FF
   </text>
 
@@ -6513,13 +6513,13 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
 
   <!-- Input -->
   <circle cx="80" cy="450" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="80" y="456" text-anchor="middle" fill="#cca040" font-size="14" font-weight="bold">in</text>
+  <text x="80" y="456" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">in</text>
 
   <line x1="100" y1="450" x2="240" y2="450" stroke="#a0a0c0" stroke-width="2"/>
 
   <!-- FF1 -->
   <rect x="240" y="425" width="80" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-  <text x="280" y="450" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">FF1</text>
+  <text x="280" y="450" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF1</text>
   <polyline points="240,440 252,450 240,460" fill="none" stroke="#cca040" stroke-width="2"/>
 
   <!-- Stage 1 logic block: XOR + AND -->
@@ -6527,26 +6527,26 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
 
   <path d="M 370 432 Q 395 450, 370 468 L 395 468 Q 415 468, 425 450 Q 415 432, 395 432 Z"
         fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
-  <text x="395" y="447" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">XOR</text>
-  <text x="395" y="460" text-anchor="middle" fill="#a0c0d0" font-size="10">90</text>
+  <text x="395" y="447" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR</text>
+  <text x="395" y="460" text-anchor="middle" fill="#a0c0d0" font-size="16">90</text>
 
   <line x1="425" y1="450" x2="455" y2="450" stroke="#a0a0c0" stroke-width="2"/>
 
   <path d="M 455 437 L 475 437 A 20 20 0 0 1 475 463 L 455 463 Z"
         fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
-  <text x="468" y="452" text-anchor="middle" fill="#80c8ff" font-size="11" font-weight="bold">AND</text>
-  <text x="468" y="465" text-anchor="middle" fill="#a0c0d0" font-size="9">60</text>
+  <text x="468" y="452" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">AND</text>
+  <text x="468" y="465" text-anchor="middle" fill="#a0c0d0" font-size="16">60</text>
 
   <line x1="495" y1="450" x2="540" y2="450" stroke="#a0a0c0" stroke-width="2"/>
 
   <!-- Stage 1 delay label -->
-  <text x="425" y="500" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold" font-style="italic">
+  <text x="425" y="500" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold" font-style="italic">
     Stage 1 = 150 ps
   </text>
 
   <!-- FF2 -->
   <rect x="540" y="425" width="80" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-  <text x="580" y="450" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">FF2</text>
+  <text x="580" y="450" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF2</text>
   <polyline points="540,440 552,450 540,460" fill="none" stroke="#cca040" stroke-width="2"/>
 
   <!-- Stage 2 logic block: AND + AND + OR + XOR -->
@@ -6554,46 +6554,46 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
 
   <path d="M 650 437 L 670 437 A 20 20 0 0 1 670 463 L 650 463 Z"
         fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
-  <text x="663" y="452" text-anchor="middle" fill="#80c8ff" font-size="11" font-weight="bold">AND</text>
-  <text x="663" y="465" text-anchor="middle" fill="#a0c0d0" font-size="9">60</text>
+  <text x="663" y="452" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">AND</text>
+  <text x="663" y="465" text-anchor="middle" fill="#a0c0d0" font-size="16">60</text>
 
   <line x1="690" y1="450" x2="710" y2="450" stroke="#a0a0c0" stroke-width="2"/>
 
   <path d="M 710 437 L 730 437 A 20 20 0 0 1 730 463 L 710 463 Z"
         fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
-  <text x="723" y="452" text-anchor="middle" fill="#80c8ff" font-size="11" font-weight="bold">AND</text>
-  <text x="723" y="465" text-anchor="middle" fill="#a0c0d0" font-size="9">60</text>
+  <text x="723" y="452" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">AND</text>
+  <text x="723" y="465" text-anchor="middle" fill="#a0c0d0" font-size="16">60</text>
 
   <line x1="750" y1="450" x2="770" y2="450" stroke="#a0a0c0" stroke-width="2"/>
 
   <path d="M 770 437 L 785 437 Q 805 437, 815 450 Q 805 463, 785 463 L 770 463 Q 780 450, 770 437 Z"
         fill="rgba(255,192,128,0.25)" stroke="#ffc080" stroke-width="2"/>
-  <text x="793" y="452" text-anchor="middle" fill="#ffc080" font-size="11" font-weight="bold">OR</text>
-  <text x="793" y="465" text-anchor="middle" fill="#a0c0d0" font-size="9">50</text>
+  <text x="793" y="452" text-anchor="middle" fill="#ffc080" font-size="16" font-weight="bold">OR</text>
+  <text x="793" y="465" text-anchor="middle" fill="#a0c0d0" font-size="16">50</text>
 
   <line x1="815" y1="450" x2="830" y2="450" stroke="#a0a0c0" stroke-width="2"/>
 
   <path d="M 830 432 Q 855 450, 830 468 L 855 468 Q 875 468, 885 450 Q 875 432, 855 432 Z"
         fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
-  <text x="855" y="447" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">XOR</text>
-  <text x="855" y="460" text-anchor="middle" fill="#a0c0d0" font-size="10">90</text>
+  <text x="855" y="447" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR</text>
+  <text x="855" y="460" text-anchor="middle" fill="#a0c0d0" font-size="16">90</text>
 
   <line x1="885" y1="450" x2="930" y2="450" stroke="#ff6060" stroke-width="3"/>
 
   <!-- Stage 2 delay label -->
-  <text x="765" y="500" text-anchor="middle" fill="#ff8080" font-size="13" font-weight="bold" font-style="italic">
+  <text x="765" y="500" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold" font-style="italic">
     Stage 2 = 260 ps ⚠ critical
   </text>
 
   <!-- FF3 -->
   <rect x="930" y="425" width="80" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
-  <text x="970" y="450" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">FF3</text>
+  <text x="970" y="450" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF3</text>
   <polyline points="930,440 942,450 930,460" fill="none" stroke="#cca040" stroke-width="2"/>
 
   <!-- Output -->
   <line x1="1010" y1="450" x2="1060" y2="450" stroke="#a0a0c0" stroke-width="2"/>
   <circle cx="1080" cy="450" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
-  <text x="1080" y="456" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">out</text>
+  <text x="1080" y="456" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">out</text>
 
   <!-- Bottom summary box -->
   <rect x="80" y="560" width="980" height="170" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
@@ -6602,19 +6602,19 @@ Gray:      00 → 01 → 11 → 10 → 00  (each step: exactly 1 bit changes!)
     Setup slack ללא skew
   </text>
 
-  <text x="280" y="635" text-anchor="middle" fill="#80f0a0" font-size="17">
+  <text x="280" y="635" text-anchor="middle" fill="#80f0a0" font-size="20">
     <tspan font-weight="bold">Stage 1:</tspan> 400 − 80 − 150 − 80 = <tspan fill="#80f0a0" font-weight="bold">+90 ps ✓</tspan>
   </text>
 
-  <text x="860" y="635" text-anchor="middle" fill="#ff8080" font-size="17">
+  <text x="860" y="635" text-anchor="middle" fill="#ff8080" font-size="20">
     <tspan font-weight="bold">Stage 2:</tspan> 400 − 80 − 260 − 80 = <tspan fill="#ff6060" font-weight="bold">−20 ps ✗</tspan>
   </text>
 
-  <text x="570" y="675" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="570" y="675" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     Stage 2 הוא הקריטי — אך יש +90 ps headroom ב-Stage 1
   </text>
 
-  <text x="570" y="705" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">
+  <text x="570" y="705" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
     הרעיון: לקחת חלק מ-90 ה-ps של stage 1 ולתת ל-stage 2 → useful skew
   </text>
 </svg>`,
@@ -6766,69 +6766,69 @@ f_max = 1 / 420 ps ≈ 2.38 GHz
         }),
         answerSchematic: `
 <svg viewBox="0 0 1080 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Setup slack waterfall — Stage 1 has +90 ps headroom, Stage 2 has -20 ps violation.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Setup slack waterfall — Stage 1 has +90 ps headroom, Stage 2 has -20 ps violation.">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Setup slack — ויזואליזציה של ה-pipeline
   </text>
 
   <!-- Stage 1 row -->
-  <text x="60" y="100" fill="#80f0a0" font-weight="bold" font-size="17">Stage 1 (FF1 → FF2)</text>
+  <text x="60" y="100" fill="#80f0a0" font-weight="bold" font-size="20">Stage 1 (FF1 → FF2)</text>
 
   <!-- Bar visualization. Scale: 1 ps = 2.4 px. Total T = 400 → 960 px. -->
   <rect x="60" y="115" width="960" height="50" rx="6" fill="#1a2230" stroke="#80c8ff" stroke-width="1.6"/>
 
   <rect x="60" y="115" width="192" height="50" rx="6" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="156" y="146" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">t_CQ 80</text>
+  <text x="156" y="146" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">t_CQ 80</text>
 
   <rect x="252" y="115" width="360" height="50" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="1.6"/>
-  <text x="432" y="146" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">logic₁ 150 ps</text>
+  <text x="432" y="146" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">logic₁ 150 ps</text>
 
   <rect x="612" y="115" width="192" height="50" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.6"/>
-  <text x="708" y="146" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">t_su 80</text>
+  <text x="708" y="146" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">t_su 80</text>
 
   <rect x="804" y="115" width="216" height="50" rx="0" fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text x="912" y="146" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">slack +90 ps ✓</text>
+  <text x="912" y="146" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">slack +90 ps ✓</text>
 
-  <text x="540" y="195" text-anchor="middle" fill="#80f0a0" font-size="15">slack₁ = 400 − 80 − 150 − 80 = +90 ps  ✓</text>
+  <text x="540" y="195" text-anchor="middle" fill="#80f0a0" font-size="18">slack₁ = 400 − 80 − 150 − 80 = +90 ps  ✓</text>
 
   <!-- Stage 2 row -->
-  <text x="60" y="250" fill="#ff8080" font-weight="bold" font-size="17">Stage 2 (FF2 → FF3)</text>
+  <text x="60" y="250" fill="#ff8080" font-weight="bold" font-size="20">Stage 2 (FF2 → FF3)</text>
 
   <rect x="60" y="265" width="960" height="50" rx="6" fill="#1a2230" stroke="#ff8080" stroke-width="1.6"/>
 
   <rect x="60" y="265" width="192" height="50" rx="6" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="156" y="296" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">t_CQ 80</text>
+  <text x="156" y="296" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">t_CQ 80</text>
 
   <rect x="252" y="265" width="624" height="50" fill="rgba(255,96,96,0.25)" stroke="#ff6060" stroke-width="1.8"/>
-  <text x="564" y="296" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">logic₂ 260 ps (critical!)</text>
+  <text x="564" y="296" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">logic₂ 260 ps (critical!)</text>
 
   <rect x="876" y="265" width="192" height="50" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.6"/>
-  <text x="972" y="296" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">t_su 80</text>
+  <text x="972" y="296" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">t_su 80</text>
 
   <!-- The negative slack (-20 ps) overflows past T_clk -->
   <line x1="1020" y1="248" x2="1020" y2="335" stroke="#ff6060" stroke-width="3" stroke-dasharray="5,3"/>
   <rect x="1020" y="265" width="48" height="50" fill="rgba(255,96,96,0.5)" stroke="#ff6060" stroke-width="1.6"/>
-  <text x="1044" y="296" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">−20!</text>
+  <text x="1044" y="296" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">−20!</text>
 
-  <text x="540" y="345" text-anchor="middle" fill="#ff8080" font-size="15">slack₂ = 400 − 80 − 260 − 80 = −20 ps  ✗ VIOLATION</text>
+  <text x="540" y="345" text-anchor="middle" fill="#ff8080" font-size="18">slack₂ = 400 − 80 − 260 − 80 = −20 ps  ✗ VIOLATION</text>
 
   <!-- T_clk reference line -->
   <line x1="1020" y1="80" x2="1020" y2="345" stroke="#80d4ff" stroke-width="1.6" stroke-dasharray="3,3"/>
-  <text x="1020" y="76" text-anchor="middle" fill="#80d4ff" font-size="13" font-weight="bold">T_clk = 400 ps</text>
+  <text x="1020" y="76" text-anchor="middle" fill="#80d4ff" font-size="18" font-weight="bold">T_clk = 400 ps</text>
 
   <!-- Summary box -->
   <rect x="60" y="385" width="960" height="130" rx="10" fill="rgba(255,200,144,0.06)" stroke="#ffc890" stroke-width="1.6"/>
-  <text x="540" y="415" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
+  <text x="540" y="415" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     f_max = 1 / (t_CQ + logic₂_max + t_su) = 1 / 420 ps ≈ 2.38 GHz
   </text>
-  <text x="540" y="445" text-anchor="middle" fill="#c8b090" font-size="14">
+  <text x="540" y="445" text-anchor="middle" fill="#c8b090" font-size="18">
     ל-T_clk = 400 ps stage 2 פוגע ב-setup ב-20 ps.
   </text>
-  <text x="540" y="471" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">
+  <text x="540" y="471" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
     Stage 1 לעומת זאת יש +90 ps headroom — &gt; אפשרות useful skew
   </text>
-  <text x="540" y="497" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">
+  <text x="540" y="497" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     Useful skew: לקחת חלק מ-Stage 1 headroom ולתת ל-Stage 2 → סעיף ב'
   </text>
 </svg>`,
@@ -6924,44 +6924,44 @@ Useful skew **מפזר** את 70 ה-ps האלה בין השלבים, אבל לא
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Skew applied: Stage 1 slack drops to -10, Stage 2 slack rises to +80. Total slack +70 preserved.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Skew applied: Stage 1 slack drops to -10, Stage 2 slack rises to +80. Total slack +70 preserved.">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     sk2 = −100 ps : הזזת slack בין השלבים
   </text>
-  <text x="540" y="64" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="540" y="64" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     Useful skew מעביר 100 ps מ-Stage 1 ל-Stage 2 — slack_total נשמר
   </text>
 
   <!-- Before / After comparison -->
-  <text x="280" y="120" text-anchor="middle" fill="#a0a0c0" font-weight="bold" font-size="17">לפני (sk2 = 0)</text>
-  <text x="800" y="120" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="17">אחרי (sk2 = −100)</text>
+  <text x="280" y="120" text-anchor="middle" fill="#a0a0c0" font-weight="bold" font-size="20">לפני (sk2 = 0)</text>
+  <text x="800" y="120" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">אחרי (sk2 = −100)</text>
 
   <!-- Before: Stage 1 -->
   <rect x="80" y="150" width="400" height="40" rx="4" fill="rgba(64,80,100,0.2)" stroke="#80c8ff" stroke-width="1.4"/>
   <rect x="80" y="150" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="98" y="175" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">CQ</text>
+  <text x="98" y="175" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">CQ</text>
   <rect x="116" y="150" width="68" height="40" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="1.4"/>
-  <text x="150" y="175" text-anchor="middle" fill="#80c8ff" font-size="11" font-weight="bold">logic₁</text>
+  <text x="150" y="175" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">logic₁</text>
   <rect x="184" y="150" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="202" y="175" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">su</text>
+  <text x="202" y="175" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">su</text>
   <rect x="220" y="150" width="40" height="40" fill="rgba(128,240,160,0.3)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text x="240" y="175" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">+90</text>
+  <text x="240" y="175" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">+90</text>
 
-  <text x="280" y="210" text-anchor="middle" fill="#80f0a0" font-size="13">Stage 1: +90 ps ✓</text>
+  <text x="280" y="210" text-anchor="middle" fill="#80f0a0" font-size="18">Stage 1: +90 ps ✓</text>
 
   <!-- Before: Stage 2 -->
   <rect x="80" y="240" width="400" height="40" rx="4" fill="rgba(64,80,100,0.2)" stroke="#ff8080" stroke-width="1.4"/>
   <rect x="80" y="240" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="98" y="265" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">CQ</text>
+  <text x="98" y="265" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">CQ</text>
   <rect x="116" y="240" width="120" height="40" fill="rgba(255,96,96,0.25)" stroke="#ff6060" stroke-width="1.4"/>
-  <text x="176" y="265" text-anchor="middle" fill="#ff8080" font-size="11" font-weight="bold">logic₂ (long)</text>
+  <text x="176" y="265" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">logic₂ (long)</text>
   <rect x="236" y="240" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="254" y="265" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">su</text>
+  <text x="254" y="265" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">su</text>
   <rect x="272" y="240" width="10" height="40" fill="rgba(255,96,96,0.5)" stroke="#ff6060" stroke-width="1.4"/>
-  <text x="290" y="265" text-anchor="start" fill="#ff6060" font-size="13" font-weight="bold">−20!</text>
+  <text x="290" y="265" text-anchor="start" fill="#ff6060" font-size="18" font-weight="bold">−20!</text>
 
-  <text x="280" y="300" text-anchor="middle" fill="#ff8080" font-size="13">Stage 2: −20 ps ✗</text>
+  <text x="280" y="300" text-anchor="middle" fill="#ff8080" font-size="18">Stage 2: −20 ps ✗</text>
 
   <!-- Arrow: Skew moves 100 ps from Stage 1 to Stage 2 -->
   <defs>
@@ -6971,47 +6971,47 @@ Useful skew **מפזר** את 70 ה-ps האלה בין השלבים, אבל לא
   </defs>
 
   <path d="M 500 170 Q 580 170, 620 170" stroke="#cc66ff" stroke-width="2.6" fill="none" marker-end="url(#skewMove)" stroke-dasharray="5,3"/>
-  <text x="560" y="160" text-anchor="middle" fill="#cc66ff" font-size="14" font-weight="bold">−100 ps</text>
+  <text x="560" y="160" text-anchor="middle" fill="#cc66ff" font-size="18" font-weight="bold">−100 ps</text>
 
   <path d="M 500 260 Q 580 260, 620 260" stroke="#cc66ff" stroke-width="2.6" fill="none" marker-end="url(#skewMove)" stroke-dasharray="5,3"/>
-  <text x="560" y="280" text-anchor="middle" fill="#cc66ff" font-size="14" font-weight="bold">+100 ps</text>
+  <text x="560" y="280" text-anchor="middle" fill="#cc66ff" font-size="18" font-weight="bold">+100 ps</text>
 
   <!-- After: Stage 1 (tightened) -->
   <rect x="600" y="150" width="400" height="40" rx="4" fill="rgba(64,80,100,0.2)" stroke="#ff8080" stroke-width="1.4"/>
   <rect x="600" y="150" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="618" y="175" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">CQ</text>
+  <text x="618" y="175" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">CQ</text>
   <rect x="636" y="150" width="68" height="40" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="1.4"/>
-  <text x="670" y="175" text-anchor="middle" fill="#80c8ff" font-size="11" font-weight="bold">logic₁</text>
+  <text x="670" y="175" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">logic₁</text>
   <rect x="704" y="150" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="722" y="175" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">su</text>
+  <text x="722" y="175" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">su</text>
   <rect x="740" y="150" width="5" height="40" fill="rgba(255,96,96,0.5)" stroke="#ff6060" stroke-width="1.4"/>
-  <text x="755" y="175" text-anchor="start" fill="#ff6060" font-size="13" font-weight="bold">−10!</text>
+  <text x="755" y="175" text-anchor="start" fill="#ff6060" font-size="18" font-weight="bold">−10!</text>
 
-  <text x="800" y="210" text-anchor="middle" fill="#ff8080" font-size="13">Stage 1: −10 ps ✗ (חדש)</text>
+  <text x="800" y="210" text-anchor="middle" fill="#ff8080" font-size="18">Stage 1: −10 ps ✗ (חדש)</text>
 
   <!-- After: Stage 2 (relaxed) -->
   <rect x="600" y="240" width="400" height="40" rx="4" fill="rgba(64,80,100,0.2)" stroke="#80f0a0" stroke-width="1.4"/>
   <rect x="600" y="240" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="618" y="265" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">CQ</text>
+  <text x="618" y="265" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">CQ</text>
   <rect x="636" y="240" width="120" height="40" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="1.4"/>
-  <text x="696" y="265" text-anchor="middle" fill="#80c8ff" font-size="11" font-weight="bold">logic₂</text>
+  <text x="696" y="265" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">logic₂</text>
   <rect x="756" y="240" width="36" height="40" fill="rgba(204,102,255,0.25)" stroke="#cc66ff" stroke-width="1.4"/>
-  <text x="774" y="265" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">su</text>
+  <text x="774" y="265" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">su</text>
   <rect x="792" y="240" width="40" height="40" fill="rgba(128,240,160,0.4)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text x="812" y="265" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">+80</text>
+  <text x="812" y="265" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">+80</text>
 
-  <text x="800" y="300" text-anchor="middle" fill="#80f0a0" font-size="13">Stage 2: +80 ps ✓</text>
+  <text x="800" y="300" text-anchor="middle" fill="#80f0a0" font-size="18">Stage 2: +80 ps ✓</text>
 
   <!-- Conservation banner -->
   <rect x="60" y="370" width="960" height="80" rx="10" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="540" y="402" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="18">
+  <text x="540" y="402" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">
     slack_total = 90 + (−20) = (−10) + 80 = +70 ps   (קבוע!)
   </text>
-  <text x="540" y="432" text-anchor="middle" fill="#c8b090" font-size="14">
+  <text x="540" y="432" text-anchor="middle" fill="#c8b090" font-size="18">
     Useful skew מעביר slack בין שלבים — לא יוצר עוד slack
   </text>
 
-  <text x="540" y="490" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="540" y="490" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     הפתרון: מאזן sk2 כך ששני השלבים נהיים חיוביים. סעיף ג'.
   </text>
 </svg>`,
@@ -7123,7 +7123,7 @@ useful skew **לא** יכול לפתור את הבעיה לבדו אם ה-pipeli
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Slack curve as a function of sk2 — feasible region with both stages positive.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Slack curve as a function of sk2 — feasible region with both stages positive.">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Slack vs sk2 — איזון אופטימלי = sk2 = −55 ps
@@ -7134,28 +7134,28 @@ useful skew **לא** יכול לפתור את הבעיה לבדו אם ה-pipeli
   <line x1="100" y1="120" x2="100" y2="450" stroke="#a0a0c0" stroke-width="1.4"/>
 
   <!-- X axis labels: sk2 from -120 to 0 -->
-  <text x="540" y="488" text-anchor="middle" fill="#a0a0c0" font-size="14" font-weight="bold">sk2 (ps)</text>
+  <text x="540" y="488" text-anchor="middle" fill="#a0a0c0" font-size="18" font-weight="bold">sk2 (ps)</text>
   ${[-120, -100, -80, -60, -40, -20, 0].map(v => {
     const x = 100 + (v + 120) * (920 / 120);
     return `
       <line x1="${x}" y1="445" x2="${x}" y2="455" stroke="#a0a0c0" stroke-width="1"/>
-      <text x="${x}" y="470" text-anchor="middle" fill="#a0a0c0" font-size="12">${v}</text>
+      <text x="${x}" y="470" text-anchor="middle" fill="#a0a0c0" font-size="16">${v}</text>
     `;
   }).join('')}
 
   <!-- Y axis labels: slack from -50 to +100 -->
-  <text x="60" y="285" text-anchor="middle" fill="#a0a0c0" font-size="14" font-weight="bold" transform="rotate(-90, 60, 285)">slack (ps)</text>
+  <text x="60" y="285" text-anchor="middle" fill="#a0a0c0" font-size="18" font-weight="bold" transform="rotate(-90, 60, 285)">slack (ps)</text>
   ${[-50, 0, 50, 100].map(v => {
     const y = 450 - (v + 50) * (330 / 150);
     return `
       <line x1="95" y1="${y}" x2="105" y2="${y}" stroke="#a0a0c0" stroke-width="1"/>
-      <text x="85" y="${y + 5}" text-anchor="end" fill="#a0a0c0" font-size="12">${v}</text>
+      <text x="85" y="${y + 5}" text-anchor="end" fill="#a0a0c0" font-size="16">${v}</text>
     `;
   }).join('')}
 
   <!-- Zero line -->
   <line x1="100" y1="340" x2="1020" y2="340" stroke="#ff6060" stroke-width="1" stroke-dasharray="5,3"/>
-  <text x="1024" y="345" fill="#ff6060" font-size="11">slack = 0</text>
+  <text x="1024" y="345" fill="#ff6060" font-size="16">slack = 0</text>
 
   <!-- Stage 1 line: slack₁ = 90 + sk2 -->
   ${(() => {
@@ -7183,20 +7183,20 @@ useful skew **לא** יכול לפתור את הבעיה לבדו אם ה-pipeli
       <circle cx="${cx}" cy="${cy}" r="8" fill="#cc66ff" stroke="#fff" stroke-width="2"/>
       <line x1="${cx}" y1="${cy}" x2="${cx}" y2="450" stroke="#cc66ff" stroke-width="1.4" stroke-dasharray="3,3"/>
       <line x1="${cx}" y1="${cy}" x2="100" y2="${cy}" stroke="#cc66ff" stroke-width="1.4" stroke-dasharray="3,3"/>
-      <text x="${cx + 18}" y="${cy - 12}" fill="#cc99ff" font-size="14" font-weight="bold">sk2=−55, slack=+35</text>
+      <text x="${cx + 18}" y="${cy - 12}" fill="#cc99ff" font-size="18" font-weight="bold">sk2=−55, slack=+35</text>
     `;
   })()}
 
   <!-- Feasibility band: sk2 in [-90, -20] -->
   <rect x="${100 + 30 * (920 / 120)}" y="120" width="${(70) * (920 / 120)}" height="330" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.6" stroke-dasharray="4,4"/>
-  <text x="${100 + 65 * (920 / 120)}" y="142" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">FEASIBLE: −90 ≤ sk2 ≤ −20</text>
+  <text x="${100 + 65 * (920 / 120)}" y="142" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">FEASIBLE: −90 ≤ sk2 ≤ −20</text>
 
   <!-- Legend -->
   <line x1="700" y1="155" x2="730" y2="155" stroke="#80c8ff" stroke-width="2.8"/>
-  <text x="740" y="160" fill="#80c8ff" font-size="14">slack₁ = 90 + sk2</text>
+  <text x="740" y="160" fill="#80c8ff" font-size="18">slack₁ = 90 + sk2</text>
 
   <line x1="700" y1="178" x2="730" y2="178" stroke="#ffc080" stroke-width="2.8"/>
-  <text x="740" y="183" fill="#ffc080" font-size="14">slack₂ = −20 − sk2</text>
+  <text x="740" y="183" fill="#ffc080" font-size="18">slack₂ = −20 − sk2</text>
 </svg>`,
       },
 
@@ -7299,27 +7299,27 @@ hold check: 110 ≥ 40 − (−80) = 120
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Useful skew bounded by both setup and hold — feasibility window [-70, -20].">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Useful skew bounded by both setup and hold — feasibility window [-70, -20].">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Useful skew bounded — ה-design window
   </text>
-  <text x="540" y="64" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="540" y="64" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     setup ↔ ה-skew רחב מדי כלפי הצד הקצר · hold ↔ ה-skew מהיר מדי כלפי הצד הארוך
   </text>
 
   <!-- Axis -->
   <line x1="80" y1="280" x2="1020" y2="280" stroke="#a0a0c0" stroke-width="2"/>
-  <text x="80" y="300" fill="#a0a0c0" font-size="12">−120</text>
-  <text x="1020" y="300" fill="#a0a0c0" font-size="12">0</text>
-  <text x="540" y="310" text-anchor="middle" fill="#a0a0c0" font-size="14" font-weight="bold">sk2 (ps)</text>
+  <text x="80" y="300" fill="#a0a0c0" font-size="16">−120</text>
+  <text x="1020" y="300" fill="#a0a0c0" font-size="16">0</text>
+  <text x="540" y="310" text-anchor="middle" fill="#a0a0c0" font-size="18" font-weight="bold">sk2 (ps)</text>
 
   <!-- Tick marks for key values -->
   ${[-90, -70, -55, -20].map(v => {
     const x = 80 + (v + 120) * (940 / 120);
     return `
       <line x1="${x}" y1="270" x2="${x}" y2="290" stroke="#a0a0c0" stroke-width="1.4"/>
-      <text x="${x}" y="266" text-anchor="middle" fill="#a0a0c0" font-size="13" font-weight="bold">${v}</text>
+      <text x="${x}" y="266" text-anchor="middle" fill="#a0a0c0" font-size="18" font-weight="bold">${v}</text>
     `;
   }).join('')}
 
@@ -7327,28 +7327,28 @@ hold check: 110 ≥ 40 − (−80) = 120
   <!-- Setup stage 1: sk2 ≥ -90 (band from -90 to 0 is OK) -->
   <rect x="${80 + 30 * (940 / 120)}" y="160" width="${90 * (940 / 120)}" height="50" rx="6"
         fill="rgba(128,200,255,0.15)" stroke="#80c8ff" stroke-width="2"/>
-  <text x="${80 + 75 * (940 / 120)}" y="190" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">
+  <text x="${80 + 75 * (940 / 120)}" y="190" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">
     Setup stage 1: sk2 ≥ −90
   </text>
 
   <!-- Setup stage 2: sk2 ≤ -20 (band from -120 to -20 is OK) -->
   <rect x="80" y="105" width="${100 * (940 / 120)}" height="50" rx="6"
         fill="rgba(255,192,128,0.15)" stroke="#ffc080" stroke-width="2"/>
-  <text x="${80 + 50 * (940 / 120)}" y="135" text-anchor="middle" fill="#ffc080" font-size="14" font-weight="bold">
+  <text x="${80 + 50 * (940 / 120)}" y="135" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">
     Setup stage 2: sk2 ≤ −20
   </text>
 
   <!-- Hold stage 2: sk2 ≥ -70 (band from -70 to 0 is OK) -->
   <rect x="${80 + 50 * (940 / 120)}" y="215" width="${70 * (940 / 120)}" height="50" rx="6"
         fill="rgba(204,102,255,0.15)" stroke="#cc66ff" stroke-width="2"/>
-  <text x="${80 + 85 * (940 / 120)}" y="245" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">
+  <text x="${80 + 85 * (940 / 120)}" y="245" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
     Hold stage 2: sk2 ≥ −70
   </text>
 
   <!-- Feasibility intersection: [-70, -20] -->
   <rect x="${80 + 50 * (940 / 120)}" y="345" width="${50 * (940 / 120)}" height="50" rx="6"
         fill="rgba(128,240,160,0.3)" stroke="#80f0a0" stroke-width="3"/>
-  <text x="${80 + 75 * (940 / 120)}" y="376" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
+  <text x="${80 + 75 * (940 / 120)}" y="376" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">
     ✓ FEASIBLE: −70 ≤ sk2 ≤ −20
   </text>
 
@@ -7357,7 +7357,7 @@ hold check: 110 ≥ 40 − (−80) = 120
     const cx = 80 + 65 * (940 / 120);  // sk2 = -55
     return `
       <line x1="${cx}" y1="345" x2="${cx}" y2="395" stroke="#cc66ff" stroke-width="3" stroke-dasharray="4,2"/>
-      <text x="${cx}" y="420" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">איזון: sk2 = −55</text>
+      <text x="${cx}" y="420" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">איזון: sk2 = −55</text>
     `;
   })()}
 
@@ -7367,24 +7367,24 @@ hold check: 110 ≥ 40 − (−80) = 120
     return `
       <line x1="${cx}" y1="345" x2="${cx}" y2="280" stroke="#ff6060" stroke-width="2"/>
       <circle cx="${cx}" cy="240" r="8" fill="#ff6060" stroke="#fff" stroke-width="2"/>
-      <text x="${cx}" y="232" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">sk2 = −80 ✗</text>
-      <text x="${cx}" y="222" text-anchor="middle" fill="#ff8080" font-size="11" font-style="italic">hold race!</text>
+      <text x="${cx}" y="232" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">sk2 = −80 ✗</text>
+      <text x="${cx}" y="222" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">hold race!</text>
     `;
   })()}
 
   <!-- Summary -->
   <rect x="60" y="450" width="960" height="76" rx="10" fill="rgba(255,200,144,0.06)" stroke="#ffc890" stroke-width="1.6"/>
-  <text x="540" y="478" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="16">
+  <text x="540" y="478" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
     Useful skew bounded משני הצדדים: setup ↑ , hold ↓
   </text>
-  <text x="540" y="506" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="540" y="506" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     בעבודה: STA tool מבצע אופטימיזציה גלובלית של skew per-FF
   </text>
 </svg>`,
       },
     ],
-    source: 'שאלת ראיון אמיתית — clock skew + useful skew (STA)',
-    tags: ['interview', 'clock-skew', 'useful-skew', 'setup', 'hold', 'sta', 'timing'],
+    source: 'clock skew + useful skew (STA)',
+    tags: ['clock-skew', 'useful-skew', 'setup', 'hold', 'sta', 'timing'],
     circuitRevealsAnswer: true,
   },
 
@@ -7419,7 +7419,7 @@ hold check: 110 ≥ 40 − (−80) = 120
   {
     id: 'interview-retiming-leiserson-saxe',
     difficulty: 'hard',
-    title: 'שאלת ראיון — Retiming (Leiserson-Saxe)',
+    title: 'Retiming (Leiserson-Saxe)',
     intro:
 `נתון מעגל קומבינטורי-עמוק עם 2 FFs ביציאה: 4 כניסות \`a, b, c, d\` נכנסות לעץ קומבינטורי שמפצל ל-2 יציאות \`out_x\` ו-\`out_y\`. ה-FFs נמצאים ב-**קצה** של נתיב ארוך — כל הקריטי-path קומבינטורי לפני ה-FFs.
 
@@ -7435,17 +7435,17 @@ hold check: 110 ≥ 40 − (−80) = 120
 ב-design הנוכחי, ה-pipeline הוא יחיד (single stage) ויש slack שלילי. Retiming יוכל לקצוץ את ה-T_clk המינימלי באופן דרמטי **בלי לשנות את הפונקציה**.`,
     schematic: `
 <svg viewBox="0 0 1140 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Unbalanced before scene: 5 combinational gates feeding 2 FFs at the output.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Unbalanced before scene: 5 combinational gates feeding 2 FFs at the output.">
 
-  <text x="570" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="570" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     BEFORE — pipeline בלתי-מאוזן (FFs ביציאה)
   </text>
-  <text x="570" y="66" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="570" y="66" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     ה-critical path קומבינטורי שלם לפני שה-FFs לוכדים. fmax נמוך.
   </text>
 
   <!-- Inputs -->
-  <g font-size="16" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <circle cx="80" cy="170" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
     <text x="80" y="176" text-anchor="middle" fill="#cca040">a</text>
     <circle cx="80" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
@@ -7467,14 +7467,14 @@ hold check: 110 ≥ 40 − (−80) = 120
   <!-- t1 = a XOR b -->
   <path d="M 280 185 Q 305 205, 280 225 L 310 225 Q 335 225, 350 205 Q 335 185, 310 185 Z"
         fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
-  <text x="318" y="202" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR</text>
-  <text x="318" y="217" text-anchor="middle" fill="#a0c0d0" font-size="11">t1=a⊕b · 90</text>
+  <text x="318" y="202" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR</text>
+  <text x="318" y="217" text-anchor="middle" fill="#a0c0d0" font-size="16">t1=a⊕b · 90</text>
 
   <!-- t2 = c XOR d -->
   <path d="M 280 345 Q 305 365, 280 385 L 310 385 Q 335 385, 350 365 Q 335 345, 310 345 Z"
         fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
-  <text x="318" y="362" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR</text>
-  <text x="318" y="377" text-anchor="middle" fill="#a0c0d0" font-size="11">t2=c⊕d · 90</text>
+  <text x="318" y="362" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR</text>
+  <text x="318" y="377" text-anchor="middle" fill="#a0c0d0" font-size="16">t2=c⊕d · 90</text>
 
   <!-- Wires from XORs to convergence -->
   <g stroke="#a0a0c0" stroke-width="1.6" fill="none">
@@ -7487,14 +7487,14 @@ hold check: 110 ≥ 40 − (−80) = 120
   <!-- t3 = t1 AND t2 -->
   <path d="M 500 245 L 530 245 A 25 25 0 0 1 530 295 L 500 295 Z"
         fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
-  <text x="518" y="265" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND</text>
-  <text x="518" y="282" text-anchor="middle" fill="#a0c0d0" font-size="11">t3 · 60</text>
+  <text x="518" y="265" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND</text>
+  <text x="518" y="282" text-anchor="middle" fill="#a0c0d0" font-size="16">t3 · 60</text>
 
   <!-- t4 = t1 OR t2 -->
   <path d="M 500 335 L 515 335 Q 535 335, 550 360 Q 535 385, 515 385 L 500 385 Q 510 360, 500 335 Z"
         fill="rgba(255,192,128,0.25)" stroke="#ffc080" stroke-width="2"/>
-  <text x="525" y="357" text-anchor="middle" fill="#ffc080" font-size="13" font-weight="bold">OR</text>
-  <text x="525" y="375" text-anchor="middle" fill="#a0c0d0" font-size="11">t4 · 50</text>
+  <text x="525" y="357" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">OR</text>
+  <text x="525" y="375" text-anchor="middle" fill="#a0c0d0" font-size="16">t4 · 50</text>
 
   <!-- Wires to FFs -->
   <g stroke="#ff6060" stroke-width="3" fill="none">
@@ -7506,12 +7506,12 @@ hold check: 110 ≥ 40 − (−80) = 120
 
   <!-- FF_outA -->
   <rect x="680" y="245" width="100" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-  <text x="730" y="270" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF_outA</text>
+  <text x="730" y="270" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_outA</text>
   <polyline points="680,260 692,270 680,280" fill="none" stroke="#cca040" stroke-width="2"/>
 
   <!-- FF_outB -->
   <rect x="680" y="335" width="100" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.6"/>
-  <text x="730" y="360" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF_outB</text>
+  <text x="730" y="360" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_outB</text>
   <polyline points="680,350 692,360 680,370" fill="none" stroke="#cca040" stroke-width="2"/>
 
   <!-- Wires to outputs -->
@@ -7520,22 +7520,22 @@ hold check: 110 ≥ 40 − (−80) = 120
 
   <!-- Outputs -->
   <circle cx="920" cy="270" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
-  <text x="920" y="276" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">out_x</text>
+  <text x="920" y="276" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">out_x</text>
 
   <circle cx="920" cy="360" r="20" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
-  <text x="920" y="366" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">out_y</text>
+  <text x="920" y="366" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">out_y</text>
 
   <!-- Critical path annotation -->
-  <text x="570" y="160" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">
+  <text x="570" y="160" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">
     Critical (red): a → XOR → AND → FF = 90+60 = 150 ps
   </text>
 
   <!-- Bottom summary -->
   <rect x="80" y="450" width="980" height="68" rx="10" fill="rgba(255,200,144,0.06)" stroke="#ffc890" stroke-width="1.6"/>
-  <text x="570" y="478" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="17">
+  <text x="570" y="478" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     T_min = t_CQ + critical + t_su = 80 + 150 + 80 = 310 ps  ⇒  f_max ≈ 3.23 GHz
   </text>
-  <text x="570" y="504" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="570" y="504" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     הרעיון: לחתוך את ה-150 ps בין שני שלבים → push ה-FFs אחורה
   </text>
 </svg>`,
@@ -7666,16 +7666,16 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
         }),
         answerSchematic: `
 <svg viewBox="0 0 1080 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Path-delay enumeration for the unbalanced before circuit.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Path-delay enumeration for the unbalanced before circuit.">
 
   <text x="540" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     כל הנתיבים — Critical path = 150 ps
   </text>
 
-  <text x="60" y="95" fill="#a0a0c0" font-size="14" font-weight="bold">מקלט</text>
-  <text x="160" y="95" fill="#a0a0c0" font-size="14" font-weight="bold">דרך</text>
-  <text x="540" y="95" fill="#a0a0c0" font-size="14" font-weight="bold">סוף</text>
-  <text x="780" y="95" fill="#a0a0c0" font-size="14" font-weight="bold">delay</text>
+  <text x="60" y="95" fill="#a0a0c0" font-size="18" font-weight="bold">מקלט</text>
+  <text x="160" y="95" fill="#a0a0c0" font-size="18" font-weight="bold">דרך</text>
+  <text x="540" y="95" fill="#a0a0c0" font-size="18" font-weight="bold">סוף</text>
+  <text x="780" y="95" fill="#a0a0c0" font-size="18" font-weight="bold">delay</text>
   <line x1="40" y1="105" x2="1020" y2="105" stroke="#3a4a5a" stroke-width="1"/>
 
   ${(() => {
@@ -7689,10 +7689,10 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
       const y = 145 + i * 48;
       const color = r[4] ? '#ff8080' : '#80f0a0';
       return `
-        <text x="60" y="${y}" fill="#cca040" font-size="15" font-weight="bold">${r[0]}</text>
-        <text x="160" y="${y}" fill="#80c8ff" font-size="15">${r[1]}</text>
-        <text x="540" y="${y}" fill="#cc99ff" font-size="15">${r[2]}</text>
-        <text x="780" y="${y}" fill="${color}" font-size="16" font-weight="bold">${r[3]}${r[4] ? '  ✗ critical' : ''}</text>
+        <text x="60" y="${y}" fill="#cca040" font-size="18" font-weight="bold">${r[0]}</text>
+        <text x="160" y="${y}" fill="#80c8ff" font-size="18">${r[1]}</text>
+        <text x="540" y="${y}" fill="#cc99ff" font-size="18">${r[2]}</text>
+        <text x="780" y="${y}" fill="${color}" font-size="18" font-weight="bold">${r[3]}${r[4] ? '  ✗ critical' : ''}</text>
       `;
     }).join('');
   })()}
@@ -7701,10 +7701,10 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
 
   <!-- Final formula box -->
   <rect x="40" y="370" width="1000" height="90" rx="10" fill="rgba(255,200,144,0.06)" stroke="#ffc890" stroke-width="1.6"/>
-  <text x="540" y="400" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
+  <text x="540" y="400" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     T_min = 80 + 150 + 80 = 310 ps   ·   f_max = 1 / 310 ps ≈ 3.23 GHz
   </text>
-  <text x="540" y="426" text-anchor="middle" fill="#c8b090" font-size="14">
+  <text x="540" y="426" text-anchor="middle" fill="#c8b090" font-size="18">
     הסעיף הבא: retiming מבחין את ה-150 ps של logic לשני stages
   </text>
 </svg>`,
@@ -7809,7 +7809,7 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="The two retiming invariants illustrated.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="The two retiming invariants illustrated.">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Retiming Invariant — שני חוקים
@@ -7817,18 +7817,18 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
 
   <!-- Top: Cycle invariant -->
   <rect x="40" y="80" width="500" height="220" rx="12" fill="rgba(204,102,255,0.04)" stroke="#cc66ff" stroke-width="1.8"/>
-  <text x="290" y="112" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="18">
+  <text x="290" y="112" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">
     1. Cycle Weight Preservation
   </text>
 
   <!-- Tiny counter loop diagram -->
   <g>
     <rect x="120" y="160" width="80" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2"/>
-    <text x="160" y="190" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF</text>
+    <text x="160" y="190" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF</text>
 
     <path d="M 240 175 Q 265 195, 240 215 L 270 215 Q 295 215, 310 195 Q 295 175, 270 175 Z"
           fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
-    <text x="280" y="198" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR</text>
+    <text x="280" y="198" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">XOR</text>
 
     <!-- Loop wires -->
     <line x1="200" y1="185" x2="245" y2="195" stroke="#a0a0c0" stroke-width="1.6"/>
@@ -7836,68 +7836,68 @@ f_max = 1 / T_min = 1 / 310 ps ≈ 3.23 GHz
     <polyline points="155,145 160,160 165,145" fill="none" stroke="#cc66ff" stroke-width="2"/>
   </g>
 
-  <text x="290" y="250" text-anchor="middle" fill="#c8b090" font-size="13">
+  <text x="290" y="250" text-anchor="middle" fill="#c8b090" font-size="18">
     בלולאה זו: 1 FF. retiming מותר רק עם 1 FF בלולאה.
   </text>
-  <text x="290" y="275" text-anchor="middle" fill="#ff8080" font-size="12" font-style="italic">
+  <text x="290" y="275" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">
     שינוי = שינוי פונקציונלי של counter
   </text>
 
   <!-- Bottom: I/O Latency invariant -->
   <rect x="560" y="80" width="500" height="220" rx="12" fill="rgba(128,240,160,0.04)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="810" y="112" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">
+  <text x="810" y="112" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">
     2. I/O Latency Preservation
   </text>
 
   <!-- BEFORE: FF at end -->
-  <text x="580" y="155" fill="#a0a0c0" font-size="13" font-weight="bold">BEFORE:</text>
+  <text x="580" y="155" fill="#a0a0c0" font-size="18" font-weight="bold">BEFORE:</text>
   <g>
     <circle cx="600" cy="190" r="14" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
-    <text x="600" y="195" text-anchor="middle" fill="#cca040" font-size="11" font-weight="bold">a</text>
+    <text x="600" y="195" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">a</text>
     <line x1="614" y1="190" x2="700" y2="190" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="700" y="175" width="40" height="30" rx="4" fill="rgba(128,200,255,0.2)" stroke="#80c8ff" stroke-width="1.4"/>
-    <text x="720" y="195" text-anchor="middle" fill="#80c8ff" font-size="11">logic</text>
+    <text x="720" y="195" text-anchor="middle" fill="#80c8ff" font-size="16">logic</text>
     <line x1="740" y1="190" x2="800" y2="190" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="800" y="175" width="40" height="30" rx="4" fill="#1a1428" stroke="#cc66ff" stroke-width="1.6"/>
-    <text x="820" y="195" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">FF</text>
+    <text x="820" y="195" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">FF</text>
     <line x1="840" y1="190" x2="900" y2="190" stroke="#ff9933" stroke-width="1.6"/>
     <circle cx="914" cy="190" r="14" fill="#0a1825" stroke="#ff9933" stroke-width="2"/>
-    <text x="914" y="195" text-anchor="middle" fill="#ff9933" font-size="11" font-weight="bold">y</text>
+    <text x="914" y="195" text-anchor="middle" fill="#ff9933" font-size="16" font-weight="bold">y</text>
   </g>
-  <text x="810" y="225" text-anchor="middle" fill="#80f0a0" font-size="12">1 FF on a → y</text>
+  <text x="810" y="225" text-anchor="middle" fill="#80f0a0" font-size="16">1 FF on a → y</text>
 
   <!-- AFTER: FF at start -->
-  <text x="580" y="245" fill="#a0a0c0" font-size="13" font-weight="bold">AFTER:</text>
+  <text x="580" y="245" fill="#a0a0c0" font-size="18" font-weight="bold">AFTER:</text>
   <g>
     <circle cx="600" cy="280" r="14" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
-    <text x="600" y="285" text-anchor="middle" fill="#cca040" font-size="11" font-weight="bold">a</text>
+    <text x="600" y="285" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">a</text>
     <line x1="614" y1="280" x2="680" y2="280" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="680" y="265" width="40" height="30" rx="4" fill="#1a1428" stroke="#cc66ff" stroke-width="1.6"/>
-    <text x="700" y="285" text-anchor="middle" fill="#cc99ff" font-size="11" font-weight="bold">FF</text>
+    <text x="700" y="285" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">FF</text>
     <line x1="720" y1="280" x2="780" y2="280" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="780" y="265" width="40" height="30" rx="4" fill="rgba(128,200,255,0.2)" stroke="#80c8ff" stroke-width="1.4"/>
-    <text x="800" y="285" text-anchor="middle" fill="#80c8ff" font-size="11">logic</text>
+    <text x="800" y="285" text-anchor="middle" fill="#80c8ff" font-size="16">logic</text>
     <line x1="820" y1="280" x2="900" y2="280" stroke="#ff9933" stroke-width="1.6"/>
     <circle cx="914" cy="280" r="14" fill="#0a1825" stroke="#ff9933" stroke-width="2"/>
-    <text x="914" y="285" text-anchor="middle" fill="#ff9933" font-size="11" font-weight="bold">y</text>
+    <text x="914" y="285" text-anchor="middle" fill="#ff9933" font-size="16" font-weight="bold">y</text>
   </g>
-  <text x="810" y="315" text-anchor="middle" fill="#80f0a0" font-size="12">1 FF on a → y ✓ same</text>
+  <text x="810" y="315" text-anchor="middle" fill="#80f0a0" font-size="16">1 FF on a → y ✓ same</text>
 
   <!-- Bottom summary -->
   <rect x="40" y="350" width="1020" height="160" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="540" y="382" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="17">
+  <text x="540" y="382" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     Retiming = הזזת FFs ע"פ שני החוקים האלה
   </text>
-  <text x="540" y="412" text-anchor="middle" fill="#c8b090" font-size="14">
+  <text x="540" y="412" text-anchor="middle" fill="#c8b090" font-size="18">
     Cycle invariant: רלוונטי רק במעגלים עם feedback. שלנו feedforward → ריק.
   </text>
-  <text x="540" y="438" text-anchor="middle" fill="#c8b090" font-size="14">
+  <text x="540" y="438" text-anchor="middle" fill="#c8b090" font-size="18">
     I/O latency: חייב לאשר שכל path PI→PO שומר על מספר FFs.
   </text>
-  <text x="540" y="468" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">
+  <text x="540" y="468" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
     שים לב: סך FFs במעגל יכול לגדול בגלל פיצולי fanout (סעיף ג').
   </text>
-  <text x="540" y="494" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">
+  <text x="540" y="494" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     זה לא הפרת invariant — רק התרחבות פיזית.
   </text>
 </svg>`,
@@ -8006,17 +8006,17 @@ f_max = 1/250 ps = 4 GHz
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Retimed scene with FFs moved from outputs to inputs.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Retimed scene with FFs moved from outputs to inputs.">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     AFTER — Retimed (FFs at inputs)
   </text>
-  <text x="540" y="64" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="540" y="64" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     r(t1)=r(t2)=r(t3)=r(t4)=1   ·   2 FFs → 4 FFs (per fanout)
   </text>
 
   <!-- Inputs -->
-  <g font-size="15" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <circle cx="60" cy="140" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
     <text x="60" y="145" text-anchor="middle" fill="#cca040">a</text>
     <circle cx="60" cy="210" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
@@ -8037,7 +8037,7 @@ f_max = 1/250 ps = 4 GHz
     <line x1="78" y1="${ff.y}" x2="150" y2="${ff.y}" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="150" y="${ff.y - 18}" width="90" height="36" rx="6"
           fill="#3a3a0a" stroke="#ffe060" stroke-width="2.4"/>
-    <text x="195" y="${ff.y + 5}" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">${ff.name} ✨</text>
+    <text x="195" y="${ff.y + 5}" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">${ff.name} ✨</text>
   `).join('')}
 
   <!-- Wires from FFs to XORs -->
@@ -8051,13 +8051,13 @@ f_max = 1/250 ps = 4 GHz
   <!-- XORs (stage 1) -->
   <path d="M 340 155 Q 365 175, 340 195 L 370 195 Q 395 195, 410 175 Q 395 155, 370 155 Z"
         fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
-  <text x="378" y="170" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">XOR</text>
-  <text x="378" y="183" text-anchor="middle" fill="#a0c0d0" font-size="10">t1 · 90</text>
+  <text x="378" y="170" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR</text>
+  <text x="378" y="183" text-anchor="middle" fill="#a0c0d0" font-size="16">t1 · 90</text>
 
   <path d="M 340 315 Q 365 335, 340 355 L 370 355 Q 395 355, 410 335 Q 395 315, 370 315 Z"
         fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
-  <text x="378" y="330" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">XOR</text>
-  <text x="378" y="343" text-anchor="middle" fill="#a0c0d0" font-size="10">t2 · 90</text>
+  <text x="378" y="330" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">XOR</text>
+  <text x="378" y="343" text-anchor="middle" fill="#a0c0d0" font-size="16">t2 · 90</text>
 
   <!-- Wires from XORs to AND/OR -->
   <g stroke="#a0a0c0" stroke-width="1.6" fill="none">
@@ -8070,13 +8070,13 @@ f_max = 1/250 ps = 4 GHz
   <!-- AND/OR (stage 2) -->
   <path d="M 540 210 L 570 210 A 25 25 0 0 1 570 260 L 540 260 Z"
         fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
-  <text x="555" y="232" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">AND</text>
-  <text x="555" y="246" text-anchor="middle" fill="#a0c0d0" font-size="10">t3 · 60</text>
+  <text x="555" y="232" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">AND</text>
+  <text x="555" y="246" text-anchor="middle" fill="#a0c0d0" font-size="16">t3 · 60</text>
 
   <path d="M 540 300 L 555 300 Q 575 300, 590 325 Q 575 350, 555 350 L 540 350 Q 550 325, 540 300 Z"
         fill="rgba(255,192,128,0.25)" stroke="#ffc080" stroke-width="2"/>
-  <text x="565" y="320" text-anchor="middle" fill="#ffc080" font-size="12" font-weight="bold">OR</text>
-  <text x="565" y="334" text-anchor="middle" fill="#a0c0d0" font-size="10">t4 · 50</text>
+  <text x="565" y="320" text-anchor="middle" fill="#ffc080" font-size="16" font-weight="bold">OR</text>
+  <text x="565" y="334" text-anchor="middle" fill="#a0c0d0" font-size="16">t4 · 50</text>
 
   <!-- Wires to outputs (no FFs here anymore) -->
   <line x1="595" y1="235" x2="780" y2="235" stroke="#ff9933" stroke-width="2"/>
@@ -8084,23 +8084,23 @@ f_max = 1/250 ps = 4 GHz
 
   <!-- Outputs -->
   <circle cx="800" cy="235" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2"/>
-  <text x="800" y="240" text-anchor="middle" fill="#ff9933" font-size="13" font-weight="bold">out_x</text>
+  <text x="800" y="240" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">out_x</text>
 
   <circle cx="800" cy="325" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2"/>
-  <text x="800" y="330" text-anchor="middle" fill="#ff9933" font-size="13" font-weight="bold">out_y</text>
+  <text x="800" y="330" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">out_y</text>
 
   <!-- Stage boundaries -->
-  <text x="285" y="100" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">Stage 1 = 90 ps</text>
-  <text x="555" y="100" text-anchor="middle" fill="#ff9050" font-size="14" font-weight="bold">Stage 2 = 60 ps</text>
+  <text x="285" y="100" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">Stage 1 = 90 ps</text>
+  <text x="555" y="100" text-anchor="middle" fill="#ff9050" font-size="18" font-weight="bold">Stage 2 = 60 ps</text>
   <line x1="280" y1="110" x2="280" y2="420" stroke="#a0a0c0" stroke-width="1" stroke-dasharray="3,3"/>
   <line x1="500" y1="110" x2="500" y2="420" stroke="#a0a0c0" stroke-width="1" stroke-dasharray="3,3"/>
 
   <!-- Bottom summary -->
   <rect x="40" y="410" width="1000" height="60" rx="10" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text x="540" y="438" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="17">
+  <text x="540" y="438" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">
     T_min = 80 + 90 + 80 = 250 ps  ⇒  f_max = 4 GHz  (+24% vs BEFORE)
   </text>
-  <text x="540" y="462" text-anchor="middle" fill="#c8b090" font-size="13" font-style="italic">
+  <text x="540" y="462" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     I/O latency = 1 cycle (נשמר). FF count: 2 → 4 (fanout).
   </text>
 </svg>`,
@@ -8205,75 +8205,75 @@ Let me redo this — getting tangled. The clean story:
         ],
         answerSchematic: `
 <svg viewBox="0 0 1080 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Partial retiming failure: out_x has 1 FF, out_y has 2 FFs — desync.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Partial retiming failure: out_x has 1 FF, out_y has 2 FFs — desync.">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Retiming שגוי — הפרת I/O Latency
   </text>
-  <text x="540" y="64" text-anchor="middle" fill="#ff8080" font-size="14" font-style="italic">
+  <text x="540" y="64" text-anchor="middle" fill="#ff8080" font-size="18" font-style="italic">
     ✗ FFs הוספו לקלטים אבל FF_outB לא הוסר — out_y בעיכוב 1 cycle
   </text>
 
   <!-- Two timelines -->
-  <text x="80" y="120" fill="#80f0a0" font-weight="bold" font-size="17">a → out_x: 1 FF (1 cycle)</text>
+  <text x="80" y="120" fill="#80f0a0" font-weight="bold" font-size="20">a → out_x: 1 FF (1 cycle)</text>
   <line x1="80" y1="135" x2="1020" y2="135" stroke="#80f0a0" stroke-width="2"/>
 
   <!-- out_x path components -->
   <g>
     <circle cx="120" cy="170" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
-    <text x="120" y="175" text-anchor="middle" fill="#cca040" font-size="13" font-weight="bold">a</text>
+    <text x="120" y="175" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">a</text>
     <line x1="138" y1="170" x2="200" y2="170" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="200" y="152" width="80" height="36" rx="4" fill="#3a3a0a" stroke="#ffe060" stroke-width="2"/>
-    <text x="240" y="175" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_a</text>
+    <text x="240" y="175" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_a</text>
     <line x1="280" y1="170" x2="370" y2="170" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="370" y="152" width="80" height="36" rx="4" fill="rgba(128,200,255,0.2)" stroke="#80c8ff" stroke-width="1.6"/>
-    <text x="410" y="175" text-anchor="middle" fill="#80c8ff" font-size="12">logic₁ (XOR)</text>
+    <text x="410" y="175" text-anchor="middle" fill="#80c8ff" font-size="16">logic₁ (XOR)</text>
     <line x1="450" y1="170" x2="540" y2="170" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="540" y="152" width="80" height="36" rx="4" fill="rgba(128,200,255,0.2)" stroke="#80c8ff" stroke-width="1.6"/>
-    <text x="580" y="175" text-anchor="middle" fill="#80c8ff" font-size="12">logic₂ (AND)</text>
+    <text x="580" y="175" text-anchor="middle" fill="#80c8ff" font-size="16">logic₂ (AND)</text>
     <line x1="620" y1="170" x2="730" y2="170" stroke="#ff9933" stroke-width="1.6"/>
     <circle cx="744" cy="170" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2"/>
-    <text x="744" y="175" text-anchor="middle" fill="#ff9933" font-size="12" font-weight="bold">out_x</text>
+    <text x="744" y="175" text-anchor="middle" fill="#ff9933" font-size="16" font-weight="bold">out_x</text>
   </g>
-  <text x="280" y="220" text-anchor="middle" fill="#80f0a0" font-size="13">Total: 1 FF ✓</text>
+  <text x="280" y="220" text-anchor="middle" fill="#80f0a0" font-size="18">Total: 1 FF ✓</text>
 
-  <text x="80" y="280" fill="#ff8080" font-weight="bold" font-size="17">a → out_y: 2 FFs (2 cycles!) ✗</text>
+  <text x="80" y="280" fill="#ff8080" font-weight="bold" font-size="20">a → out_y: 2 FFs (2 cycles!) ✗</text>
   <line x1="80" y1="295" x2="1020" y2="295" stroke="#ff8080" stroke-width="2"/>
 
   <!-- out_y path components -->
   <g>
     <circle cx="120" cy="330" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2"/>
-    <text x="120" y="335" text-anchor="middle" fill="#cca040" font-size="13" font-weight="bold">a</text>
+    <text x="120" y="335" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">a</text>
     <line x1="138" y1="330" x2="200" y2="330" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="200" y="312" width="80" height="36" rx="4" fill="#3a3a0a" stroke="#ffe060" stroke-width="2"/>
-    <text x="240" y="335" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_a</text>
+    <text x="240" y="335" text-anchor="middle" fill="#ffe060" font-size="18" font-weight="bold">FF_a</text>
     <line x1="280" y1="330" x2="370" y2="330" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="370" y="312" width="80" height="36" rx="4" fill="rgba(128,200,255,0.2)" stroke="#80c8ff" stroke-width="1.6"/>
-    <text x="410" y="335" text-anchor="middle" fill="#80c8ff" font-size="12">logic₁ (XOR)</text>
+    <text x="410" y="335" text-anchor="middle" fill="#80c8ff" font-size="16">logic₁ (XOR)</text>
     <line x1="450" y1="330" x2="540" y2="330" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="540" y="312" width="80" height="36" rx="4" fill="rgba(255,192,128,0.2)" stroke="#ffc080" stroke-width="1.6"/>
-    <text x="580" y="335" text-anchor="middle" fill="#ffc080" font-size="12">logic₂ (OR)</text>
+    <text x="580" y="335" text-anchor="middle" fill="#ffc080" font-size="16">logic₂ (OR)</text>
     <line x1="620" y1="330" x2="700" y2="330" stroke="#a0a0c0" stroke-width="1.6"/>
     <rect x="700" y="312" width="80" height="36" rx="4" fill="#1a1428" stroke="#cc66ff" stroke-width="2"/>
-    <text x="740" y="335" text-anchor="middle" fill="#cc99ff" font-size="13" font-weight="bold">FF_outB</text>
+    <text x="740" y="335" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_outB</text>
     <line x1="780" y1="330" x2="850" y2="330" stroke="#ff9933" stroke-width="1.6"/>
     <circle cx="864" cy="330" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2"/>
-    <text x="864" y="335" text-anchor="middle" fill="#ff9933" font-size="12" font-weight="bold">out_y</text>
+    <text x="864" y="335" text-anchor="middle" fill="#ff9933" font-size="16" font-weight="bold">out_y</text>
   </g>
-  <text x="490" y="380" text-anchor="middle" fill="#ff8080" font-size="13">Total: 2 FFs ✗ desync!</text>
+  <text x="490" y="380" text-anchor="middle" fill="#ff8080" font-size="18">Total: 2 FFs ✗ desync!</text>
 
   <!-- Bottom analysis -->
   <rect x="40" y="410" width="1000" height="110" rx="10" fill="rgba(255,96,96,0.06)" stroke="#ff8080" stroke-width="1.8"/>
-  <text x="540" y="438" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">
+  <text x="540" y="438" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
     out_x: input cycle N → output cycle N+1
   </text>
-  <text x="540" y="462" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">
+  <text x="540" y="462" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
     out_y: input cycle N → output cycle N+2
   </text>
-  <text x="540" y="490" text-anchor="middle" fill="#ffc890" font-size="14" font-weight="bold">
+  <text x="540" y="490" text-anchor="middle" fill="#ffc890" font-size="18" font-weight="bold">
     Consumer מצפה לזוג מתאים — מקבל זוג לא תואם → לוגיקה שגויה
   </text>
-  <text x="540" y="512" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">
+  <text x="540" y="512" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     הפתרון הנכון: r(t3) = r(t4) = 1, FF_outA AND FF_outB צריכים שניהם להיעלם (סעיף ג')
   </text>
 </svg>`,
@@ -8440,19 +8440,19 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
         }),
         answerSchematic: `
 <svg viewBox="0 0 1080 500" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="15" role="img" aria-label="Function verification — BEFORE and AFTER produce same outputs for the same inputs.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Function verification — BEFORE and AFTER produce same outputs for the same inputs.">
 
   <text x="540" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Function Verification — BEFORE vs AFTER
   </text>
-  <text x="540" y="64" text-anchor="middle" fill="#80f0a0" font-size="14" font-style="italic">
+  <text x="540" y="64" text-anchor="middle" fill="#80f0a0" font-size="18" font-style="italic">
     ✓ אותה הפונקציה. רק T_min שונה.
   </text>
 
   <!-- Table headers -->
   <line x1="60" y1="100" x2="1020" y2="100" stroke="#3a4a5a" stroke-width="1.4"/>
 
-  <g font-size="14" font-weight="bold" fill="#a0a0c0">
+  <g font-size="18" font-weight="bold" fill="#a0a0c0">
     <text x="100" y="125">(a, b, c, d)</text>
     <text x="260" y="125">t1 = a⊕b</text>
     <text x="400" y="125">t2 = c⊕d</text>
@@ -8477,35 +8477,35 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
       const out_y = t1 | t2;
       const y = 165 + i * 40;
       return `
-        <text x="100" y="${y}" fill="#cca040" font-size="15" font-weight="bold">(${a},${b},${c},${d})</text>
-        <text x="280" y="${y}" text-anchor="middle" fill="#80f0a0" font-size="15">${t1}</text>
-        <text x="420" y="${y}" text-anchor="middle" fill="#80f0a0" font-size="15">${t2}</text>
-        <text x="580" y="${y}" text-anchor="middle" fill="#ff9933" font-size="15" font-weight="bold">${out_x}</text>
-        <text x="760" y="${y}" text-anchor="middle" fill="#ff9933" font-size="15" font-weight="bold">${out_y}</text>
-        <text x="940" y="${y}" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">✓</text>
+        <text x="100" y="${y}" fill="#cca040" font-size="18" font-weight="bold">(${a},${b},${c},${d})</text>
+        <text x="280" y="${y}" text-anchor="middle" fill="#80f0a0" font-size="18">${t1}</text>
+        <text x="420" y="${y}" text-anchor="middle" fill="#80f0a0" font-size="18">${t2}</text>
+        <text x="580" y="${y}" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">${out_x}</text>
+        <text x="760" y="${y}" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">${out_y}</text>
+        <text x="940" y="${y}" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">✓</text>
       `;
     }).join('');
   })()}
 
   <!-- Summary -->
   <rect x="60" y="350" width="960" height="120" rx="10" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="540" y="382" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">
+  <text x="540" y="382" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">
     ✓ Function preserved across all 4 test vectors
   </text>
-  <text x="540" y="410" text-anchor="middle" fill="#c8b090" font-size="15">
+  <text x="540" y="410" text-anchor="middle" fill="#c8b090" font-size="18">
     T_min: 310 → 250 ps   ·   f_max: 3.23 → 4 GHz (+24%)
   </text>
-  <text x="540" y="438" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="540" y="438" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     מחיר: FF count 2 → 4 (fanout expansion at inputs)
   </text>
-  <text x="540" y="462" text-anchor="middle" fill="#cc99ff" font-size="13" font-weight="bold">
+  <text x="540" y="462" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
     זהו Retiming אופטימלי לטופולוגיה הזו. אין דרך לקבל יותר טוב בלי לפצל gates.
   </text>
 </svg>`,
       },
     ],
-    source: 'שאלת ראיון אמיתית — Retiming (Leiserson-Saxe)',
-    tags: ['interview', 'retiming', 'cycle-invariant', 'leiserson-saxe', 'fmax', 'timing'],
+    source: 'Retiming (Leiserson-Saxe)',
+    tags: ['retiming', 'cycle-invariant', 'leiserson-saxe', 'fmax', 'timing'],
     circuitRevealsAnswer: true,
   },
 ];

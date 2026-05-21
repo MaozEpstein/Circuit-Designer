@@ -6,9 +6,9 @@
 import { build, h } from '../../js/interview/circuitHelpers.js';
 
 const LFSR4_SVG = `
-<svg viewBox="0 0 560 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="4-bit Fibonacci LFSR with taps 3,0">
-  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">4-bit Fibonacci LFSR — taps [3,0]</text>
-  <text x="280" y="38" text-anchor="middle" fill="#c8d8f0" font-size="10">x⁴ + x + 1  (primitive, period 15)</text>
+<svg viewBox="0 0 560 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="4-bit Fibonacci LFSR with taps 3,0">
+  <text x="280" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">4-bit Fibonacci LFSR — taps [3,0]</text>
+  <text x="280" y="38" text-anchor="middle" fill="#c8d8f0" font-size="16">x⁴ + x + 1  (primitive, period 15)</text>
 
   <!-- 4 FFs in a row (left = high bit = b3, right = low = b0) -->
   <g stroke="#80b0e0" stroke-width="1.6" fill="#0a1520">
@@ -17,13 +17,13 @@ const LFSR4_SVG = `
     <rect x="280" y="100" width="60" height="60"/>
     <rect x="380" y="100" width="60" height="60"/>
   </g>
-  <g fill="#c8d8f0" text-anchor="middle" font-size="11">
+  <g fill="#c8d8f0" text-anchor="middle" font-size="16">
     <text x="110" y="135">b3</text>
     <text x="210" y="135">b2</text>
     <text x="310" y="135">b1</text>
     <text x="410" y="135">b0</text>
   </g>
-  <g fill="#80b0e0" text-anchor="middle" font-size="9">
+  <g fill="#80b0e0" text-anchor="middle" font-size="16">
     <text x="110" y="178">FF3</text>
     <text x="210" y="178">FF2</text>
     <text x="310" y="178">FF1</text>
@@ -37,24 +37,24 @@ const LFSR4_SVG = `
 
   <!-- Feedback XOR: taps are b3 (high) and b0 (low) -->
   <circle cx="40" cy="220" r="14" fill="#0a1520" stroke="#ffb878" stroke-width="1.8"/>
-  <text x="40" y="225" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="14">⊕</text>
-  <text x="40" y="248" text-anchor="middle" fill="#ffb878" font-size="9">XOR</text>
+  <text x="40" y="225" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="18">⊕</text>
+  <text x="40" y="248" text-anchor="middle" fill="#ffb878" font-size="16">XOR</text>
 
   <!-- b3 → XOR (top tap) -->
   <path d="M 110 160 L 110 200 L 54 200 L 54 214" stroke="#80f0a0" fill="none" stroke-width="1.3" marker-end="url(#l-arr-g)"/>
-  <text x="78" y="195" fill="#80f0a0" font-size="9">tap b3</text>
+  <text x="78" y="195" fill="#80f0a0" font-size="16">tap b3</text>
   <!-- b0 → XOR (bottom tap) -->
   <path d="M 410 160 L 410 230 L 54 230 L 54 226" stroke="#80f0a0" fill="none" stroke-width="1.3" marker-end="url(#l-arr-g)"/>
-  <text x="240" y="245" fill="#80f0a0" font-size="9">tap b0</text>
+  <text x="240" y="245" fill="#80f0a0" font-size="16">tap b0</text>
 
   <!-- XOR → b3.D -->
   <path d="M 40 206 L 40 75 L 110 75 L 110 100" stroke="#ffb878" fill="none" stroke-width="1.5" marker-end="url(#l-arr-o)"/>
-  <text x="75" y="70" fill="#ffb878" font-size="10" font-weight="bold">new bit</text>
+  <text x="75" y="70" fill="#ffb878" font-size="16" font-weight="bold">new bit</text>
 
   <!-- Serial Q output = b3 -->
   <path d="M 440 130 L 510 130" stroke="#80c8ff" stroke-width="1.8" marker-end="url(#l-arr-b)"/>
-  <text x="475" y="124" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="11">Q</text>
-  <text x="475" y="147" text-anchor="middle" fill="#80c8ff" font-size="9">(serial out = b3)</text>
+  <text x="475" y="124" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="16">Q</text>
+  <text x="475" y="147" text-anchor="middle" fill="#80c8ff" font-size="16">(serial out = b3)</text>
 
   <defs>
     <marker id="l-arr"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c8d8f0"/></marker>
@@ -66,9 +66,9 @@ const LFSR4_SVG = `
 `;
 
 const MISR4_SVG = `
-<svg viewBox="0 0 760 560" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="11" role="img" aria-label="4-bit MISR — gate-level (4 D-FFs + 5 XORs)">
-  <text x="380" y="22" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="13">4-bit MISR — gate-level (4 D-FFs + 5 XORs)</text>
-  <text x="380" y="40" text-anchor="middle" fill="#c8d8f0" font-size="10">per-cell XOR mixes D[i] with the shifted bit; feedback XOR closes the loop (taps [3,0])</text>
+<svg viewBox="0 0 760 560" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="4-bit MISR — gate-level (4 D-FFs + 5 XORs)">
+  <text x="380" y="22" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">4-bit MISR — gate-level (4 D-FFs + 5 XORs)</text>
+  <text x="380" y="40" text-anchor="middle" fill="#c8d8f0" font-size="16">per-cell XOR mixes D[i] with the shifted bit; feedback XOR closes the loop (taps [3,0])</text>
 
   <!-- Column x centres -->
   <!-- col0 (LSB FF0): 110 | col1 (FF1): 290 | col2 (FF2): 470 | col3 (MSB FF3): 650 -->
@@ -76,13 +76,13 @@ const MISR4_SVG = `
   <!-- D inputs (green pads at top) -->
   <g>
     <circle cx="110" cy="80" r="15" fill="#0a2018" stroke="#80f0a0" stroke-width="1.8"/>
-    <text x="110" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="12">D0</text>
+    <text x="110" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">D0</text>
     <circle cx="290" cy="80" r="15" fill="#0a2018" stroke="#80f0a0" stroke-width="1.8"/>
-    <text x="290" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="12">D1</text>
+    <text x="290" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">D1</text>
     <circle cx="470" cy="80" r="15" fill="#0a2018" stroke="#80f0a0" stroke-width="1.8"/>
-    <text x="470" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="12">D2</text>
+    <text x="470" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">D2</text>
     <circle cx="650" cy="80" r="15" fill="#0a2018" stroke="#80f0a0" stroke-width="1.8"/>
-    <text x="650" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="12">D3</text>
+    <text x="650" y="84" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">D3</text>
   </g>
 
   <!-- D inputs drop wires -->
@@ -96,20 +96,20 @@ const MISR4_SVG = `
   <!-- Per-cell XORs (block style, like the canvas) -->
   <g>
     <rect x="80"  y="175" width="60" height="36" rx="3" fill="#0a1520" stroke="#ffb878" stroke-width="1.8"/>
-    <text x="110" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="12">XOR</text>
-    <text x="110" y="208" text-anchor="middle" fill="#ffb878" font-size="9">▷ 0</text>
+    <text x="110" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="16">XOR</text>
+    <text x="110" y="208" text-anchor="middle" fill="#ffb878" font-size="16">▷ 0</text>
 
     <rect x="260" y="175" width="60" height="36" rx="3" fill="#0a1520" stroke="#ffb878" stroke-width="1.8"/>
-    <text x="290" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="12">XOR</text>
-    <text x="290" y="208" text-anchor="middle" fill="#ffb878" font-size="9">▷ 0</text>
+    <text x="290" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="16">XOR</text>
+    <text x="290" y="208" text-anchor="middle" fill="#ffb878" font-size="16">▷ 0</text>
 
     <rect x="440" y="175" width="60" height="36" rx="3" fill="#0a1520" stroke="#ffb878" stroke-width="1.8"/>
-    <text x="470" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="12">XOR</text>
-    <text x="470" y="208" text-anchor="middle" fill="#ffb878" font-size="9">▷ 0</text>
+    <text x="470" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="16">XOR</text>
+    <text x="470" y="208" text-anchor="middle" fill="#ffb878" font-size="16">▷ 0</text>
 
     <rect x="620" y="175" width="60" height="36" rx="3" fill="#0a1520" stroke="#ffb878" stroke-width="1.8"/>
-    <text x="650" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="12">XOR</text>
-    <text x="650" y="208" text-anchor="middle" fill="#ffb878" font-size="9">▷ 0</text>
+    <text x="650" y="195" text-anchor="middle" fill="#ffb878" font-weight="bold" font-size="16">XOR</text>
+    <text x="650" y="208" text-anchor="middle" fill="#ffb878" font-size="16">▷ 0</text>
   </g>
 
   <!-- XOR → FF D wires -->
@@ -123,34 +123,34 @@ const MISR4_SVG = `
   <!-- 4 D-FFs (block style) -->
   <g>
     <rect x="70"  y="260" width="80" height="70" rx="4" fill="#0a1520" stroke="#80b0e0" stroke-width="1.8"/>
-    <text x="110" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="14">D</text>
-    <text x="110" y="304" text-anchor="middle" fill="#80b0e0" font-size="9">FF0 (LSB)</text>
-    <text x="138" y="278" text-anchor="end" fill="#c8d8f0" font-size="9">Q</text>
+    <text x="110" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="18">D</text>
+    <text x="110" y="304" text-anchor="middle" fill="#80b0e0" font-size="16">FF0 (LSB)</text>
+    <text x="138" y="278" text-anchor="end" fill="#c8d8f0" font-size="16">Q</text>
     <path d="M 75 320 L 84 314 L 75 308 z" fill="#80c8ff"/>
 
     <rect x="250" y="260" width="80" height="70" rx="4" fill="#0a1520" stroke="#80b0e0" stroke-width="1.8"/>
-    <text x="290" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="14">D</text>
-    <text x="290" y="304" text-anchor="middle" fill="#80b0e0" font-size="9">FF1</text>
-    <text x="318" y="278" text-anchor="end" fill="#c8d8f0" font-size="9">Q</text>
+    <text x="290" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="18">D</text>
+    <text x="290" y="304" text-anchor="middle" fill="#80b0e0" font-size="16">FF1</text>
+    <text x="318" y="278" text-anchor="end" fill="#c8d8f0" font-size="16">Q</text>
     <path d="M 255 320 L 264 314 L 255 308 z" fill="#80c8ff"/>
 
     <rect x="430" y="260" width="80" height="70" rx="4" fill="#0a1520" stroke="#80b0e0" stroke-width="1.8"/>
-    <text x="470" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="14">D</text>
-    <text x="470" y="304" text-anchor="middle" fill="#80b0e0" font-size="9">FF2</text>
-    <text x="498" y="278" text-anchor="end" fill="#c8d8f0" font-size="9">Q</text>
+    <text x="470" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="18">D</text>
+    <text x="470" y="304" text-anchor="middle" fill="#80b0e0" font-size="16">FF2</text>
+    <text x="498" y="278" text-anchor="end" fill="#c8d8f0" font-size="16">Q</text>
     <path d="M 435 320 L 444 314 L 435 308 z" fill="#80c8ff"/>
 
     <rect x="610" y="260" width="80" height="70" rx="4" fill="#0a1520" stroke="#80b0e0" stroke-width="1.8"/>
-    <text x="650" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="14">D</text>
-    <text x="650" y="304" text-anchor="middle" fill="#80b0e0" font-size="9">FF3 (MSB)</text>
-    <text x="678" y="278" text-anchor="end" fill="#c8d8f0" font-size="9">Q</text>
+    <text x="650" y="285" text-anchor="middle" fill="#c8d8f0" font-weight="bold" font-size="18">D</text>
+    <text x="650" y="304" text-anchor="middle" fill="#80b0e0" font-size="16">FF3 (MSB)</text>
+    <text x="678" y="278" text-anchor="end" fill="#c8d8f0" font-size="16">Q</text>
     <path d="M 615 320 L 624 314 L 615 308 z" fill="#80c8ff"/>
   </g>
 
   <!-- CLK bus (cyan dashed, shared across all FFs) -->
   <g>
     <path d="M 40 350 L 720 350" stroke="#22ccff" stroke-width="1.4" stroke-dasharray="6 3" fill="none"/>
-    <text x="20" y="354" fill="#22ccff" font-weight="bold" font-size="11">clk</text>
+    <text x="20" y="354" fill="#22ccff" font-weight="bold" font-size="16">clk</text>
     <path d="M 110 350 L 110 320" stroke="#22ccff" stroke-width="1.4" stroke-dasharray="6 3" fill="none"/>
     <path d="M 290 350 L 290 320" stroke="#22ccff" stroke-width="1.4" stroke-dasharray="6 3" fill="none"/>
     <path d="M 470 350 L 470 320" stroke="#22ccff" stroke-width="1.4" stroke-dasharray="6 3" fill="none"/>
@@ -159,13 +159,13 @@ const MISR4_SVG = `
 
   <!-- SIG output pads (red, like the canvas) -->
   <g>
-    <text x="110" y="380" text-anchor="middle" fill="#80c8ff" font-size="10" font-weight="bold">SIG[0]</text>
+    <text x="110" y="380" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">SIG[0]</text>
     <circle cx="110" cy="405" r="18" fill="#2a0a14" stroke="#80c8ff" stroke-width="1.5"/>
-    <text x="290" y="380" text-anchor="middle" fill="#80c8ff" font-size="10" font-weight="bold">SIG[1]</text>
+    <text x="290" y="380" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">SIG[1]</text>
     <circle cx="290" cy="405" r="18" fill="#2a0a14" stroke="#80c8ff" stroke-width="1.5"/>
-    <text x="470" y="380" text-anchor="middle" fill="#80c8ff" font-size="10" font-weight="bold">SIG[2]</text>
+    <text x="470" y="380" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">SIG[2]</text>
     <circle cx="470" cy="405" r="18" fill="#2a0a14" stroke="#80c8ff" stroke-width="1.5"/>
-    <text x="650" y="380" text-anchor="middle" fill="#80c8ff" font-size="10" font-weight="bold">SIG[3]</text>
+    <text x="650" y="380" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">SIG[3]</text>
     <circle cx="650" cy="405" r="18" fill="#2a0a14" stroke="#80c8ff" stroke-width="1.5"/>
   </g>
   <!-- FF.Q → SIG pad -->
@@ -189,8 +189,8 @@ const MISR4_SVG = `
   <!-- Feedback XOR (bottom) — taps [3,0] -->
   <g>
     <rect x="320" y="480" width="80" height="36" rx="3" fill="#0a1520" stroke="#39ff80" stroke-width="2"/>
-    <text x="360" y="500" text-anchor="middle" fill="#39ff80" font-weight="bold" font-size="12">XOR</text>
-    <text x="360" y="513" text-anchor="middle" fill="#39ff80" font-size="9">▷ FB</text>
+    <text x="360" y="500" text-anchor="middle" fill="#39ff80" font-weight="bold" font-size="16">XOR</text>
+    <text x="360" y="513" text-anchor="middle" fill="#39ff80" font-size="16">▷ FB</text>
   </g>
 
   <!-- FF0.Q → FB (lower tap) -->
@@ -208,10 +208,10 @@ const MISR4_SVG = `
   </g>
 
   <!-- Labels -->
-  <text x="220" y="282" fill="#c8d8f0" font-size="9">shift</text>
-  <text x="400" y="282" fill="#c8d8f0" font-size="9">shift</text>
-  <text x="580" y="282" fill="#c8d8f0" font-size="9">shift</text>
-  <text x="370" y="540" fill="#39ff80" font-size="9" text-anchor="middle">feedback (FF3.Q ⊕ FF0.Q) → FF0's XOR</text>
+  <text x="220" y="282" fill="#c8d8f0" font-size="16">shift</text>
+  <text x="400" y="282" fill="#c8d8f0" font-size="16">shift</text>
+  <text x="580" y="282" fill="#c8d8f0" font-size="16">shift</text>
+  <text x="370" y="540" fill="#39ff80" font-size="16" text-anchor="middle">feedback (FF3.Q ⊕ FF0.Q) → FF0's XOR</text>
 
   <defs>
     <marker id="mm-arr"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c8d8f0"/></marker>
@@ -783,7 +783,7 @@ endmodule
 איך נכנס קלטים ב-\`A\`, \`B\`, \`C\` כדי לזהות את **סוג** הקצר, במספר וקטורי הבדיקה המינימלי?`,
     schematic: `
 <svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="3-input AND fed by A, NOR(B,C), and INV(C). C fans out: one branch through INV to AND, the other up with the fault circle into the NOR.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="3-input AND fed by A, NOR(B,C), and INV(C). C fans out: one branch through INV to AND, the other up with the fault circle into the NOR.">
   <defs>
     <marker id="dft3arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
@@ -803,9 +803,9 @@ endmodule
   -->
 
   <!-- ── Input labels ───────────────────────────────────────────── -->
-  <text direction="ltr" x="22" y="64"  text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">A</text>
-  <text direction="ltr" x="22" y="154" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">B</text>
-  <text direction="ltr" x="22" y="324" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">C</text>
+  <text direction="ltr" x="22" y="64"  text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">A</text>
+  <text direction="ltr" x="22" y="154" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">B</text>
+  <text direction="ltr" x="22" y="324" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">C</text>
 
   <!-- ── A wire: long horizontal then DOWN into AND top input ──── -->
   <line x1="40"  y1="60"  x2="600" y2="60"  stroke="#f0d080" stroke-width="1.8"/>
@@ -830,7 +830,7 @@ endmodule
   <path d="M 220 118 Q 232 175 220 232 Q 280 232 312 207 Q 340 175 312 143 Q 280 118 220 118 Z"
         fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
   <circle cx="345" cy="175" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="268" y="180" text-anchor="middle" fill="#80d4ff" font-size="12" font-weight="bold">NOR</text>
+  <text direction="ltr" x="268" y="180" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">NOR</text>
 
   <!-- NOR output → AND middle input -->
   <line x1="350" y1="175" x2="600" y2="175" stroke="#80d4ff" stroke-width="1.8"/>
@@ -838,11 +838,11 @@ endmodule
   <!-- ── 3-input AND gate ───────────────────────────────────────── -->
   <path d="M 600 105 L 600 245 L 645 245 A 70 70 0 0 0 645 105 Z"
         fill="#102818" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="624" y="180" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">AND</text>
+  <text direction="ltr" x="624" y="180" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">AND</text>
 
   <!-- AND output → Out -->
   <line x1="715" y1="175" x2="745" y2="175" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft3arr)"/>
-  <text direction="ltr" x="755" y="181" text-anchor="end" fill="#80f0a0" font-weight="bold" font-size="15">Out</text>
+  <text direction="ltr" x="755" y="181" text-anchor="end" fill="#80f0a0" font-weight="bold" font-size="18">Out</text>
 
   <!-- ── C fanout — UP branch (with fault) into NOR bottom input ── -->
   <!-- Route: UP from the fanout dot, then RIGHT into the NOR's bottom
@@ -854,7 +854,7 @@ endmodule
 
   <!-- ★★★ FAULT MARKER — blue circle on the UP wire, midway up ★★★ -->
   <circle cx="200" cy="255" r="11" fill="#80c8ff" stroke="#3060a0" stroke-width="2.4"/>
-  <text direction="ltr" x="222" y="259" text-anchor="start" fill="#80c8ff" font-size="11" font-weight="bold">fault</text>
+  <text direction="ltr" x="222" y="259" text-anchor="start" fill="#80c8ff" font-size="16" font-weight="bold">fault</text>
 
   <!-- ── C fanout — FORWARD branch through INV ──────────────────── -->
   <!--    horizontal RIGHT from fanout dot to INV input -->
@@ -862,7 +862,7 @@ endmodule
   <!--    INV triangle pointing RIGHT, bubble on right tip -->
   <polygon points="345,303 345,337 378,320" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
   <circle  cx="383" cy="320" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="362" y="358" text-anchor="middle" fill="#80d4ff" font-size="11" font-style="italic">INV</text>
+  <text direction="ltr" x="362" y="358" text-anchor="middle" fill="#80d4ff" font-size="16" font-style="italic">INV</text>
 
   <!-- ── INV output → up & right → AND bottom input ─────────────── -->
   <!-- Route: right from INV → vertical up → right into AND bottom.
@@ -878,11 +878,11 @@ endmodule
   <line x1="560" y1="215" x2="600" y2="215" stroke="#80d4ff" stroke-width="1.8"/>
 
   <!-- net labels -->
-  <text direction="ltr" x="225" y="194" text-anchor="start" fill="#f0d080" font-size="10" font-style="italic">C (faulty)</text>
-  <text direction="ltr" x="430" y="312" text-anchor="start" fill="#80d4ff" font-size="10" font-style="italic">¬C</text>
+  <text direction="ltr" x="225" y="194" text-anchor="start" fill="#f0d080" font-size="16" font-style="italic">C (faulty)</text>
+  <text direction="ltr" x="430" y="312" text-anchor="start" fill="#80d4ff" font-size="16" font-style="italic">¬C</text>
 
   <!-- Caption -->
-  <text direction="ltr" x="380" y="392" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="380" y="392" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Out = A · NOR(B, C) · ¬C = A · ¬B · ¬C   (when fault-free)
   </text>
 </svg>`,
@@ -899,23 +899,23 @@ endmodule
         ],
         answerSchematic: `
 <svg viewBox="0 0 940 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Truth table comparison of free / s-a-0 / s-a-1 showing s-a-0 is redundant.">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Truth table comparison of free / s-a-0 / s-a-1 showing s-a-0 is redundant.">
   <rect x="0" y="0" width="940" height="46" fill="#0c1a28"/>
-  <text direction="ltr" x="470" y="20" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">
+  <text direction="ltr" x="470" y="20" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     s-a-0 is REDUNDANT — single test vector (1,0,0) discriminates the two cases
   </text>
-  <text direction="ltr" x="470" y="38" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="470" y="38" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Out = A · NOR(B, C_faulty) · ¬C   (C̄ comes from the INV branch, unaffected by the fault)
   </text>
 
   <!-- ── Truth-table panel ──────────────────────────────────────── -->
   <rect x="40" y="62" width="860" height="380" rx="8" fill="#0e1218" stroke="#3a2818" stroke-width="1.4"/>
-  <text direction="ltr" x="470" y="92" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="13" letter-spacing="2">
+  <text direction="ltr" x="470" y="92" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18" letter-spacing="2">
     FULL TRUTH TABLE
   </text>
 
   <!-- column headers -->
-  <g font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#cca040">
+  <g font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold" fill="#cca040">
     <text x="100" y="125" text-anchor="middle">A</text>
     <text x="160" y="125" text-anchor="middle">B</text>
     <text x="220" y="125" text-anchor="middle">C</text>
@@ -942,30 +942,30 @@ endmodule
     const rowBg = mismatch ? '<rect x="60" y="' + (y - 17) + '" width="820" height="30" fill="rgba(255,80,100,0.10)" stroke="rgba(255,80,100,0.4)" stroke-width="1.2" rx="3"/>' : '';
     const noteX = 920;
     const note = mismatch
-      ? '<text direction="ltr" x="' + (820 + 70) + '" y="' + (y + 3) + '" text-anchor="middle" fill="#ff8090" font-size="10" font-weight="bold">⚡ s-a-1 detected</text>'
+      ? '<text direction="ltr" x="' + (820 + 70) + '" y="' + (y + 3) + '" text-anchor="middle" fill="#ff8090" font-size="16" font-weight="bold">⚡ s-a-1 detected</text>'
       : '';
     return `
       ${rowBg}
-      <text direction="ltr" x="100" y="${y + 3}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="13">${a}</text>
-      <text direction="ltr" x="160" y="${y + 3}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="13">${b}</text>
-      <text direction="ltr" x="220" y="${y + 3}" text-anchor="middle" fill="#${c?'80f0a0':'506080'}" font-weight="bold" font-size="13">${c}</text>
-      <text direction="ltr" x="340" y="${y + 3}" text-anchor="middle" fill="#80d4ff" font-size="12">${nc}</text>
-      <text direction="ltr" x="460" y="${y + 3}" text-anchor="middle" fill="#80d4ff" font-size="12">${nor}</text>
-      <text direction="ltr" x="580" y="${y + 3}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="13">${free}</text>
-      <text direction="ltr" x="700" y="${y + 3}" text-anchor="middle" fill="#${sa0?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa0}</text>
-      <text direction="ltr" x="820" y="${y + 3}" text-anchor="middle" fill="#${mismatch?'ff5060':sa1?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa1}</text>
+      <text direction="ltr" x="100" y="${y + 3}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="18">${a}</text>
+      <text direction="ltr" x="160" y="${y + 3}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="18">${b}</text>
+      <text direction="ltr" x="220" y="${y + 3}" text-anchor="middle" fill="#${c?'80f0a0':'506080'}" font-weight="bold" font-size="18">${c}</text>
+      <text direction="ltr" x="340" y="${y + 3}" text-anchor="middle" fill="#80d4ff" font-size="16">${nc}</text>
+      <text direction="ltr" x="460" y="${y + 3}" text-anchor="middle" fill="#80d4ff" font-size="16">${nor}</text>
+      <text direction="ltr" x="580" y="${y + 3}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="18">${free}</text>
+      <text direction="ltr" x="700" y="${y + 3}" text-anchor="middle" fill="#${sa0?'80f0a0':'506080'}" font-weight="bold" font-size="18">${sa0}</text>
+      <text direction="ltr" x="820" y="${y + 3}" text-anchor="middle" fill="#${mismatch?'ff5060':sa1?'80f0a0':'506080'}" font-weight="bold" font-size="18">${sa1}</text>
     `;
   }).join('')}
 
   <!-- Highlight Free and s-a-0 columns as IDENTICAL -->
   <rect x="540" y="138" width="80" height="298" fill="none" stroke="#80f0a0" stroke-width="1.5" stroke-dasharray="4 3" rx="4" opacity="0.7"/>
   <rect x="660" y="138" width="80" height="298" fill="none" stroke="#80f0a0" stroke-width="1.5" stroke-dasharray="4 3" rx="4" opacity="0.7"/>
-  <text direction="ltr" x="640" y="455" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">
+  <text direction="ltr" x="640" y="455" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
     ↑ Free Out ≡ s-a-0 Out  (identical for ALL 8 inputs → s-a-0 is REDUNDANT)
   </text>
 
   <!-- Highlight (1,0,0) row -->
-  <text direction="ltr" x="920" y="261" text-anchor="middle" fill="#ff8090" font-size="11" font-weight="bold">⚡</text>
+  <text direction="ltr" x="920" y="261" text-anchor="middle" fill="#ff8090" font-size="16" font-weight="bold">⚡</text>
 </svg>`,
         answer:
 `**טוויסט: אחת התקלות (s-a-0) רדוננטית — לא ניתנת לזיהוי.** אם ידוע שיש תקלה — **וקטור יחיד \`(1,0,0)\` מספיק** להבחין בין השתיים.
@@ -1131,7 +1131,7 @@ endmodule
 איך נכנס קלטים ב-\`A\`, \`B\` כדי לזהות את **סוג** הקצר, במספר וקטורי הבדיקה המינימלי?`,
     schematic: `
 <svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Half-adder (XOR + AND) feeding a second XOR; fault marker on the COUT wire between AND and second XOR.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Half-adder (XOR + AND) feeding a second XOR; fault marker on the COUT wire between AND and second XOR.">
   <defs>
     <marker id="dft4arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
@@ -1147,8 +1147,8 @@ endmodule
   -->
 
   <!-- Input labels -->
-  <text direction="ltr" x="22" y="104" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">A</text>
-  <text direction="ltr" x="22" y="284" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">B</text>
+  <text direction="ltr" x="22" y="104" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">A</text>
+  <text direction="ltr" x="22" y="284" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">B</text>
 
   <!-- ── A wire: fanout to XOR1.top + AND.top ─────────────────────── -->
   <line x1="40" y1="100" x2="140" y2="100" stroke="#f0d080" stroke-width="1.8"/>
@@ -1168,42 +1168,42 @@ endmodule
   <path d="M 195 75 Q 215 120 195 165 Q 230 165 260 142 Q 290 120 260 98 Q 230 75 195 75 Z"
         fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
   <path d="M 188 75 Q 208 120 188 165" fill="none" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="232" y="124" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">XOR</text>
+  <text direction="ltr" x="232" y="124" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">XOR</text>
 
   <!-- ── AND (bottom, computes COUT = A·B) ───────────────────────── -->
   <path d="M 200 235 L 200 305 L 240 305 A 35 35 0 0 0 240 235 Z"
         fill="#102818" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="222" y="275" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">AND</text>
+  <text direction="ltr" x="222" y="275" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">AND</text>
 
   <!-- ── SUM wire: XOR1.out → XOR2.top input ──────────────────────── -->
   <line x1="290" y1="120" x2="380" y2="120" stroke="#80d4ff" stroke-width="1.8"/>
   <line x1="380" y1="120" x2="380" y2="180" stroke="#80d4ff" stroke-width="1.8"/>
   <line x1="380" y1="180" x2="430" y2="180" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="338" y="112" text-anchor="middle" fill="#80d4ff" font-size="10" font-style="italic">SUM = A⊕B</text>
+  <text direction="ltr" x="338" y="112" text-anchor="middle" fill="#80d4ff" font-size="16" font-style="italic">SUM = A⊕B</text>
 
   <!-- ── COUT wire: AND.out → XOR2.bot input  (with FAULT marker) ── -->
   <line x1="280" y1="270" x2="380" y2="270" stroke="#80f0a0" stroke-width="1.8"/>
   <!--   vertical segment UP, carries the fault -->
   <line x1="380" y1="270" x2="380" y2="220" stroke="#80f0a0" stroke-width="1.8"/>
   <line x1="380" y1="220" x2="430" y2="220" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="335" y="284" text-anchor="middle" fill="#80f0a0" font-size="10" font-style="italic">COUT = A·B</text>
+  <text direction="ltr" x="335" y="284" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">COUT = A·B</text>
 
   <!-- ★★★ FAULT MARKER on the COUT vertical segment, close to XOR2 -->
   <circle cx="380" cy="240" r="11" fill="#80c8ff" stroke="#3060a0" stroke-width="2.4"/>
-  <text direction="ltr" x="403" y="244" text-anchor="start" fill="#80c8ff" font-size="11" font-weight="bold">fault</text>
+  <text direction="ltr" x="403" y="244" text-anchor="start" fill="#80c8ff" font-size="16" font-weight="bold">fault</text>
 
   <!-- ── XOR2 (right, the final XOR combining SUM + COUT) ─────────── -->
   <path d="M 425 155 Q 445 200 425 245 Q 460 245 490 222 Q 520 200 490 178 Q 460 155 425 155 Z"
         fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
   <path d="M 418 155 Q 438 200 418 245" fill="none" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="462" y="204" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">XOR</text>
+  <text direction="ltr" x="462" y="204" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">XOR</text>
 
   <!-- ── XOR2 output → Y ──────────────────────────────────────────── -->
   <line x1="520" y1="200" x2="600" y2="200" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft4arr)"/>
-  <text direction="ltr" x="635" y="206" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="15">Y</text>
+  <text direction="ltr" x="635" y="206" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y</text>
 
   <!-- Caption -->
-  <text direction="ltr" x="350" y="362" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="350" y="362" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Y = (A⊕B) ⊕ (A·B)   (when fault-free)
   </text>
 </svg>`,
@@ -1221,22 +1221,22 @@ endmodule
         ],
         answerSchematic: `
 <svg viewBox="0 0 940 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="12" role="img" aria-label="Truth-table comparison of OR / XOR / XNOR — the three functions produced by free / s-a-0 / s-a-1.">
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Truth-table comparison of OR / XOR / XNOR — the three functions produced by free / s-a-0 / s-a-1.">
   <rect x="0" y="0" width="940" height="46" fill="#0c1a28"/>
-  <text direction="ltr" x="470" y="20" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="15">
+  <text direction="ltr" x="470" y="20" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
     Fault scrambles the half-adder identity into 3 different functions
   </text>
-  <text direction="ltr" x="470" y="38" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="470" y="38" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     free = OR  ·  s-a-0 = XOR  ·  s-a-1 = XNOR  ·  distinguished by the two extremes (0,0) and (1,1)
   </text>
 
   <!-- ── Truth-table panel ──────────────────────────────────────── -->
   <rect x="40" y="62" width="860" height="310" rx="8" fill="#0e1218" stroke="#3a2818" stroke-width="1.4"/>
-  <text direction="ltr" x="470" y="92" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="13" letter-spacing="2">
+  <text direction="ltr" x="470" y="92" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18" letter-spacing="2">
     Y(A, B) UNDER EACH SCENARIO
   </text>
 
-  <g font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#cca040">
+  <g font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold" fill="#cca040">
     <text x="120" y="125" text-anchor="middle">A</text>
     <text x="200" y="125" text-anchor="middle">B</text>
     <text x="340" y="125" text-anchor="middle">A⊕B (SUM)</text>
@@ -1257,23 +1257,23 @@ endmodule
     const isExtreme = (a === b);
     const rowBg = isExtreme ? '<rect x="60" y="' + (y - 22) + '" width="820" height="38" fill="rgba(64,204,96,0.08)" stroke="rgba(64,204,96,0.35)" stroke-width="1.2" rx="3"/>' : '';
     const noteEl = isExtreme
-      ? '<text direction="ltr" x="900" y="' + (y + 4) + '" text-anchor="middle" fill="#80f0a0" font-size="11" font-weight="bold">⚡</text>'
+      ? '<text direction="ltr" x="900" y="' + (y + 4) + '" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">⚡</text>'
       : '';
     return `
       ${rowBg}
-      <text direction="ltr" x="120" y="${y + 4}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="13">${a}</text>
-      <text direction="ltr" x="200" y="${y + 4}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="13">${b}</text>
-      <text direction="ltr" x="340" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="12">${sum}</text>
-      <text direction="ltr" x="470" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="12">${cout}</text>
-      <text direction="ltr" x="600" y="${y + 4}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="13">${free}</text>
-      <text direction="ltr" x="720" y="${y + 4}" text-anchor="middle" fill="#${sa0?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa0}</text>
-      <text direction="ltr" x="840" y="${y + 4}" text-anchor="middle" fill="#${sa1?'80f0a0':'506080'}" font-weight="bold" font-size="13">${sa1}</text>
+      <text direction="ltr" x="120" y="${y + 4}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="18">${a}</text>
+      <text direction="ltr" x="200" y="${y + 4}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="18">${b}</text>
+      <text direction="ltr" x="340" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="16">${sum}</text>
+      <text direction="ltr" x="470" y="${y + 4}" text-anchor="middle" fill="#80d4ff" font-size="16">${cout}</text>
+      <text direction="ltr" x="600" y="${y + 4}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="18">${free}</text>
+      <text direction="ltr" x="720" y="${y + 4}" text-anchor="middle" fill="#${sa0?'80f0a0':'506080'}" font-weight="bold" font-size="18">${sa0}</text>
+      <text direction="ltr" x="840" y="${y + 4}" text-anchor="middle" fill="#${sa1?'80f0a0':'506080'}" font-weight="bold" font-size="18">${sa1}</text>
       ${noteEl}
     `;
   }).join('')}
 
   <!-- Footnote — extreme rows are the detecting vectors -->
-  <text direction="ltr" x="470" y="358" text-anchor="middle" fill="#80f0a0" font-size="12" font-weight="bold">
+  <text direction="ltr" x="470" y="358" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
     ⚡ rows = the two extremes that fully distinguish the 3 scenarios. Middle rows are symmetry-blind.
   </text>
 </svg>`,
@@ -1444,16 +1444,16 @@ endmodule
 איך נכנס קלטים ב-\`A\`, \`B\`, \`S\` כדי לזהות את **סוג** הקצר, במספר וקטורי הבדיקה המינימלי?`,
     schematic: `
 <svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="13" role="img" aria-label="Gate-level 2:1 MUX with a bridge fault between the two data wires (A and B) before they enter their respective ANDs.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Gate-level 2:1 MUX with a bridge fault between the two data wires (A and B) before they enter their respective ANDs.">
   <defs>
     <marker id="dft5arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
   </defs>
 
   <!-- Input labels -->
-  <text direction="ltr" x="22" y="84"  text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">A</text>
-  <text direction="ltr" x="22" y="224" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">B</text>
-  <text direction="ltr" x="22" y="334" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="15">S</text>
+  <text direction="ltr" x="22" y="84"  text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">A</text>
+  <text direction="ltr" x="22" y="224" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">B</text>
+  <text direction="ltr" x="22" y="334" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">S</text>
 
   <!-- ── A wire: horizontal into AND_A.top ───────────────────────── -->
   <line x1="40"  y1="80"  x2="295" y2="80"  stroke="#f0d080" stroke-width="1.8"/>
@@ -1471,7 +1471,7 @@ endmodule
   <circle cx="180" cy="220" r="3.5" fill="#80c8ff"/>
   <!-- ★★★ FAULT MARKER ★★★ -->
   <circle cx="180" cy="150" r="11" fill="#80c8ff" stroke="#3060a0" stroke-width="2.4"/>
-  <text direction="ltr" x="202" y="154" text-anchor="start" fill="#80c8ff" font-size="11" font-weight="bold">bridge</text>
+  <text direction="ltr" x="202" y="154" text-anchor="start" fill="#80c8ff" font-size="16" font-weight="bold">bridge</text>
 
   <!-- ── S wire: fanout to AND_A bottom (UP) and INV (RIGHT) ───── -->
   <line x1="40"  y1="330" x2="110" y2="330" stroke="#f0d080" stroke-width="1.8"/>
@@ -1485,23 +1485,23 @@ endmodule
   <!-- ── INV: triangle pointing RIGHT, bubble on right tip ──────── -->
   <polygon points="245,314 245,346 278,330" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
   <circle cx="283" cy="330" r="5" fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="262" y="368" text-anchor="middle" fill="#80d4ff" font-size="11" font-style="italic">INV</text>
+  <text direction="ltr" x="262" y="368" text-anchor="middle" fill="#80d4ff" font-size="16" font-style="italic">INV</text>
 
   <!-- ── ¬S wire: from INV bubble → up → into AND_B bottom ─────── -->
   <line x1="288" y1="330" x2="320" y2="330" stroke="#80d4ff" stroke-width="1.8"/>
   <line x1="320" y1="330" x2="320" y2="250" stroke="#80d4ff" stroke-width="1.8"/>
   <line x1="320" y1="250" x2="295" y2="250" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="335" y="298" text-anchor="start" fill="#80d4ff" font-size="10" font-style="italic">¬S</text>
+  <text direction="ltr" x="335" y="298" text-anchor="start" fill="#80d4ff" font-size="16" font-style="italic">¬S</text>
 
   <!-- ── AND_A: 2-input AND, takes A and S ─────────────────────── -->
   <path d="M 295 65 L 295 125 L 330 125 A 30 30 0 0 0 330 65 Z"
         fill="#102818" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="316" y="100" text-anchor="middle" fill="#80f0a0" font-size="10" font-weight="bold">AND</text>
+  <text direction="ltr" x="316" y="100" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">AND</text>
 
   <!-- ── AND_B: 2-input AND, takes B and ¬S ────────────────────── -->
   <path d="M 295 205 L 295 265 L 330 265 A 30 30 0 0 0 330 205 Z"
         fill="#102818" stroke="#80f0a0" stroke-width="1.8"/>
-  <text direction="ltr" x="316" y="240" text-anchor="middle" fill="#80f0a0" font-size="10" font-weight="bold">AND</text>
+  <text direction="ltr" x="316" y="240" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">AND</text>
 
   <!-- AND_A output → OR top input -->
   <line x1="360" y1="95" x2="450" y2="95"  stroke="#80f0a0" stroke-width="1.6"/>
@@ -1517,14 +1517,14 @@ endmodule
   <path d="M 470 135 Q 490 175 470 215 Q 510 215 540 195 Q 565 175 540 155 Q 510 135 470 135 Z"
         fill="#0a1825" stroke="#80d4ff" stroke-width="1.8"/>
   <path d="M 463 135 Q 483 175 463 215" fill="none" stroke="#80d4ff" stroke-width="1.8"/>
-  <text direction="ltr" x="508" y="180" text-anchor="middle" fill="#80d4ff" font-size="11" font-weight="bold">OR</text>
+  <text direction="ltr" x="508" y="180" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">OR</text>
 
   <!-- ── OR output → Out ───────────────────────────────────────── -->
   <line x1="565" y1="175" x2="625" y2="175" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#dft5arr)"/>
-  <text direction="ltr" x="665" y="181" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="15">Out</text>
+  <text direction="ltr" x="665" y="181" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Out</text>
 
   <!-- Caption -->
-  <text direction="ltr" x="360" y="362" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+  <text direction="ltr" x="360" y="362" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     Out = S·A + ¬S·B = (S ? A : B)   (when fault-free)
   </text>
 </svg>`,
@@ -1542,22 +1542,22 @@ endmodule
         ],
         answerSchematic: `
 <svg viewBox="0 0 1240 660" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Truth-table comparison showing how the bridge erases the MUX's S-dependence.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Truth-table comparison showing how the bridge erases the MUX's S-dependence.">
   <rect x="0" y="0" width="1240" height="62" fill="#0c1a28"/>
   <text direction="ltr" x="620" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="20">
     Bridge erases the MUX's S-dependence — Out becomes independent of S
   </text>
-  <text direction="ltr" x="620" y="52" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text direction="ltr" x="620" y="52" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     free = (S ? A : B)   ·   AND-bridge = A·B   ·   OR-bridge = A+B
   </text>
 
   <!-- ── Truth-table panel ──────────────────────────────────────── -->
   <rect x="50" y="82" width="1140" height="540" rx="10" fill="#0e1218" stroke="#3a2818" stroke-width="1.6"/>
-  <text direction="ltr" x="620" y="118" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="17" letter-spacing="3">
+  <text direction="ltr" x="620" y="118" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20" letter-spacing="3">
     OUT(A, B, S) UNDER EACH SCENARIO
   </text>
 
-  <g font-family="'JetBrains Mono', monospace" font-size="16" font-weight="bold" fill="#cca040">
+  <g font-family="'JetBrains Mono', monospace" font-size="18" font-weight="bold" fill="#cca040">
     <text x="135" y="160" text-anchor="middle">A</text>
     <text x="230" y="160" text-anchor="middle">B</text>
     <text x="325" y="160" text-anchor="middle">S</text>
@@ -1583,21 +1583,21 @@ endmodule
       ? '<rect x="80" y="' + (y - 26) + '" width="1080" height="42" fill="rgba(64,204,96,0.08)" stroke="rgba(64,204,96,0.35)" stroke-width="1.4" rx="4"/>'
       : '<rect x="80" y="' + (y - 26) + '" width="1080" height="42" fill="rgba(80,80,80,0.05)" stroke="rgba(80,80,80,0.22)" stroke-width="1.2" rx="4" stroke-dasharray="4 4"/>';
     const noteEl = active
-      ? '<text direction="ltr" x="1180" y="' + (y + 6) + '" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">⚡</text>'
-      : '<text direction="ltr" x="1180" y="' + (y + 6) + '" text-anchor="middle" fill="#666" font-size="16">—</text>';
+      ? '<text direction="ltr" x="1180" y="' + (y + 6) + '" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">⚡</text>'
+      : '<text direction="ltr" x="1180" y="' + (y + 6) + '" text-anchor="middle" fill="#666" font-size="18">—</text>';
     return `
       ${rowBg}
-      <text direction="ltr" x="135"  y="${y + 6}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="18">${a}</text>
-      <text direction="ltr" x="230"  y="${y + 6}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="18">${b}</text>
-      <text direction="ltr" x="325"  y="${y + 6}" text-anchor="middle" fill="#${s?'80f0a0':'506080'}" font-weight="bold" font-size="18">${s}</text>
-      <text direction="ltr" x="525"  y="${y + 6}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="18">${free}</text>
-      <text direction="ltr" x="790"  y="${y + 6}" text-anchor="middle" fill="#${andBr?'80f0a0':'506080'}" font-weight="bold" font-size="18">${andBr}</text>
-      <text direction="ltr" x="1050" y="${y + 6}" text-anchor="middle" fill="#${orBr?'80f0a0':'506080'}" font-weight="bold" font-size="18">${orBr}</text>
+      <text direction="ltr" x="135"  y="${y + 6}" text-anchor="middle" fill="#${a?'80f0a0':'506080'}" font-weight="bold" font-size="20">${a}</text>
+      <text direction="ltr" x="230"  y="${y + 6}" text-anchor="middle" fill="#${b?'80f0a0':'506080'}" font-weight="bold" font-size="20">${b}</text>
+      <text direction="ltr" x="325"  y="${y + 6}" text-anchor="middle" fill="#${s?'80f0a0':'506080'}" font-weight="bold" font-size="20">${s}</text>
+      <text direction="ltr" x="525"  y="${y + 6}" text-anchor="middle" fill="#${free?'80f0a0':'506080'}" font-weight="bold" font-size="20">${free}</text>
+      <text direction="ltr" x="790"  y="${y + 6}" text-anchor="middle" fill="#${andBr?'80f0a0':'506080'}" font-weight="bold" font-size="20">${andBr}</text>
+      <text direction="ltr" x="1050" y="${y + 6}" text-anchor="middle" fill="#${orBr?'80f0a0':'506080'}" font-weight="bold" font-size="20">${orBr}</text>
       ${noteEl}
     `;
   }).join('')}
 
-  <text direction="ltr" x="620" y="645" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">
+  <text direction="ltr" x="620" y="645" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">
     ⚡ rows = vectors that activate the bridge (require A ≠ B).   Dashed rows = transparent.
   </text>
 </svg>`,
@@ -1775,13 +1775,13 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 לכל סוג תקלה — איזה דפוסי בדיקה תריץ, באיזה סדר, וכמה אופרציות נדרשות?`,
     schematic: `
 <svg viewBox="0 0 900 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Two stacked 8x8 RAM grids: stuck-at example on top, coupling pair below.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Two stacked 8x8 RAM grids: stuck-at example on top, coupling pair below.">
 
   <!-- ===================== TOP HEADER ===================== -->
   <text x="450" y="42" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     RAM 8 × 8 — שני סוגי תקלות
   </text>
-  <text x="450" y="74" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+  <text x="450" y="74" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     8 addresses (rows) × 8 bits per word (columns)
   </text>
 
@@ -1791,10 +1791,10 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   <rect x="20" y="100" width="860" height="490" rx="12"
         fill="rgba(255,80,80,0.05)" stroke="rgba(255,96,96,0.6)" stroke-width="2"/>
 
-  <text x="450" y="140" text-anchor="middle" fill="#ff8a8a" font-weight="bold" font-size="26">
+  <text x="450" y="140" text-anchor="middle" fill="#ff8a8a" font-weight="bold" font-size="28">
     סעיף א — תא בודד תקוע
   </text>
-  <text x="450" y="168" text-anchor="middle" fill="#c8b090" font-size="17" font-style="italic">
+  <text x="450" y="168" text-anchor="middle" fill="#c8b090" font-size="20" font-style="italic">
     cell stuck at 0 or 1, regardless of writes
   </text>
 
@@ -1831,7 +1831,7 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   }).join('')}
 
   <!-- Explanation under grid -->
-  <text x="450" y="550" text-anchor="middle" fill="#ff8080" font-size="19" font-weight="bold">
+  <text x="450" y="550" text-anchor="middle" fill="#ff8080" font-size="20" font-weight="bold">
     קריאה ≠ כתיבה — התא תמיד מחזיר את ערכו התקוע
   </text>
   <text x="450" y="580" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
@@ -1844,10 +1844,10 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   <rect x="20" y="620" width="860" height="540" rx="12"
         fill="rgba(204,102,255,0.05)" stroke="rgba(204,102,255,0.6)" stroke-width="2"/>
 
-  <text x="450" y="660" text-anchor="middle" fill="#d699ff" font-weight="bold" font-size="26">
+  <text x="450" y="660" text-anchor="middle" fill="#d699ff" font-weight="bold" font-size="28">
     סעיף ב — קיבול פרזיטי בין תאים
   </text>
-  <text x="450" y="688" text-anchor="middle" fill="#c8b090" font-size="17" font-style="italic">
+  <text x="450" y="688" text-anchor="middle" fill="#c8b090" font-size="20" font-style="italic">
     write to A leaks into B (parasitic capacitance)
   </text>
 
@@ -1874,10 +1874,10 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
       let dot = '';
       if (a === 1 && b === 5) {
         fill = '#1a0a2a'; stroke = '#cc66ff'; strokeW = 3;
-        dot = `<text x="${x + 25}" y="${y + 30}" text-anchor="middle" fill="#cc66ff" font-weight="bold" font-size="26">A</text>`;
+        dot = `<text x="${x + 25}" y="${y + 30}" text-anchor="middle" fill="#cc66ff" font-weight="bold" font-size="28">A</text>`;
       } else if (a === 6 && b === 5) {
         fill = '#1a0a2a'; stroke = '#cc66ff'; strokeW = 3;
-        dot = `<text x="${x + 25}" y="${y + 30}" text-anchor="middle" fill="#cc66ff" font-weight="bold" font-size="26">B</text>`;
+        dot = `<text x="${x + 25}" y="${y + 30}" text-anchor="middle" fill="#cc66ff" font-weight="bold" font-size="28">B</text>`;
       }
       return `<rect x="${x}" y="${y + 2}" width="50" height="34" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>${dot}`;
     }).join('');
@@ -1896,12 +1896,12 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
         stroke="#cc66ff" stroke-width="2.8" fill="none"
         stroke-dasharray="8,5" opacity="0.9"
         marker-end="url(#arrowB6006)"/>
-  <text x="680" y="912" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
+  <text x="680" y="912" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">
     coupling
   </text>
 
   <!-- Explanation under grid -->
-  <text x="450" y="1100" text-anchor="middle" fill="#d699ff" font-size="19" font-weight="bold">
+  <text x="450" y="1100" text-anchor="middle" fill="#d699ff" font-size="20" font-weight="bold">
     כתיבה ל-A → משפיעה על ערכו של B
   </text>
   <text x="450" y="1130" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
@@ -2086,25 +2086,25 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 איזה רכיב נוסף הופך \`D-FF\` ל-\`Scan-FF\`? מה תפקידו של כל אחד מהאותות החדשים, ומה המחיר הביצועי?`,
     schematic: `
 <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="D-FF compared with a Scan-FF black box. Internals of the Scan-FF are hidden.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="D-FF compared with a Scan-FF black box. Internals of the Scan-FF are hidden.">
 
-  <text x="450" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="450" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     D-FF רגיל לעומת Scan-FF
   </text>
-  <text x="450" y="66" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+  <text x="450" y="66" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     מה צריך להוסיף בפנים כדי לתמוך ב-scan?
   </text>
 
   <!-- LEFT: regular D-FF -->
   <rect x="20" y="90" width="400" height="380" rx="12"
         fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
-  <text x="220" y="128" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+  <text x="220" y="128" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     D-FF רגיל
   </text>
 
   <!-- D-FF body -->
   <rect x="180" y="220" width="120" height="120" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
-  <text x="240" y="284" text-anchor="middle" fill="#c8d8f0" font-size="22" font-weight="bold">FF</text>
+  <text x="240" y="284" text-anchor="middle" fill="#c8d8f0" font-size="24" font-weight="bold">FF</text>
 
   <!-- D input -->
   <line x1="80" y1="252" x2="180" y2="252" stroke="#cca040" stroke-width="2"/>
@@ -2117,26 +2117,26 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   <line x1="300" y1="280" x2="380" y2="280" stroke="#ff9933" stroke-width="2"/>
   <text x="365" y="272" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">Q</text>
 
-  <text x="220" y="380" text-anchor="middle" fill="#a0c0d0" font-size="16">
+  <text x="220" y="380" text-anchor="middle" fill="#a0c0d0" font-size="18">
     2 כניסות: <tspan fill="#cca040" font-weight="bold">D</tspan>, <tspan fill="#80f0a0" font-weight="bold">CLK</tspan>
   </text>
-  <text x="220" y="404" text-anchor="middle" fill="#a0c0d0" font-size="16">
+  <text x="220" y="404" text-anchor="middle" fill="#a0c0d0" font-size="18">
     1 יציאה: <tspan fill="#ff9933" font-weight="bold">Q</tspan>
   </text>
-  <text x="220" y="432" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">
+  <text x="220" y="432" text-anchor="middle" fill="#a0c0d0" font-size="18" font-style="italic">
     כל clock: Q ← D
   </text>
 
   <!-- RIGHT: Scan-FF (BLACK BOX — internals hidden) -->
   <rect x="480" y="90" width="400" height="380" rx="12"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="680" y="128" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+  <text x="680" y="128" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
     Scan-FF
   </text>
 
   <!-- Black box body with "?" inside -->
   <rect x="620" y="200" width="140" height="140" rx="6" fill="#0a1825" stroke="#ffc080" stroke-width="2.4" stroke-dasharray="5,4"/>
-  <text x="690" y="280" text-anchor="middle" fill="#ffc080" font-size="48" font-weight="bold" opacity="0.85">?</text>
+  <text x="690" y="280" text-anchor="middle" fill="#ffc080" font-size="32" font-weight="bold" opacity="0.85">?</text>
 
   <!-- D input -->
   <line x1="520" y1="222" x2="620" y2="222" stroke="#cca040" stroke-width="2"/>
@@ -2149,19 +2149,19 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   <text x="555" y="282" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">SE</text>
   <!-- CLK input -->
   <line x1="520" y1="324" x2="620" y2="324" stroke="#80f0a0" stroke-width="2"/>
-  <text x="555" y="316" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">CLK</text>
+  <text x="555" y="316" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">CLK</text>
   <polyline points="620,316 632,324 620,332" fill="none" stroke="#80f0a0" stroke-width="2"/>
   <!-- Q output -->
   <line x1="760" y1="270" x2="850" y2="270" stroke="#ff9933" stroke-width="2"/>
   <text x="835" y="262" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">Q</text>
 
-  <text x="680" y="380" text-anchor="middle" fill="#a0c0d0" font-size="16">
+  <text x="680" y="380" text-anchor="middle" fill="#a0c0d0" font-size="18">
     4 כניסות, 1 יציאה — <tspan fill="#ffc080" font-weight="bold">איך זה בנוי בפנים?</tspan>
   </text>
-  <text x="680" y="406" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">
+  <text x="680" y="406" text-anchor="middle" fill="#a0c0d0" font-size="18" font-style="italic">
     SE=0: התנהג כמו D-FF רגיל
   </text>
-  <text x="680" y="428" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">
+  <text x="680" y="428" text-anchor="middle" fill="#a0c0d0" font-size="18" font-style="italic">
     SE=1: טען מ-SI במקום מ-D
   </text>
 </svg>`,
@@ -2260,12 +2260,12 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 תאר את החיווט הנדרש: איך מחברים את 4 ה-FFs, אילו אותות משותפים, ומה משמעות \`SE=0\` לעומת \`SE=1\` במעגל המחובר.`,
         schematic: `
 <svg viewBox="0 0 1100 620" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="4-stage scan chain built from decomposed Scan-FFs. Each stage is a MUX 2:1 + D-FF. SE and CLK are broadcast.">
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="4-stage scan chain built from decomposed Scan-FFs. Each stage is a MUX 2:1 + D-FF. SE and CLK are broadcast.">
 
-  <text x="550" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="550" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     4 Scan-FFs → scan chain אחד
   </text>
-  <text x="550" y="66" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="550" y="66" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     כל שלב = MUX 2:1 + D-FF (כמו בסעיף א'). SE ו-CLK משותפים. Q של אחד = SI של הבא.
   </text>
 
@@ -2280,34 +2280,34 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
         <!-- Stage box -->
         <rect x="${x - 60}" y="180" width="200" height="240" rx="10"
               fill="rgba(255,176,96,0.04)" stroke="rgba(255,176,96,0.55)" stroke-width="1.8" stroke-dasharray="5,4"/>
-        <text x="${x + 40}" y="208" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="17">Scan-FF ${idx}</text>
+        <text x="${x + 40}" y="208" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="20">Scan-FF ${idx}</text>
 
         <!-- MUX 2:1 (trapezoid) -->
         <path d="M ${x - 20} 244 L ${x + 30} 234 L ${x + 30} 304 L ${x - 20} 294 Z"
               fill="#1a2230" stroke="#cc99ff" stroke-width="2.2"/>
-        <text x="${x + 5}" y="272" text-anchor="middle" fill="#cc99ff" font-size="13" font-weight="bold">MUX</text>
+        <text x="${x + 5}" y="272" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">MUX</text>
 
         <!-- FF body -->
         <rect x="${x + 50}" y="246" width="80" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-        <text x="${x + 90}" y="282" text-anchor="middle" fill="#c8d8f0" font-size="16" font-weight="bold">FF${idx}</text>
+        <text x="${x + 90}" y="282" text-anchor="middle" fill="#c8d8f0" font-size="18" font-weight="bold">FF${idx}</text>
 
         <!-- MUX → FF.D -->
         <line x1="${x + 30}" y1="269" x2="${x + 50}" y2="269" stroke="#cca040" stroke-width="2"/>
 
         <!-- D_n input from above (functional) -->
         <line x1="${x - 10}" y1="155" x2="${x - 10}" y2="249" stroke="#cca040" stroke-width="2"/>
-        <text x="${x - 10}" y="148" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">D${idx}</text>
+        <text x="${x - 10}" y="148" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">D${idx}</text>
 
         <!-- SE input from below (broadcast) — short tap -->
         <line x1="${x + 5}" y1="304" x2="${x + 5}" y2="470" stroke="#80f0a0" stroke-width="2"/>
-        <text x="${x + 5}" y="318" text-anchor="middle" fill="#80f0a0" font-size="11">SE</text>
+        <text x="${x + 5}" y="318" text-anchor="middle" fill="#80f0a0" font-size="16">SE</text>
 
         <!-- CLK input from below — short tap -->
         <line x1="${x + 90}" y1="306" x2="${x + 90}" y2="510" stroke="#cca040" stroke-width="2"/>
         <polyline points="${x + 84} 306 ${x + 90} 314 ${x + 96} 306" fill="none" stroke="#cca040" stroke-width="2"/>
 
         <!-- Stage label small caption -->
-        <text x="${x + 40}" y="402" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+        <text x="${x + 40}" y="402" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
           MUX 2:1 + D-FF
         </text>
       `;
@@ -2334,31 +2334,31 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   </defs>
 
   <!-- SI external label -->
-  <text x="30" y="252" fill="#cc66ff" font-size="17" font-weight="bold">SI</text>
+  <text x="30" y="252" fill="#cc66ff" font-size="20" font-weight="bold">SI</text>
   <!-- SO external label -->
-  <text x="1020" y="270" fill="#cc66ff" font-size="17" font-weight="bold">SO</text>
+  <text x="1020" y="270" fill="#cc66ff" font-size="20" font-weight="bold">SO</text>
 
   <!-- Per-link labels -->
-  <text x="255" y="248" text-anchor="middle" fill="#cc99ff" font-size="12" font-style="italic">Q1→SI2</text>
-  <text x="485" y="248" text-anchor="middle" fill="#cc99ff" font-size="12" font-style="italic">Q2→SI3</text>
-  <text x="715" y="248" text-anchor="middle" fill="#cc99ff" font-size="12" font-style="italic">Q3→SI4</text>
+  <text x="255" y="248" text-anchor="middle" fill="#cc99ff" font-size="16" font-style="italic">Q1→SI2</text>
+  <text x="485" y="248" text-anchor="middle" fill="#cc99ff" font-size="16" font-style="italic">Q2→SI3</text>
+  <text x="715" y="248" text-anchor="middle" fill="#cc99ff" font-size="16" font-style="italic">Q3→SI4</text>
 
   <!-- ════════ SE broadcast rail ════════ -->
   <line x1="40" y1="470" x2="1060" y2="470" stroke="#80f0a0" stroke-width="2.4" stroke-dasharray="6,4"/>
-  <text x="30" y="464" fill="#80f0a0" font-size="17" font-weight="bold">SE</text>
-  <text x="1075" y="475" fill="#80f0a0" font-size="13" font-style="italic">broadcast</text>
+  <text x="30" y="464" fill="#80f0a0" font-size="20" font-weight="bold">SE</text>
+  <text x="1075" y="475" fill="#80f0a0" font-size="18" font-style="italic">broadcast</text>
 
   <!-- ════════ CLK broadcast rail ════════ -->
   <line x1="40" y1="510" x2="1060" y2="510" stroke="#cca040" stroke-width="2.4"/>
-  <text x="30" y="504" fill="#cca040" font-size="17" font-weight="bold">CLK</text>
-  <text x="1075" y="515" fill="#cca040" font-size="13" font-style="italic">broadcast</text>
+  <text x="30" y="504" fill="#cca040" font-size="20" font-weight="bold">CLK</text>
+  <text x="1075" y="515" fill="#cca040" font-size="18" font-style="italic">broadcast</text>
 
   <!-- ════════ Bottom summary ════════ -->
   <rect x="40" y="540" width="1020" height="68" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="550" y="568" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="16">
+  <text x="550" y="568" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
     SE=0 (mission): כל FF טוען את D שלו עצמאית · SE=1 (test): שרשרת shift באורך 4
   </text>
-  <text x="550" y="592" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+  <text x="550" y="592" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">
     SI_external זוחל דרך FF1→FF2→FF3→FF4 ב-4 מחזורי clock · SO_external = Q4
   </text>
 </svg>`,
@@ -2546,7 +2546,7 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 3. **Unload** (\`SE=1\`): מעבירים את התוצאה החוצה דרך \`SO\` ב-\`N\` מחזורים → משווים לצפוי.`,
     schematic: `
 <svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="4-FF scan chain showing SE, SI, SO common signals plus the 3-phase test flow.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="4-FF scan chain showing SE, SI, SO common signals plus the 3-phase test flow.">
 
   <text x="500" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Scan chain — 4 FFs בשרשרת
@@ -2565,7 +2565,7 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
     <text x="580" y="190">FF3</text>
     <text x="780" y="190">FF4</text>
   </g>
-  <g fill="#a0a0c0" font-size="13" text-anchor="middle" font-style="italic">
+  <g fill="#a0a0c0" font-size="18" text-anchor="middle" font-style="italic">
     <text x="180" y="215">Scan-FF</text>
     <text x="380" y="215">Scan-FF</text>
     <text x="580" y="215">Scan-FF</text>
@@ -2609,25 +2609,25 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   <!-- 3-phase legend (each step on its own row, generous spacing) -->
   <rect x="60" y="380" width="880" height="300" rx="10"
         fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="500" y="416" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+  <text x="500" y="416" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="24">
     flow של 3 שלבים
   </text>
 
   <!-- Step 1: LOAD -->
-  <text x="90" y="466" fill="#80f0a0" font-weight="bold" font-size="22">1. LOAD</text>
-  <text x="90" y="496" fill="#c8b090" font-size="19">
+  <text x="90" y="466" fill="#80f0a0" font-weight="bold" font-size="24">1. LOAD</text>
+  <text x="90" y="496" fill="#c8b090" font-size="20">
     SE=1, N מחזורי clock — וקטור נכנס דרך SI ל-FF1 ומתפזר ל-FF2,3,4
   </text>
 
   <!-- Step 2: CAPTURE -->
-  <text x="90" y="546" fill="#ff9933" font-weight="bold" font-size="22">2. CAPTURE</text>
-  <text x="90" y="576" fill="#c8b090" font-size="19">
+  <text x="90" y="546" fill="#ff9933" font-weight="bold" font-size="24">2. CAPTURE</text>
+  <text x="90" y="576" fill="#c8b090" font-size="20">
     SE=0, מחזור clock יחיד — ה-FFs לוכדים את תוצאת הלוגיקה הפונקציונלית
   </text>
 
   <!-- Step 3: UNLOAD -->
-  <text x="90" y="626" fill="#cc99ff" font-weight="bold" font-size="22">3. UNLOAD</text>
-  <text x="90" y="656" fill="#c8b090" font-size="19">
+  <text x="90" y="626" fill="#cc99ff" font-weight="bold" font-size="24">3. UNLOAD</text>
+  <text x="90" y="656" fill="#c8b090" font-size="20">
     SE=1, N מחזורי clock — התוצאה יוצאת דרך SO להשוואה
   </text>
 </svg>`,
@@ -2774,18 +2774,18 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 מה ההפרש ב-**מספר המחזורים** וב-**coverage**?`,
     schematic: `
 <svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="3-FF sequential chain with stuck-at-0 fault on AND gate driving FF3.D.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="3-FF sequential chain with stuck-at-0 fault on AND gate driving FF3.D.">
 
   <text x="500" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     תקלת stuck-at-0 ב-AND שמזין את FF3
   </text>
-  <text x="500" y="62" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="500" y="62" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     כדי להגיע ל-FF3 מ-PI נדרשים מחזורי clock רצופים
   </text>
 
   <!-- PI inputs on the left -->
   <circle cx="60" cy="170" r="14" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="60" y="174" text-anchor="middle" fill="#cca040" font-size="14" font-weight="bold">PI</text>
+  <text x="60" y="174" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">PI</text>
 
   <!-- FF1 -->
   <rect x="140" y="130" width="100" height="80" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.4"/>
@@ -2797,11 +2797,11 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 
   <!-- AND gate -->
   <path d="M 520 145 L 540 145 A 30 30 0 0 1 540 205 L 520 205 Z" fill="#1a1428" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="540" y="178" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">AND</text>
+  <text x="540" y="178" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">AND</text>
 
   <!-- Second AND input (from PI2) -->
   <circle cx="480" cy="240" r="14" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
-  <text x="480" y="244" text-anchor="middle" fill="#cca040" font-size="12" font-weight="bold">PI2</text>
+  <text x="480" y="244" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">PI2</text>
   <path d="M 480 226 L 480 195 L 525 195" fill="none" stroke="#cca040" stroke-width="2"/>
 
   <!-- FF3 -->
@@ -2810,7 +2810,7 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 
   <!-- Output -->
   <circle cx="860" cy="170" r="14" fill="#0a1825" stroke="#ff9933" stroke-width="2.2"/>
-  <text x="860" y="174" text-anchor="middle" fill="#ff9933" font-size="13" font-weight="bold">PO</text>
+  <text x="860" y="174" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">PO</text>
 
   <!-- Wires -->
   <g stroke="#a0a0c0" stroke-width="2" fill="none">
@@ -2823,29 +2823,29 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 
   <!-- Fault marker on AND output -->
   <circle cx="610" cy="172" r="14" fill="#3a0a14" stroke="#ff6060" stroke-width="2.4"/>
-  <text x="610" y="178" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">×</text>
-  <text x="610" y="124" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">s-a-0</text>
+  <text x="610" y="178" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">×</text>
+  <text x="610" y="124" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">s-a-0</text>
 
   <!-- Comparison box -->
   <rect x="60" y="290" width="880" height="380" rx="12" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="500" y="328" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+  <text x="500" y="328" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="24">
     שתי גישות לחשיפת התקלה
   </text>
 
   <!-- No-scan side -->
-  <text x="240" y="378" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">
+  <text x="240" y="378" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="24">
     ללא scan
   </text>
-  <text x="240" y="416" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="240" y="416" text-anchor="middle" fill="#c8b090" font-size="20">
     PI → FF1 (cycle 1)
   </text>
-  <text x="240" y="450" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="240" y="450" text-anchor="middle" fill="#c8b090" font-size="20">
     FF1 → FF2 (cycle 2)
   </text>
-  <text x="240" y="484" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="240" y="484" text-anchor="middle" fill="#c8b090" font-size="20">
     FF2+PI2 → AND → FF3 (cycle 3)
   </text>
-  <text x="240" y="518" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="240" y="518" text-anchor="middle" fill="#c8b090" font-size="20">
     FF3 → PO (cycle 4)
   </text>
   <text x="240" y="560" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
@@ -2856,19 +2856,19 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
   <line x1="500" y1="350" x2="500" y2="640" stroke="#3a4a5a" stroke-width="1.2" stroke-dasharray="4,4"/>
 
   <!-- Scan side -->
-  <text x="740" y="378" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">
+  <text x="740" y="378" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">
     עם scan
   </text>
-  <text x="740" y="416" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="740" y="416" text-anchor="middle" fill="#c8b090" font-size="20">
     SE=1: shift-in ב-3 cycles → טוען
   </text>
-  <text x="740" y="450" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="740" y="450" text-anchor="middle" fill="#c8b090" font-size="20">
     \`FF1, FF2, FF3\` בערכים שרירותיים
   </text>
-  <text x="740" y="484" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="740" y="484" text-anchor="middle" fill="#c8b090" font-size="20">
     SE=0: capture cycle יחיד
   </text>
-  <text x="740" y="518" text-anchor="middle" fill="#c8b090" font-size="19">
+  <text x="740" y="518" text-anchor="middle" fill="#c8b090" font-size="20">
     SE=1: shift-out ב-3 cycles
   </text>
   <text x="740" y="560" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">
@@ -3024,12 +3024,12 @@ ASIC מודרני: 100K-10M FFs. בלי scan: ATPG לא יוכל למצוא vect
 יחד הם מאפשרים לבדוק את כל ה-I/O של ה-chip בלי לפתוח אותו פיזית, ומאפשרים flash של firmware, debug, ו-board-level continuity testing.`,
     schematic: `
 <svg viewBox="0 0 1100 1320" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="JTAG TAP 16-state FSM at top, boundary-scan cell black box at bottom.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="JTAG TAP 16-state FSM at top, boundary-scan cell black box at bottom.">
 
-  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     JTAG TAP — מכונת מצבים בת 16 מצבים
   </text>
-  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     כל מעבר נשלט ע"י TMS על posedge של TCK
   </text>
 
@@ -3049,75 +3049,75 @@ ASIC מודרני: 100K-10M FFs. בלי scan: ATPG לא יוכל למצוא vect
 
   <!-- TLR (Test-Logic-Reset) at top center -->
   <circle cx="550" cy="150" r="42" fill="#3a0a14" stroke="#ff6060" stroke-width="2.4"/>
-  <text x="550" y="148" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">TLR</text>
-  <text x="550" y="166" text-anchor="middle" fill="#c8b090" font-size="11">state 0</text>
+  <text x="550" y="148" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">TLR</text>
+  <text x="550" y="166" text-anchor="middle" fill="#c8b090" font-size="16">state 0</text>
 
   <!-- RTI (Run-Test/Idle) -->
   <circle cx="550" cy="270" r="42" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-  <text x="550" y="268" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">RTI</text>
-  <text x="550" y="286" text-anchor="middle" fill="#c8b090" font-size="11">state 1</text>
+  <text x="550" y="268" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">RTI</text>
+  <text x="550" y="286" text-anchor="middle" fill="#c8b090" font-size="16">state 1</text>
 
   <!-- TLR ↔ RTI (TMS=0 down, TMS=1 self-loop on TLR) -->
   <path d="M 550 192 L 550 228" stroke="#80f0a0" stroke-width="2" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="538" y="214" text-anchor="end" fill="#80f0a0" font-size="14" font-weight="bold">0</text>
+  <text x="538" y="214" text-anchor="end" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
   <path d="M 596 130 Q 660 100, 660 150 Q 660 200, 596 170" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
-  <text x="680" y="150" text-anchor="start" fill="#ff6080" font-size="14" font-weight="bold">1 (self)</text>
+  <text x="680" y="150" text-anchor="start" fill="#ff6080" font-size="18" font-weight="bold">1 (self)</text>
 
   <!-- DR branch (LEFT side) -->
-  <g font-size="13" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <!-- Select-DR -->
     <circle cx="270" cy="360" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="270" y="358" text-anchor="middle" fill="#80c8ff" font-size="13">Sel-DR</text>
-    <text x="270" y="374" text-anchor="middle" fill="#c8b090" font-size="11">state 2</text>
+    <text x="270" y="358" text-anchor="middle" fill="#80c8ff" font-size="18">Sel-DR</text>
+    <text x="270" y="374" text-anchor="middle" fill="#c8b090" font-size="16">state 2</text>
     <!-- Capture-DR -->
     <circle cx="270" cy="460" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="270" y="458" text-anchor="middle" fill="#80c8ff" font-size="13">Cap-DR</text>
-    <text x="270" y="474" text-anchor="middle" fill="#c8b090" font-size="11">state 3</text>
+    <text x="270" y="458" text-anchor="middle" fill="#80c8ff" font-size="18">Cap-DR</text>
+    <text x="270" y="474" text-anchor="middle" fill="#c8b090" font-size="16">state 3</text>
     <!-- Shift-DR -->
     <circle cx="270" cy="560" r="40" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.6"/>
-    <text x="270" y="558" text-anchor="middle" fill="#80f0a0" font-size="13">Shift-DR</text>
-    <text x="270" y="574" text-anchor="middle" fill="#c8b090" font-size="11">state 4</text>
+    <text x="270" y="558" text-anchor="middle" fill="#80f0a0" font-size="18">Shift-DR</text>
+    <text x="270" y="574" text-anchor="middle" fill="#c8b090" font-size="16">state 4</text>
     <!-- Exit1-DR -->
     <circle cx="160" cy="640" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="160" y="638" text-anchor="middle" fill="#80c8ff" font-size="12">Exit1-DR</text>
-    <text x="160" y="654" text-anchor="middle" fill="#c8b090" font-size="10">5</text>
+    <text x="160" y="638" text-anchor="middle" fill="#80c8ff" font-size="16">Exit1-DR</text>
+    <text x="160" y="654" text-anchor="middle" fill="#c8b090" font-size="16">5</text>
     <!-- Pause-DR -->
     <circle cx="80" cy="720" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="80" y="718" text-anchor="middle" fill="#80c8ff" font-size="12">Pause-DR</text>
-    <text x="80" y="734" text-anchor="middle" fill="#c8b090" font-size="10">6</text>
+    <text x="80" y="718" text-anchor="middle" fill="#80c8ff" font-size="16">Pause-DR</text>
+    <text x="80" y="734" text-anchor="middle" fill="#c8b090" font-size="16">6</text>
     <!-- Exit2-DR -->
     <circle cx="180" cy="800" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="180" y="798" text-anchor="middle" fill="#80c8ff" font-size="12">Exit2-DR</text>
-    <text x="180" y="814" text-anchor="middle" fill="#c8b090" font-size="10">7</text>
+    <text x="180" y="798" text-anchor="middle" fill="#80c8ff" font-size="16">Exit2-DR</text>
+    <text x="180" y="814" text-anchor="middle" fill="#c8b090" font-size="16">7</text>
     <!-- Update-DR -->
     <circle cx="360" cy="720" r="40" fill="#3a2a14" stroke="#ffc080" stroke-width="2.4"/>
-    <text x="360" y="718" text-anchor="middle" fill="#ffc080" font-size="13">Upd-DR</text>
-    <text x="360" y="734" text-anchor="middle" fill="#c8b090" font-size="11">state 8</text>
+    <text x="360" y="718" text-anchor="middle" fill="#ffc080" font-size="18">Upd-DR</text>
+    <text x="360" y="734" text-anchor="middle" fill="#c8b090" font-size="16">state 8</text>
   </g>
 
   <!-- IR branch (RIGHT side) -->
-  <g font-size="13" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <circle cx="830" cy="360" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="830" y="358" text-anchor="middle" fill="#80c8ff" font-size="13">Sel-IR</text>
-    <text x="830" y="374" text-anchor="middle" fill="#c8b090" font-size="11">state 9</text>
+    <text x="830" y="358" text-anchor="middle" fill="#80c8ff" font-size="18">Sel-IR</text>
+    <text x="830" y="374" text-anchor="middle" fill="#c8b090" font-size="16">state 9</text>
     <circle cx="830" cy="460" r="40" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="830" y="458" text-anchor="middle" fill="#80c8ff" font-size="13">Cap-IR</text>
-    <text x="830" y="474" text-anchor="middle" fill="#c8b090" font-size="11">state 10</text>
+    <text x="830" y="458" text-anchor="middle" fill="#80c8ff" font-size="18">Cap-IR</text>
+    <text x="830" y="474" text-anchor="middle" fill="#c8b090" font-size="16">state 10</text>
     <circle cx="830" cy="560" r="40" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.6"/>
-    <text x="830" y="558" text-anchor="middle" fill="#80f0a0" font-size="13">Shift-IR</text>
-    <text x="830" y="574" text-anchor="middle" fill="#c8b090" font-size="11">state 11</text>
+    <text x="830" y="558" text-anchor="middle" fill="#80f0a0" font-size="18">Shift-IR</text>
+    <text x="830" y="574" text-anchor="middle" fill="#c8b090" font-size="16">state 11</text>
     <circle cx="940" cy="640" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="940" y="638" text-anchor="middle" fill="#80c8ff" font-size="12">Exit1-IR</text>
-    <text x="940" y="654" text-anchor="middle" fill="#c8b090" font-size="10">12</text>
+    <text x="940" y="638" text-anchor="middle" fill="#80c8ff" font-size="16">Exit1-IR</text>
+    <text x="940" y="654" text-anchor="middle" fill="#c8b090" font-size="16">12</text>
     <circle cx="1020" cy="720" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="1020" y="718" text-anchor="middle" fill="#80c8ff" font-size="12">Pause-IR</text>
-    <text x="1020" y="734" text-anchor="middle" fill="#c8b090" font-size="10">13</text>
+    <text x="1020" y="718" text-anchor="middle" fill="#80c8ff" font-size="16">Pause-IR</text>
+    <text x="1020" y="734" text-anchor="middle" fill="#c8b090" font-size="16">13</text>
     <circle cx="920" cy="800" r="36" fill="#0a1825" stroke="#80c8ff" stroke-width="2"/>
-    <text x="920" y="798" text-anchor="middle" fill="#80c8ff" font-size="12">Exit2-IR</text>
-    <text x="920" y="814" text-anchor="middle" fill="#c8b090" font-size="10">14</text>
+    <text x="920" y="798" text-anchor="middle" fill="#80c8ff" font-size="16">Exit2-IR</text>
+    <text x="920" y="814" text-anchor="middle" fill="#c8b090" font-size="16">14</text>
     <circle cx="740" cy="720" r="40" fill="#3a2a14" stroke="#ffc080" stroke-width="2.4"/>
-    <text x="740" y="718" text-anchor="middle" fill="#ffc080" font-size="13">Upd-IR</text>
-    <text x="740" y="734" text-anchor="middle" fill="#c8b090" font-size="11">state 15</text>
+    <text x="740" y="718" text-anchor="middle" fill="#ffc080" font-size="18">Upd-IR</text>
+    <text x="740" y="734" text-anchor="middle" fill="#c8b090" font-size="16">state 15</text>
   </g>
 
   <!-- DR transitions -->
@@ -3127,59 +3127,59 @@ ASIC מודרני: 100K-10M FFs. בלי scan: ATPG לא יוכל למצוא vect
   <g stroke="#ff6080" stroke-width="1.8" fill="none">
     <path d="M 512 282 Q 400 320, 308 360" marker-end="url(#tapArr1)"/>
   </g>
-  <text x="370" y="320" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <text x="370" y="320" fill="#ff6080" font-size="18" font-weight="bold">1</text>
 
   <!-- Sel-DR → Cap-DR (0), Sel-DR → Sel-IR (1) -->
   <path d="M 270 400 L 270 420" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="280" y="416" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="280" y="416" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
   <path d="M 310 360 L 790 360" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
-  <text x="540" y="354" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <text x="540" y="354" fill="#ff6080" font-size="18" font-weight="bold">1</text>
 
   <!-- Cap-DR → Shift-DR (0), Cap-DR → Exit1-DR (1) -->
   <path d="M 270 500 L 270 520" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="280" y="516" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="280" y="516" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
   <path d="M 240 490 Q 180 540, 160 604" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
-  <text x="180" y="570" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <text x="180" y="570" fill="#ff6080" font-size="18" font-weight="bold">1</text>
 
   <!-- Shift-DR → Shift-DR (0 self) and Shift-DR → Exit1-DR (1) -->
   <path d="M 230 540 Q 200 540, 200 560 Q 200 580, 230 580" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="180" y="560" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="180" y="560" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
   <path d="M 240 590 Q 180 615, 160 604" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
-  <text x="180" y="640" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <text x="180" y="640" fill="#ff6080" font-size="18" font-weight="bold">1</text>
 
   <!-- Exit1-DR → Update-DR (1) -->
   <path d="M 196 640 Q 290 690, 320 720" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
-  <text x="280" y="666" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <text x="280" y="666" fill="#ff6080" font-size="18" font-weight="bold">1</text>
   <!-- Exit1-DR → Pause-DR (0) -->
   <path d="M 140 670 L 100 700" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="100" y="676" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="100" y="676" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
 
   <!-- Update-DR → RTI (0) — go back up -->
   <path d="M 360 680 Q 430 540, 510 290" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="430" y="450" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="430" y="450" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
 
   <!-- IR side: mirrored transitions (kept concise) -->
   <path d="M 830 400 L 830 420" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="840" y="416" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="840" y="416" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
   <path d="M 830 500 L 830 520" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="840" y="516" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="840" y="516" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
   <path d="M 870 540 Q 900 540, 900 560 Q 900 580, 870 580" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="908" y="560" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="908" y="560" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
   <path d="M 860 590 Q 920 615, 940 604" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
-  <text x="920" y="640" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <text x="920" y="640" fill="#ff6080" font-size="18" font-weight="bold">1</text>
   <path d="M 904 640 Q 810 690, 780 720" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
-  <text x="820" y="666" fill="#ff6080" font-size="13" font-weight="bold">1</text>
+  <text x="820" y="666" fill="#ff6080" font-size="18" font-weight="bold">1</text>
   <path d="M 740 680 Q 670 540, 590 290" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
-  <text x="670" y="450" fill="#80f0a0" font-size="13" font-weight="bold">0</text>
+  <text x="670" y="450" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
 
   <!-- Legend -->
   <g transform="translate(40, 110)">
     <line x1="0" y1="0" x2="34" y2="0" stroke="#80f0a0" stroke-width="2.4"/>
-    <text x="40" y="5" fill="#80f0a0" font-size="14" font-weight="bold">TMS = 0</text>
+    <text x="40" y="5" fill="#80f0a0" font-size="18" font-weight="bold">TMS = 0</text>
     <line x1="0" y1="22" x2="34" y2="22" stroke="#ff6080" stroke-width="2.4"/>
-    <text x="40" y="27" fill="#ff6080" font-size="14" font-weight="bold">TMS = 1</text>
+    <text x="40" y="27" fill="#ff6080" font-size="18" font-weight="bold">TMS = 1</text>
   </g>
-  <text x="550" y="850" text-anchor="middle" fill="#ffc080" font-size="16" font-style="italic">
+  <text x="550" y="850" text-anchor="middle" fill="#ffc080" font-size="18" font-style="italic">
     הערה: מ-TLR ניתן להגיע ל-Shift-DR ב-4 מעברים בלבד
   </text>
 
@@ -3192,42 +3192,42 @@ ASIC מודרני: 100K-10M FFs. בלי scan: ATPG לא יוכל למצוא vect
 
   <!-- BSC black box -->
   <rect x="380" y="990" width="340" height="200" rx="8" fill="#0a1825" stroke="#ffc080" stroke-width="2.4" stroke-dasharray="6,4"/>
-  <text x="550" y="1080" text-anchor="middle" fill="#ffc080" font-size="36" font-weight="bold" opacity="0.85">BSC</text>
+  <text x="550" y="1080" text-anchor="middle" fill="#ffc080" font-size="32" font-weight="bold" opacity="0.85">BSC</text>
 
   <!-- Inputs (left) -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <line x1="280" y1="1020" x2="380" y2="1020" stroke="#cca040" stroke-width="2"/>
     <text x="320" y="1012" text-anchor="middle" fill="#cca040">PI</text>
-    <text x="232" y="1024" fill="#a0a0c0" font-size="13" font-style="italic">primary input</text>
+    <text x="232" y="1024" fill="#a0a0c0" font-size="18" font-style="italic">primary input</text>
 
     <line x1="280" y1="1066" x2="380" y2="1066" stroke="#cc66ff" stroke-width="2"/>
     <text x="320" y="1058" text-anchor="middle" fill="#cc66ff">SI</text>
-    <text x="232" y="1070" fill="#a0a0c0" font-size="13" font-style="italic">scan input</text>
+    <text x="232" y="1070" fill="#a0a0c0" font-size="18" font-style="italic">scan input</text>
 
     <line x1="280" y1="1112" x2="380" y2="1112" stroke="#80f0a0" stroke-width="2"/>
     <text x="320" y="1104" text-anchor="middle" fill="#80f0a0">MODE</text>
-    <text x="232" y="1116" fill="#a0a0c0" font-size="13" font-style="italic">test/normal</text>
+    <text x="232" y="1116" fill="#a0a0c0" font-size="18" font-style="italic">test/normal</text>
 
     <line x1="280" y1="1158" x2="380" y2="1158" stroke="#80f0a0" stroke-width="2"/>
     <text x="320" y="1150" text-anchor="middle" fill="#80f0a0">SHIFT</text>
-    <text x="232" y="1162" fill="#a0a0c0" font-size="13" font-style="italic">shift/capture</text>
+    <text x="232" y="1162" fill="#a0a0c0" font-size="18" font-style="italic">shift/capture</text>
   </g>
 
   <!-- Outputs (right) -->
-  <g font-size="18" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <line x1="720" y1="1044" x2="820" y2="1044" stroke="#ff9933" stroke-width="2"/>
     <text x="770" y="1036" text-anchor="middle" fill="#ff9933">PO</text>
-    <text x="830" y="1048" fill="#a0a0c0" font-size="13" font-style="italic">primary output</text>
+    <text x="830" y="1048" fill="#a0a0c0" font-size="18" font-style="italic">primary output</text>
 
     <line x1="720" y1="1130" x2="820" y2="1130" stroke="#cc66ff" stroke-width="2"/>
     <text x="770" y="1122" text-anchor="middle" fill="#cc66ff">SO</text>
-    <text x="830" y="1134" fill="#a0a0c0" font-size="13" font-style="italic">scan output</text>
+    <text x="830" y="1134" fill="#a0a0c0" font-size="18" font-style="italic">scan output</text>
   </g>
 
-  <text x="550" y="1230" text-anchor="middle" fill="#c8b090" font-size="16">
+  <text x="550" y="1230" text-anchor="middle" fill="#c8b090" font-size="18">
     שני latches בפנים: <tspan fill="#cc66ff" font-weight="bold">shift latch</tspan> ו-<tspan fill="#ffc080" font-weight="bold">update latch</tspan>
   </text>
-  <text x="550" y="1260" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">
+  <text x="550" y="1260" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
     איך פועלים PO ו-SO ב-4 השילובים של MODE × SHIFT?
   </text>
 </svg>`,
@@ -3468,28 +3468,28 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
 מה מבנה ה-test pattern שכן יתפוס את התקלה? כמה וקטורים נדרשים? מה ההבדל בין **launch-on-shift** ל-**launch-on-capture**?`,
     schematic: `
 <svg viewBox="0 0 1000 1100" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="Transition fault waveforms (normal vs slow-to-rise) and 2-vector test sequence.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Transition fault waveforms (normal vs slow-to-rise) and 2-vector test sequence.">
 
-  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     תקלת מעבר — מה stuck-at לא תופס
   </text>
-  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     התקלה תלויה ב-**זמן** המעבר, לא רק בערך הסופי
   </text>
 
   <!-- ============= TOP: WAVEFORM PANEL ============= -->
   <rect x="20" y="90" width="960" height="500" rx="12"
         fill="rgba(96,192,255,0.04)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
-  <text x="500" y="128" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+  <text x="500" y="128" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
     Waveform — נקי לעומת slow-to-rise
   </text>
 
   <!-- Clock waveform -->
-  <text x="60" y="180" fill="#cca040" font-size="18" font-weight="bold">CLK</text>
+  <text x="60" y="180" fill="#cca040" font-size="20" font-weight="bold">CLK</text>
   <path d="M 120 180 L 200 180 L 200 160 L 280 160 L 280 180 L 360 180 L 360 160 L 440 160 L 440 180 L 520 180 L 520 160 L 600 160 L 600 180 L 680 180 L 680 160 L 760 160 L 760 180 L 840 180 L 840 160 L 920 160"
         stroke="#cca040" stroke-width="2.2" fill="none"/>
   <!-- Clock edge markers (rising edges) -->
-  <g fill="#cca040" font-size="13" text-anchor="middle">
+  <g fill="#cca040" font-size="18" text-anchor="middle">
     <text x="280" y="206">↑ t1</text>
     <text x="440" y="206">↑ t2 (V1)</text>
     <text x="600" y="206">↑ t3 (V2)</text>
@@ -3497,45 +3497,45 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
   </g>
 
   <!-- Input D waveform (V1: 0 stable, V2: rises to 1 at t3) -->
-  <text x="60" y="280" fill="#cc66ff" font-size="18" font-weight="bold">D</text>
+  <text x="60" y="280" fill="#cc66ff" font-size="20" font-weight="bold">D</text>
   <path d="M 120 290 L 600 290 L 600 250 L 920 250" stroke="#cc66ff" stroke-width="2.4" fill="none"/>
-  <text x="350" y="284" fill="#a0a0c0" font-size="14" font-style="italic">stable LOW (V1)</text>
-  <text x="730" y="244" fill="#a0a0c0" font-size="14" font-style="italic">HIGH (V2)</text>
+  <text x="350" y="284" fill="#a0a0c0" font-size="18" font-style="italic">stable LOW (V1)</text>
+  <text x="730" y="244" fill="#a0a0c0" font-size="18" font-style="italic">HIGH (V2)</text>
 
   <!-- Normal output waveform -->
-  <text x="60" y="380" fill="#80f0a0" font-size="18" font-weight="bold">OUT (clean)</text>
+  <text x="60" y="380" fill="#80f0a0" font-size="20" font-weight="bold">OUT (clean)</text>
   <path d="M 120 390 L 600 390 L 615 350 L 920 350" stroke="#80f0a0" stroke-width="2.4" fill="none"/>
-  <text x="730" y="344" fill="#80f0a0" font-size="14" font-style="italic">rises promptly</text>
+  <text x="730" y="344" fill="#80f0a0" font-size="18" font-style="italic">rises promptly</text>
   <!-- Capture sample marker -->
   <circle cx="760" cy="350" r="8" fill="#80f0a0" opacity="0.85"/>
-  <text x="760" y="338" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">FF captures 1 ✓</text>
+  <text x="760" y="338" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">FF captures 1 ✓</text>
 
   <!-- Slow-to-rise output waveform -->
-  <text x="60" y="480" fill="#ff6080" font-size="18" font-weight="bold">OUT (STR)</text>
+  <text x="60" y="480" fill="#ff6080" font-size="20" font-weight="bold">OUT (STR)</text>
   <path d="M 120 490 L 600 490 L 850 490 L 920 450" stroke="#ff6080" stroke-width="2.4" fill="none"/>
-  <text x="730" y="484" fill="#ff8080" font-size="14" font-style="italic">slow — finishes too late</text>
+  <text x="730" y="484" fill="#ff8080" font-size="18" font-style="italic">slow — finishes too late</text>
   <!-- Capture sample marker on faulty -->
   <circle cx="760" cy="490" r="8" fill="#ff6080" opacity="0.85"/>
-  <text x="760" y="478" text-anchor="middle" fill="#ff6080" font-size="14" font-weight="bold">FF captures 0 ✗</text>
+  <text x="760" y="478" text-anchor="middle" fill="#ff6080" font-size="18" font-weight="bold">FF captures 0 ✗</text>
   <!-- Slow rise shown as gentle slope after capture -->
   <line x1="600" y1="490" x2="850" y2="490" stroke="#ff6080" stroke-width="2.4" stroke-dasharray="3,3" opacity="0.6"/>
 
-  <text x="500" y="560" text-anchor="middle" fill="#ffe080" font-size="17" font-weight="bold">
+  <text x="500" y="560" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
     אותו וקטור-כתיבה, אותו ערך סופי — אבל ה-FF לוכד **ערך שגוי** בגלל delay
   </text>
 
   <!-- ============= BOTTOM: TWO-VECTOR TEST PANEL ============= -->
   <rect x="20" y="610" width="960" height="470" rx="12"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="500" y="648" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+  <text x="500" y="648" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
     מבנה ה-test pattern — דרושים שני וקטורים רצופים
   </text>
 
   <!-- V1 box -->
   <rect x="60" y="680" width="270" height="100" rx="8" fill="rgba(96,192,255,0.06)" stroke="#80c8ff" stroke-width="2"/>
   <text x="195" y="710" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">V1 — Stabilize</text>
-  <text x="195" y="738" text-anchor="middle" fill="#c8b090" font-size="15">מציב את המעגל במצב התחלתי</text>
-  <text x="195" y="762" text-anchor="middle" fill="#c8b090" font-size="15">(הקצה האחר של המעבר)</text>
+  <text x="195" y="738" text-anchor="middle" fill="#c8b090" font-size="18">מציב את המעגל במצב התחלתי</text>
+  <text x="195" y="762" text-anchor="middle" fill="#c8b090" font-size="18">(הקצה האחר של המעבר)</text>
 
   <!-- Arrow -->
   <path d="M 340 730 L 380 730" stroke="#cca040" stroke-width="2.4" fill="none" marker-end="url(#tArrow)"/>
@@ -3548,8 +3548,8 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
   <!-- V2 box -->
   <rect x="400" y="680" width="270" height="100" rx="8" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="2"/>
   <text x="535" y="710" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">V2 — Launch</text>
-  <text x="535" y="738" text-anchor="middle" fill="#c8b090" font-size="15">מפעיל את המעבר על המעגל</text>
-  <text x="535" y="762" text-anchor="middle" fill="#c8b090" font-size="15">(הופך את הקצה — STR / STF)</text>
+  <text x="535" y="738" text-anchor="middle" fill="#c8b090" font-size="18">מפעיל את המעבר על המעגל</text>
+  <text x="535" y="762" text-anchor="middle" fill="#c8b090" font-size="18">(הופך את הקצה — STR / STF)</text>
 
   <!-- Arrow -->
   <path d="M 680 730 L 720 730" stroke="#cca040" stroke-width="2.4" fill="none" marker-end="url(#tArrow)"/>
@@ -3557,27 +3557,27 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
   <!-- Capture box -->
   <rect x="740" y="680" width="220" height="100" rx="8" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="2"/>
   <text x="850" y="710" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">Capture</text>
-  <text x="850" y="738" text-anchor="middle" fill="#c8b090" font-size="15">clock אחד — לוכד</text>
-  <text x="850" y="762" text-anchor="middle" fill="#c8b090" font-size="15">את התוצאה ב-FF הבא</text>
+  <text x="850" y="738" text-anchor="middle" fill="#c8b090" font-size="18">clock אחד — לוכד</text>
+  <text x="850" y="762" text-anchor="middle" fill="#c8b090" font-size="18">את התוצאה ב-FF הבא</text>
 
   <!-- LOS vs LOC -->
-  <text x="500" y="830" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="19">
+  <text x="500" y="830" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     שתי סכימות להפקת V2:
   </text>
 
   <rect x="60" y="855" width="430" height="180" rx="8" fill="rgba(96,192,255,0.04)" stroke="rgba(128,212,255,0.4)" stroke-width="1.6"/>
-  <text x="275" y="884" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">Launch-on-Shift (LOS)</text>
-  <text x="275" y="912" text-anchor="middle" fill="#c8b090" font-size="15">V2 מגיע מ-shift אחרון של scan</text>
-  <text x="275" y="938" text-anchor="middle" fill="#c8b090" font-size="15">SE=1 → ביט אחרון נכנס</text>
-  <text x="275" y="964" text-anchor="middle" fill="#c8b090" font-size="15">SE=0 → capture cycle</text>
-  <text x="275" y="998" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">פשוט יותר, כיסוי טוב</text>
+  <text x="275" y="884" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">Launch-on-Shift (LOS)</text>
+  <text x="275" y="912" text-anchor="middle" fill="#c8b090" font-size="18">V2 מגיע מ-shift אחרון של scan</text>
+  <text x="275" y="938" text-anchor="middle" fill="#c8b090" font-size="18">SE=1 → ביט אחרון נכנס</text>
+  <text x="275" y="964" text-anchor="middle" fill="#c8b090" font-size="18">SE=0 → capture cycle</text>
+  <text x="275" y="998" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">פשוט יותר, כיסוי טוב</text>
 
   <rect x="510" y="855" width="430" height="180" rx="8" fill="rgba(255,176,96,0.04)" stroke="rgba(255,176,96,0.4)" stroke-width="1.6"/>
-  <text x="725" y="884" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="18">Launch-on-Capture (LOC)</text>
-  <text x="725" y="912" text-anchor="middle" fill="#c8b090" font-size="15">V2 נוצר ע"י clock פונקציונלי</text>
-  <text x="725" y="938" text-anchor="middle" fill="#c8b090" font-size="15">SE=0 לאורך שני ה-clocks</text>
-  <text x="725" y="964" text-anchor="middle" fill="#c8b090" font-size="15">המעבר בא מלוגיקה אמיתית</text>
-  <text x="725" y="998" text-anchor="middle" fill="#ff9933" font-size="14" font-weight="bold">at-speed אמיתי, ATPG קשה יותר</text>
+  <text x="725" y="884" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="20">Launch-on-Capture (LOC)</text>
+  <text x="725" y="912" text-anchor="middle" fill="#c8b090" font-size="18">V2 נוצר ע"י clock פונקציונלי</text>
+  <text x="725" y="938" text-anchor="middle" fill="#c8b090" font-size="18">SE=0 לאורך שני ה-clocks</text>
+  <text x="725" y="964" text-anchor="middle" fill="#c8b090" font-size="18">המעבר בא מלוגיקה אמיתית</text>
+  <text x="725" y="998" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">at-speed אמיתי, ATPG קשה יותר</text>
 </svg>`,
     parts: [
       {
@@ -3712,12 +3712,12 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
 נתון \`RAM 8x8\` (\`N=8\`). תאר את ששת ה-march elements של March C-. למה שני הכיוונים הכרחיים? כמה ops זה לעומת Walking?`,
     schematic: `
 <svg viewBox="0 0 1000 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="March C- as six march elements, vertically stacked with arrows showing direction.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="March C- as six march elements, vertically stacked with arrows showing direction.">
 
   <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     March C- — שישה march elements
   </text>
-  <text x="500" y="70" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+  <text x="500" y="70" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     init + 4 passes (2× ascending + 2× descending) + final read
   </text>
 
@@ -3725,84 +3725,84 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
   <!-- M0 — init -->
   <rect x="60" y="110" width="880" height="120" rx="10"
         fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
-  <text x="100" y="155" fill="#80c8ff" font-weight="bold" font-size="22">M0</text>
+  <text x="100" y="155" fill="#80c8ff" font-weight="bold" font-size="24">M0</text>
   <text x="240" y="155" fill="#ffe080" font-weight="bold" font-size="32">⇕</text>
-  <text x="320" y="155" fill="#c8d8f0" font-size="22" font-family="monospace">(w0)</text>
-  <text x="500" y="155" fill="#c8b090" font-size="17">— initialize all cells to 0</text>
-  <text x="100" y="200" fill="#a0a0c0" font-size="15">כיוון לא קריטי — רק init</text>
-  <text x="780" y="200" text-anchor="end" fill="#80f0a0" font-size="16" font-weight="bold">N ops</text>
+  <text x="320" y="155" fill="#c8d8f0" font-size="24" font-family="monospace">(w0)</text>
+  <text x="500" y="155" fill="#c8b090" font-size="20">— initialize all cells to 0</text>
+  <text x="100" y="200" fill="#a0a0c0" font-size="18">כיוון לא קריטי — רק init</text>
+  <text x="780" y="200" text-anchor="end" fill="#80f0a0" font-size="18" font-weight="bold">N ops</text>
 
   <!-- M1 — ascending r0,w1 -->
   <rect x="60" y="245" width="880" height="120" rx="10"
         fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
-  <text x="100" y="290" fill="#80f0a0" font-weight="bold" font-size="22">M1</text>
+  <text x="100" y="290" fill="#80f0a0" font-weight="bold" font-size="24">M1</text>
   <text x="240" y="290" fill="#80f0a0" font-weight="bold" font-size="32">⇑</text>
-  <text x="320" y="290" fill="#c8d8f0" font-size="22" font-family="monospace">(r0, w1)</text>
-  <text x="500" y="290" fill="#c8b090" font-size="17">— ascending: read 0, write 1</text>
-  <text x="100" y="335" fill="#a0a0c0" font-size="15">בודק כתיבה 0→1 בכיוון עולה</text>
-  <text x="780" y="335" text-anchor="end" fill="#80f0a0" font-size="16" font-weight="bold">2N ops</text>
+  <text x="320" y="290" fill="#c8d8f0" font-size="24" font-family="monospace">(r0, w1)</text>
+  <text x="500" y="290" fill="#c8b090" font-size="20">— ascending: read 0, write 1</text>
+  <text x="100" y="335" fill="#a0a0c0" font-size="18">בודק כתיבה 0→1 בכיוון עולה</text>
+  <text x="780" y="335" text-anchor="end" fill="#80f0a0" font-size="18" font-weight="bold">2N ops</text>
 
   <!-- M2 — ascending r1,w0 -->
   <rect x="60" y="380" width="880" height="120" rx="10"
         fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
-  <text x="100" y="425" fill="#80f0a0" font-weight="bold" font-size="22">M2</text>
+  <text x="100" y="425" fill="#80f0a0" font-weight="bold" font-size="24">M2</text>
   <text x="240" y="425" fill="#80f0a0" font-weight="bold" font-size="32">⇑</text>
-  <text x="320" y="425" fill="#c8d8f0" font-size="22" font-family="monospace">(r1, w0)</text>
-  <text x="500" y="425" fill="#c8b090" font-size="17">— ascending: read 1, write 0</text>
-  <text x="100" y="470" fill="#a0a0c0" font-size="15">בודק כתיבה 1→0 בכיוון עולה</text>
-  <text x="780" y="470" text-anchor="end" fill="#80f0a0" font-size="16" font-weight="bold">2N ops</text>
+  <text x="320" y="425" fill="#c8d8f0" font-size="24" font-family="monospace">(r1, w0)</text>
+  <text x="500" y="425" fill="#c8b090" font-size="20">— ascending: read 1, write 0</text>
+  <text x="100" y="470" fill="#a0a0c0" font-size="18">בודק כתיבה 1→0 בכיוון עולה</text>
+  <text x="780" y="470" text-anchor="end" fill="#80f0a0" font-size="18" font-weight="bold">2N ops</text>
 
   <!-- M3 — descending r0,w1 -->
   <rect x="60" y="515" width="880" height="120" rx="10"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="100" y="560" fill="#ffc080" font-weight="bold" font-size="22">M3</text>
+  <text x="100" y="560" fill="#ffc080" font-weight="bold" font-size="24">M3</text>
   <text x="240" y="560" fill="#ffc080" font-weight="bold" font-size="32">⇓</text>
-  <text x="320" y="560" fill="#c8d8f0" font-size="22" font-family="monospace">(r0, w1)</text>
-  <text x="500" y="560" fill="#c8b090" font-size="17">— descending: read 0, write 1</text>
-  <text x="100" y="605" fill="#a0a0c0" font-size="15">בודק 0→1 בכיוון יורד — תופס תקלות אסימטריות</text>
-  <text x="780" y="605" text-anchor="end" fill="#ffc080" font-size="16" font-weight="bold">2N ops</text>
+  <text x="320" y="560" fill="#c8d8f0" font-size="24" font-family="monospace">(r0, w1)</text>
+  <text x="500" y="560" fill="#c8b090" font-size="20">— descending: read 0, write 1</text>
+  <text x="100" y="605" fill="#a0a0c0" font-size="18">בודק 0→1 בכיוון יורד — תופס תקלות אסימטריות</text>
+  <text x="780" y="605" text-anchor="end" fill="#ffc080" font-size="18" font-weight="bold">2N ops</text>
 
   <!-- M4 — descending r1,w0 -->
   <rect x="60" y="650" width="880" height="120" rx="10"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="100" y="695" fill="#ffc080" font-weight="bold" font-size="22">M4</text>
+  <text x="100" y="695" fill="#ffc080" font-weight="bold" font-size="24">M4</text>
   <text x="240" y="695" fill="#ffc080" font-weight="bold" font-size="32">⇓</text>
-  <text x="320" y="695" fill="#c8d8f0" font-size="22" font-family="monospace">(r1, w0)</text>
-  <text x="500" y="695" fill="#c8b090" font-size="17">— descending: read 1, write 0</text>
-  <text x="100" y="740" fill="#a0a0c0" font-size="15">בודק 1→0 בכיוון יורד</text>
-  <text x="780" y="740" text-anchor="end" fill="#ffc080" font-size="16" font-weight="bold">2N ops</text>
+  <text x="320" y="695" fill="#c8d8f0" font-size="24" font-family="monospace">(r1, w0)</text>
+  <text x="500" y="695" fill="#c8b090" font-size="20">— descending: read 1, write 0</text>
+  <text x="100" y="740" fill="#a0a0c0" font-size="18">בודק 1→0 בכיוון יורד</text>
+  <text x="780" y="740" text-anchor="end" fill="#ffc080" font-size="18" font-weight="bold">2N ops</text>
 
   <!-- M5 — final read -->
   <rect x="60" y="785" width="880" height="120" rx="10"
         fill="rgba(204,102,255,0.05)" stroke="rgba(204,102,255,0.55)" stroke-width="2"/>
-  <text x="100" y="830" fill="#cc99ff" font-weight="bold" font-size="22">M5</text>
+  <text x="100" y="830" fill="#cc99ff" font-weight="bold" font-size="24">M5</text>
   <text x="240" y="830" fill="#ffe080" font-weight="bold" font-size="32">⇕</text>
-  <text x="320" y="830" fill="#c8d8f0" font-size="22" font-family="monospace">(r0)</text>
-  <text x="500" y="830" fill="#c8b090" font-size="17">— final: read 0 from all cells</text>
-  <text x="100" y="875" fill="#a0a0c0" font-size="15">verification — כל התאים אמורים להיות 0</text>
-  <text x="780" y="875" text-anchor="end" fill="#cc99ff" font-size="16" font-weight="bold">N ops</text>
+  <text x="320" y="830" fill="#c8d8f0" font-size="24" font-family="monospace">(r0)</text>
+  <text x="500" y="830" fill="#c8b090" font-size="20">— final: read 0 from all cells</text>
+  <text x="100" y="875" fill="#a0a0c0" font-size="18">verification — כל התאים אמורים להיות 0</text>
+  <text x="780" y="875" text-anchor="end" fill="#cc99ff" font-size="18" font-weight="bold">N ops</text>
 
   <!-- Total + comparison -->
   <rect x="60" y="930" width="880" height="220" rx="10"
         fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.6"/>
-  <text x="500" y="966" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+  <text x="500" y="966" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="24">
     סה"כ = N + 2N + 2N + 2N + 2N + N = 10N ops
   </text>
 
   <!-- Comparison table inline -->
-  <text x="220" y="1010" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">N=8</text>
-  <text x="500" y="1010" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="18">N=64</text>
-  <text x="780" y="1010" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">N=1024</text>
+  <text x="220" y="1010" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">N=8</text>
+  <text x="500" y="1010" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="20">N=64</text>
+  <text x="780" y="1010" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">N=1024</text>
 
-  <text x="120" y="1050" fill="#cc99ff" font-size="18">Walking-1 (N²+2N):</text>
-  <text x="220" y="1080" text-anchor="middle" fill="#c8b090" font-size="17">80</text>
-  <text x="500" y="1080" text-anchor="middle" fill="#c8b090" font-size="17">4,224</text>
-  <text x="780" y="1080" text-anchor="middle" fill="#ff8080" font-size="17" font-weight="bold">1,050,624</text>
+  <text x="120" y="1050" fill="#cc99ff" font-size="20">Walking-1 (N²+2N):</text>
+  <text x="220" y="1080" text-anchor="middle" fill="#c8b090" font-size="20">80</text>
+  <text x="500" y="1080" text-anchor="middle" fill="#c8b090" font-size="20">4,224</text>
+  <text x="780" y="1080" text-anchor="middle" fill="#ff8080" font-size="20" font-weight="bold">1,050,624</text>
 
-  <text x="120" y="1118" fill="#80f0a0" font-size="18">March C- (10N):</text>
-  <text x="220" y="1145" text-anchor="middle" fill="#c8b090" font-size="17">80</text>
-  <text x="500" y="1145" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">640</text>
-  <text x="780" y="1145" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">10,240</text>
+  <text x="120" y="1118" fill="#80f0a0" font-size="20">March C- (10N):</text>
+  <text x="220" y="1145" text-anchor="middle" fill="#c8b090" font-size="20">80</text>
+  <text x="500" y="1145" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">640</text>
+  <text x="780" y="1145" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">10,240</text>
 </svg>`,
     parts: [
       {
@@ -3922,12 +3922,12 @@ Coupling faults נעות. דוגמה: \`CFin(aggressor=5, victim=3, trigger='01'
 מהן הקבוצות של תקלות שקולות (equivalent), ומה הרשימה ה-**collapsed** המינימלית? כמה תקלות חוסכים?`,
     schematic: `
 <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="3-input NAND with all 8 stuck-at fault sites and a behavior table.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="3-input NAND with all 8 stuck-at fault sites and a behavior table.">
 
-  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     NAND עם 3 כניסות — 8 תקלות stuck-at
   </text>
-  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     Y = ¬(A · B · C)
   </text>
 
@@ -3938,44 +3938,44 @@ Coupling faults נעות. דוגמה: \`CFin(aggressor=5, victim=3, trigger='01'
   <!-- NAND gate body (rounded D shape with bubble) -->
   <path d="M 380 200 L 480 200 A 90 90 0 0 1 480 380 L 380 380 Z" fill="#0a1825" stroke="#80c8ff" stroke-width="2.6"/>
   <circle cx="595" cy="290" r="10" fill="#0a1825" stroke="#80c8ff" stroke-width="2.6"/>
-  <text x="430" y="296" text-anchor="middle" fill="#80c8ff" font-size="22" font-weight="bold">NAND</text>
+  <text x="430" y="296" text-anchor="middle" fill="#80c8ff" font-size="24" font-weight="bold">NAND</text>
 
   <!-- Inputs A, B, C -->
   <line x1="160" y1="230" x2="380" y2="230" stroke="#cca040" stroke-width="2.2"/>
-  <text x="130" y="236" text-anchor="middle" fill="#cca040" font-size="22" font-weight="bold">A</text>
+  <text x="130" y="236" text-anchor="middle" fill="#cca040" font-size="24" font-weight="bold">A</text>
   <circle cx="270" cy="230" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
-  <text x="270" y="200" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f1, f2</text>
+  <text x="270" y="200" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">f1, f2</text>
 
   <line x1="160" y1="290" x2="380" y2="290" stroke="#cca040" stroke-width="2.2"/>
-  <text x="130" y="296" text-anchor="middle" fill="#cca040" font-size="22" font-weight="bold">B</text>
+  <text x="130" y="296" text-anchor="middle" fill="#cca040" font-size="24" font-weight="bold">B</text>
   <circle cx="270" cy="290" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
-  <text x="270" y="320" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f3, f4</text>
+  <text x="270" y="320" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">f3, f4</text>
 
   <line x1="160" y1="350" x2="380" y2="350" stroke="#cca040" stroke-width="2.2"/>
-  <text x="130" y="356" text-anchor="middle" fill="#cca040" font-size="22" font-weight="bold">C</text>
+  <text x="130" y="356" text-anchor="middle" fill="#cca040" font-size="24" font-weight="bold">C</text>
   <circle cx="270" cy="350" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
-  <text x="270" y="380" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f5, f6</text>
+  <text x="270" y="380" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">f5, f6</text>
 
   <!-- Output Y -->
   <line x1="605" y1="290" x2="850" y2="290" stroke="#ff9933" stroke-width="2.2"/>
-  <text x="880" y="296" text-anchor="middle" fill="#ff9933" font-size="22" font-weight="bold">Y</text>
+  <text x="880" y="296" text-anchor="middle" fill="#ff9933" font-size="24" font-weight="bold">Y</text>
   <circle cx="730" cy="290" r="13" fill="#3a0a14" stroke="#ff6060" stroke-width="2"/>
-  <text x="730" y="260" text-anchor="middle" fill="#ff6060" font-size="13" font-weight="bold">f7, f8</text>
+  <text x="730" y="260" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">f7, f8</text>
 
   <!-- Fault legend -->
-  <text x="500" y="438" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">
+  <text x="500" y="438" text-anchor="middle" fill="#ff8080" font-size="18" font-style="italic">
     8 fault sites: A_sa0/sa1 · B_sa0/sa1 · C_sa0/sa1 · Y_sa0/sa1
   </text>
 
   <!-- ===== BOTTOM PANEL: behavior table ===== -->
   <rect x="20" y="490" width="960" height="490" rx="12"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="500" y="528" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+  <text x="500" y="528" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
     התנהגות ה-Y בכל קומבינציה של ABC
   </text>
 
   <!-- Table header -->
-  <g font-size="16" font-weight="bold">
+  <g font-size="18" font-weight="bold">
     <text x="80" y="582" text-anchor="middle" fill="#cca040">ABC</text>
     <text x="180" y="582" text-anchor="middle" fill="#80c8ff">Y free</text>
     <text x="290" y="582" text-anchor="middle" fill="#ff6080">A_sa0</text>
@@ -4004,18 +4004,18 @@ Coupling faults נעות. דוגמה: \`CFin(aggressor=5, victim=3, trigger='01'
   ].map((r, i) => {
     const y = 620 + i * 42;
     const fills = ['#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#cc66ff','#cc66ff'];
-    let html = `<text x="80" y="${y}" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">${r.abc}</text>`;
-    html += `<text x="180" y="${y}" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">${r.yFree}</text>`;
+    let html = `<text x="80" y="${y}" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">${r.abc}</text>`;
+    html += `<text x="180" y="${y}" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">${r.yFree}</text>`;
     const xs = [290, 370, 450, 530, 610, 690, 800, 900];
     r.vals.forEach((v, j) => {
       const fill = (v === r.yFree) ? '#c8b090' : fills[j];
       const weight = (v === r.yFree) ? 'normal' : 'bold';
-      html += `<text x="${xs[j]}" y="${y}" text-anchor="middle" fill="${fill}" font-size="16" font-weight="${weight}">${v}</text>`;
+      html += `<text x="${xs[j]}" y="${y}" text-anchor="middle" fill="${fill}" font-size="18" font-weight="${weight}">${v}</text>`;
     });
     return html;
   }).join('')}
 
-  <text x="500" y="970" text-anchor="middle" fill="#ffe080" font-size="17" font-style="italic">
+  <text x="500" y="970" text-anchor="middle" fill="#ffe080" font-size="20" font-style="italic">
     תאים מודגשים = הפלט שונה מ-Y free — וקטור שמזהה את התקלה
   </text>
 </svg>`,
@@ -4147,32 +4147,32 @@ NAND עם 3 כניסות. שנה את \`A, B, C\` ב-\`(0,0,0)\` עד \`(1,1,1)\
 נתון 2 פינים חיצוניים ו-3 chains פנימיים. תכנן את ה-XOR לשני הכיוונים. מה ההגבלות?`,
     schematic: `
 <svg viewBox="0 0 1000 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="Scan compression: decompressor XOR network (top) and compactor XOR tree (bottom).">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Scan compression: decompressor XOR network (top) and compactor XOR tree (bottom).">
 
-  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     EDT — מ-2 פינים ל-3 chains וחזרה
   </text>
-  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     decompressor (XOR network) → 3 scan chains → compactor (XOR tree)
   </text>
 
   <!-- ========== DECOMPRESSOR PANEL ========== -->
   <rect x="20" y="90" width="960" height="490" rx="12"
         fill="rgba(204,102,255,0.05)" stroke="rgba(204,102,255,0.55)" stroke-width="2"/>
-  <text x="500" y="128" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="22">
+  <text x="500" y="128" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="24">
     DECOMPRESSOR — 2 פינים → 3 chains
   </text>
 
   <!-- External inputs e0, e1 (top) -->
   <circle cx="100" cy="200" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="100" y="206" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">e0</text>
+  <text x="100" y="206" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">e0</text>
   <circle cx="100" cy="320" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="100" y="326" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">e1</text>
-  <text x="58" y="160" fill="#a0a0c0" font-size="14" font-style="italic">external</text>
+  <text x="100" y="326" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">e1</text>
+  <text x="58" y="160" fill="#a0a0c0" font-size="18" font-style="italic">external</text>
 
   <!-- XOR gate -->
   <polygon points="450,250 500,232 540,250 540,290 500,308 450,290" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-  <text x="495" y="276" text-anchor="middle" fill="#80f0a0" font-size="22" font-weight="bold">⊕</text>
+  <text x="495" y="276" text-anchor="middle" fill="#80f0a0" font-size="24" font-weight="bold">⊕</text>
 
   <!-- Wires from e0 to chain0 (s0) and to XOR -->
   <line x1="122" y1="200" x2="300" y2="200" stroke="#cca040" stroke-width="2.2"/>
@@ -4196,58 +4196,58 @@ NAND עם 3 כניסות. שנה את \`A, B, C\` ב-\`(0,0,0)\` עד \`(1,1,1)\
   <!-- Chain SCAN_FF blocks (right side) -->
   <g>
     <rect x="780" y="170" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="840" y="196" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 0</text>
-    <text x="840" y="215" text-anchor="middle" fill="#c8b090" font-size="13">SI = e0</text>
+    <text x="840" y="196" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 0</text>
+    <text x="840" y="215" text-anchor="middle" fill="#c8b090" font-size="18">SI = e0</text>
   </g>
   <g>
     <rect x="780" y="290" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="840" y="316" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 1</text>
-    <text x="840" y="335" text-anchor="middle" fill="#c8b090" font-size="13">SI = e1</text>
+    <text x="840" y="316" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 1</text>
+    <text x="840" y="335" text-anchor="middle" fill="#c8b090" font-size="18">SI = e1</text>
   </g>
   <g>
     <rect x="780" y="410" width="120" height="60" rx="6" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.6"/>
-    <text x="840" y="436" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">chain 2</text>
-    <text x="840" y="455" text-anchor="middle" fill="#c8b090" font-size="13">SI = e0 ⊕ e1</text>
+    <text x="840" y="436" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">chain 2</text>
+    <text x="840" y="455" text-anchor="middle" fill="#c8b090" font-size="18">SI = e0 ⊕ e1</text>
   </g>
 
-  <text x="500" y="530" text-anchor="middle" fill="#ffe080" font-size="16" font-style="italic">
+  <text x="500" y="530" text-anchor="middle" fill="#ffe080" font-size="18" font-style="italic">
     יתרון: 1.5× חיסכון. הגבלה: chain 2 לא עצמאי — תלוי לינארית ב-chain 0 ו-1.
   </text>
-  <text x="500" y="558" text-anchor="middle" fill="#a0a0c0" font-size="14">
+  <text x="500" y="558" text-anchor="middle" fill="#a0a0c0" font-size="18">
     ב-EDT אמיתי: LFSR + phase shifter במקום XOR שטוח, מאפשר עד 1000:1
   </text>
 
   <!-- ========== COMPACTOR PANEL ========== -->
   <rect x="20" y="600" width="960" height="560" rx="12"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="500" y="638" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+  <text x="500" y="638" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
     COMPACTOR — 3 chains → 2 פינים
   </text>
 
   <!-- Chain outputs Q0, Q1, Q2 (left) -->
   <g>
     <rect x="100" y="710" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="160" y="736" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 0</text>
-    <text x="160" y="755" text-anchor="middle" fill="#c8b090" font-size="13">Q0</text>
+    <text x="160" y="736" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 0</text>
+    <text x="160" y="755" text-anchor="middle" fill="#c8b090" font-size="18">Q0</text>
   </g>
   <g>
     <rect x="100" y="840" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="160" y="866" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 1</text>
-    <text x="160" y="885" text-anchor="middle" fill="#c8b090" font-size="13">Q1</text>
+    <text x="160" y="866" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 1</text>
+    <text x="160" y="885" text-anchor="middle" fill="#c8b090" font-size="18">Q1</text>
   </g>
   <g>
     <rect x="100" y="970" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="160" y="996" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="14">chain 2</text>
-    <text x="160" y="1015" text-anchor="middle" fill="#c8b090" font-size="13">Q2</text>
+    <text x="160" y="996" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 2</text>
+    <text x="160" y="1015" text-anchor="middle" fill="#c8b090" font-size="18">Q2</text>
   </g>
 
   <!-- XOR gates for compactor -->
   <!-- o0 = Q0 ⊕ Q1 -->
   <polygon points="500,760 550,742 590,760 590,800 550,818 500,800" fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
-  <text x="545" y="786" text-anchor="middle" fill="#ffc080" font-size="22" font-weight="bold">⊕</text>
+  <text x="545" y="786" text-anchor="middle" fill="#ffc080" font-size="24" font-weight="bold">⊕</text>
   <!-- o1 = Q1 ⊕ Q2 -->
   <polygon points="500,910 550,892 590,910 590,950 550,968 500,950" fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
-  <text x="545" y="936" text-anchor="middle" fill="#ffc080" font-size="22" font-weight="bold">⊕</text>
+  <text x="545" y="936" text-anchor="middle" fill="#ffc080" font-size="24" font-weight="bold">⊕</text>
 
   <!-- Wires Q0 → o0 XOR -->
   <line x1="220" y1="740" x2="500" y2="768" stroke="#80c8ff" stroke-width="2.2"/>
@@ -4266,21 +4266,21 @@ NAND עם 3 כניסות. שנה את \`A, B, C\` ב-\`(0,0,0)\` עד \`(1,1,1)\
   <!-- Compactor outputs -->
   <line x1="590" y1="780" x2="800" y2="780" stroke="#ff9933" stroke-width="2.4"/>
   <circle cx="830" cy="780" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="830" y="786" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">o0</text>
-  <text x="694" y="770" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">Q0 ⊕ Q1</text>
+  <text x="830" y="786" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">o0</text>
+  <text x="694" y="770" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">Q0 ⊕ Q1</text>
 
   <line x1="590" y1="930" x2="800" y2="930" stroke="#ff9933" stroke-width="2.4"/>
   <circle cx="830" cy="930" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="830" y="936" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">o1</text>
-  <text x="694" y="920" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">Q1 ⊕ Q2</text>
+  <text x="830" y="936" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">o1</text>
+  <text x="694" y="920" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">Q1 ⊕ Q2</text>
 
-  <text x="500" y="1080" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">
+  <text x="500" y="1080" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
     בעיה: aliasing — שתי תקלות שונות יכולות לתת אותו וקטור (o0,o1)
   </text>
-  <text x="500" y="1108" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="17">
+  <text x="500" y="1108" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
     בעיה: X-states — chain אחד עם X מזהם את כל ה-compactor output
   </text>
-  <text x="500" y="1140" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+  <text x="500" y="1140" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     הפתרון התעשייתי: X-masking + פתרונות EDT מתקדמים יותר
   </text>
 </svg>`,
@@ -4526,16 +4526,16 @@ Q2 ──┘
 איך מזהים כל אחד, ומה הדפוסים המתאימים?`,
     schematic: `
 <svg viewBox="0 0 1000 1080" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="Three address-decoder fault models plus retention fault timeline.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Three address-decoder fault models plus retention fault timeline.">
 
-  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     מודלים של תקלות RAM מעבר ל-stuck-at
   </text>
 
   <!-- ============ DECODER FAULTS PANEL ============ -->
   <rect x="20" y="80" width="960" height="540" rx="12"
         fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
-  <text x="500" y="118" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="22">
+  <text x="500" y="118" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="24">
     Address Decoder Faults — 3 סוגים
   </text>
 
@@ -4543,7 +4543,7 @@ Q2 ──┘
   <rect x="50" y="150" width="290" height="430" rx="10"
         fill="rgba(255,80,80,0.06)" stroke="rgba(255,96,96,0.55)" stroke-width="1.8"/>
   <text x="195" y="186" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">AFcell</text>
-  <text x="195" y="210" text-anchor="middle" fill="#c8b090" font-size="15">תא בלתי-נגיש</text>
+  <text x="195" y="210" text-anchor="middle" fill="#c8b090" font-size="18">תא בלתי-נגיש</text>
   <!-- Cell array sketch -->
   <g>
     ${Array.from({ length: 4 }, (_, a) => Array.from({ length: 4 }, (_, b) => {
@@ -4555,15 +4555,15 @@ Q2 ──┘
       return `<rect x="${x}" y="${y}" width="50" height="40" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${dead ? 2.4 : 1.4}"/>${dead ? `<text x="${x+25}" y="${y+27}" text-anchor="middle" fill="#ff6060" font-size="20" font-weight="bold">×</text>` : ''}`;
     }).join('')).join('')}
   </g>
-  <text x="195" y="490" text-anchor="middle" fill="#c8b090" font-size="14">decoder מגיע ל-X</text>
-  <text x="195" y="513" text-anchor="middle" fill="#c8b090" font-size="14">תאים — אף תא לא נכתב</text>
-  <text x="195" y="555" text-anchor="middle" fill="#ffe080" font-size="15" font-weight="bold">תופס: read-after-write</text>
+  <text x="195" y="490" text-anchor="middle" fill="#c8b090" font-size="18">decoder מגיע ל-X</text>
+  <text x="195" y="513" text-anchor="middle" fill="#c8b090" font-size="18">תאים — אף תא לא נכתב</text>
+  <text x="195" y="555" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">תופס: read-after-write</text>
 
   <!-- AFmult -->
   <rect x="355" y="150" width="290" height="430" rx="10"
         fill="rgba(255,176,96,0.06)" stroke="rgba(255,176,96,0.55)" stroke-width="1.8"/>
   <text x="500" y="186" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="20">AFmult</text>
-  <text x="500" y="210" text-anchor="middle" fill="#c8b090" font-size="15">כתובת אחת → מספר תאים</text>
+  <text x="500" y="210" text-anchor="middle" fill="#c8b090" font-size="18">כתובת אחת → מספר תאים</text>
   <!-- Cell array with two cells highlighted -->
   <g>
     ${Array.from({ length: 4 }, (_, a) => Array.from({ length: 4 }, (_, b) => {
@@ -4572,18 +4572,18 @@ Q2 ──┘
       const highlighted = (a === 2 && b === 1) || (a === 2 && b === 2);
       const fill = highlighted ? '#3a2a14' : '#0a1825';
       const stroke = highlighted ? '#ffc080' : '#3a4a60';
-      return `<rect x="${x}" y="${y}" width="50" height="40" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${highlighted ? 2.4 : 1.4}"/>${highlighted ? `<text x="${x+25}" y="${y+27}" text-anchor="middle" fill="#ffc080" font-size="14" font-weight="bold">A</text>` : ''}`;
+      return `<rect x="${x}" y="${y}" width="50" height="40" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${highlighted ? 2.4 : 1.4}"/>${highlighted ? `<text x="${x+25}" y="${y+27}" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">A</text>` : ''}`;
     }).join('')).join('')}
   </g>
-  <text x="500" y="490" text-anchor="middle" fill="#c8b090" font-size="14">decoder מגיע לשני תאים</text>
-  <text x="500" y="513" text-anchor="middle" fill="#c8b090" font-size="14">בו-זמנית — write conflict</text>
-  <text x="500" y="555" text-anchor="middle" fill="#ffe080" font-size="15" font-weight="bold">תופס: March C-</text>
+  <text x="500" y="490" text-anchor="middle" fill="#c8b090" font-size="18">decoder מגיע לשני תאים</text>
+  <text x="500" y="513" text-anchor="middle" fill="#c8b090" font-size="18">בו-זמנית — write conflict</text>
+  <text x="500" y="555" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">תופס: March C-</text>
 
   <!-- AFwrong -->
   <rect x="660" y="150" width="290" height="430" rx="10"
         fill="rgba(204,102,255,0.06)" stroke="rgba(204,102,255,0.55)" stroke-width="1.8"/>
   <text x="805" y="186" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">AFwrong</text>
-  <text x="805" y="210" text-anchor="middle" fill="#c8b090" font-size="15">כתובת → תא שגוי</text>
+  <text x="805" y="210" text-anchor="middle" fill="#c8b090" font-size="18">כתובת → תא שגוי</text>
   <!-- Cell array with arrow from one cell to wrong one -->
   <g>
     ${Array.from({ length: 4 }, (_, a) => Array.from({ length: 4 }, (_, b) => {
@@ -4594,8 +4594,8 @@ Q2 ──┘
       return `<rect x="${x}" y="${y}" width="50" height="40" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.4"/>`;
     }).join('')).join('')}
     <!-- Arrow from (row 2, col 1) to (row 2, col 3) showing wrong addressing -->
-    <text x="765" y="367" text-anchor="middle" fill="#cc66ff" font-size="14" font-weight="bold">addr</text>
-    <text x="885" y="367" text-anchor="middle" fill="#cc66ff" font-size="14" font-weight="bold">actual</text>
+    <text x="765" y="367" text-anchor="middle" fill="#cc66ff" font-size="18" font-weight="bold">addr</text>
+    <text x="885" y="367" text-anchor="middle" fill="#cc66ff" font-size="18" font-weight="bold">actual</text>
     <path d="M 765 380 Q 825 410, 885 380" stroke="#cc66ff" stroke-width="2" fill="none" marker-end="url(#decArr)"/>
     <defs>
       <marker id="decArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
@@ -4603,47 +4603,47 @@ Q2 ──┘
       </marker>
     </defs>
   </g>
-  <text x="805" y="490" text-anchor="middle" fill="#c8b090" font-size="14">כתיבה ל-A מגיעה ל-B</text>
-  <text x="805" y="513" text-anchor="middle" fill="#c8b090" font-size="14">— כתובת מבולגנת</text>
-  <text x="805" y="555" text-anchor="middle" fill="#ffe080" font-size="15" font-weight="bold">תופס: Address-as-data</text>
+  <text x="805" y="490" text-anchor="middle" fill="#c8b090" font-size="18">כתיבה ל-A מגיעה ל-B</text>
+  <text x="805" y="513" text-anchor="middle" fill="#c8b090" font-size="18">— כתובת מבולגנת</text>
+  <text x="805" y="555" text-anchor="middle" fill="#ffe080" font-size="18" font-weight="bold">תופס: Address-as-data</text>
 
   <!-- ============ RETENTION PANEL ============ -->
   <rect x="20" y="640" width="960" height="420" rx="12"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="500" y="678" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+  <text x="500" y="678" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
     Retention Fault — הזיכרון "דולף"
   </text>
 
   <!-- Timeline -->
   <line x1="80" y1="800" x2="920" y2="800" stroke="#a0a0c0" stroke-width="2.4"/>
-  <text x="60" y="806" text-anchor="end" fill="#a0a0c0" font-size="14">t</text>
+  <text x="60" y="806" text-anchor="end" fill="#a0a0c0" font-size="18">t</text>
 
   <!-- Write event -->
   <circle cx="160" cy="800" r="8" fill="#80f0a0"/>
-  <text x="160" y="828" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">Write 1</text>
-  <text x="160" y="848" text-anchor="middle" fill="#a0a0c0" font-size="13">cell stores 1</text>
+  <text x="160" y="828" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">Write 1</text>
+  <text x="160" y="848" text-anchor="middle" fill="#a0a0c0" font-size="18">cell stores 1</text>
 
   <!-- Pause -->
   <line x1="180" y1="800" x2="640" y2="800" stroke="#cca040" stroke-width="2.4" stroke-dasharray="6,4"/>
-  <text x="410" y="772" text-anchor="middle" fill="#cca040" font-size="15" font-style="italic">pause T₁ (ms) — תא לבד</text>
+  <text x="410" y="772" text-anchor="middle" fill="#cca040" font-size="18" font-style="italic">pause T₁ (ms) — תא לבד</text>
 
   <!-- Read event with fault -->
   <circle cx="700" cy="800" r="8" fill="#ff6080"/>
-  <text x="700" y="828" text-anchor="middle" fill="#ff6080" font-size="15" font-weight="bold">Read</text>
-  <text x="700" y="848" text-anchor="middle" fill="#ff8080" font-size="13" font-weight="bold">→ קוראים 0!</text>
-  <text x="700" y="868" text-anchor="middle" fill="#a0a0c0" font-size="13">קיבול דולף</text>
+  <text x="700" y="828" text-anchor="middle" fill="#ff6080" font-size="18" font-weight="bold">Read</text>
+  <text x="700" y="848" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">→ קוראים 0!</text>
+  <text x="700" y="868" text-anchor="middle" fill="#a0a0c0" font-size="18">קיבול דולף</text>
 
   <!-- Annotation -->
-  <text x="500" y="940" text-anchor="middle" fill="#ffe080" font-size="17" font-weight="bold">
+  <text x="500" y="940" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
     הדפוס לזיהוי: pause-based pattern
   </text>
-  <text x="500" y="970" text-anchor="middle" fill="#c8b090" font-size="15">
+  <text x="500" y="970" text-anchor="middle" fill="#c8b090" font-size="18">
     write all 1s → wait T (ms) → read all → השוואה
   </text>
-  <text x="500" y="998" text-anchor="middle" fill="#c8b090" font-size="15">
+  <text x="500" y="998" text-anchor="middle" fill="#c8b090" font-size="18">
     תאים שאיבדו → קוראים 0 במקום 1
   </text>
-  <text x="500" y="1030" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="500" y="1030" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     בתעשייה: T נקבע ע"י refresh-period של ה-DRAM (typically 64ms / row)
   </text>
 </svg>`,
@@ -4829,31 +4829,31 @@ DRAM testing במפעל מריץ retention test עם pause מתאם ל-spec של
 לכן **בדיקת stuck-at רגילה (וקטור יחיד) לא תופסת תקלת stuck-open**. למה? ומה הדפוס שכן יתפוס?`,
     schematic: `
 <svg viewBox="0 0 1000 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="17" role="img" aria-label="CMOS inverter at transistor level with pMOS open fault, and 2-vector test sequence.">
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="CMOS inverter at transistor level with pMOS open fault, and 2-vector test sequence.">
 
-  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     Stuck-Open ב-CMOS — transistor שלא מוליך
   </text>
-  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="17" font-style="italic">
+  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
     הקיבול של החוט הופך את התא ל-latch זמני
   </text>
 
   <!-- ============ TOP: CMOS INVERTER WITH FAULT ============ -->
   <rect x="20" y="90" width="960" height="540" rx="12"
         fill="rgba(96,192,255,0.05)" stroke="rgba(128,212,255,0.55)" stroke-width="2"/>
-  <text x="500" y="128" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="22">
+  <text x="500" y="128" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="24">
     CMOS Inverter — pMOS פתוח (stuck-open)
   </text>
 
   <!-- Vdd rail -->
   <line x1="400" y1="180" x2="600" y2="180" stroke="#ff6080" stroke-width="2.6"/>
-  <text x="500" y="170" text-anchor="middle" fill="#ff6080" font-size="18" font-weight="bold">Vdd</text>
+  <text x="500" y="170" text-anchor="middle" fill="#ff6080" font-size="20" font-weight="bold">Vdd</text>
 
   <!-- pMOS (top — FAULTY) -->
   <rect x="450" y="200" width="100" height="100" rx="6" fill="#3a0a14" stroke="#ff6060" stroke-width="2.8" stroke-dasharray="4,4"/>
-  <text x="500" y="244" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">pMOS</text>
-  <text x="500" y="270" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">OPEN</text>
-  <text x="500" y="288" text-anchor="middle" fill="#ff8080" font-size="12" font-style="italic">(broken)</text>
+  <text x="500" y="244" text-anchor="middle" fill="#ff8080" font-size="20" font-weight="bold">pMOS</text>
+  <text x="500" y="270" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">OPEN</text>
+  <text x="500" y="288" text-anchor="middle" fill="#ff8080" font-size="16" font-style="italic">(broken)</text>
 
   <!-- pMOS source up (to Vdd), drain down (to output) -->
   <line x1="500" y1="180" x2="500" y2="200" stroke="#ff6080" stroke-width="2.4"/>
@@ -4867,24 +4867,24 @@ DRAM testing במפעל מריץ retention test עם pause מתאם ל-spec של
   <circle cx="350" cy="355" r="6" fill="#cca040"/>
   <line x1="350" y1="355" x2="200" y2="355" stroke="#cca040" stroke-width="2.4"/>
   <circle cx="180" cy="355" r="18" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="180" y="361" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">IN</text>
+  <text x="180" y="361" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">IN</text>
 
   <!-- Output -->
   <circle cx="500" cy="380" r="8" fill="#cca040"/>
   <line x1="500" y1="380" x2="780" y2="380" stroke="#ff9933" stroke-width="2.4"/>
   <circle cx="800" cy="380" r="18" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="800" y="386" text-anchor="middle" fill="#ff9933" font-size="18" font-weight="bold">OUT</text>
+  <text x="800" y="386" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">OUT</text>
 
   <!-- Capacitance icon on output -->
   <line x1="610" y1="370" x2="660" y2="370" stroke="#a0a0c0" stroke-width="2"/>
   <line x1="620" y1="378" x2="650" y2="378" stroke="#a0a0c0" stroke-width="2"/>
-  <text x="635" y="402" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">C_load</text>
+  <text x="635" y="402" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">C_load</text>
 
   <!-- nMOS (bottom — OK) -->
   <line x1="500" y1="380" x2="500" y2="460" stroke="#80f0a0" stroke-width="2.4"/>
   <rect x="450" y="460" width="100" height="100" rx="6" fill="#0a1825" stroke="#80f0a0" stroke-width="2.4"/>
-  <text x="500" y="504" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">nMOS</text>
-  <text x="500" y="525" text-anchor="middle" fill="#a0c0d0" font-size="12">healthy</text>
+  <text x="500" y="504" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">nMOS</text>
+  <text x="500" y="525" text-anchor="middle" fill="#a0c0d0" font-size="16">healthy</text>
 
   <!-- Gate of nMOS from input -->
   <line x1="440" y1="510" x2="350" y2="510" stroke="#cca040" stroke-width="2"/>
@@ -4895,46 +4895,46 @@ DRAM testing במפעל מריץ retention test עם pause מתאם ל-spec של
   <line x1="450" y1="600" x2="550" y2="600" stroke="#80f0a0" stroke-width="2.6"/>
   <line x1="465" y1="608" x2="535" y2="608" stroke="#80f0a0" stroke-width="2"/>
   <line x1="478" y1="616" x2="522" y2="616" stroke="#80f0a0" stroke-width="2"/>
-  <text x="500" y="592" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">GND</text>
+  <text x="500" y="592" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">GND</text>
 
   <!-- ============ BOTTOM: TWO-VECTOR TEST ============ -->
   <rect x="20" y="650" width="960" height="510" rx="12"
         fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="500" y="688" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="22">
+  <text x="500" y="688" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
     מבחן 2-vector — לתפיסת stuck-open ב-pMOS
   </text>
 
   <!-- V1 vector -->
   <rect x="60" y="720" width="430" height="180" rx="8" fill="rgba(96,192,255,0.06)" stroke="#80c8ff" stroke-width="2"/>
   <text x="275" y="754" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">V1 — Initialization</text>
-  <text x="275" y="788" text-anchor="middle" fill="#c8b090" font-size="17">IN = 1 → nMOS מוליך → OUT = 0</text>
-  <text x="275" y="816" text-anchor="middle" fill="#c8b090" font-size="15">הקיבול \`C_load\` נטען ל-0 (GND)</text>
-  <text x="275" y="844" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">מצב התחלתי מוגדר</text>
-  <text x="275" y="876" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">(אם בדיקה רגילה הייתה עוצרת כאן — PASS)</text>
+  <text x="275" y="788" text-anchor="middle" fill="#c8b090" font-size="20">IN = 1 → nMOS מוליך → OUT = 0</text>
+  <text x="275" y="816" text-anchor="middle" fill="#c8b090" font-size="18">הקיבול \`C_load\` נטען ל-0 (GND)</text>
+  <text x="275" y="844" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">מצב התחלתי מוגדר</text>
+  <text x="275" y="876" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">(אם בדיקה רגילה הייתה עוצרת כאן — PASS)</text>
 
   <!-- V2 vector -->
   <rect x="510" y="720" width="430" height="180" rx="8" fill="rgba(255,80,80,0.07)" stroke="#ff6060" stroke-width="2"/>
   <text x="725" y="754" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">V2 — Launch</text>
-  <text x="725" y="788" text-anchor="middle" fill="#c8b090" font-size="17">IN = 0 → pMOS אמור לפתוח → OUT = 1</text>
-  <text x="725" y="816" text-anchor="middle" fill="#ff8080" font-size="15">אבל pMOS פגום → C_load שומר על 0</text>
-  <text x="725" y="844" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="15">⇒ קוראים OUT = 0 (לא 1!)</text>
-  <text x="725" y="876" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">תקלה נתפסה ✓</text>
+  <text x="725" y="788" text-anchor="middle" fill="#c8b090" font-size="20">IN = 0 → pMOS אמור לפתוח → OUT = 1</text>
+  <text x="725" y="816" text-anchor="middle" fill="#ff8080" font-size="18">אבל pMOS פגום → C_load שומר על 0</text>
+  <text x="725" y="844" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">⇒ קוראים OUT = 0 (לא 1!)</text>
+  <text x="725" y="876" text-anchor="middle" fill="#ff6060" font-size="18" font-weight="bold">תקלה נתפסה ✓</text>
 
   <!-- Why single-vector misses it -->
   <rect x="60" y="930" width="880" height="190" rx="8" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
-  <text x="500" y="962" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="19">
+  <text x="500" y="962" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="20">
     למה stuck-at testing (וקטור יחיד) מפספס?
   </text>
-  <text x="500" y="995" text-anchor="middle" fill="#c8b090" font-size="16">
+  <text x="500" y="995" text-anchor="middle" fill="#c8b090" font-size="18">
     אם רק IN=0 מבחנים (בלי V1 מוקדם): OUT תלוי במה ש-C_load כבר טען
   </text>
-  <text x="500" y="1020" text-anchor="middle" fill="#c8b090" font-size="16">
+  <text x="500" y="1020" text-anchor="middle" fill="#c8b090" font-size="18">
     אם C_load טעון 1 מקודם → OUT=1 → PASS (לא תופסים)
   </text>
-  <text x="500" y="1052" text-anchor="middle" fill="#ffe080" font-size="17" font-weight="bold">
+  <text x="500" y="1052" text-anchor="middle" fill="#ffe080" font-size="20" font-weight="bold">
     חייבים לטעון את הקיבול לערך **הפוך** בוקטור הראשון, ואז לבדוק
   </text>
-  <text x="500" y="1085" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="500" y="1085" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
     אותו רעיון כמו transition fault (#6011) — שני וקטורים, מצב התחלתי + launch
   </text>
 </svg>`,
