@@ -2202,8 +2202,112 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
 `עכשיו יש לך **4 Scan-FFs נפרדים** (כל אחד = MUX 2:1 + D-FF, כמו שבנינו בסעיף א'). אתה רוצה להפוך אותם ל-**scan chain אחד** כך שיוכלו לפעול גם כ-shift register בזמן בדיקה.
 
 תאר את החיווט הנדרש: איך מחברים את 4 ה-FFs, אילו אותות משותפים, ומה משמעות \`SE=0\` לעומת \`SE=1\` במעגל המחובר.`,
+        schematic: `
+<svg viewBox="0 0 1100 620" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="4-stage scan chain built from decomposed Scan-FFs. Each stage is a MUX 2:1 + D-FF. SE and CLK are broadcast.">
+
+  <text x="550" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    4 Scan-FFs → scan chain אחד
+  </text>
+  <text x="550" y="66" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+    כל שלב = MUX 2:1 + D-FF (כמו בסעיף א'). SE ו-CLK משותפים. Q של אחד = SI של הבא.
+  </text>
+
+  <!-- ════════ The 4 stages — drawn as repeating MUX+FF pairs ════════ -->
+  ${(() => {
+    const X0 = 110;
+    const DX = 230;
+    return [0, 1, 2, 3].map(i => {
+      const x = X0 + i * DX;
+      const idx = i + 1;
+      return `
+        <!-- Stage box -->
+        <rect x="${x - 60}" y="180" width="200" height="240" rx="10"
+              fill="rgba(255,176,96,0.04)" stroke="rgba(255,176,96,0.55)" stroke-width="1.8" stroke-dasharray="5,4"/>
+        <text x="${x + 40}" y="208" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="17">Scan-FF ${idx}</text>
+
+        <!-- MUX 2:1 (trapezoid) -->
+        <path d="M ${x - 20} 244 L ${x + 30} 234 L ${x + 30} 304 L ${x - 20} 294 Z"
+              fill="#1a2230" stroke="#cc99ff" stroke-width="2.2"/>
+        <text x="${x + 5}" y="272" text-anchor="middle" fill="#cc99ff" font-size="13" font-weight="bold">MUX</text>
+
+        <!-- FF body -->
+        <rect x="${x + 50}" y="246" width="80" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
+        <text x="${x + 90}" y="282" text-anchor="middle" fill="#c8d8f0" font-size="16" font-weight="bold">FF${idx}</text>
+
+        <!-- MUX → FF.D -->
+        <line x1="${x + 30}" y1="269" x2="${x + 50}" y2="269" stroke="#cca040" stroke-width="2"/>
+
+        <!-- D_n input from above (functional) -->
+        <line x1="${x - 10}" y1="155" x2="${x - 10}" y2="249" stroke="#cca040" stroke-width="2"/>
+        <text x="${x - 10}" y="148" text-anchor="middle" fill="#cca040" font-size="15" font-weight="bold">D${idx}</text>
+
+        <!-- SE input from below (broadcast) — short tap -->
+        <line x1="${x + 5}" y1="304" x2="${x + 5}" y2="470" stroke="#80f0a0" stroke-width="2"/>
+        <text x="${x + 5}" y="318" text-anchor="middle" fill="#80f0a0" font-size="11">SE</text>
+
+        <!-- CLK input from below — short tap -->
+        <line x1="${x + 90}" y1="306" x2="${x + 90}" y2="510" stroke="#cca040" stroke-width="2"/>
+        <polyline points="${x + 84} 306 ${x + 90} 314 ${x + 96} 306" fill="none" stroke="#cca040" stroke-width="2"/>
+
+        <!-- Stage label small caption -->
+        <text x="${x + 40}" y="402" text-anchor="middle" fill="#a0a0c0" font-size="11" font-style="italic">
+          MUX 2:1 + D-FF
+        </text>
+      `;
+    }).join('');
+  })()}
+
+  <!-- ════════ SI chain — purple arrows ════════ -->
+  <g stroke="#cc66ff" stroke-width="2.8" fill="none">
+    <!-- SI_external → MUX1.d1 -->
+    <line x1="40" y1="259" x2="90" y2="259" marker-end="url(#arrSIb)"/>
+    <!-- FF1.Q → MUX2.d1 -->
+    <line x1="200" y1="276" x2="320" y2="259" marker-end="url(#arrSIb)"/>
+    <!-- FF2.Q → MUX3.d1 -->
+    <line x1="430" y1="276" x2="550" y2="259" marker-end="url(#arrSIb)"/>
+    <!-- FF3.Q → MUX4.d1 -->
+    <line x1="660" y1="276" x2="780" y2="259" marker-end="url(#arrSIb)"/>
+    <!-- FF4.Q → SO_external -->
+    <line x1="890" y1="276" x2="1010" y2="276" marker-end="url(#arrSIb)"/>
+  </g>
+  <defs>
+    <marker id="arrSIb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#cc66ff"/>
+    </marker>
+  </defs>
+
+  <!-- SI external label -->
+  <text x="30" y="252" fill="#cc66ff" font-size="17" font-weight="bold">SI</text>
+  <!-- SO external label -->
+  <text x="1020" y="270" fill="#cc66ff" font-size="17" font-weight="bold">SO</text>
+
+  <!-- Per-link labels -->
+  <text x="255" y="248" text-anchor="middle" fill="#cc99ff" font-size="12" font-style="italic">Q1→SI2</text>
+  <text x="485" y="248" text-anchor="middle" fill="#cc99ff" font-size="12" font-style="italic">Q2→SI3</text>
+  <text x="715" y="248" text-anchor="middle" fill="#cc99ff" font-size="12" font-style="italic">Q3→SI4</text>
+
+  <!-- ════════ SE broadcast rail ════════ -->
+  <line x1="40" y1="470" x2="1060" y2="470" stroke="#80f0a0" stroke-width="2.4" stroke-dasharray="6,4"/>
+  <text x="30" y="464" fill="#80f0a0" font-size="17" font-weight="bold">SE</text>
+  <text x="1075" y="475" fill="#80f0a0" font-size="13" font-style="italic">broadcast</text>
+
+  <!-- ════════ CLK broadcast rail ════════ -->
+  <line x1="40" y1="510" x2="1060" y2="510" stroke="#cca040" stroke-width="2.4"/>
+  <text x="30" y="504" fill="#cca040" font-size="17" font-weight="bold">CLK</text>
+  <text x="1075" y="515" fill="#cca040" font-size="13" font-style="italic">broadcast</text>
+
+  <!-- ════════ Bottom summary ════════ -->
+  <rect x="40" y="540" width="1020" height="68" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
+  <text x="550" y="568" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="16">
+    SE=0 (mission): כל FF טוען את D שלו עצמאית · SE=1 (test): שרשרת shift באורך 4
+  </text>
+  <text x="550" y="592" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+    SI_external זוחל דרך FF1→FF2→FF3→FF4 ב-4 מחזורי clock · SO_external = Q4
+  </text>
+</svg>`,
         hints: [
-          'הרעיון: כשsuccess SE=1 לכל ה-FFs, ה-MUXs בוחרים ב-\\\`SI\\\`. ה-\\\`SI\\\` של כל FF הוא ה-\\\`Q\\\` של הקודם → shift register.',
+          'הרעיון: כש-\\\`SE=1\\\` לכל ה-FFs, ה-MUXs בוחרים ב-\\\`SI\\\`. ה-\\\`SI\\\` של כל FF הוא ה-\\\`Q\\\` של הקודם → shift register.',
           'אילו אותות חייבים להיות **משותפים (broadcast)** לכל ה-FFs? \\\`SE\\\` ו-\\\`CLK\\\`. אחד מהם — אם תפצל אותו — תיווצר חוסר עקביות.',
           'ה-\\\`SI\\\` החיצוני (PI) מגיע ל-FF1 בלבד. ה-\\\`SO\\\` החיצוני (PO) הוא ה-\\\`Q\\\` של FF4 (האחרון בשרשרת).',
           'בכל FF פנימי: \\\`Q_prev → SI_curr\\\`. למשל FF2.SI ← FF1.Q.',
