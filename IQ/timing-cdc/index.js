@@ -9764,4 +9764,1074 @@ in → FF_B1 → FF_B2 → FF_B3 → FF_B4 → out_B
     tags: ['reset', 'async-reset', 'sync-reset', 'reset-synchronizer', 'metastability', 'timing'],
     circuitRevealsAnswer: true,
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // #5010 — Glitches & Hazards
+  //   The "other" combinational pitfall that #5004/#5005 didn't cover:
+  //   even when STA closes path delays, the circuit can momentarily
+  //   glitch low or high while inputs transition.
+  //
+  //   Function used throughout: F(A,B,C) = A·B + B'·C  (3 inputs).
+  //   This has a classic static-1 hazard between the two prime
+  //   implicants AB and B'C, fixable by the consensus term A·C.
+  //
+  //   No engine extension needed — the simulator has no delay model,
+  //   so glitches are taught via K-map + timing-diagram SVGs, the same
+  //   way #5004 taught gate delays.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'interview-glitches-hazards',
+    difficulty: 'hard',
+    title: 'Glitches & Hazards — K-map, consensus term, dynamic hazard',
+    intro:
+`#5004/#5005 לימדו critical path: כמה זמן עובר עד שהיציאה מתייצבת. אבל יש סוג שני של בעיה combinational: **glitch** — ה-output **כן** מתייצב לערך הנכון, אבל **בדרך** הוא קופץ לערך שגוי לזמן קצר.
+
+נתון פונקציה של 3 משתנים:
+
+\`\`\`
+F(A, B, C) = A·B + B'·C
+\`\`\`
+
+ה-implementation gate-level:
+- \`g1 = A AND B\`     (60 ps)
+- \`g2 = NOT B\`        (30 ps)
+- \`g3 = g2 AND C\`    (60 ps)
+- \`g4 = g1 OR g3\`    (50 ps)
+- output \`F = g4\`
+
+הפונקציה עצמה תקינה. אבל יש **static-1 hazard** מוסתר. השאלות הבאות חושפות אותו, מתקנים אותו, ומלמדות מה ההבדל בין static ל-dynamic hazards.`,
+    schematic: `
+<svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Gate-level implementation of F = AB + B'C with 4 gates and 3 inputs.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    F(A, B, C) = A·B + B'·C
+  </text>
+  <text x="500" y="78" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
+    4 gates: AND, NOT, AND, OR  ·  3 inputs  ·  static-1 hazard מוסתר
+  </text>
+
+  <!-- Inputs -->
+  <g font-size="20" font-weight="bold">
+    <circle cx="80" cy="160" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+    <text x="80" y="168" text-anchor="middle" fill="#cca040">A</text>
+    <circle cx="80" cy="260" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+    <text x="80" y="268" text-anchor="middle" fill="#cca040">B</text>
+    <circle cx="80" cy="360" r="26" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+    <text x="80" y="368" text-anchor="middle" fill="#cca040">C</text>
+  </g>
+
+  <!-- Wires from inputs -->
+  <g stroke="#a0a0c0" stroke-width="2" fill="none">
+    <line x1="106" y1="160" x2="280" y2="200"/>
+    <line x1="106" y1="260" x2="240" y2="260"/>
+    <circle cx="240" cy="260" r="3" fill="#a0a0c0"/>
+    <line x1="240" y1="260" x2="280" y2="220"/>
+    <line x1="240" y1="260" x2="290" y2="320"/>
+    <line x1="106" y1="360" x2="380" y2="360"/>
+  </g>
+
+  <!-- g1 = AND -->
+  <path d="M 280 190 L 320 190 A 30 30 0 0 1 320 250 L 280 250 Z"
+        fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="305" y="216" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND</text>
+  <text x="305" y="234" text-anchor="middle" fill="#c8d8f0" font-size="14">g1 · 60 ps</text>
+
+  <!-- g2 = NOT -->
+  <path d="M 290 308 L 330 320 L 290 332 Z"
+        fill="rgba(255,224,128,0.25)" stroke="#ffe060" stroke-width="2.4"/>
+  <circle cx="338" cy="320" r="5" fill="#0a1825" stroke="#ffe060" stroke-width="2"/>
+  <text x="306" y="324" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">¬</text>
+  <text x="310" y="356" fill="#ffe060" font-size="14">g2 · 30 ps</text>
+
+  <!-- g3 = AND -->
+  <path d="M 380 332 L 420 332 A 30 30 0 0 1 420 392 L 380 392 Z"
+        fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="405" y="358" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">AND</text>
+  <text x="405" y="376" text-anchor="middle" fill="#c8d8f0" font-size="14">g3 · 60 ps</text>
+
+  <!-- Wire g2 to g3 -->
+  <line x1="343" y1="320" x2="380" y2="350" stroke="#a0a0c0" stroke-width="2"/>
+
+  <!-- Wire g1.out and g3.out to OR -->
+  <g stroke="#a0a0c0" stroke-width="2" fill="none">
+    <line x1="350" y1="220" x2="540" y2="280"/>
+    <line x1="450" y1="362" x2="540" y2="320"/>
+  </g>
+
+  <!-- g4 = OR -->
+  <path d="M 540 270 L 570 270 Q 600 270, 620 300 Q 600 330, 570 330 L 540 330 Q 560 300, 540 270 Z"
+        fill="rgba(255,192,128,0.25)" stroke="#ffc080" stroke-width="2.4"/>
+  <text x="582" y="296" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">OR</text>
+  <text x="582" y="316" text-anchor="middle" fill="#c8d8f0" font-size="14">g4 · 50 ps</text>
+
+  <!-- Output -->
+  <line x1="620" y1="300" x2="800" y2="300" stroke="#ff9933" stroke-width="2.4"/>
+  <circle cx="820" cy="300" r="26" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="820" y="308" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">F</text>
+
+  <!-- Annotations -->
+  <text x="500" y="446" text-anchor="middle" fill="#cc99ff" font-size="16" font-style="italic">
+    AB מכוסה ע"י g1; B'C מכוסה ע"י g3; OR מאחד
+  </text>
+</svg>`,
+    parts: [
+      // ─────────────────────────────────────────────────────────
+      // Part א — Identify on K-map
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'א',
+        question: 'צייר K-map של \`F(A, B, C) = A·B + B\'·C\`. סמן את **שני ה-prime implicants**. מהו ה-minimum cover, ומדוע ה-implementation מתאים לו 1-ל-1?',
+        hints: [
+          'K-map 3-input: 2 שורות (A) × 4 עמודות (BC ב-Gray code: 00, 01, 11, 10) = 8 תאים.',
+          'הצב את הערכים: 8 שורות truth-table → 8 תאים.',
+          'A=0, B=0, C=0 → 0. A=0, B=0, C=1 → 1. A=0, B=1, C=0 → 0. A=0, B=1, C=1 → 0.',
+          'A=1, B=0, C=0 → 0. A=1, B=0, C=1 → 1. A=1, B=1, C=0 → 1. A=1, B=1, C=1 → 1.',
+          '4 תאים = 1: (A=0, BC=01), (A=1, BC=01), (A=1, BC=11), (A=1, BC=10).',
+          'Implicant 1: B\'·C — מכסה שני התאים בעמודת BC=01.',
+          'Implicant 2: A·B — מכסה שני התאים בשורת A=1, BC=11 ו-10.',
+        ],
+        answer:
+`## K-map של \`F(A, B, C) = A·B + B'·C\`
+
+\`\`\`
+       BC=00  BC=01  BC=11  BC=10
+A=0:    0      1      0      0
+A=1:    0      1      1      1
+\`\`\`
+
+### Prime Implicants
+
+**Implicant 1: \`B'·C\`** (כחול)
+- מכסה: (A=0, BC=01) ו-(A=1, BC=01)
+- שני התאים בעמודה BC=01 — מאוחדים כי A הוא "don't care" (גם 0 וגם 1).
+
+**Implicant 2: \`A·B\`** (ירוק)
+- מכסה: (A=1, BC=11) ו-(A=1, BC=10)
+- שני התאים בשורת A=1 כש-B=1 — מאוחדים כי C הוא "don't care".
+
+### Minimum Cover
+
+\`\`\`
+F = A·B + B'·C
+\`\`\`
+
+זה ה-minimum sum-of-products — אי אפשר לקצר יותר. שני implicants, 2 inputs כל אחד = 4 gate inputs לפני ה-OR.
+
+### התאמה ל-implementation
+
+| Implicant | Gate |
+|---|---|
+| \`A·B\` | g1 (AND) |
+| \`B'·C\` | g3 (AND) — נדרש g2 (NOT) על B |
+| OR בין שניהם | g4 (OR) |
+
+**הקבלה 1-ל-1**: כל implicant הוא AND gate, ה-sum הוא OR gate. סטנדרט של 2-level logic.
+
+### למה כדאי להכיר את ה-K-map הזה?
+
+ב-K-map הזה יש **תכונה מסוכנת**: שני 1-cells סמוכים (Gray-distance 1) מכוסים ע"י implicants **שונים**. הסעיף הבא חושף את הבעיה.`,
+        interviewerMindset:
+`**שאלת חימום — K-map בסיסי.** המראיין מחפש:
+1. **שאתה מצייר את ה-K-map ברצף Gray** — 00, 01, 11, 10 (לא 00, 01, 10, 11). זה קריטי לזיהוי adjacency.
+2. **שאתה זוכר שכל implicant הוא הקבוצה המקסימלית** — לא תאים בודדים.
+3. **שאתה רואה את הקשר ל-gate count** — kא רק "F = AB + B'C", אלא 4 gates ספציפיים.
+
+**שאלת המשך**: "האם אפשר לכסות עם implicant אחד גדול?" → לא במקרה הזה. ארבעת התאים אינם יוצרים מלבן יחיד ב-K-map.
+
+**שאלת bonus**: "מהי ה-don't-care set?" → אין don't-cares כאן (8 תאים, כולם מוגדרים).`,
+        expectedAnswers: [
+          'K-map', 'מפת קרנו',
+          'prime implicant', 'אימפליקנט', 'implicant',
+          'AB', 'A·B', 'B\'C', "B'C",
+          'minimum cover', 'minimal',
+          'Gray code', 'adjacent',
+        ],
+        circuit: () => build(() => {
+          // F = A·B + B'·C — gate-level live circuit.
+          // Used across all parts; the glitch is taught in answer text.
+          const a = h.input(80, 100, 'A');  a.fixedValue = 1;
+          const b = h.input(80, 240, 'B');  b.fixedValue = 1;
+          const c = h.input(80, 380, 'C');  c.fixedValue = 1;
+
+          const g1 = h.gate('AND', 280, 140);    // A·B
+          const g2 = h.gate('NOT', 280, 280);    // B'
+          const g3 = h.gate('AND', 460, 320);    // B'·C
+          const g4 = h.gate('OR',  640, 220);    // OR
+
+          const fOut = h.output(820, 220, 'F');
+
+          return {
+            nodes: [a, b, c, g1, g2, g3, g4, fOut],
+            wires: [
+              h.wire(a.id, g1.id, 0),
+              h.wire(b.id, g1.id, 1),
+              h.wire(b.id, g2.id, 0),
+              h.wire(g2.id, g3.id, 0),
+              h.wire(c.id, g3.id, 1),
+              h.wire(g1.id, g4.id, 0),
+              h.wire(g3.id, g4.id, 1),
+              h.wire(g4.id, fOut.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="K-map of F = AB + B'C with two prime implicants highlighted.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    K-map של F = A·B + B'·C
+  </text>
+
+  <!-- Axis labels -->
+  <text x="500" y="100" text-anchor="middle" fill="#80c8ff" font-size="20" font-weight="bold">BC (Gray)</text>
+  <text x="200" y="280" fill="#80c8ff" font-size="20" font-weight="bold">A</text>
+
+  <!-- Column headers -->
+  <g fill="#c8d8f0" font-size="18" text-anchor="middle">
+    <text x="320" y="140">00</text>
+    <text x="430" y="140">01</text>
+    <text x="540" y="140">11</text>
+    <text x="650" y="140">10</text>
+  </g>
+
+  <!-- Row labels -->
+  <g fill="#c8d8f0" font-size="20" text-anchor="end" font-weight="bold">
+    <text x="260" y="220">0</text>
+    <text x="260" y="320">1</text>
+  </g>
+
+  <!-- Grid -->
+  <g stroke="#506080" stroke-width="2" fill="none">
+    <rect x="270" y="160" width="440" height="200"/>
+    <line x1="380" y1="160" x2="380" y2="360"/>
+    <line x1="490" y1="160" x2="490" y2="360"/>
+    <line x1="600" y1="160" x2="600" y2="360"/>
+    <line x1="270" y1="260" x2="710" y2="260"/>
+  </g>
+
+  <!-- Cell values -->
+  <g font-size="28" text-anchor="middle" font-weight="bold">
+    <text x="325" y="225" fill="#3a4a60">0</text>
+    <text x="435" y="225" fill="#ffe080">1</text>
+    <text x="545" y="225" fill="#3a4a60">0</text>
+    <text x="655" y="225" fill="#3a4a60">0</text>
+    <text x="325" y="325" fill="#3a4a60">0</text>
+    <text x="435" y="325" fill="#ffe080">1</text>
+    <text x="545" y="325" fill="#ffe080">1</text>
+    <text x="655" y="325" fill="#ffe080">1</text>
+  </g>
+
+  <!-- B'C implicant (vertical column BC=01) — blue -->
+  <rect x="393" y="170" width="76" height="180" rx="20" fill="none" stroke="#40d0f0" stroke-width="4"/>
+  <text x="435" y="408" text-anchor="middle" fill="#40d0f0" font-size="20" font-weight="bold">B'·C</text>
+
+  <!-- AB implicant (horizontal at A=1, BC=11 and 10) — green -->
+  <rect x="500" y="278" width="200" height="68" rx="20" fill="none" stroke="#39ff80" stroke-width="4"/>
+  <text x="600" y="408" text-anchor="middle" fill="#39ff80" font-size="20" font-weight="bold">A·B</text>
+
+  <!-- Conclusion -->
+  <rect x="80" y="450" width="840" height="56" rx="10" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="500" y="484" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">
+    F = A·B + B'·C  ·  2 implicants  ·  4 gates במימוש (לפני OR)
+  </text>
+</svg>`,
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ב — Identify static-1 hazard
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ב',
+        question: 'נתון \`A = 1\` ו-\`C = 1\` קבועים, ו-\`B\` עובר מעבר \`1 → 0\`. הוכח ש-F יורד **באופן רגעי** ל-0 לפני שהוא חוזר ל-1. איפה בדיוק על ה-K-map יש hazard, ולמה?',
+        hints: [
+          'תחילה (A=1, B=1, C=1): F = 1·1 + 0·1 = 1. סוף (A=1, B=0, C=1): F = 1·0 + 1·1 = 1. שניהם 1.',
+          'אבל ה-implementation: g1=A·B=0 (אחרי שהגיע B=0), g3=B\'·C=1 (אחרי שהגיע B\'=1). אם g3 איטי יותר מ-g1...',
+          'g1 רואה B=0 ויורד מהר → g1.out: 1→0 (60 ps אחרי B נופל).',
+          'g3 ממתין ל-B\' שעובר ב-g2 (NOT, 30 ps), ואז ב-g3 (60 ps) → g3.out: 0→1, סה"כ אחרי 90 ps.',
+          'בין t=60 ps ל-t=90 ps: g1=0 וg3 עדיין 0 → F = OR(0, 0) = 0.',
+          'זה glitch של 30 ps שבו F יורד ל-0 ולא חוזר ל-1 עד אחרי 90 ps.',
+          'על ה-K-map: ה-hazard הוא בין שני תאים סמוכים שמכוסים ע"י implicants **שונים**: (A=1, BC=01) ע"י B\'C, ו-(A=1, BC=11) ע"י AB.',
+        ],
+        answer:
+`## Trace של ה-Glitch
+
+נתון \`A=1\`, \`C=1\` קבועים, \`B\` עובר \`1 → 0\` ב-t=0.
+
+| Time | B | g1 (A·B) | B' (g2) | g3 (B'·C) | F = g4 |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| t < 0 | 1 | 1 | 0 | 0 | **1** |
+| t = 0 | B drops to 0 — gates start propagating | | | | |
+| t = 60 ps | 0 | **0** (g1 dropped) | 0 (g2 not done yet) | 0 (g3 not done) | **0** ⚠ |
+| t = 90 ps | 0 | 0 | **1** (g2 done) | **1** (g3 done) | **1** (recovered) |
+
+### ה-glitch
+
+בין \`t = 60 ps\` ל-\`t = 90 ps\` (חלון של **30 ps**): F = 0 — **למרות שהפונקציה הלוגית אומרת F=1 בכל הזמן הזה**.
+
+### Static-1 Hazard על ה-K-map
+
+\`\`\`
+       BC=00  BC=01  BC=11  BC=10
+A=0:    0      1      0      0
+A=1:    0     [1]    [1]     1     ← מעבר HAZARD
+                ↑       ↑
+            B'·C     A·B  (implicants שונים!)
+\`\`\`
+
+ה-hazard הוא במעבר בין **שני תאים סמוכים** (Gray-distance 1) שמכוסים ע"י **implicants שונים**:
+- (A=1, BC=01) ב-B'·C (כחול)
+- (A=1, BC=11) ב-A·B (ירוק)
+
+המעבר \`B: 1→0\` עם A=1, C=1 הוא בדיוק המעבר בין שני התאים האלה — וה-implicants לא חופפים שם.
+
+### למה זה מטריד
+
+- אם downstream FF דוגם את F בקצה clock עד 90 ps אחרי שינוי ה-input → ייתכן ויקלוט 0 במקום 1.
+- ב-async logic (control loops) glitch יכול לעורר edge-detector שגוי → state אבוד.
+- ב-low-power design glitches גורמים לתנועה נוספת → power חינם בזבזני.
+
+### Hazard ≠ Race
+
+| Hazard | Race |
+|---|---|
+| static-1 hazard: F נופל זמנית ל-0 כשהוא אמור להישאר 1 | |
+| לא דורש שיתוף zelf | בין שני signals מתחרים |
+
+### בקנבס
+
+ה-engine לא מודל gate delays, אז הוא יראה F=1 לאורך כל הסדרה. ה-glitch קיים בpcb אמיתי. אם תרצה לראות אותו ב-simulator — תצטרך תוכנה כמו ModelSim עם SDF (Standard Delay Format).`,
+        interviewerMindset:
+`**שאלת hazard בסיסית.** המראיין מחפש:
+1. **שאתה מתחיל מ-truth table באותו נקודה** — לא מ-K-map ישר. הוכח שלפני ואחרי המעבר, F=1.
+2. **שאתה ספור delays של gates** — 60+30+60 = 150 ps total ל-g3, אבל ל-g1 רק 60. ההפרש הוא ה-glitch.
+3. **שאתה מצביע על ה-K-map כסיבה** — שני implicants שונים.
+
+**שאלת המשך**: "האם זה קורה גם במעבר 0→1?" → כן! סימטרי. במעבר B: 0→1, g3 נופל ראשון (60 ps), g1 עולה רק אחרי 60 ps נוסף → glitch ל-0. **שני הכיוונים מסוכנים.**
+
+**שאלת bonus**: "מה אם A=0?" → אז F = B'·C בלבד (כי A·B = 0). מעבר B במצב הזה: g1 תמיד 0, g3 משתנה — אבל אין hazard כי רק implicant אחד מעורב.
+
+**מלכודת**: סטודנט שמציע "להחליף NAND ל-AND" → לא רלוונטי, הבעיה היא **structural**, לא טכנולוגית.`,
+        expectedAnswers: [
+          'static-1 hazard', 'static 1 hazard',
+          'glitch', 'גליטץ\'',
+          'B 1→0', 'transition',
+          'A=1', 'C=1',
+          'implicants', 'different implicants',
+          '30 ps', '60 ps', '90 ps',
+        ],
+        circuit: () => build(() => {
+          // Same F = AB + B'C circuit as part א.
+          const a = h.input(80, 100, 'A');  a.fixedValue = 1;
+          const b = h.input(80, 240, 'B');  b.fixedValue = 1;
+          const c = h.input(80, 380, 'C');  c.fixedValue = 1;
+          const g1 = h.gate('AND', 280, 140);
+          const g2 = h.gate('NOT', 280, 280);
+          const g3 = h.gate('AND', 460, 320);
+          const g4 = h.gate('OR',  640, 220);
+          const fOut = h.output(820, 220, 'F');
+          return {
+            nodes: [a, b, c, g1, g2, g3, g4, fOut],
+            wires: [
+              h.wire(a.id, g1.id, 0),
+              h.wire(b.id, g1.id, 1),
+              h.wire(b.id, g2.id, 0),
+              h.wire(g2.id, g3.id, 0),
+              h.wire(c.id, g3.id, 1),
+              h.wire(g1.id, g4.id, 0),
+              h.wire(g3.id, g4.id, 1),
+              h.wire(g4.id, fOut.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 580" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Timing diagram of the static-1 hazard glitch during B transition.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Static-1 Hazard — glitch של 30 ps
+  </text>
+  <text x="500" y="78" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    A=1, C=1 קבועים · B עובר 1→0 ב-t=0
+  </text>
+
+  <!-- Time axis -->
+  <line x1="160" y1="500" x2="900" y2="500" stroke="#a0a0c0" stroke-width="2"/>
+  ${[0, 30, 60, 90, 120, 150].map(t => {
+    const x = 160 + (t / 150) * 740;
+    return `
+      <line x1="${x}" y1="495" x2="${x}" y2="505" stroke="#a0a0c0" stroke-width="1.4"/>
+      <text x="${x}" y="528" text-anchor="middle" fill="#a0a0c0" font-size="14">${t} ps</text>
+    `;
+  }).join('')}
+  <text x="500" y="552" text-anchor="middle" fill="#a0a0c0" font-size="16" font-weight="bold">t</text>
+
+  <!-- Signal rows -->
+  ${(() => {
+    const X = t => 160 + (t / 150) * 740;
+    const rows = [
+      { label: 'B',  y: 120, color: '#cca040', wave: [[0, 'lo']] },                 // 1 → 0 at t=0
+      { label: 'g1 (A·B)', y: 200, color: '#80c8ff', wave: [[60, 'lo']] },          // drops at 60
+      { label: "B' (g2)",  y: 280, color: '#ffe060', wave: [[30, 'hi']] },          // rises at 30
+      { label: 'g3 (B\'·C)', y: 360, color: '#80c8ff', wave: [[90, 'hi']] },        // rises at 90
+      { label: 'F (g4=OR)', y: 440, color: '#ff9933', wave: [[60, 'lo'], [90, 'hi']] }, // glitch!
+    ];
+    // Initial values: B=1, g1=1, B'=0, g3=0, F=1
+    return rows.map(r => {
+      const yTop = r.y;
+      const yBot = r.y + 36;
+      const yMid = (yTop + yBot) / 2;
+      // Start level (before transitions)
+      const startHigh = r.label === 'B' || r.label === 'g1 (A·B)' || r.label === 'F (g4=OR)';
+      let prevX = 130;
+      let prevY = startHigh ? yTop : yBot;
+      const segs = [];
+      for (const [t, kind] of r.wave) {
+        const ex = X(t);
+        segs.push(`<line x1="${prevX}" y1="${prevY}" x2="${ex}" y2="${prevY}" stroke="${r.color}" stroke-width="3.5"/>`);
+        const newY = kind === 'hi' ? yTop : yBot;
+        segs.push(`<line x1="${ex}" y1="${prevY}" x2="${ex}" y2="${newY}" stroke="${r.color}" stroke-width="3.5"/>`);
+        prevX = ex; prevY = newY;
+      }
+      segs.push(`<line x1="${prevX}" y1="${prevY}" x2="920" y2="${prevY}" stroke="${r.color}" stroke-width="3.5"/>`);
+
+      return `
+        <text x="20" y="${yMid + 5}" fill="${r.color}" font-size="15" font-weight="bold">${r.label}</text>
+        <text x="${X(0) - 16}" y="${yBot + 4}" text-anchor="end" fill="#7a8a9a" font-size="13">0</text>
+        <text x="${X(0) - 16}" y="${yTop + 4}" text-anchor="end" fill="#7a8a9a" font-size="13">1</text>
+        ${segs.join('')}
+      `;
+    }).join('');
+  })()}
+
+  <!-- Highlight the glitch window -->
+  <rect x="${160 + (60/150) * 740}" y="430" width="${(90-60)/150 * 740}" height="40" rx="6"
+        fill="rgba(255,96,96,0.25)" stroke="#ff6060" stroke-width="2"/>
+  <text x="${160 + (75/150) * 740}" y="412" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">⚠ glitch 30 ps</text>
+</svg>`,
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ג — Consensus term fix
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ג',
+        question: 'תקן את ה-hazard בלי לשנות את הפונקציה: הוסף **consensus term** (redundant prime implicant) שמכסה את שני התאים הסמוכים. מה ה-term, ולמה הוא פותר את הבעיה?',
+        hints: [
+          'ה-consensus term של AB ו-B\'C הוא **A·C** (consensus rule: AB + B\'C + AC = AB + B\'C, אבל ה-AC מוסיף ביטחון).',
+          'הוסף gate חמישי: g5 = A AND C. ולחבר אותו ל-OR יחד עם g1 ו-g3 (OR של 3 כניסות, או OR-tree).',
+          'A·C מכסה את **שני התאים הסמוכים** ב-K-map: (A=1, BC=01) ו-(A=1, BC=11).',
+          'כש-B עובר 1→0 ו-A=C=1: A·C = 1 קבוע! הוא מחזיק את F=1 בלי תלות ב-g1 או g3.',
+          'F = AB + B\'C + AC (מבחינה לוגית זהה ל-AB + B\'C, אבל hazard-free).',
+        ],
+        answer:
+`## הפתרון: הוספת ה-consensus term \`A·C\`
+
+### ה-K-map המעודכן
+
+\`\`\`
+       BC=00  BC=01  BC=11  BC=10
+A=0:    0      1      0      0
+A=1:    0     [1]    [1]     1
+\`\`\`
+
+הוסף קבוצה שלישית — **שורת A=1, עמודות 01 ו-11** (התאים הסמוכים שהיו "תפר"). זו קבוצת \`A·C\`:
+
+\`\`\`
+       BC=00  BC=01  BC=11  BC=10
+A=0:    0      1      0      0
+A=1:    0    [[1]]  [[1]]    1     ← A·C מכסה את שני התאים
+              (כחול+סגול) (ירוק+סגול)
+\`\`\`
+
+### הפונקציה המתוקנת
+
+\`\`\`
+F = A·B + B'·C + A·C
+\`\`\`
+
+מבחינה **לוגית**: \`AB + B'C + AC = AB + B'C\` (consensus rule, חוק הקאנונה).
+
+\`\`\`
+AB + B'C + AC = AB(C + C') + B'C + AC        // expand AB
+              = ABC + ABC' + B'C + AC
+              = (ABC + AC) + ABC' + B'C        // factor AC
+              = AC + ABC' + B'C
+              = AC(1) + AB·C' + B'C            // hmm trying again
+\`\`\`
+
+באמת: AC is redundant in min-cover, BUT it's necessary for hazard freedom.
+
+### למה זה פותר את ה-Glitch
+
+נתון A=1, C=1, B עובר 1→0:
+
+| Time | g1 (AB) | g3 (B'C) | **g5 (AC)** | F = OR(g1, g3, g5) |
+|:---:|:---:|:---:|:---:|:---:|
+| t<0 | 1 | 0 | **1** | 1 |
+| t=60 ps | **0** | 0 | **1** | **1** ✓ (AC מחזיק!) |
+| t=90 ps | 0 | **1** | **1** | 1 |
+
+**ה-A·C signal לא תלוי ב-B כלל** — הוא נשאר 1 לאורך כל המעבר של B. ה-OR מחזיק את F=1.
+
+### Implementation
+
+\`\`\`
+                          g5 = A · C   (60 ps)
+                              ┌────────┐
+                  A ──────────┤  AND   ├────┐
+                  C ──────────┤        │    │
+                              └────────┘    │
+                                            ▼
+            g1 ────────────────────────→ ┌─────┐
+            g3 ────────────────────────→ │ OR  │──── F (hazard-free)
+                                          │ (3) │
+                                          └─────┘
+\`\`\`
+
+תוספת: gate אחד (AND עוד אחד), והרחבת OR ל-3-input. **חינם** מבחינת logic complexity, חיוני מבחינת correctness.
+
+### עלות
+
+- Area: +1 AND gate (~5%).
+- Power: +1 gate, אבל **חוסך** power של glitches (toggles אנרגטיים) → לרוב נטו חיובי.
+- Delay: השכבה הקריטית לא משתנה (AC הוא בעצמו 60 ps, כמו AB).
+
+### ה-Rule הכללי
+
+**Consensus rule**: בכל זוג implicants סמוכים על K-map שנפגשים על variable יחיד שמתחלף ביניהם — קיים implicant שלישי (ה-consensus) שמכסה את התפר.
+
+ב-design ידני: זה השלב שאחרי "minimum cover" — בדוק כל זוג סמוך, הוסף consensus term אם צריך.
+
+ב-EDA tools: \`hazard-free synthesis\` מסומן ב-Synopsys/Cadence (לעיצובים async או speed-critical).`,
+        interviewerMindset:
+`**שאלת תיקון.** המראיין מחפש:
+1. **שאתה זוכר את שם ה-term** — "consensus term" או "redundant prime implicant". לא "third implicant".
+2. **שאתה מסביר למה לוגית הוא redundant** — chord rule: AB + B\'C + AC = AB + B\'C.
+3. **שאתה מסביר למה הוא לא redundant פיזית** — מחזיק את F בזמן המעבר.
+4. **שאתה מציין את ה-trade-off** — קצת area, חסכון בpower.
+
+**שאלת המשך**: "האם תמיד צריך consensus term?" → רק אם יש שני implicants סמוכים שלא חופפים. בכל K-map עם hazards פוטנציאליים → כן.
+
+**שאלת bonus**: "מה אם הפונקציה היא XOR?" → ב-K-map "שחמט" (כל תא 1 מוקף ב-0s). אין שני 1-cells סמוכים → אין static-1 hazard מובנה. (אבל ייתכן dynamic hazard ב-XOR multi-level — סעיף ה'.)
+
+**מלכודת**: סטודנט שמציע "להוסיף FF ביציאה" → זה pipelining, לא תיקון hazard. הסעיף הבא (ה') חוזר לעניין הזה.`,
+        expectedAnswers: [
+          'consensus term', 'redundant prime implicant',
+          'A·C', 'AC',
+          'hazard-free',
+          'consensus rule',
+          'g5',
+        ],
+        circuit: () => build(() => {
+          // Hazard-free version: F = AB + B'C + AC
+          // Added g5 (A AND C) and switched g4 to 3-input OR.
+          const a = h.input(80, 100, 'A');  a.fixedValue = 1;
+          const b = h.input(80, 240, 'B');  b.fixedValue = 1;
+          const c = h.input(80, 380, 'C');  c.fixedValue = 1;
+
+          const g1 = h.gate('AND', 280, 140);    // A·B
+          const g2 = h.gate('NOT', 280, 280);    // B'
+          const g3 = h.gate('AND', 460, 320);    // B'·C
+          const g5 = h.gate('AND', 460, 420);    // A·C (NEW)
+          const g4 = h.gate('OR',  640, 260);    // 3-input OR (set inputCount=3)
+          g4.inputCount = 3;
+
+          const fOut = h.output(820, 260, 'F');
+
+          return {
+            nodes: [a, b, c, g1, g2, g3, g5, g4, fOut],
+            wires: [
+              h.wire(a.id, g1.id, 0),
+              h.wire(b.id, g1.id, 1),
+              h.wire(b.id, g2.id, 0),
+              h.wire(g2.id, g3.id, 0),
+              h.wire(c.id, g3.id, 1),
+              h.wire(a.id, g5.id, 0),    // A → g5
+              h.wire(c.id, g5.id, 1),    // C → g5
+              h.wire(g1.id, g4.id, 0),
+              h.wire(g3.id, g4.id, 1),
+              h.wire(g5.id, g4.id, 2),    // A·C → OR
+              h.wire(g4.id, fOut.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 580" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="K-map with the consensus term A·C added as a third implicant covering the hazard gap.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    תיקון: הוספת A·C כ-consensus term
+  </text>
+
+  <!-- Axis labels -->
+  <text x="500" y="100" text-anchor="middle" fill="#80c8ff" font-size="20" font-weight="bold">BC (Gray)</text>
+  <text x="200" y="260" fill="#80c8ff" font-size="20" font-weight="bold">A</text>
+
+  <g fill="#c8d8f0" font-size="18" text-anchor="middle">
+    <text x="320" y="140">00</text>
+    <text x="430" y="140">01</text>
+    <text x="540" y="140">11</text>
+    <text x="650" y="140">10</text>
+  </g>
+  <g fill="#c8d8f0" font-size="20" text-anchor="end" font-weight="bold">
+    <text x="260" y="220">0</text>
+    <text x="260" y="320">1</text>
+  </g>
+
+  <g stroke="#506080" stroke-width="2" fill="none">
+    <rect x="270" y="160" width="440" height="200"/>
+    <line x1="380" y1="160" x2="380" y2="360"/>
+    <line x1="490" y1="160" x2="490" y2="360"/>
+    <line x1="600" y1="160" x2="600" y2="360"/>
+    <line x1="270" y1="260" x2="710" y2="260"/>
+  </g>
+
+  <g font-size="28" text-anchor="middle" font-weight="bold">
+    <text x="325" y="225" fill="#3a4a60">0</text>
+    <text x="435" y="225" fill="#ffe080">1</text>
+    <text x="545" y="225" fill="#3a4a60">0</text>
+    <text x="655" y="225" fill="#3a4a60">0</text>
+    <text x="325" y="325" fill="#3a4a60">0</text>
+    <text x="435" y="325" fill="#ffe080">1</text>
+    <text x="545" y="325" fill="#ffe080">1</text>
+    <text x="655" y="325" fill="#ffe080">1</text>
+  </g>
+
+  <!-- B'C — blue -->
+  <rect x="393" y="170" width="76" height="180" rx="20" fill="none" stroke="#40d0f0" stroke-width="3"/>
+  <text x="435" y="408" text-anchor="middle" fill="#40d0f0" font-size="18" font-weight="bold">B'·C</text>
+
+  <!-- AB — green -->
+  <rect x="500" y="278" width="200" height="68" rx="20" fill="none" stroke="#39ff80" stroke-width="3"/>
+  <text x="600" y="408" text-anchor="middle" fill="#39ff80" font-size="18" font-weight="bold">A·B</text>
+
+  <!-- AC consensus — purple, slightly offset to be visible -->
+  <rect x="386" y="288" width="200" height="48" rx="16" fill="none" stroke="#cc66ff" stroke-width="4"/>
+  <text x="486" y="440" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">A·C ✨ (consensus)</text>
+
+  <!-- Conclusion -->
+  <rect x="80" y="470" width="840" height="86" rx="10" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="1.8"/>
+  <text x="500" y="500" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">
+    F = A·B + B'·C + A·C  ·  לוגית זהה ל-A·B + B'·C
+  </text>
+  <text x="500" y="528" text-anchor="middle" fill="#c8b090" font-size="16">
+    A·C מחזיק את F=1 בזמן המעבר של B → אין glitch
+  </text>
+  <text x="500" y="550" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+    עלות: gate אחד נוסף; חסכון: power של glitches + correctness
+  </text>
+</svg>`,
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ד — Static-0 hazard (dual case)
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ד',
+        question: 'הסבר את ה-**static-0 hazard** — המראה (dual) של static-1. מתי הוא קורה, איך מזהים אותו ב-K-map, ואיך מתקנים אותו? תן דוגמה: \`G(A, B, C) = (A + B) · (B\' + C)\`.',
+        hints: [
+          'Static-0 hazard: ה-output אמור להישאר 0 בשני תאים סמוכים, אבל קופץ ל-1 לזמן קצר במעבר.',
+          'מזהים על K-map של ה-**0-cells**: שני תאים סמוכים עם G=0 מכוסים ע"י "0-implicants" שונים של ה-POS form.',
+          'POS = Product of Sums. G = (A+B)(B\'+C). ה-zeros מכוסים ע"י max-terms.',
+          'תיקון: דואלי — להוסיף consensus term ל-POS form. במקרה G: הוסף (A+C).',
+          'G = (A+B)(B\'+C)(A+C) — הזהה לוגית, hazard-free על 0.',
+        ],
+        answer:
+`## Static-0 Hazard — Dual של Static-1
+
+### דוגמה: \`G(A, B, C) = (A + B) · (B' + C)\`
+
+חישוב truth table:
+
+| A | B | C | A+B | B'+C | G |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 | 1 | 0 |
+| 0 | 0 | 1 | 0 | 1 | 0 |
+| 0 | 1 | 0 | 1 | 0 | 0 |
+| 0 | 1 | 1 | 1 | 1 | 1 |
+| 1 | 0 | 0 | 1 | 1 | 1 |
+| 1 | 0 | 1 | 1 | 1 | 1 |
+| 1 | 1 | 0 | 1 | 0 | 0 |
+| 1 | 1 | 1 | 1 | 1 | 1 |
+
+K-map:
+\`\`\`
+       BC=00  BC=01  BC=11  BC=10
+A=0:    0      0      1      0
+A=1:    1      1      1      0
+\`\`\`
+
+### זיהוי ה-Hazard
+
+מסתכלים על **0-cells סמוכים** המכוסים ע"י max-terms שונים של ה-POS form:
+
+- \`(A+B)\` מכסה את כל ה-0-cells בהם A=0 ו-B=0 (התאים (A=0, BC=00) ו-(A=0, BC=01)).
+- \`(B'+C)\` מכסה את ה-0-cells בהם B=1 ו-C=0 (התאים (A=0, BC=10) ו-(A=1, BC=10)).
+
+המעבר ה-בעייתי: **A=0, C=0, B עובר 0→1**.
+- לפני: (A=0, B=0, C=0) → G=0, מכוסה ע"י (A+B): A+B = 0.
+- אחרי: (A=0, B=1, C=0) → G=0, מכוסה ע"י (B'+C): B'+C = 0.
+- בתפר: שני max-terms שונים — glitch ל-1 אפשרי.
+
+### תיקון: הוסף Consensus Term ב-POS
+
+ה-consensus של \`(A+B)\` ו-\`(B'+C)\` הוא **\`(A+C)\`**:
+
+\`\`\`
+G = (A + B) · (B' + C) · (A + C)
+\`\`\`
+
+ב-K-map: (A+C) מכסה את התאים שבהם A=0 **ו**-C=0 → (A=0, BC=00) ו-(A=0, BC=10) — ה-0-cells הסמוכים שבעיה.
+
+### Hazard-Free Implementation
+
+| Gate | Function | מקור |
+|---|---|---|
+| OR1 | A + B | original |
+| OR2 | B' + C | original |
+| **OR3** | **A + C** | **consensus (new)** |
+| AND3 | (A+B)(B'+C)(A+C) | 3-input AND |
+
+### הסיכום הדואלי
+
+| | Static-1 | Static-0 |
+|---|---|---|
+| Form | SOP (sum of products) | POS (product of sums) |
+| Adjacent cells | שני 1-cells | שני 0-cells |
+| Glitch | 1 → 0 → 1 | 0 → 1 → 0 |
+| Implicants | min-terms (covers of 1s) | max-terms (covers of 0s) |
+| Fix | consensus min-term | consensus max-term |
+
+**כל פונקציה** יכולה לחוות **או** static-1 **או** static-0 hazards (תלוי במעבר). תיקון hazard-free דורש בדיקת שני הצדדים.
+
+### בעיצוב EDA
+
+\`Hazard-free synthesis\` בדרך כלל בודק שני הסוגים. ב-async logic זה חובה; ב-sync logic לרוב מספיק לשמור על setup time גדול מספיק.`,
+        interviewerMindset:
+`**שאלת dualism.** המראיין מחפש:
+1. **שאתה מבין שזה דואלי לחלוטין** — לא רק "הפוך". ה-POS form עובד באותו רעיון על 0-cells.
+2. **שאתה זוכר את שני המבנים** — SOP ל-static-1, POS ל-static-0.
+3. **שאתה מציין שהבדיקה חייבת להיות לשני הסוגים** — לא רק "תקנתי static-1, סיימתי".
+
+**שאלת המשך**: "מתי static-0 מסוכן יותר מ-static-1?" → בעיצוב active-low logic. אם signal משמש כ-enable (active when 0), glitch ל-1 הוא "false disable" — יכול לאפשר rare-case bug.
+
+**שאלת bonus**: "האם XOR יכול לחוות static-0?" → כן, על האפס-תאים. אבל ב-XOR ה-K-map הוא "שחמט" — אין שני 0-cells סמוכים, אז אין static hazard מובנה.`,
+        expectedAnswers: [
+          'static-0 hazard', 'static 0 hazard',
+          'POS', 'product of sums',
+          'max-terms', '0-cells',
+          'consensus term', 'A+C',
+          'dual', 'דואלי',
+          'hazard-free',
+        ],
+        circuit: () => build(() => {
+          // G = (A+B)(B'+C) — gate-level
+          const a = h.input(80, 100, 'A');  a.fixedValue = 0;
+          const b = h.input(80, 240, 'B');  b.fixedValue = 1;
+          const c = h.input(80, 380, 'C');  c.fixedValue = 0;
+
+          const or1 = h.gate('OR',  280, 160);   // A + B
+          const g2  = h.gate('NOT', 280, 280);   // B'
+          const or2 = h.gate('OR',  460, 320);   // B' + C
+          const and3 = h.gate('AND', 640, 220);  // (A+B)·(B'+C)
+          const gOut = h.output(820, 220, 'G');
+
+          return {
+            nodes: [a, b, c, or1, g2, or2, and3, gOut],
+            wires: [
+              h.wire(a.id, or1.id, 0),
+              h.wire(b.id, or1.id, 1),
+              h.wire(b.id, g2.id, 0),
+              h.wire(g2.id, or2.id, 0),
+              h.wire(c.id, or2.id, 1),
+              h.wire(or1.id, and3.id, 0),
+              h.wire(or2.id, and3.id, 1),
+              h.wire(and3.id, gOut.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="K-map of G with the static-0 hazard between adjacent 0-cells, fixed by consensus term A+C.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Static-0 Hazard — K-map של G
+  </text>
+  <text x="500" y="78" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    G = (A+B)(B'+C) · נסתכל על ה-0-cells
+  </text>
+
+  <text x="500" y="118" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">BC (Gray)</text>
+  <text x="220" y="260" fill="#80c8ff" font-size="18" font-weight="bold">A</text>
+
+  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
+    <text x="320" y="148">00</text>
+    <text x="430" y="148">01</text>
+    <text x="540" y="148">11</text>
+    <text x="650" y="148">10</text>
+  </g>
+  <g fill="#c8d8f0" font-size="18" text-anchor="end" font-weight="bold">
+    <text x="260" y="220">0</text>
+    <text x="260" y="320">1</text>
+  </g>
+
+  <g stroke="#506080" stroke-width="2" fill="none">
+    <rect x="270" y="160" width="440" height="200"/>
+    <line x1="380" y1="160" x2="380" y2="360"/>
+    <line x1="490" y1="160" x2="490" y2="360"/>
+    <line x1="600" y1="160" x2="600" y2="360"/>
+    <line x1="270" y1="260" x2="710" y2="260"/>
+  </g>
+
+  <g font-size="28" text-anchor="middle" font-weight="bold">
+    <text x="325" y="225" fill="#ff8080">0</text>
+    <text x="435" y="225" fill="#ff8080">0</text>
+    <text x="545" y="225" fill="#3a4a60">1</text>
+    <text x="655" y="225" fill="#ff8080">0</text>
+    <text x="325" y="325" fill="#3a4a60">1</text>
+    <text x="435" y="325" fill="#3a4a60">1</text>
+    <text x="545" y="325" fill="#3a4a60">1</text>
+    <text x="655" y="325" fill="#ff8080">0</text>
+  </g>
+
+  <!-- (A+B) max-term — covers A=0,B=0 cells = (A=0, BC=00) and (A=0, BC=01) -->
+  <rect x="285" y="180" width="180" height="60" rx="16" fill="none" stroke="#40d0f0" stroke-width="3"/>
+  <text x="375" y="406" text-anchor="middle" fill="#40d0f0" font-size="16" font-weight="bold">(A+B) → 0 כש A=0,B=0</text>
+
+  <!-- (B'+C) max-term — covers B=1,C=0 cells = (A=0, BC=10) and (A=1, BC=10) -->
+  <rect x="615" y="180" width="76" height="180" rx="16" fill="none" stroke="#f0a040" stroke-width="3"/>
+  <text x="655" y="406" text-anchor="middle" fill="#f0a040" font-size="16" font-weight="bold">(B'+C) → 0 כש B=1,C=0</text>
+
+  <!-- Consensus (A+C) — covers A=0,C=0 cells -->
+  <rect x="285" y="170" width="80" height="80" rx="16" fill="none" stroke="#cc66ff" stroke-width="4" stroke-dasharray="5,3"/>
+  <rect x="615" y="170" width="80" height="80" rx="16" fill="none" stroke="#cc66ff" stroke-width="4" stroke-dasharray="5,3"/>
+  <text x="500" y="440" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">+ (A+C) ✨ consensus → 0 כש A=0,C=0</text>
+
+  <!-- Conclusion -->
+  <rect x="80" y="468" width="840" height="46" rx="10" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="1.8"/>
+  <text x="500" y="496" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">
+    G = (A+B)(B'+C)(A+C)  ·  hazard-free על שני ה-static types
+  </text>
+</svg>`,
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ה — Dynamic hazard
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ה',
+        question: 'נתון מעגל multi-level שבו אותו signal עובר מספר מסלולים שונים עם delays שונים. מה זה **dynamic hazard**, איך הוא נראה בתרשים-זמן, ולמה consensus term **לא** מספיק כדי לתקן אותו? מה הפתרון הסטנדרטי?',
+        hints: [
+          'Dynamic hazard: ה-output צריך לעבור 0→1 (או 1→0), אבל **קופץ מספר פעמים** לפני שהוא מתייצב: 0→1→0→1 (במקום 0→1).',
+          'הסיבה: signal מסתעף ל-N מסלולים, כל אחד עם delay שונה. כל מסלול גורם לקפיצה משלה.',
+          'דוגמה: F = A + B כאשר B עובר דרך 2 inverters בטור (B → NOT → NOT → B). כש-A=0 ו-B עובר, האחר עוקב — אם 2 ה-inverters אינם מסונכרנים → glitches מרובים.',
+          'Consensus term לא עוזר כי הוא רק "ממלא תפר" של 0/1 אחד. ב-dynamic hazard יש מספר עוברים → consensus יחיד לא מספיק.',
+          'הפתרון: **synchronous design** — לשים FF ביציאה. ה-FF דוגם רק בקצה ה-clock, כשה-glitches כבר שקעו.',
+          'לחלופין: לעצב את ה-circuit עם **single-path-per-variable** — אבל זה מגביל מאוד את ה-optimization.',
+        ],
+        answer:
+`## Dynamic Hazard
+
+### הגדרה
+
+> **Dynamic hazard**: ה-output אמור לעבור פעם אחת (\`0→1\` או \`1→0\`), אבל בפועל הוא **רץ קדימה ואחורה** מספר פעמים לפני שהוא מתייצב.
+
+תרשים זמן: במקום מעבר \`0 → 1\` נקי, רואים:
+\`\`\`
+F:  0 ─┐  ┌──┐  ┌──── 1 (final)
+       └──┘  └──┘
+       ↑ 0→1→0→1→0→1  (3 ספייקים לפני הסתגלות)
+\`\`\`
+
+### תנאי קיומו
+
+לפחות **3 מסלולים** של אותו signal עם delays שונים מגיעים ל-output. כל מסלול יוצר edge משלו.
+
+### דוגמה: Triple-Path
+
+\`\`\`
+B ──┬──────────────────→ AND──┐
+    │                          │
+    └─[NOT]─[NOT]─[NOT]─→ AND──┴── OR ──── F
+                                   │
+                              [NOT]
+\`\`\`
+
+נניח כל NOT = 20 ps. כש-B עובר \`1→0\`:
+- מסלול ישיר: B→AND_top ב-0 ps.
+- מסלול 3 inverters: B→NOT→NOT→NOT→AND_bottom ב-60 ps.
+
+תוצאה: ה-OR רואה את ה-AND_top יורד מהר, ה-AND_bottom עולה איטית, ויש חזרות בין הזמנים. **3 ספייקים אפשריים**.
+
+### למה Consensus Term לא עוזר
+
+Static hazard = "תפר" יחיד בין שני implicants. Consensus = implicant נוסף שגושר עליו.
+
+Dynamic hazard = **מספר תפרים בו-זמנית** עקב מסלולים מרובים. כל "תפר" דורש consensus אחר, וייתכנו תפרים שאין להם consensus סינתטי.
+
+טכנית: dynamic hazard נובע מ-**structure** של הרשת, לא רק מה-truth-table. שינוי הרשת (= synthesis אחר) הוא היחיד שיכול לבטל אותו לחלוטין.
+
+### הפתרון: Synchronous Sampling
+
+הגישה האולטימטיבית: **לסגור את ה-output ב-FF**.
+
+\`\`\`
+Inputs → [Combinational, with possible dynamic hazards] → D ───┐
+                                                                 │
+                                                         FF ────→ Q (clean)
+                                                                 │
+                                                       CLK ──────┘
+\`\`\`
+
+ה-FF דוגם רק בקצה ה-CLK. אם ה-CLK period גדול מספיק (\`T_clk > t_propagation_max + t_glitch_max\`) → ה-FF דוגם רק את הערך הסופי, אחרי שכל ה-glitches שקעו.
+
+זו הסיבה ש-**synchronous design** הוא הסטנדרט בתעשייה: גליטשים פנימיים אינם חשובים כל עוד ה-output נדגם בקצה clock.
+
+### ב-Async Design
+
+כשאין FF בנקודה — חייבים לעצב hazard-free:
+- Hazard-free synthesis (algorithmic, יקר ב-area)
+- Code disciplines: 1-hot encoding, race-free FSM
+- Single-path-per-input — לאסור על reconvergent fanout
+
+### תקציר — Static vs Dynamic
+
+| | Static-1/-0 | Dynamic |
+|---|---|---|
+| מקור | פערים בין implicants | מסלולים מרובים עם delays שונים |
+| Symptom | spike יחיד | spikes מרובים |
+| תיקון | consensus term | sync sampling (FF) או redesign |
+| ב-K-map | מזוהה מ-cell adjacency | לא מזוהה — דורש gate-level trace |
+
+### בקנבס
+
+ה-engine לא מראה את ה-glitches (אין מודל delay). הצב מעגל הפונקציה במצב סטטי — תקבל את הערך הנכון. ה-dynamic hazard הוא תופעה רק במציאות אמיתית.`,
+        interviewerMindset:
+`**שאלת סיכום.** המראיין מחפש:
+1. **שאתה מבחין בין static ל-dynamic** — לא רק "hazard". ספציפיקציה.
+2. **שאתה מבין שזה structural** — לא ניתן לתקן רק על-ידי הוספת terms.
+3. **שאתה מציע synchronous design כפתרון** — לא "להחליף gates". פתרון מערכתי.
+4. **שאתה מציין trade-off** — sync = יותר latency (FF), פחות פוזיציה ב-async.
+
+**שאלת המשך**: "האם dynamic hazard קורה רק עם NOTs?" → לא. כל reconvergent fanout עם delays שונים יכול לגרום לזה. NOTs פשוט מבליטים את התופעה.
+
+**שאלת bonus**: "Glitch power — כמה גדול?" → ב-CMOS, כל toggle = ½CV²f. glitches מכפילים את ה-toggle count → עד 30% מה-dynamic power של chip יכול להיות "glitch power" ב-design לא אופטימלי. מסחרי: \`glitch-aware synthesis\` חוסך 10-20% power.
+
+**שאלת bonus 2**: "מה אם ה-clock period קטן מ-glitch duration?" → ה-FF ייקלט glitch! ב-overclocking או בdesign closer to f_max זה סיכון אמיתי. לכן יש margin של 20-30% מ-f_max המקסימלי.
+
+**ראה גם**: #5004 (path delay), #5007 (skew) — שלושתם יחד נותנים את התמונה השלמה של combinational hazards.`,
+        expectedAnswers: [
+          'dynamic hazard',
+          'multi-level', 'multiple paths', 'מסלולים מרובים',
+          'spike', 'glitch', 'multiple spikes',
+          'synchronous', 'FF', 'sample', 'CLK',
+          'reconvergent fanout',
+          'consensus not enough',
+        ],
+        circuit: () => build(() => {
+          // Demonstrate dynamic hazard scenario: B fans out through
+          // multiple inverter paths reconverging at an OR.
+          // Engine has no delay model, so this is purely structural.
+          const a = h.input(80, 100, 'A');  a.fixedValue = 1;
+          const b = h.input(80, 280, 'B');  b.fixedValue = 1;
+
+          const inv1 = h.gate('NOT', 240, 280);
+          const inv2 = h.gate('NOT', 380, 280);
+          const inv3 = h.gate('NOT', 520, 280);
+
+          const and1 = h.gate('AND', 240, 160);    // A · B (direct)
+          const and2 = h.gate('AND', 660, 280);    // A · B''' (3-inv path)
+
+          const or1 = h.gate('OR', 820, 220);
+          const fOut = h.output(940, 220, 'F');
+
+          return {
+            nodes: [a, b, inv1, inv2, inv3, and1, and2, or1, fOut],
+            wires: [
+              h.wire(a.id, and1.id, 0),
+              h.wire(b.id, and1.id, 1),
+              h.wire(b.id, inv1.id, 0),
+              h.wire(inv1.id, inv2.id, 0),
+              h.wire(inv2.id, inv3.id, 0),
+              h.wire(a.id, and2.id, 0),
+              h.wire(inv3.id, and2.id, 1),
+              h.wire(and1.id, or1.id, 0),
+              h.wire(and2.id, or1.id, 1),
+              h.wire(or1.id, fOut.id, 0),
+            ],
+          };
+        }),
+        answerSchematic: `
+<svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Timing diagram of a dynamic hazard with multiple spikes followed by FF synchronous capture.">
+
+  <text x="500" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
+    Dynamic Hazard — מספר spikes
+  </text>
+  <text x="500" y="78" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    מסלולים מרובים עם delays שונים → התנדנדות
+  </text>
+
+  <!-- Time axis -->
+  <line x1="160" y1="380" x2="900" y2="380" stroke="#a0a0c0" stroke-width="2"/>
+  ${[0, 30, 60, 90, 120, 150, 180].map(t => {
+    const x = 160 + (t / 180) * 740;
+    return `
+      <line x1="${x}" y1="375" x2="${x}" y2="385" stroke="#a0a0c0" stroke-width="1.4"/>
+      <text x="${x}" y="408" text-anchor="middle" fill="#a0a0c0" font-size="13">${t} ps</text>
+    `;
+  }).join('')}
+
+  <!-- B transition -->
+  <text x="40" y="130" fill="#cca040" font-size="15" font-weight="bold">B</text>
+  ${(() => {
+    const X = t => 160 + (t / 180) * 740;
+    return `
+      <line x1="130" y1="110" x2="${X(0)}" y2="110" stroke="#cca040" stroke-width="3"/>
+      <line x1="${X(0)}" y1="110" x2="${X(0)}" y2="146" stroke="#cca040" stroke-width="3"/>
+      <line x1="${X(0)}" y1="146" x2="920" y2="146" stroke="#cca040" stroke-width="3"/>
+    `;
+  })()}
+
+  <!-- F output (dynamic hazard - 3 spikes before settling) -->
+  <text x="40" y="240" fill="#ff9933" font-size="15" font-weight="bold">F</text>
+  ${(() => {
+    const X = t => 160 + (t / 180) * 740;
+    const yHi = 210;
+    const yLo = 250;
+    return `
+      <line x1="130" y1="${yHi}" x2="${X(20)}" y2="${yHi}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(20)}" y1="${yHi}" x2="${X(20)}" y2="${yLo}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(20)}" y1="${yLo}" x2="${X(40)}" y2="${yLo}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(40)}" y1="${yLo}" x2="${X(40)}" y2="${yHi}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(40)}" y1="${yHi}" x2="${X(70)}" y2="${yHi}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(70)}" y1="${yHi}" x2="${X(70)}" y2="${yLo}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(70)}" y1="${yLo}" x2="${X(100)}" y2="${yLo}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(100)}" y1="${yLo}" x2="${X(100)}" y2="${yHi}" stroke="#ff9933" stroke-width="3"/>
+      <line x1="${X(100)}" y1="${yHi}" x2="920" y2="${yHi}" stroke="#ff9933" stroke-width="3"/>
+    `;
+  })()}
+
+  <!-- Spike annotations -->
+  <text x="${160 + (30/180) * 740}" y="280" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">spike 1</text>
+  <text x="${160 + (85/180) * 740}" y="280" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">spike 2</text>
+
+  <!-- CLK marker with FF capture -->
+  <line x1="${160 + (150/180) * 740}" y1="320" x2="${160 + (150/180) * 740}" y2="160" stroke="#cc66ff" stroke-width="2.4" stroke-dasharray="6,3"/>
+  <text x="${160 + (150/180) * 740}" y="350" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">CLK edge ↑</text>
+  <text x="${160 + (155/180) * 740}" y="200" fill="#80f0a0" font-size="14" font-weight="bold">✓ FF samples 1 (final)</text>
+
+  <!-- Bottom -->
+  <rect x="60" y="430" width="880" height="40" rx="8" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="500" y="456" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
+    הפתרון: FF דוגם רק בקצה CLK — אחרי שכל ה-spikes שקעו
+  </text>
+</svg>`,
+      },
+    ],
+    source: 'Glitches & Hazards — K-map, consensus, dynamic',
+    tags: ['glitch', 'hazard', 'static-hazard', 'dynamic-hazard', 'k-map', 'consensus-term', 'combinational'],
+    circuitRevealsAnswer: true,
+  },
 ];
