@@ -2163,9 +2163,14 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
         circuit: () => build(() => {
           // Decomposed Scan-FF: explicit MUX + D-FF so the student
           // can see how it's built. Inputs: D, SI, SE, CLK. Output: Q.
-          const dIn  = h.input(80, 200, 'D');
-          const siIn = h.input(80, 320, 'SI');
-          const seIn = h.input(80, 440, 'SE');
+          //
+          // Defaults: D=1, SI=0, SE=0 → MUX picks D=1 → Q goes to 1
+          // after the first clock edge. Flipping SE=1 swaps to SI=0
+          // → Q goes to 0 on the next edge. This makes the role of
+          // SE visible without needing the student to set values.
+          const dIn  = h.input(80, 200, 'D');   dIn.fixedValue  = 1;
+          const siIn = h.input(80, 320, 'SI');  siIn.fixedValue = 0;
+          const seIn = h.input(80, 440, 'SE');  seIn.fixedValue = 0;
           const clk  = h.clock(80, 560);
           const mux  = h.mux(280, 320, 'MUX 2:1');
           const ff   = h.ffD(500, 280, 'D-FF');
@@ -2179,6 +2184,179 @@ OR-bridge  : Out = S · (A+B) + ¬S · (A+B) = (A+B) · (S + ¬S) = A + B
               h.wire(mux.id,  ff.id,  0),                 // mux.out → FF.D
               h.wire(clk.id,  ff.id,  1, 0, { isClockWire: true }),
               h.wire(ff.id,   qOut.id, 0),                // FF.Q → output
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ב — Chain the single Scan-FF from part א into a 4-stage
+      //   scan chain. Demonstrates how broadcast SE + Q→SI wiring
+      //   turns N independent Scan-FFs into a shift register during
+      //   test mode, while staying functionally independent in
+      //   mission mode (SE=0).
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ב',
+        question:
+`עכשיו יש לך **4 Scan-FFs נפרדים** (כל אחד = MUX 2:1 + D-FF, כמו שבנינו בסעיף א'). אתה רוצה להפוך אותם ל-**scan chain אחד** כך שיוכלו לפעול גם כ-shift register בזמן בדיקה.
+
+תאר את החיווט הנדרש: איך מחברים את 4 ה-FFs, אילו אותות משותפים, ומה משמעות \`SE=0\` לעומת \`SE=1\` במעגל המחובר.`,
+        hints: [
+          'הרעיון: כשsuccess SE=1 לכל ה-FFs, ה-MUXs בוחרים ב-\\\`SI\\\`. ה-\\\`SI\\\` של כל FF הוא ה-\\\`Q\\\` של הקודם → shift register.',
+          'אילו אותות חייבים להיות **משותפים (broadcast)** לכל ה-FFs? \\\`SE\\\` ו-\\\`CLK\\\`. אחד מהם — אם תפצל אותו — תיווצר חוסר עקביות.',
+          'ה-\\\`SI\\\` החיצוני (PI) מגיע ל-FF1 בלבד. ה-\\\`SO\\\` החיצוני (PO) הוא ה-\\\`Q\\\` של FF4 (האחרון בשרשרת).',
+          'בכל FF פנימי: \\\`Q_prev → SI_curr\\\`. למשל FF2.SI ← FF1.Q.',
+          'בזמן \\\`SE=0\\\` (mission mode): כל FF טוען את ה-\\\`D\\\` הפונקציונלי שלו → ה-FFs **פועלים עצמאית** ולא רואים זה את זה.',
+          'בזמן \\\`SE=1\\\` (test mode): כל FF טוען מ-\\\`SI\\\` שלו → **shift register**. הוקטור-בדיקה נדחף ב-N מחזורים.',
+        ],
+        answer:
+`### החיווט הנדרש לשרשרת של N=4
+
+| חיבור | כיוון | הסבר |
+|---|---|---|
+| \`SI_external → FF1.SI\` | PI → FF | קלט הוקטור נכנס לשרשרת ב-FF הראשון |
+| \`FF1.Q → FF2.SI\` | FF → FF | פלט FF הקודם = scan-in של הבא |
+| \`FF2.Q → FF3.SI\` | FF → FF | המשך השרשרת |
+| \`FF3.Q → FF4.SI\` | FF → FF | המשך השרשרת |
+| \`FF4.Q → SO_external\` | FF → PO | קצה השרשרת — היציאה החיצונית |
+| \`SE → כל ה-FFs\` | broadcast | סלקטור MUX משותף — חובה |
+| \`CLK → כל ה-FFs\` | broadcast | שעון משותף — חובה |
+| \`D1..D4\` | מהלוגיקה הפונקציונלית | כל FF עם ה-\`D\` שלו (לא מחוברים בינם לבין עצמם) |
+
+### שני המצבים
+
+**\`SE = 0\` — Mission mode (תפקוד רגיל)**
+- כל MUX בוחר את \`D\` הפונקציונלי.
+- כל FF טוען עצמאית את ה-\`D\` שלו. **אין** קשר בין ה-FFs דרך ה-scan path.
+- המעגל מתנהג בדיוק כמו עם 4 D-FFs רגילים.
+
+**\`SE = 1\` — Test mode (scan shift)**
+- כל MUX בוחר את \`SI\` (שהוא \`Q\` של הקודם).
+- ה-FFs יוצרים **shift register באורך 4**.
+- וקטור־בדיקה נכנס דרך \`SI_external\`, ובמהלך 4 מחזורי clock יושב על כל ארבעת ה-FFs.
+
+### למה SE ו-CLK חייבים להיות broadcast
+
+- **SE לא משותף** → חלק מה-FFs ב-mission ואחרים ב-test בו-זמנית → state inconsistent → לא scan ולא functional. תוצאה: garbage.
+- **CLK לא משותף** → FFs מתפזרים על clock domains שונים → CDC, metastability, וגרוע — shift לא סינכרוני. בדרך כלל אסור בתוך אותה שרשרת (scan chains חוצי-clock דורשים lock-up latches — נושא נפרד).
+
+### מהלך בדיקה מלא (N=4)
+
+| שלב | SE | מחזורי clock | מה קורה |
+|---|:---:|:---:|---|
+| Load | 1 | 4 | וקטור נדחף מ-\`SI_external\` דרך FF1→FF2→FF3→FF4 |
+| Capture | 0 | 1 | כל FF לוכד את תוצאת הלוגיקה הפונקציונלית מה-\`D\` שלו |
+| Unload | 1 | 4 | התוצאה זוחלת חזרה דרך \`SO_external\` (FF4.Q) |
+
+סה"כ **2N+1 = 9 מחזורים** לוקטור-בדיקה אחד. נושא ה-flow מטופל בהרחבה ב-#6008.
+
+### בקנבס
+
+ה-Scan-FFs מופיעים כ-MUX + FF מפורקים (כמו בסעיף א'), כך שתוכל לעקוב פיזית אחר ה-Q→SI chaining. **ברירת מחדל**: \`SE=0\`, כל \`D=1\` ו-\`SI_external=1\` → אחרי clock אחד כל ה-\`Q\` נטענים ל-1. החלף ל-\`SE=1\` ושנה את \`SI_external\` ל-0 → תראה את ה-0 זוחל לאורך השרשרת מ-FF1 ל-FF4 על פני 4 מחזורי clock.`,
+        interviewerMindset:
+`**שאלת המשך טבעית.** המראיין מחפש:
+1. **שאתה זוכר ש-SE ו-CLK הם broadcast** — לא נפרדים. סטודנט שמשרטט SE נפרד לכל FF נכשל ברעיון.
+2. **שאתה מבחין בין mission mode ל-test mode** — שני התנהגויות שונות לחלוטין מאותו רכיב, נשלטות ב-SE יחיד.
+3. **שאתה מציין \`Q→SI\` chaining** — לא XOR, לא חיבור ישיר ל-\`D\`. MUX-input.
+4. **שאתה מזכיר את ה-flow של 2N+1** או לפחות יודע שיש concept של load/capture/unload.
+
+**שאלת המשך**: "מה אם השרשרת ארוכה מדי (N=10,000)?" → חלוקה למספר scan chains קצרות יותר במקביל (multi-chain DFT). מקצר את זמן הבדיקה הליניארית.
+
+**שאלת bonus**: "מה קורה ל-\`Q\` בזמן shift אם הוא בלאו הכי מחובר ללוגיקה הפונקציונלית?" → ה-\`Q\` משדר ערכים שגויים ב-mission-path בזמן ה-shift, אבל זה לא משנה כי \`SE=1\` משמעו "מצב בדיקה" וההיסטוריה הפונקציונלית בלאו הכי לא חשובה. עם זאת — צריך לוודא שזה לא גורם נזק (latch-up, contention). פתרון: **scan gating** — חוסם את ה-\`Q\` בזמן shift.
+
+**שאלת bonus 2**: "מה משנה אם משנים את **סדר** ה-FFs בשרשרת?" → פונקציונלית כלום (כל ה-FFs בכל מקרה מקבלים אותו ערך אחרי load). למעשה כלי DFT מבצעים **scan-chain reordering** כדי למזער את אורך החוטים פיזית — אופטימיזציה של routing/area.`,
+        expectedAnswers: [
+          'SI', 'SO', 'SE', 'CLK',
+          'broadcast', 'shared', 'משותף',
+          'chain', 'shift register', 'שרשרת',
+          'Q to SI', 'Q→SI',
+          'mission mode', 'test mode', 'scan mode',
+          'FF1', 'FF4',
+          '4 FFs', 'N FFs',
+          'mux', 'multiplexer',
+        ],
+        circuit: () => build(() => {
+          // 4-stage scan chain built from 4 decomposed Scan-FFs.
+          // Each stage = MUX 2:1 + D-FF (same construction as part א).
+          // SE and CLK broadcast; Q_n → SI_{n+1}.
+          //
+          // Defaults: SE=0, every D_n=1, SI_external=1.
+          //   On each clock edge (SE=0), every FF captures its own D=1
+          //   so all Q become 1.
+          //   Flip SE=1 and SI_external=0 → on the next 4 clocks, 0s
+          //   walk along the chain Q1→Q2→Q3→Q4.
+          const clk = h.clock(80, 760, 'CLK');
+          const seIn = h.input(80, 640, 'SE');         seIn.fixedValue = 0;
+          const siExt = h.input(80, 100, 'SI');        siExt.fixedValue = 1;
+
+          // Per-stage functional D inputs (independent)
+          const d1 = h.input(80,  240, 'D1');  d1.fixedValue = 1;
+          const d2 = h.input(280, 240, 'D2');  d2.fixedValue = 1;
+          const d3 = h.input(480, 240, 'D3');  d3.fixedValue = 1;
+          const d4 = h.input(680, 240, 'D4');  d4.fixedValue = 1;
+
+          // Decomposed Scan-FF #1
+          const mux1 = h.mux(180, 360, 'MUX1');
+          const ff1  = h.ffD(180, 480, 'FF1');
+
+          // Decomposed Scan-FF #2
+          const mux2 = h.mux(380, 360, 'MUX2');
+          const ff2  = h.ffD(380, 480, 'FF2');
+
+          // Decomposed Scan-FF #3
+          const mux3 = h.mux(580, 360, 'MUX3');
+          const ff3  = h.ffD(580, 480, 'FF3');
+
+          // Decomposed Scan-FF #4
+          const mux4 = h.mux(780, 360, 'MUX4');
+          const ff4  = h.ffD(780, 480, 'FF4');
+
+          // Per-stage outputs (Q taps) + the external SO
+          const q1Out = h.output(280, 580, 'Q1');
+          const q2Out = h.output(480, 580, 'Q2');
+          const q3Out = h.output(680, 580, 'Q3');
+          const soOut = h.output(900, 580, 'SO');
+
+          return {
+            nodes: [
+              clk, seIn, siExt,
+              d1, d2, d3, d4,
+              mux1, ff1, mux2, ff2, mux3, ff3, mux4, ff4,
+              q1Out, q2Out, q3Out, soOut,
+            ],
+            wires: [
+              // ── Stage 1 ──
+              h.wire(d1.id,    mux1.id, 0),                            // D1 → mux1.d0
+              h.wire(siExt.id, mux1.id, 1),                            // SI_ext → mux1.d1
+              h.wire(seIn.id,  mux1.id, 2),                            // SE → mux1.sel
+              h.wire(mux1.id,  ff1.id,  0),                            // mux1.out → FF1.D
+              h.wire(clk.id,   ff1.id,  1, 0, { isClockWire: true }),
+              h.wire(ff1.id,   q1Out.id, 0),                           // Q1 tap
+
+              // ── Stage 2 ──
+              h.wire(d2.id,    mux2.id, 0),
+              h.wire(ff1.id,   mux2.id, 1),                            // Q1 → SI2
+              h.wire(seIn.id,  mux2.id, 2),                            // broadcast SE
+              h.wire(mux2.id,  ff2.id,  0),
+              h.wire(clk.id,   ff2.id,  1, 0, { isClockWire: true }),  // broadcast CLK
+              h.wire(ff2.id,   q2Out.id, 0),
+
+              // ── Stage 3 ──
+              h.wire(d3.id,    mux3.id, 0),
+              h.wire(ff2.id,   mux3.id, 1),                            // Q2 → SI3
+              h.wire(seIn.id,  mux3.id, 2),
+              h.wire(mux3.id,  ff3.id,  0),
+              h.wire(clk.id,   ff3.id,  1, 0, { isClockWire: true }),
+              h.wire(ff3.id,   q3Out.id, 0),
+
+              // ── Stage 4 ──
+              h.wire(d4.id,    mux4.id, 0),
+              h.wire(ff3.id,   mux4.id, 1),                            // Q3 → SI4
+              h.wire(seIn.id,  mux4.id, 2),
+              h.wire(mux4.id,  ff4.id,  0),
+              h.wire(clk.id,   ff4.id,  1, 0, { isClockWire: true }),
+              h.wire(ff4.id,   soOut.id, 0),                           // SO_external = Q4
             ],
           };
         }),

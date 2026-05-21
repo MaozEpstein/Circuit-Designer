@@ -651,7 +651,7 @@ Setup violations נגרמות מ:
   // ─────────────────────────────────────────────────────────────
   {
     id: 'interview-2bit-adder-identification',
-    difficulty: 'medium',
+    difficulty: 'hard',
     title: 'שאלת ראיון — זיהוי רכיב מתוך מימוש שערים',
     intro:
 `**שאלה אמיתית מראיון.** ניתן לפניך מימוש gate-level של מעגל קומבינטורי:
@@ -3400,6 +3400,2215 @@ Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא
     ],
     source: 'שאלת ראיון אמיתית — תכן לוגי / תזמון וסנכרון',
     tags: ['interview', 'adder', 'half-adder', 'full-adder', 'gate-level', 'identification', 'combinational', 'timing', 'critical-path'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ═════════════════════════════════════════════════════════════════
+  // #5005 — 2-bit multiplier interview question.
+  //   Sister to #5004 (2-bit adder). Same pedagogical flow but on a
+  //   different circuit so the principles transfer. 7 parts:
+  //     א — identify the circuit (multiplier, NOT adder)
+  //     ב — path-delay analysis (critical 390 ps, shortest 120 ps)
+  //     ג — minimal pipelining (single FF on the C1 wire)
+  //     ד — pipeline balancing (3 more FFs)
+  //     ה — hold violation + BUF on P0 path
+  //     ו — bridge fault between PP_10 and PP_01 wires
+  //     ז — stuck-at-0 on the C1 wire
+  // ═════════════════════════════════════════════════════════════════
+  {
+    id: 'interview-2bit-multiplier-identification',
+    difficulty: 'hard',
+    title: 'שאלת ראיון — זיהוי רכיב מתוך מימוש שערים (גרסה 2)',
+    intro:
+`**שאלה אמיתית מראיון.** ניתן לפניך מימוש gate-level של מעגל קומבינטורי:
+
+- **4 כניסות**: \`A0, A1, B0, B1\`
+- **4 יציאות**: \`Y0, Y1, Y2, Y3\`
+- **8 שערים**: 6 × AND, 2 × XOR
+
+אין שום תיוג ברמה גבוהה — רק שערים וחוטים. **התפקיד שלך**: לזהות מה החישוב.
+
+> 💡 רמז ראשון בעצמך: **מספר ה-IO שונה משאלה 5004**. מה זה אומר?`,
+    schematic: `
+<svg viewBox="0 0 1200 740" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Gate-level netlist of an 8-gate combinational circuit with 4 inputs and 4 outputs.">
+
+  <text x="600" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    מעגל קומבינטורי — 4 כניסות, 4 יציאות, 8 שערים
+  </text>
+  <text x="600" y="64" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+    מה הרכיב המיוצג?
+  </text>
+
+  <!-- ════════ INPUTS (left) ════════ -->
+  <g font-size="20" font-weight="bold">
+    <circle cx="60" cy="140" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+    <text x="60" y="147" text-anchor="middle" fill="#cca040">A0</text>
+    <circle cx="60" cy="240" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+    <text x="60" y="247" text-anchor="middle" fill="#cca040">A1</text>
+    <circle cx="60" cy="440" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+    <text x="60" y="447" text-anchor="middle" fill="#cca040">B0</text>
+    <circle cx="60" cy="540" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
+    <text x="60" y="547" text-anchor="middle" fill="#cca040">B1</text>
+  </g>
+
+  <!-- ════════ Stage 0: 4 partial-product ANDs ════════ -->
+  <!-- AND1 (A0·B0): top-left -->
+  <g>
+    <path d="M 250 125 L 280 125 A 30 30 0 0 1 280 185 L 250 185 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="270" y="160" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND1</text>
+  </g>
+  <!-- AND2 (A1·B0): upper-middle -->
+  <g>
+    <path d="M 250 225 L 280 225 A 30 30 0 0 1 280 285 L 250 285 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="270" y="260" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND2</text>
+  </g>
+  <!-- AND3 (A0·B1): lower-middle -->
+  <g>
+    <path d="M 250 325 L 280 325 A 30 30 0 0 1 280 385 L 250 385 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="270" y="360" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND3</text>
+  </g>
+  <!-- AND4 (A1·B1): bottom -->
+  <g>
+    <path d="M 250 425 L 280 425 A 30 30 0 0 1 280 485 L 250 485 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="270" y="460" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND4</text>
+  </g>
+
+  <!-- ════════ Input fan-out wires ════════ -->
+  <g stroke="#cca040" stroke-width="2" fill="none">
+    <!-- A0 → AND1.in0, AND3.in0 -->
+    <path d="M 82 140 L 200 140 L 200 140 L 250 140"/>
+    <path d="M 200 140 L 200 340 L 250 340"/>
+    <circle cx="200" cy="140" r="4" fill="#cca040"/>
+    <!-- A1 → AND2.in0, AND4.in0 -->
+    <path d="M 82 240 L 180 240 L 180 240 L 250 240"/>
+    <path d="M 180 240 L 180 440 L 250 440"/>
+    <circle cx="180" cy="240" r="4" fill="#cca040"/>
+    <!-- B0 → AND1.in1, AND2.in1 -->
+    <path d="M 82 440 L 160 440 L 160 170 L 250 170"/>
+    <path d="M 160 440 L 160 270 L 250 270"/>
+    <circle cx="160" cy="440" r="4" fill="#cca040"/>
+    <!-- B1 → AND3.in1, AND4.in1 -->
+    <path d="M 82 540 L 140 540 L 140 370 L 250 370"/>
+    <path d="M 140 540 L 140 470 L 250 470"/>
+    <circle cx="140" cy="540" r="4" fill="#cca040"/>
+  </g>
+
+  <!-- ════════ Stage 1: XOR1 + AND5 (half adder on column 1) ════════ -->
+  <!-- AND1.out → Y0 (direct) -->
+  <line x1="310" y1="155" x2="1100" y2="155" stroke="#ff9933" stroke-width="2"/>
+
+  <!-- AND2.out wire: → XOR1.in0 and AND5.in0 -->
+  <g stroke="#5a6e80" stroke-width="1.8" fill="none">
+    <path d="M 310 255 L 480 255 L 480 295 L 530 295"/>
+    <path d="M 480 255 L 480 350 L 530 350"/>
+    <circle cx="480" cy="255" r="4" fill="#5a6e80"/>
+  </g>
+  <!-- AND3.out wire: → XOR1.in1 and AND5.in1 -->
+  <g stroke="#5a6e80" stroke-width="1.8" fill="none">
+    <path d="M 310 355 L 460 355 L 460 315 L 530 315"/>
+    <path d="M 460 355 L 460 370 L 530 370"/>
+    <circle cx="460" cy="355" r="4" fill="#5a6e80"/>
+  </g>
+
+  <!-- XOR1 -->
+  <g>
+    <path d="M 530 280 Q 558 305, 530 330 L 560 330 Q 590 330, 608 305 Q 590 280, 560 280 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
+    <text x="570" y="310" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR1</text>
+  </g>
+  <!-- AND5 -->
+  <g>
+    <path d="M 530 335 L 560 335 A 25 25 0 0 1 560 385 L 530 385 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="548" y="365" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND5</text>
+  </g>
+
+  <!-- XOR1.out → Y1 -->
+  <line x1="608" y1="305" x2="1100" y2="305" stroke="#ff9933" stroke-width="2"/>
+
+  <!-- ════════ Stage 2: XOR2 (for Y2) + AND6 (for Y3) ════════ -->
+  <!-- AND4.out wire: → XOR2.in0 and AND6.in0 -->
+  <g stroke="#5a6e80" stroke-width="1.8" fill="none">
+    <path d="M 310 455 L 720 455 L 720 460 L 770 460"/>
+    <path d="M 720 455 L 720 560 L 950 560"/>
+    <circle cx="720" cy="455" r="4" fill="#5a6e80"/>
+  </g>
+  <!-- AND5.out wire (C1): → XOR2.in1 and AND6.in1 -->
+  <g stroke="#5a6e80" stroke-width="1.8" fill="none">
+    <path d="M 595 360 L 690 360 L 690 480 L 770 480"/>
+    <path d="M 690 360 L 690 590 L 950 590"/>
+    <circle cx="690" cy="360" r="4" fill="#5a6e80"/>
+  </g>
+
+  <!-- XOR2 -->
+  <g>
+    <path d="M 770 445 Q 798 470, 770 495 L 800 495 Q 830 495, 848 470 Q 830 445, 800 445 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
+    <text x="810" y="475" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR2</text>
+  </g>
+  <!-- XOR2.out → Y2 -->
+  <line x1="848" y1="470" x2="1100" y2="470" stroke="#ff9933" stroke-width="2"/>
+
+  <!-- AND6 -->
+  <g>
+    <path d="M 950 545 L 980 545 A 30 30 0 0 1 980 605 L 950 605 Z" fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+    <text x="970" y="580" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND6</text>
+  </g>
+  <!-- AND6.out → Y3 -->
+  <line x1="1010" y1="575" x2="1100" y2="575" stroke="#ff9933" stroke-width="2"/>
+
+  <!-- ════════ OUTPUTS (right) ════════ -->
+  <g font-size="20" font-weight="bold">
+    <circle cx="1120" cy="155" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+    <text x="1120" y="162" text-anchor="middle" fill="#ff9933">Y0</text>
+    <circle cx="1120" cy="305" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+    <text x="1120" y="312" text-anchor="middle" fill="#ff9933">Y1</text>
+    <circle cx="1120" cy="470" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+    <text x="1120" y="477" text-anchor="middle" fill="#ff9933">Y2</text>
+    <circle cx="1120" cy="575" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
+    <text x="1120" y="582" text-anchor="middle" fill="#ff9933">Y3</text>
+  </g>
+
+  <!-- Legend at bottom -->
+  <text x="600" y="700" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+    8 שערים: 6 × AND · 2 × XOR (⊕) · אין OR
+  </text>
+  <text x="600" y="722" text-anchor="middle" fill="#80c8ff" font-size="13">
+    AND1, AND2, AND3, AND4 → 4 partial products   ·   XOR1+AND5 → HA1   ·   XOR2+AND6 → HA2
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: '**איזה רכיב ממשים במעגל**? ההבדל המכריע משאלה 5004: כאן יש **4 יציאות** (לא 3).',
+        hints: [
+          'במחבר N-ביט יש N+1 יציאות (סכום + carry-out). 4 inputs → לא מסתדר עם adder סטנדרטי (היה אמור להיות 3 outputs).',
+          'מה הפעולה השנייה הכי נפוצה על שני מספרים בני 2-ביט? **כפל**! \\\`2-bit × 2-bit = 4-bit result\\\`.',
+          'כפל ארוך של (A1A0) ב-(B1B0):\\n  PP row 0 = A·B0\\n  PP row 1 = A·B1 (shifted left)\\nואז לחבר את שתי השורות.',
+          'AND1..AND4 הם **partial products**: A0·B0, A1·B0, A0·B1, A1·B1. בדיוק 4 ANDs.',
+          'XOR1 + AND5 = half-adder על העמודה האמצעית (column 1) שמסכם את A1·B0 + A0·B1.',
+          'XOR2 + AND6 = half-adder על העמודה השמאלית (column 2) שמסכם את A1·B1 + carry_in.',
+        ],
+        answer:
+`## הרכיב: **2-bit Unsigned Multiplier** — מכפיל בלתי-חתום של שני מספרים בני 2-ביט
+
+\`\`\`
+   A1 A0
+ × B1 B0
+ ───────────
+        A1·B0  A0·B0         (שורה ראשונה: כפל ב-B0)
+A1·B1  A0·B1                 (שורה שנייה: כפל ב-B1, מוזז שמאלה ביט אחד)
+───────────────────────────
+   Y3   Y2   Y1   Y0
+\`\`\`
+
+### פירוק לפי גייטים
+
+| שער | תפקיד | חישוב |
+|---|---|---|
+| AND1 | PP_00 | A0 · B0 → \`Y0\` ישיר |
+| AND2 | PP_10 | A1 · B0 |
+| AND3 | PP_01 | A0 · B1 |
+| AND4 | PP_11 | A1 · B1 |
+| XOR1 | HA1 sum | (A1·B0) ⊕ (A0·B1) → \`Y1\` |
+| AND5 | HA1 carry (C1) | (A1·B0) · (A0·B1) |
+| XOR2 | HA2 sum | (A1·B1) ⊕ C1 → \`Y2\` |
+| AND6 | HA2 carry (=C2) | (A1·B1) · C1 → \`Y3\` |
+
+### טבלת אמת (16 שורות) — אימות
+
+| A1A0 | B1B0 | A | B | A×B | Y3 Y2 Y1 Y0 |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 00 | 00 | 0 | 0 | 0 | 0000 |
+| 00 | 01 | 0 | 1 | 0 | 0000 |
+| 00 | 10 | 0 | 2 | 0 | 0000 |
+| 00 | 11 | 0 | 3 | 0 | 0000 |
+| 01 | 00 | 1 | 0 | 0 | 0000 |
+| 01 | 01 | 1 | 1 | 1 | 0001 |
+| 01 | 10 | 1 | 2 | 2 | 0010 |
+| 01 | 11 | 1 | 3 | 3 | 0011 |
+| 10 | 00 | 2 | 0 | 0 | 0000 |
+| 10 | 01 | 2 | 1 | 2 | 0010 |
+| 10 | 10 | 2 | 2 | 4 | 0100 |
+| 10 | 11 | 2 | 3 | 6 | 0110 |
+| 11 | 00 | 3 | 0 | 0 | 0000 |
+| 11 | 01 | 3 | 1 | 3 | 0011 |
+| 11 | 10 | 3 | 2 | 6 | 0110 |
+| **11** | **11** | **3** | **3** | **9** | **1001** |
+
+\`3 × 3 = 9\`, שזה \`1001₂\` — דורש 4 ביטים. זו הסיבה ל-4 יציאות.
+
+### למה לא adder
+
+| מאפיין | Adder | **Multiplier** |
+|---|:---:|:---:|
+| #IO | 4 in → 3 out | **4 in → 4 out** ← ההבדל |
+| גייטים | XOR + AND + OR | **רק XOR + AND** |
+| מבנה | HA + FA לטור | **partial products + 2 HAs** |
+
+### בקנבס
+
+המעגל בקנבס מציג את 8 השערים פונקציונליים. עם \`A0=A1=B0=B1=1\` (A=3, B=3) → \`Y3 Y2 Y1 Y0 = 1001 = 9\`. שנה ערכים לאמת את כל 16 הקומבינציות.`,
+        interviewerMindset:
+`**שאלת פתיחה קלאסית** בראיון תכן לוגי. המראיין מחפש:
+1. **שאתה לא קופץ ל"adder"** — 4 outputs צריך להדליק נורה אדומה. Adder סטנדרטי הוא N+1 outputs.
+2. **שאתה זוכר שכפל = partial products + adder tree**. זה ה-mental model הבסיסי.
+3. **שאתה מזהה 4 ANDs ב-stage 0** = 2-bit × 2-bit = 4 בתי PP.
+4. **שאתה מאמת בעזרת מספר אחד**: \`3 × 3 = 9\`. אם הסטודנט שואל "מה זה?" ולא יודע לחשב \`A × B\` בעצמו — הוא לא הבין.
+
+**שאלת המשך נפוצה**: "האם זה signed או unsigned?" → unsigned. עבור signed היו צריכים XOR-ים נוספים על MSB (Baugh-Wooley או Booth).
+
+**שאלת bonus**: "מה היה משתנה אילו הכפלת 3×3-ביט?" → 6 ANDs ל-PP + adder tree עם 3 HA/FA. הכפל גדל כ-N² ב-PPs. רעיון חשוב ל-Wallace/Dadda trees.
+
+**מלכודת נפוצה**: מועמדים שמסתכלים על "AND ו-XOR" ומיד אומרים "FA" או "adder". האמת — multiplier משתמש באותם בלוקים אבל ב-pattern שונה.`,
+        expectedAnswers: [
+          'multiplier', 'מכפיל', 'מכפלה',
+          '2-bit multiplier', '2 bit multiplier',
+          'unsigned multiplier',
+          'A × B', 'A x B', 'A*B',
+          'כפל', 'כפול',
+          'partial products', 'PP',
+          'four outputs', '4 outputs', '4 יציאות',
+        ],
+        circuit: () => build(() => {
+          // Gate-level 2-bit unsigned multiplier.
+          // 4 inputs, 4 outputs, 8 gates (6 AND + 2 XOR).
+          // Inputs default to 1 → A=3, B=3 → Y3..Y0 = 1001 = 9.
+          const a0 = h.input(80,  100, 'A0');  a0.fixedValue = 1;
+          const a1 = h.input(80,  200, 'A1');  a1.fixedValue = 1;
+          const b0 = h.input(80,  340, 'B0');  b0.fixedValue = 1;
+          const b1 = h.input(80,  440, 'B1');  b1.fixedValue = 1;
+
+          // 4 partial-product ANDs
+          const pp00 = h.gate('AND', 260, 130);   // A0·B0 → Y0
+          const pp10 = h.gate('AND', 260, 220);   // A1·B0
+          const pp01 = h.gate('AND', 260, 310);   // A0·B1
+          const pp11 = h.gate('AND', 260, 400);   // A1·B1
+
+          // HA1 — column 1 (sum and carry)
+          const xor1 = h.gate('XOR', 480, 265);   // (A1·B0)⊕(A0·B1) → Y1
+          const and5 = h.gate('AND', 480, 345);   // (A1·B0)·(A0·B1) → C1
+
+          // HA2 — column 2
+          const xor2 = h.gate('XOR', 680, 400);   // (A1·B1)⊕C1 → Y2
+          const and6 = h.gate('AND', 880, 440);   // (A1·B1)·C1 → Y3
+
+          const y0 = h.output(1040, 130, 'Y0');
+          const y1 = h.output(1040, 265, 'Y1');
+          const y2 = h.output(1040, 400, 'Y2');
+          const y3 = h.output(1040, 480, 'Y3');
+
+          return {
+            nodes: [a0, a1, b0, b1, pp00, pp10, pp01, pp11, xor1, and5, xor2, and6, y0, y1, y2, y3],
+            wires: [
+              // Stage 0 — partial products
+              h.wire(a0.id, pp00.id, 0),
+              h.wire(b0.id, pp00.id, 1),
+              h.wire(a1.id, pp10.id, 0),
+              h.wire(b0.id, pp10.id, 1),
+              h.wire(a0.id, pp01.id, 0),
+              h.wire(b1.id, pp01.id, 1),
+              h.wire(a1.id, pp11.id, 0),
+              h.wire(b1.id, pp11.id, 1),
+              // Y0 direct
+              h.wire(pp00.id, y0.id, 0),
+              // HA1 inputs
+              h.wire(pp10.id, xor1.id, 0),
+              h.wire(pp01.id, xor1.id, 1),
+              h.wire(pp10.id, and5.id, 0),
+              h.wire(pp01.id, and5.id, 1),
+              // Y1 from HA1 sum
+              h.wire(xor1.id, y1.id, 0),
+              // HA2 inputs (C1 from AND5)
+              h.wire(pp11.id, xor2.id, 0),
+              h.wire(and5.id, xor2.id, 1),
+              h.wire(pp11.id, and6.id, 0),
+              h.wire(and5.id, and6.id, 1),
+              // Y2 from HA2 sum, Y3 from HA2 carry
+              h.wire(xor2.id, y2.id, 0),
+              h.wire(and6.id, y3.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ב — Path-delay analysis on the 2-bit multiplier
+      //
+      // Given gate delays:  AND = 120 ps  ·  XOR = 150 ps  (no OR)
+      //
+      // 9 unique paths total:
+      //   • critical = 390 ps  (A1/B0 or A0/B1 → AND → AND5 → XOR2 → Y2)
+      //   • shortest = 120 ps  (A0/B0 → PP00 → Y0 — single AND)
+      //
+      // Mirrors #5004 part ג but with 9 paths instead of 6.
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ב',
+        question:
+`נתונים זמני ההפצה (propagation delays) של רכיבי המעגל מסעיף א':
+
+| רכיב | delay (ps) |
+|:---:|:---:|
+| AND | 120 |
+| XOR | 150 |
+
+(שים לב — אין במעגל הזה שערי OR.)
+
+מהם **שני המסלולים הקריטיים** במעגל — אחד שקובע את הגבול ל-**setup violation** ואחד שקובע את הגבול ל-**hold violation**? לכל מסלול: רשום את הקלט שממנו הוא מתחיל, את השערים שהוא חוצה לפי הסדר, את היציאה שאליה הוא מגיע, ואת ה-delay הכולל.
+
+**רמז למניית מסלולים**: ספור כמה שערים בין כל זוג (קלט, יציאה). יש כאן יותר משש מסלולים — אל תפסיק אחרי שמצאת אחד.`,
+        hints: [
+          'התחל מהמעגל של סעיף א\': 8 שערים מסודרים ב-3 שלבים — PP layer (4 ANDs), HA1 (XOR1+AND5), HA2 (XOR2+AND6).',
+          'עבור כל קלט (A0, A1, B0, B1), **עקוב לכל היציאות הסופיות** (Y0..Y3). חלק מהקלטים מגיעים ליציאות שונות דרך מסלולים שונים.',
+          'Y0 = PP00.out → רק AND אחד מקלט A0/B0 — נתיב הכי קצר.',
+          'Y1 = XOR1.out → שני קלטים: PP10 (מ-A1/B0) או PP01 (מ-A0/B1), שניהם דרך AND→XOR.',
+          'Y2 = XOR2.out → שני קלטים: PP11 (מ-A1/B1) ישירות, או C1 = PP10·PP01 דרך AND5 — שני נתיבים שונים מאוד באורכם.',
+          'Y3 = AND6.out → שני קלטים: PP11 (מ-A1/B1) או C1 (מ-AND5).',
+          'Setup constraint: \\\`T_clk ≥ t_clk-q + T_longest_path + t_su\\\` — תופס את הנתיב הארוך ביותר.',
+          'Hold constraint: \\\`T_shortest_path ≥ t_h − t_clk-q\\\` — תופס את הנתיב הקצר ביותר. נתיב קצר מדי = race.',
+        ],
+        answer:
+`### כל 9 המסלולים
+
+| יעד | קלטים | שערים בנתיב | delay |
+|---|---|---|---:|
+| **Y0** | A0, B0 | PP00 | **120 ps** ← קצר ביותר |
+| Y3 | A1, B1 | PP11 → AND6 | 120 + 120 = 240 ps |
+| Y1 | A1, B0 | PP10 → XOR1 | 120 + 150 = 270 ps |
+| Y1 | A0, B1 | PP01 → XOR1 | 120 + 150 = 270 ps |
+| Y2 | A1, B1 | PP11 → XOR2 | 120 + 150 = 270 ps |
+| Y3 | A1, B0 | PP10 → AND5 → AND6 | 120 + 120 + 120 = 360 ps |
+| Y3 | A0, B1 | PP01 → AND5 → AND6 | 120 + 120 + 120 = 360 ps |
+| **Y2** | A1, B0 | PP10 → AND5 → XOR2 | 120 + 120 + 150 = **390 ps** ← ארוך ביותר |
+| **Y2** | A0, B1 | PP01 → AND5 → XOR2 | 120 + 120 + 150 = **390 ps** ← ארוך ביותר (תאום) |
+
+### Critical path (setup) — **390 ps**
+
+**\`A1 / B0 → PP10 → AND5 → XOR2 → Y2\`** (או הסימטרי דרך \`PP01\`) — 3 שערים, ושני שערים מסוג AND ועוד XOR יקר.
+
+נוסחת ה-setup:
+\`\`\`
+T_clk ≥ t_clk-q + 390 + t_su
+\`\`\`
+
+עם \`t_clk-q = 30 ps\` ו-\`t_su = 50 ps\`:
+\`\`\`
+T_clk ≥ 30 + 390 + 50 = 470 ps   ⇒   Fmax ≈ 2.13 GHz
+\`\`\`
+
+### Shortest path (hold) — **120 ps**
+
+**\`A0 / B0 → PP00 → Y0\`** — שער יחיד.
+
+נוסחת ה-hold:
+\`\`\`
+T_shortest ≥ t_h − t_clk-q
+\`\`\`
+
+עם \`t_h = 40 ps\` ו-\`t_clk-q = 30 ps\`:
+\`\`\`
+120 ≥ 40 − 30 = 10 ps   ✓ (הפרש של 110 ps — בטוח)
+\`\`\`
+
+### תובנות
+
+**Setup הוא ה-bottleneck.** הסימטריה של ה-multiplier יוצרת **שני מסלולים תאומים** של 390 ps (דרך PP10 ודרך PP01) שמגיעים שניהם ל-Y2 דרך \`AND5 → XOR2\`. זה אופייני ל-multipliers: יש פעמים רבות נתיבים זהים שיש לתזמן יחד.
+
+ה-Y2 ויש לזכור: גם הוא מגיע **גם** ישירות מ-PP11 ב-270 ps. כלומר ל-XOR2 יש קלט שמגיע ב-270 ps וקלט שני שמגיע ב-390 ps → ה-XOR מייצב **ב-390 ps** (ה-max), ובדרך — glitch potential של 120 ps בין הזמנים.
+
+> מה עושים אם תקציב ה-setup הקיים לא מספיק ל-390 ps? נמשיך בסעיפים הבאים.`,
+        interviewerMindset:
+`**שאלת timing analysis מתקדמת.** המראיין מחפש:
+1. **שאתה מונה כל 9 המסלולים**, ולא רק את אחד הקריטיים. ספירת המסלולים בעצמה היא מבחן — מועמד טוב יתחיל בטבלה.
+2. **שאתה מזהה את ה-tied paths**: שני המסלולים של 390 ps (דרך PP10 ודרך PP01) הם תאומים מבחינת timing — שניהם יכולים להיות "critical" באותה מידה. זה לא טעות, זו תכונה של ה-multiplier הסימטרי.
+3. **שאתה מבחין שב-Y2 יש שני קלטים שונים מאוד בזמן הגעה**: 270 ps (מ-PP11) ו-390 ps (מ-C1). זה יוצר **glitch window של 120 ps** ב-XOR2. בעיה גם ב-power וגם ב-correctness אם דוגמים בזמן הלא נכון.
+4. **שאתה זוכר את ה-shortest path להמשך** — Y0 ב-120 ps עלול להפוך לבעיית hold בסעיפים הבאים.
+
+**שאלת המשך נפוצה**: "מה ה-Fmax?" → חישוב מספרי לפי הנוסחה. הסטודנט שאומר "תלוי" נכשל.
+
+**שאלת bonus**: "האם הפיצול של AND5 ל-fan-out 2 (למ XOR2 ול-AND6) משפיע על ה-delay?" → כן בטכנולוגיה פיזית (capacitive load), אבל ברמת הניתוח האידיאלי שכאן — לא. במציאות הוסיפים penalty של ~5-10% ל-delay לכל fan-out נוסף.
+
+**שאלת bonus 2**: "איך זה משתנה ב-multiplier של 3×3 או 4×4?" → צריכת gates גדלה כ-N², וה-critical path גדל כ-O(N) (carry chain). שיטות Wallace/Dadda tree מקצרות את הקריטי ל-O(log N).`,
+        expectedAnswers: [
+          '390', '390 ps', '390ps',
+          '120', '120 ps', '120ps',
+          'PP10', 'PP01', 'AND5', 'XOR2', 'PP00',
+          'critical path', 'shortest path',
+          'A1', 'B0', 'A0', 'B1', 'Y0', 'Y2',
+          '9', '8', 'tied', 'תאומים',
+          'setup', 'hold',
+          'fmax', '2.13',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 1140 1700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Circuit with the two critical paths coloured (SETUP red, HOLD green) at the top; Gantt-style chart of all 9 unique paths at the bottom.">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SECTION 1 — Circuit diagram with the two critical paths
+                   colored on the actual gates (top half).
+       ═══════════════════════════════════════════════════════════ -->
+
+  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    המעגל עם שני המסלולים הקריטיים
+  </text>
+
+  <!-- Legend pills (centered) -->
+  <rect x="160" y="68" width="370" height="34" rx="8" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.8"/>
+  <circle cx="186" cy="85" r="8" fill="#ff6060"/>
+  <text x="206" y="91" fill="#ff8080" font-size="15" font-weight="bold">SETUP critical — נתיב הארוך ביותר</text>
+
+  <rect x="560" y="68" width="370" height="34" rx="8" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.8"/>
+  <circle cx="586" cy="85" r="8" fill="#80f0a0"/>
+  <text x="606" y="91" fill="#80f0a0" font-size="15" font-weight="bold">HOLD shortest — נתיב הקצר ביותר</text>
+
+  <!-- ════════ SETUP critical path (red, drawn FIRST so gates sit on top) ════════
+       A1/B0 → PP10 → AND5 → XOR2 → Y2     (390 ps)
+       Also tied: A0/B1 → PP01 → AND5 → XOR2 → Y2
+  -->
+  <g stroke="#ff6060" stroke-width="6" fill="none" opacity="0.85">
+    <!-- A1 → PP10 input -->
+    <path d="M 130 180 L 260 180 L 260 220" stroke-linecap="round"/>
+    <!-- B0 → PP10 input -->
+    <path d="M 130 340 L 200 340 L 200 230 L 260 230" stroke-linecap="round"/>
+    <!-- PP10 → AND5 -->
+    <path d="M 320 220 L 360 220 L 360 340 L 460 340" stroke-linecap="round"/>
+    <!-- AND5 → XOR2 -->
+    <path d="M 540 350 L 580 350 L 580 400 L 660 400" stroke-linecap="round"/>
+    <!-- XOR2 → Y2 -->
+    <path d="M 740 400 L 1010 400" stroke-linecap="round"/>
+  </g>
+
+  <!-- Also show the tied symmetric path (PP01) in light red -->
+  <g stroke="#ff6060" stroke-width="3" fill="none" opacity="0.45" stroke-dasharray="5,4">
+    <path d="M 130 180 L 170 180 L 170 310 L 260 310" stroke-linecap="round"/>
+    <path d="M 130 440 L 220 440 L 220 320 L 260 320" stroke-linecap="round"/>
+    <path d="M 320 310 L 380 310 L 380 350 L 460 350" stroke-linecap="round"/>
+  </g>
+
+  <!-- ════════ HOLD critical path (green, also drawn first) ════════
+       A0/B0 → PP00 → Y0   (120 ps)
+  -->
+  <g stroke="#80f0a0" stroke-width="6" fill="none" opacity="0.85">
+    <path d="M 130 180 L 180 180 L 180 130 L 260 130" stroke-linecap="round"/>
+    <path d="M 130 340 L 190 340 L 190 140 L 260 140" stroke-linecap="round"/>
+    <path d="M 320 130 L 1010 130" stroke-linecap="round"/>
+  </g>
+
+  <!-- ═══ Inputs ═══ -->
+  <g font-size="17" font-weight="bold">
+    <circle cx="120" cy="180" r="14" fill="#1a1f2e" stroke="#cca040" stroke-width="2"/>
+    <text x="120" y="186" text-anchor="middle" fill="#cca040">A0</text>
+    <circle cx="120" cy="260" r="14" fill="#1a1f2e" stroke="#cca040" stroke-width="2"/>
+    <text x="120" y="266" text-anchor="middle" fill="#cca040">A1</text>
+    <circle cx="120" cy="340" r="14" fill="#1a1f2e" stroke="#cca040" stroke-width="2"/>
+    <text x="120" y="346" text-anchor="middle" fill="#cca040">B0</text>
+    <circle cx="120" cy="440" r="14" fill="#1a1f2e" stroke="#cca040" stroke-width="2"/>
+    <text x="120" y="446" text-anchor="middle" fill="#cca040">B1</text>
+  </g>
+
+  <!-- ═══ Gates (8 total) ═══ -->
+  <g font-size="14" font-weight="bold">
+    <!-- PP layer -->
+    <rect x="260" y="118" width="60" height="36" rx="6" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
+    <text x="290" y="141" text-anchor="middle" fill="#c0e0ff">PP00</text>
+
+    <rect x="260" y="208" width="60" height="36" rx="6" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
+    <text x="290" y="231" text-anchor="middle" fill="#c0e0ff">PP10</text>
+
+    <rect x="260" y="298" width="60" height="36" rx="6" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
+    <text x="290" y="321" text-anchor="middle" fill="#c0e0ff">PP01</text>
+
+    <rect x="260" y="388" width="60" height="36" rx="6" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
+    <text x="290" y="411" text-anchor="middle" fill="#c0e0ff">PP11</text>
+
+    <!-- HA1 -->
+    <rect x="460" y="248" width="80" height="36" rx="6" fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
+    <text x="500" y="271" text-anchor="middle" fill="#a0f0c0">XOR1</text>
+
+    <rect x="460" y="328" width="80" height="36" rx="6" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
+    <text x="500" y="351" text-anchor="middle" fill="#c0e0ff">AND5</text>
+
+    <!-- HA2 -->
+    <rect x="660" y="382" width="80" height="36" rx="6" fill="rgba(128,240,160,0.25)" stroke="#80f0a0" stroke-width="2"/>
+    <text x="700" y="405" text-anchor="middle" fill="#a0f0c0">XOR2</text>
+
+    <rect x="660" y="462" width="80" height="36" rx="6" fill="rgba(128,200,255,0.25)" stroke="#80c8ff" stroke-width="2"/>
+    <text x="700" y="485" text-anchor="middle" fill="#c0e0ff">AND6</text>
+  </g>
+
+  <!-- ═══ Light grey wires (the rest of the circuit) ═══ -->
+  <g stroke="#5a6a7a" stroke-width="1.4" fill="none" opacity="0.65">
+    <!-- A1 → PP11 -->
+    <path d="M 130 260 L 240 260 L 240 400 L 260 400"/>
+    <!-- B1 → PP01, PP11 -->
+    <path d="M 130 440 L 145 440 L 145 320 L 260 320"/>
+    <path d="M 130 440 L 250 440 L 250 410 L 260 410"/>
+    <!-- A0 → PP01 -->
+    <path d="M 130 180 L 175 180 L 175 310 L 260 310"/>
+    <!-- B0 → PP10 already in red -->
+    <!-- PP10 → XOR1 (also feeds HA1) -->
+    <path d="M 320 220 L 400 220 L 400 258 L 460 258"/>
+    <!-- PP01 → XOR1, AND5 -->
+    <path d="M 320 310 L 420 310 L 420 270 L 460 270"/>
+    <!-- PP11 → XOR2, AND6 -->
+    <path d="M 320 400 L 600 400 L 600 392 L 660 392"/>
+    <path d="M 320 400 L 600 400 L 600 472 L 660 472"/>
+    <!-- AND5 → AND6 -->
+    <path d="M 540 350 L 620 350 L 620 482 L 660 482"/>
+    <!-- XOR1 → Y1 -->
+    <path d="M 540 266 L 1010 266"/>
+    <!-- AND6 → Y3 -->
+    <path d="M 740 472 L 880 472 L 880 535 L 1010 535"/>
+  </g>
+
+  <!-- ═══ Outputs ═══ -->
+  <g font-size="17" font-weight="bold">
+    <circle cx="1020" cy="130" r="14" fill="#1a1f2e" stroke="#ff9933" stroke-width="2"/>
+    <text x="1020" y="136" text-anchor="middle" fill="#ff9933">Y0</text>
+    <circle cx="1020" cy="266" r="14" fill="#1a1f2e" stroke="#ff9933" stroke-width="2"/>
+    <text x="1020" y="272" text-anchor="middle" fill="#ff9933">Y1</text>
+    <circle cx="1020" cy="400" r="14" fill="#1a1f2e" stroke="#ff9933" stroke-width="2"/>
+    <text x="1020" y="406" text-anchor="middle" fill="#ff9933">Y2</text>
+    <circle cx="1020" cy="535" r="14" fill="#1a1f2e" stroke="#ff9933" stroke-width="2"/>
+    <text x="1020" y="541" text-anchor="middle" fill="#ff9933">Y3</text>
+  </g>
+
+  <!-- ═══ Summary banner under top half ═══ -->
+  <text x="570" y="600" text-anchor="middle" fill="#ffc890" font-size="19" font-weight="bold">
+    SETUP: A1/B0 (or A0/B1) → PP10/PP01 → AND5 → XOR2 → Y2  =  390 ps     (תאומים)
+  </text>
+  <text x="570" y="625" text-anchor="middle" fill="#ffc890" font-size="19" font-weight="bold">
+    HOLD:   A0/B0 → PP00 → Y0  =  120 ps
+  </text>
+
+  <!-- ════════ Section divider ════════ -->
+  <line x1="40" y1="660" x2="1100" y2="660" stroke="#3a4a5a" stroke-width="1.2" stroke-dasharray="6,4"/>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SECTION 2 — Gantt chart of all 9 unique paths
+                   (shifted down by 680px via <g transform>)
+       ═══════════════════════════════════════════════════════════ -->
+  <g transform="translate(0, 680)">
+
+  <text x="570" y="44" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    כל 9 המסלולים — Gantt of gate delays
+  </text>
+  <text x="570" y="72" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+    AND 120 ps · XOR 150 ps  ·  no OR in this circuit  ·  Scale: 1 ps = 1.5 px
+  </text>
+
+  <!-- =========== LEGEND (color key) =========== -->
+  <g transform="translate(60, 100)">
+    <rect x="0" y="0" width="30" height="22" rx="3" fill="rgba(128,200,255,0.4)" stroke="#80c8ff" stroke-width="1.4"/>
+    <text x="40" y="16" fill="#80c8ff" font-size="14" font-weight="bold">AND (120 ps)</text>
+    <rect x="200" y="0" width="30" height="22" rx="3" fill="rgba(128,240,160,0.4)" stroke="#80f0a0" stroke-width="1.4"/>
+    <text x="240" y="16" fill="#80f0a0" font-size="14" font-weight="bold">XOR (150 ps)</text>
+  </g>
+
+  <!-- =========== Column headers =========== -->
+  <text x="60" y="172"  fill="#a0a0c0" font-size="13" font-weight="bold">קלטים</text>
+  <text x="190" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">יעד</text>
+  <text x="280" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">שערים בנתיב (רוחב = delay)</text>
+  <text x="940" y="172" fill="#a0a0c0" font-size="13" font-weight="bold">סה"כ</text>
+  <line x1="50" y1="180" x2="1100" y2="180" stroke="#3a4a5a" stroke-width="1.2"/>
+
+  <!-- =========== Path bars (sorted ascending by delay) =========== -->
+  ${(() => {
+    const C = { AND: { fill: 'rgba(128,200,255,0.4)', stroke: '#80c8ff', txt: '#c0e0ff' },
+                XOR: { fill: 'rgba(128,240,160,0.4)', stroke: '#80f0a0', txt: '#a0f0c0' } };
+    const paths = [
+      { src: 'A0 / B0', dst: 'Y0', gates: [['PP00', 'AND', 120]],                                                total: 120, tag: 'shortest' },
+      { src: 'A1 / B1', dst: 'Y3', gates: [['PP11', 'AND', 120], ['AND6', 'AND', 120]],                          total: 240, tag: null },
+      { src: 'A1 / B0', dst: 'Y1', gates: [['PP10', 'AND', 120], ['XOR1', 'XOR', 150]],                          total: 270, tag: null },
+      { src: 'A0 / B1', dst: 'Y1', gates: [['PP01', 'AND', 120], ['XOR1', 'XOR', 150]],                          total: 270, tag: null },
+      { src: 'A1 / B1', dst: 'Y2', gates: [['PP11', 'AND', 120], ['XOR2', 'XOR', 150]],                          total: 270, tag: null },
+      { src: 'A1 / B0', dst: 'Y3', gates: [['PP10', 'AND', 120], ['AND5', 'AND', 120], ['AND6', 'AND', 120]],    total: 360, tag: null },
+      { src: 'A0 / B1', dst: 'Y3', gates: [['PP01', 'AND', 120], ['AND5', 'AND', 120], ['AND6', 'AND', 120]],    total: 360, tag: null },
+      { src: 'A1 / B0', dst: 'Y2', gates: [['PP10', 'AND', 120], ['AND5', 'AND', 120], ['XOR2', 'XOR', 150]],    total: 390, tag: 'critical' },
+      { src: 'A0 / B1', dst: 'Y2', gates: [['PP01', 'AND', 120], ['AND5', 'AND', 120], ['XOR2', 'XOR', 150]],    total: 390, tag: 'critical' },
+    ];
+    const ROW_H = 60;
+    const BAR_H = 40;
+    const Y0 = 196;
+    const X0 = 280;
+    const PX_PER_PS = 1.5;
+    return paths.map((p, i) => {
+      const y = Y0 + i * ROW_H;
+      const barY = y + (ROW_H - BAR_H) / 2 - 6;
+      let cursorX = X0;
+      const segs = p.gates.map(([name, kind, ms]) => {
+        const w = ms * PX_PER_PS;
+        const col = C[kind];
+        const seg = `<rect x="${cursorX}" y="${barY}" width="${w}" height="${BAR_H}" rx="4" fill="${col.fill}" stroke="${col.stroke}" stroke-width="1.8"/>
+          <text x="${cursorX + w / 2}" y="${barY + 18}" text-anchor="middle" fill="${col.txt}" font-size="13" font-weight="bold">${name}</text>
+          <text x="${cursorX + w / 2}" y="${barY + 34}" text-anchor="middle" fill="${col.txt}" font-size="12">${ms} ps</text>`;
+        cursorX += w + 3;
+        return seg;
+      }).join('');
+      // Tag badge
+      let badge = '';
+      if (p.tag === 'shortest') {
+        badge = `<rect x="990" y="${barY + 5}" width="110" height="30" rx="6" fill="rgba(128,240,160,0.18)" stroke="#80f0a0" stroke-width="1.6"/>
+                 <text x="1045" y="${barY + 25}" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="14">✓ shortest</text>`;
+      } else if (p.tag === 'critical') {
+        badge = `<rect x="990" y="${barY + 5}" width="110" height="30" rx="6" fill="rgba(255,96,96,0.18)" stroke="#ff6060" stroke-width="1.6"/>
+                 <text x="1045" y="${barY + 25}" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="14">✗ critical</text>`;
+      }
+      const totalColor = p.tag === 'shortest' ? '#80f0a0' : (p.tag === 'critical' ? '#ff8080' : '#ffc890');
+      return `<text x="60" y="${barY + 26}" fill="#cca040" font-size="15" font-weight="bold">${p.src}</text>
+        <text x="190" y="${barY + 26}" fill="#ff9933" font-size="17" font-weight="bold">→ ${p.dst}</text>
+        ${segs}
+        <text x="935" y="${barY + 26}" text-anchor="end" fill="${totalColor}" font-size="20" font-weight="bold">${p.total} ps</text>
+        ${badge}`;
+    }).join('');
+  })()}
+
+  <!-- =========== SUMMARY box =========== -->
+  <rect x="40" y="760" width="1060" height="220" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
+  <text x="570" y="800" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="22">
+    סיכום timing
+  </text>
+
+  <!-- Setup card -->
+  <rect x="70" y="826" width="490" height="140" rx="8" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.5)" stroke-width="1.6"/>
+  <text x="315" y="856" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">Critical path (setup)</text>
+  <text x="90" y="890" fill="#c8b090" font-size="17">A1/B0 → PP10 → AND5 → XOR2 → Y2 = <tspan fill="#ff8080" font-weight="bold">390 ps</tspan></text>
+  <text x="90" y="918" fill="#c8b090" font-size="14" font-style="italic">(תאום: דרך PP01 — אותו זמן)</text>
+  <text x="90" y="946" fill="#80f0a0" font-size="17" font-weight="bold">T_clk ≥ 470 ps  ⇒  Fmax ≈ 2.13 GHz</text>
+
+  <!-- Hold card -->
+  <rect x="580" y="826" width="490" height="140" rx="8" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.5)" stroke-width="1.6"/>
+  <text x="825" y="856" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">Shortest path (hold)</text>
+  <text x="600" y="890" fill="#c8b090" font-size="17">A0/B0 → PP00 → Y0 = <tspan fill="#80f0a0" font-weight="bold">120 ps</tspan></text>
+  <text x="600" y="918" fill="#c8b090" font-size="14" font-style="italic">(שער יחיד — הקצר ביותר במעגל)</text>
+  <text x="600" y="946" fill="#80f0a0" font-size="17" font-weight="bold">120 ≥ 10 ps ✓ (בטוח)</text>
+
+  </g><!-- end translate(0, 680) wrapper -->
+</svg>`,
+        circuit: () => build(() => {
+          // Focused circuit for part ב: same 8-gate multiplier as part א.
+          // Student plays with it to trace paths and verify delays.
+          const a0 = h.input(80,  100, 'A0');  a0.fixedValue = 1;
+          const a1 = h.input(80,  200, 'A1');  a1.fixedValue = 1;
+          const b0 = h.input(80,  340, 'B0');  b0.fixedValue = 1;
+          const b1 = h.input(80,  440, 'B1');  b1.fixedValue = 1;
+
+          const pp00 = h.gate('AND', 260, 130);
+          const pp10 = h.gate('AND', 260, 220);
+          const pp01 = h.gate('AND', 260, 310);
+          const pp11 = h.gate('AND', 260, 400);
+
+          const xor1 = h.gate('XOR', 480, 265);
+          const and5 = h.gate('AND', 480, 345);
+
+          const xor2 = h.gate('XOR', 680, 400);
+          const and6 = h.gate('AND', 880, 440);
+
+          const y0 = h.output(1040, 130, 'Y0');
+          const y1 = h.output(1040, 265, 'Y1');
+          const y2 = h.output(1040, 400, 'Y2');
+          const y3 = h.output(1040, 480, 'Y3');
+
+          return {
+            nodes: [a0, a1, b0, b1, pp00, pp10, pp01, pp11, xor1, and5, xor2, and6, y0, y1, y2, y3],
+            wires: [
+              h.wire(a0.id, pp00.id, 0),
+              h.wire(b0.id, pp00.id, 1),
+              h.wire(a1.id, pp10.id, 0),
+              h.wire(b0.id, pp10.id, 1),
+              h.wire(a0.id, pp01.id, 0),
+              h.wire(b1.id, pp01.id, 1),
+              h.wire(a1.id, pp11.id, 0),
+              h.wire(b1.id, pp11.id, 1),
+              h.wire(pp00.id, y0.id, 0),
+              h.wire(pp10.id, xor1.id, 0),
+              h.wire(pp01.id, xor1.id, 1),
+              h.wire(pp10.id, and5.id, 0),
+              h.wire(pp01.id, and5.id, 1),
+              h.wire(xor1.id, y1.id, 0),
+              h.wire(pp11.id, xor2.id, 0),
+              h.wire(and5.id, xor2.id, 1),
+              h.wire(pp11.id, and6.id, 0),
+              h.wire(and5.id, and6.id, 1),
+              h.wire(xor2.id, y2.id, 0),
+              h.wire(and6.id, y3.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ג — Minimal pipelining: setup budget = 300 ps.
+      //   Critical = 390 ps > 300 ps  ⇒  violation.
+      //   Solution: insert ONE FF on the C1 wire (between AND5 and
+      //   the {XOR2, AND6} consumers). This splits the 390 ps path:
+      //     Stage 1 = PP10/PP01 → AND5  = 240 ps ✓
+      //     Stage 2 = XOR2 (or AND6)    = 150 ps ✓
+      //   Other paths bypass → balancing issue addressed in ד.
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ג',
+        question: 'נתון כעת: **תקציב ה-setup המקסימלי = 300 ps**. ה-critical path במעגל הוא 390 ps (מסעיף ב\'). תן **פתרון מינימלי** שיפתור את הבעיה — חיתוך אחד, FF יחיד. תאר את המבנה החדש ואת ה-delay של כל שלב.',
+        hints: [
+          'בעיה: 390 ps > 300 ps. צריך **לקצר את הנתיב הקומבינטורי** המקסימלי ל-≤ 300 ps.',
+          'אופציות: (1) להחליף שערים ב-cells מהירים יותר; (2) לשנות מבנה ל-Wallace tree; (3) **pipelining** — שבירת הנתיב עם FF.',
+          'למעגל קטן כזה — pipelining הוא הפתרון הפשוט והנכון. השאלה: **איפה לחתוך?**',
+          'המסלול הקריטי הוא \\\`PP10 → AND5 → XOR2 → Y2\\\` (3 שערים, 390 ps). יש גם תאום סימטרי דרך \\\`PP01\\\`.',
+          'חתך מצוין: על ה-wire של **C1 = AND5.out** — מקום שמשרת **גם** XOR2 וגם AND6.',
+          'שלב 1 = PP layer + AND5 = 120 + 120 = 240 ps ✓ · שלב 2 = max(XOR2, AND6) = 150 ps ✓',
+          'יתרון נוסף של חיתוך על C1: שני המסלולים הקריטיים התאומים (דרך PP10 ודרך PP01) מטופלים יחד — שניהם עוברים דרך AND5.',
+        ],
+        answer:
+`**הפתרון המינימלי: FF יחיד על ה-wire של C1 (יציאת AND5).**
+
+### למה דווקא על C1?
+
+המסלול הקריטי = \`PP10/PP01 → AND5 → XOR2 → Y2\` = 390 ps. החיתוך הנכון הוא **בנקודה המוצקה שאחרי AND5** — wire ה-\`C1\`.
+
+| מיקום FF | שלב 1 | שלב 2 | תועלת | חיסרון |
+|---|---:|---:|---|---|
+| לפני AND5 | 120 ps | 270 ps | מאזן? | מספר נתיבים גדל |
+| **על C1 (אחרי AND5)** | **240 ps** | **150 ps** | חתך נקי, FF יחיד | שלבים לא מאוזנים לחלוטין |
+| על PP11 | אין שימוש... |||  לא רלוונטי |
+
+החיתוך **אחרי AND5** משרת בו-זמנית את שני הצרכנים של C1 (XOR2 ו-AND6) — ולכן **FF אחד מספיק**.
+
+### המבנה החדש
+
+| שלב | תוכן | delay |
+|---|---|---:|
+| Stage 1 | (PP10 ‖ PP01) → AND5 | 240 ps |
+| Stage 2 | XOR2 (Y2) או AND6 (Y3) | 150 ps |
+
+נוסיף **FF יחיד — \`FF_C1\`** — שיתפוס את \`C1 = AND5.out\` בין שני השלבים. **ראה הדיאגרמה בראש דף התשובה.**
+
+### בדיקת timing אחרי הפתרון
+
+- שלב 1: 240 ps ✓ (< 300)
+- שלב 2: 150 ps ✓ (< 300)
+
+הכי גדול: **240 ps < 300 ps** ✓ — אין יותר setup violation על המסלול הקריטי.
+
+### אבל... יש עוד עבודה
+
+\`FF_C1\` לבד **פוגע בנכונות**:
+- XOR2 ו-AND6 מקבלים את \`C1_pipe\` (מהמחזור הקודם) יחד עם \`PP11\` (combinational, מחזור נוכחי) → תוצאה שגויה.
+- Y0, Y1 יוצאים combinational ב-cycle 1; Y2, Y3 יוצאים ב-cycle 2 → **אי-איזון יציאות**.
+
+זה מטופל בסעיף ד'.`,
+        interviewerMindset:
+`**שאלת פתרון** מעשית. המראיין מחפש:
+1. **שאתה לא קופץ ל"להחליף cells"** — pipelining היא הטכניקה היסודית שהוא רוצה לראות.
+2. **שאתה בוחר את הנקודה הנכונה לחיתוך** — חיתוך על \`C1\` חוסך FF נוסף (אם היית חותך לפני AND5, היית צריך 2 FFs — אחד לכל קלט של AND5). הסטודנט המעולה רואה את ה-confluence point.
+3. **שאתה מתעדף שלמות הפתרון** — אומר מיד שיצרת בעיה חדשה (סנכרון) שצריכה טיפול בסעיף הבא.
+4. **שאתה זוכר את שני המסלולים הקריטיים התאומים** (PP10 ו-PP01) — שניהם מטופלים על-ידי אותו FF_C1.
+
+**שאלת המשך מובטחת**: "מה הבעיה החדשה שיצרת?" → ראה סעיף ד.
+
+**שאלת bonus**: "מה היה קורה אם הייתי חותך לפני AND5?" → צריך 2 FFs (אחד על PP10, אחד על PP01) ושלב 1 הוא רק 120 ps — לא מאוזן ו-area יקר יותר. ה-confluence point של AND5 הוא ה-design sweet spot.`,
+        expectedAnswers: [
+          'pipeline', 'pipelining',
+          'FF', 'register', 'flip-flop',
+          'split path', 'break',
+          '240', '150', '300',
+          'C1', 'AND5',
+          'balanced',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 1140 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Minimal pipelining: a single FF_C1 on the C1 wire between AND5 and the consumers XOR2/AND6.">
+
+  <defs>
+    <linearGradient id="pipeBandM" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#cc66ff" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#cc66ff" stop-opacity="0.14"/>
+      <stop offset="80%" stop-color="#cc66ff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#cc66ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    פתרון מינימלי — FF יחיד על C1
+  </text>
+
+  <!-- ════════ Pipeline band (purple background) ════════ -->
+  <rect x="500" y="110" width="140" height="470" rx="10"
+        fill="url(#pipeBandM)" stroke="#cc66ff" stroke-width="1.8" stroke-dasharray="6,4"/>
+  <text x="570" y="100" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">PIPELINE FF</text>
+
+  <!-- ════════ Stage headers ════════ -->
+  <rect x="50"  y="80" width="450" height="32" rx="6" fill="rgba(128,200,255,0.10)" stroke="#80c8ff" stroke-width="1.4"/>
+  <text x="275" y="102" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">STAGE 1 (PP + AND5, ≤ 240 ps)</text>
+
+  <rect x="640" y="80" width="460" height="32" rx="6" fill="rgba(255,144,80,0.10)" stroke="#ff9050" stroke-width="1.4"/>
+  <text x="870" y="102" text-anchor="middle" fill="#ff9050" font-size="16" font-weight="bold">STAGE 2 (XOR2 / AND6, ≤ 150 ps)</text>
+
+  <!-- ════════ Inputs (left) ════════ -->
+  <g font-size="18" font-weight="bold">
+    <circle cx="70" cy="155" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="161" text-anchor="middle" fill="#cca040">A0</text>
+    <circle cx="70" cy="260" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="266" text-anchor="middle" fill="#cca040">A1</text>
+    <circle cx="70" cy="380" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="386" text-anchor="middle" fill="#cca040">B0</text>
+    <circle cx="70" cy="490" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="496" text-anchor="middle" fill="#cca040">B1</text>
+  </g>
+
+  <!-- ════════ Bypass (non-pipelined) wires — dashed grey ════════ -->
+  <g stroke="#5a6e80" stroke-width="1.6" fill="none">
+    <!-- A0 → PP00, PP01 -->
+    <path d="M 90 155 L 220 155 L 220 175 L 250 175"/>
+    <path d="M 220 155 L 220 335 L 250 335"/>
+    <circle cx="220" cy="155" r="3.5" fill="#5a6e80"/>
+    <!-- B0 → PP00, PP10 -->
+    <path d="M 90 380 L 235 380 L 235 185 L 250 185"/>
+    <path d="M 235 380 L 235 245 L 250 245"/>
+    <circle cx="235" cy="380" r="3.5" fill="#5a6e80"/>
+    <!-- A1 → PP10, PP11 -->
+    <path d="M 90 260 L 230 260 L 230 235 L 250 235"/>
+    <path d="M 230 260 L 230 425 L 250 425"/>
+    <circle cx="230" cy="260" r="3.5" fill="#5a6e80"/>
+    <!-- B1 → PP01, PP11 -->
+    <path d="M 90 490 L 245 490 L 245 345 L 250 345"/>
+    <path d="M 245 490 L 245 435 L 250 435"/>
+    <circle cx="245" cy="490" r="3.5" fill="#5a6e80"/>
+
+    <!-- PP00 → Y0 (BYPASS — combinational, dashed) -->
+    <path d="M 320 180 L 1010 180" stroke-dasharray="6,5"/>
+
+    <!-- PP10 → XOR1.in0 (combinational, bypass) -->
+    <path d="M 320 240 L 410 240 L 410 280 L 430 280" stroke-dasharray="6,5"/>
+    <!-- PP01 → XOR1.in1 (combinational, bypass) -->
+    <path d="M 320 340 L 410 340 L 410 290 L 430 290" stroke-dasharray="6,5"/>
+    <!-- XOR1 → Y1 (BYPASS) -->
+    <path d="M 490 285 L 1010 285" stroke-dasharray="6,5"/>
+
+    <!-- PP11 → XOR2.in0 (BYPASS — crosses pipeline band, dashed) -->
+    <path d="M 320 430 L 680 430 L 680 410 L 700 410" stroke-dasharray="6,5"/>
+    <!-- PP11 → AND6.in0 (BYPASS) -->
+    <path d="M 320 430 L 680 430 L 680 525 L 700 525" stroke-dasharray="6,5"/>
+    <circle cx="680" cy="430" r="3.5" fill="#5a6e80"/>
+  </g>
+
+  <!-- ════════ CRITICAL pipelined path (red, on top) ════════
+       PP10/PP01 → AND5 → FF_C1 → {XOR2, AND6} -->
+  <g stroke="#ff6060" stroke-width="3.5" fill="none" opacity="0.8">
+    <!-- PP10 → AND5.in0 -->
+    <path d="M 320 240 L 420 240 L 420 370 L 440 370"/>
+    <!-- PP01 → AND5.in1 -->
+    <path d="M 320 340 L 425 340 L 425 380 L 440 380"/>
+    <!-- AND5 → FF_C1 -->
+    <path d="M 510 375 L 540 375"/>
+    <!-- FF_C1 → XOR2.in1 -->
+    <path d="M 630 375 L 680 375 L 680 420 L 700 420"/>
+    <!-- FF_C1 → AND6.in1 (branch) -->
+    <path d="M 660 375 L 660 535 L 700 535"/>
+    <circle cx="660" cy="375" r="3.5" fill="#ff6060"/>
+    <!-- XOR2 → Y2 -->
+    <path d="M 760 415 L 1010 415"/>
+    <!-- AND6 → Y3 -->
+    <path d="M 760 530 L 1010 530"/>
+  </g>
+
+  <!-- ════════ PP layer (4 ANDs) ════════ -->
+  <g>
+    <path d="M 250 162 L 280 162 A 22 22 0 0 1 280 208 L 250 208 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="182" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP00</text>
+    <text x="266" y="197" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+
+    <path d="M 250 222 L 280 222 A 22 22 0 0 1 280 268 L 250 268 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="242" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP10</text>
+    <text x="266" y="257" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+
+    <path d="M 250 322 L 280 322 A 22 22 0 0 1 280 368 L 250 368 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="342" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP01</text>
+    <text x="266" y="357" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+
+    <path d="M 250 412 L 280 412 A 22 22 0 0 1 280 458 L 250 458 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="432" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP11</text>
+    <text x="266" y="447" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+  </g>
+
+  <!-- ════════ HA1 — XOR1 (S-side) + AND5 (C1-side, critical) ════════ -->
+  <g>
+    <path d="M 430 260 Q 455 285, 430 310 L 460 310 Q 485 310, 500 285 Q 485 260, 460 260 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
+    <text x="468" y="282" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR1</text>
+    <text x="468" y="298" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+  </g>
+  <g>
+    <path d="M 440 350 L 470 350 A 25 25 0 0 1 470 400 L 440 400 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="458" y="372" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND5</text>
+    <text x="458" y="388" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+  </g>
+
+  <!-- ════════ Single Pipeline FF — FF_C1 ════════ -->
+  <g>
+    <rect x="540" y="350" width="90" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
+    <text x="585" y="372" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">FF_C1</text>
+    <text x="585" y="389" text-anchor="middle" fill="#fff080" font-size="11">★ הפתרון</text>
+  </g>
+
+  <!-- ════════ HA2 — XOR2 + AND6 ════════ -->
+  <g>
+    <path d="M 700 392 Q 725 417, 700 442 L 730 442 Q 755 442, 770 417 Q 755 392, 730 392 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
+    <text x="738" y="414" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR2</text>
+    <text x="738" y="430" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+  </g>
+  <g>
+    <path d="M 700 507 L 730 507 A 25 25 0 0 1 730 557 L 700 557 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="718" y="529" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND6</text>
+    <text x="718" y="545" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+  </g>
+
+  <!-- ════════ Outputs ════════ -->
+  <g font-size="18" font-weight="bold">
+    <circle cx="1030" cy="180" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2" stroke-dasharray="5,3"/>
+    <text x="1030" y="186" text-anchor="middle" fill="#cca040">Y0</text>
+    <circle cx="1030" cy="285" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2" stroke-dasharray="5,3"/>
+    <text x="1030" y="291" text-anchor="middle" fill="#cca040">Y1</text>
+    <circle cx="1030" cy="415" r="22" fill="#0a1825" stroke="#ff6060" stroke-width="2.6"/>
+    <text x="1030" y="421" text-anchor="middle" fill="#ff6060">Y2</text>
+    <circle cx="1030" cy="530" r="22" fill="#0a1825" stroke="#ff6060" stroke-width="2.6"/>
+    <text x="1030" y="536" text-anchor="middle" fill="#ff6060">Y3</text>
+  </g>
+
+  <!-- Critical-path badge -->
+  <rect x="740" y="585" width="290" height="32" rx="6" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.6"/>
+  <text x="885" y="606" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">SETUP: 240 ps | 150 ps ≤ 300 ✓</text>
+
+  <!-- Bottom summary -->
+  <rect x="40" y="630" width="1060" height="58" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
+  <text x="570" y="660" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="17">
+    FF יחיד (FF_C1) שובר את ה-390 ps לשני שלבים: 240 + 150 ≤ 300 ✓ — אבל Y0,Y1 לא פוייפלינו → מטופל ב-ד'
+  </text>
+</svg>`,
+        circuit: () => build(() => {
+          // Minimal pipelining: ONE FF (FF_C1) on the C1 wire between
+          // AND5 and the consumers XOR2/AND6. The PP→Y0 and PP→XOR1→Y1
+          // paths bypass — creating the imbalance fixed in ד.
+          const clk = h.clock(80, 600, 'CLK');
+          const a0 = h.input(80, 100, 'A0');  a0.fixedValue = 1;
+          const a1 = h.input(80, 200, 'A1');  a1.fixedValue = 1;
+          const b0 = h.input(80, 340, 'B0');  b0.fixedValue = 1;
+          const b1 = h.input(80, 440, 'B1');  b1.fixedValue = 1;
+
+          const pp00 = h.gate('AND', 260, 130);
+          const pp10 = h.gate('AND', 260, 220);
+          const pp01 = h.gate('AND', 260, 310);
+          const pp11 = h.gate('AND', 260, 400);
+
+          const xor1 = h.gate('XOR', 460, 265);
+          const and5 = h.gate('AND', 460, 345);
+
+          // Single pipeline FF on the C1 wire
+          const ffC1 = h.ffD(620, 345, 'FF_C1');
+
+          const xor2 = h.gate('XOR', 800, 400);
+          const and6 = h.gate('AND', 800, 480);
+
+          const y0 = h.output(1000, 130, 'Y0');
+          const y1 = h.output(1000, 265, 'Y1');
+          const y2 = h.output(1000, 400, 'Y2');
+          const y3 = h.output(1000, 480, 'Y3');
+
+          return {
+            nodes: [
+              clk, a0, a1, b0, b1,
+              pp00, pp10, pp01, pp11,
+              xor1, and5,
+              ffC1,
+              xor2, and6,
+              y0, y1, y2, y3,
+            ],
+            wires: [
+              // PP layer
+              h.wire(a0.id, pp00.id, 0),
+              h.wire(b0.id, pp00.id, 1),
+              h.wire(a1.id, pp10.id, 0),
+              h.wire(b0.id, pp10.id, 1),
+              h.wire(a0.id, pp01.id, 0),
+              h.wire(b1.id, pp01.id, 1),
+              h.wire(a1.id, pp11.id, 0),
+              h.wire(b1.id, pp11.id, 1),
+
+              // HA1
+              h.wire(pp10.id, xor1.id, 0),
+              h.wire(pp01.id, xor1.id, 1),
+              h.wire(pp10.id, and5.id, 0),
+              h.wire(pp01.id, and5.id, 1),
+
+              // C1 goes through FF_C1
+              h.wire(and5.id, ffC1.id, 0),
+              h.wire(clk.id,  ffC1.id, 1, 0, { isClockWire: true }),
+
+              // HA2 sees pipelined C1 + bypass PP11 (combinational)
+              h.wire(pp11.id, xor2.id, 0),
+              h.wire(ffC1.id, xor2.id, 1),
+              h.wire(pp11.id, and6.id, 0),
+              h.wire(ffC1.id, and6.id, 1),
+
+              // Outputs — Y0, Y1 bypass; Y2, Y3 are 1 cycle delayed
+              h.wire(pp00.id, y0.id, 0),
+              h.wire(xor1.id, y1.id, 0),
+              h.wire(xor2.id, y2.id, 0),
+              h.wire(and6.id, y3.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ד — Pipeline balancing
+      //   FF_C1 alone (from ג) creates two issues:
+      //     (1) functional — XOR2/AND6 see PP11 (combinational, cycle N)
+      //         alongside C1_pipe (cycle N−1) → wrong product.
+      //     (2) imbalance — Y0/Y1 exit cycle 1, Y2/Y3 exit cycle 2.
+      //   Fix: add FF_PP11, FF_Y0, FF_Y1 so EVERY wire crossing the
+      //   pipeline boundary is registered. Total = 4 FFs, latency = 2,
+      //   throughput preserved.
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ד',
+        question: 'הפתרון מסעיף ג\' הוצב במקום — אבל הוא יצר **בעיה חדשה** (למעשה שתיים). מהן הבעיות, ומה אתה מציע כדי לטפל בהן?',
+        hints: [
+          'ה-FF היחיד (FF_C1) חוצה את שלב ה-pipeline על קו אחד בלבד. כל קו אחר שחוצה את אותו שלב הוא בעיה.',
+          'בעיה 1 (פונקציונלית): XOR2 ו-AND6 מקבלים **\\\`C1_pipe\\\`** (cycle N−1, יצא מ-FF_C1) ויחד עם **\\\`PP11\\\`** (cycle N, combinational). שני הזמנים לא תואמים → תוצאה שגויה.',
+          'בעיה 2 (אי-איזון יציאות): Y0, Y1 יוצאים combinational ב-cycle 1. Y2, Y3 מגיעים cycle אחד מאוחר יותר. ה-consumer לא יודע מתי לדגום.',
+          'הפתרון: כל wire שחוצה את שלב ה-pipeline חייב לעבור FF. סך הכל יש **4 קווים שחוצים**: C1, PP11, Y0 (=PP00), Y1 (=XOR1).',
+          'תוסיף 3 FFs נוספים: \\\`FF_PP11\\\`, \\\`FF_Y0\\\`, \\\`FF_Y1\\\`. ביחד עם \\\`FF_C1\\\` יש 4 FFs.',
+          'אחרי האיזון: stage 1 = max(PP00=120, XOR1=270, AND5=240, PP11=120) = **270 ps** ✓ · stage 2 = max(XOR2=150, AND6=120) = **150 ps** ✓.',
+        ],
+        answer:
+`**הבעיות**: FF_C1 לבד יוצר שתי בעיות:
+
+1. **שגיאה פונקציונלית** — XOR2 ו-AND6 מקבלים את \`C1_pipe\` מ-cycle N−1, אבל את \`PP11\` ישירות מהקלט הנוכחי (cycle N). הם **לא מסונכרנים** → התוצאה לא Y2/Y3 של אף אופרנד.
+2. **אי-איזון יציאות** — Y0 ו-Y1 יוצאים combinational באותו cycle של הקלט; Y2, Y3 cycle אחרי. ה-receiver שמצפה ל-Y3..Y0 כקבוצה לא יודע מתי לדגום.
+
+**הפתרון**: להוסיף **3 FFs נוספים** — \`FF_PP11\`, \`FF_Y0\`, \`FF_Y1\` — כך שכל wire שחוצה את שלב ה-pipeline עובר דרך FF. **ראה הדיאגרמה.**
+
+### Mapping של ה-4 FFs
+
+| FF | מהיכן | משמש את | מטרה |
+|---|---|---|---|
+| FF_C1 (מ-ג') | AND5.out | XOR2, AND6 | חתך נתיב קריטי |
+| **FF_PP11** ✨ | PP11.out | XOR2, AND6 | סנכרון עם C1_pipe |
+| **FF_Y0** ✨ | PP00.out | Y0 (output) | סנכרון יציאה |
+| **FF_Y1** ✨ | XOR1.out | Y1 (output) | סנכרון יציאה |
+
+### בדיקת timing אחרי האיזון
+
+| שלב | תוכן (max delay) | delay | ≤ 300 ? |
+|---|---|---:|:---:|
+| Stage 1 | max(PP00, AND5, **XOR1**, PP11) | **270 ps** | ✓ |
+| Stage 2 | max(XOR2, AND6) | **150 ps** | ✓ |
+
+⚠ שים לב: \`XOR1\` (= PP→XOR1 = 270 ps) הוא **הקריטי החדש** ב-stage 1 אחרי האיזון.
+
+### Trade-offs
+
+- **Latency** הוכפלה ל-2 cycles — בלתי-הפיך, אינהרנטי ל-pipelining.
+- **Area**: סה"כ 4 FFs.
+- **Power**: יותר switching → ~10-20% תוספת.
+- **Throughput** **נשמרת** — וקטור חדש בכל clock.`,
+        interviewerMindset:
+`**שאלה המשכית קלאסית.** המראיין מחפש:
+1. **שאתה מבדיל בין latency ל-throughput** — אלה שני מדדים שונים. הסטודנט שאומר "pipelining מאט את המעגל" טועה — הוא מאט את ה-latency, לא את ה-throughput.
+2. **שאתה מזהה את שתי הבעיות** — אי-איזון יציאות (ויזואלי, קל) וגם שגיאה פונקציונלית של XOR2/AND6 (חשוב יותר!).
+3. **שאתה ספור 3 FFs נוספים, לא יותר ולא פחות** — סטודנט שמוסיף FF גם על PP10 ו-PP01 מבזבז area. שלושה FFs בדיוק.
+4. **שאתה מזהה את ה-critical החדש ב-stage 1** — אחרי האיזון, XOR1 (270 ps) מחליף את AND5 (240 ps) כקריטי החדש של stage 1. זה דיוק ש-stat tools היו מגלים מיד.
+
+**שאלת המשך**: "מה אם אני לא יכול להרשות לעצמי 3 FFs נוספים?" → אז:
+- לקבל את ה-latency הגבוה (לא לעשות pipelining).
+- לחזור ל-faster cells או architecture שונה.
+- לתת ל-balancing להיות חלקי — אבל אז התוצאה שגויה פונקציונלית, לא רק "imbalanced".
+
+**שאלת bonus**: "מה הקשר ל-retiming?" → Retiming הוא טכניקת STA שמזיזה FFs קיימים סביב לוגיקה כדי לאזן stages. במקום להוסיף FFs חדשים, היא מנצלת FFs קיימים בזרימה הכוללת.`,
+        expectedAnswers: [
+          'latency', 'throughput', 'השהיה',
+          'pipeline imbalance', 'balance', 'balancing',
+          '2 cycles', 'one cycle later',
+          'add FF', 'parallel FF', '3 FFs', '4 FFs',
+          'PP11', 'XOR1', 'PP00',
+          'Y0', 'Y1', 'sync', 'synchronization',
+          '270', '150',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 1140 720" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Balanced pipelined multiplier — 4 FFs total (FF_C1 + 3 added).">
+
+  <defs>
+    <linearGradient id="pipeBand3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#cc66ff" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#cc66ff" stop-opacity="0.14"/>
+      <stop offset="80%" stop-color="#cc66ff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#cc66ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <text x="570" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    Pipeline מאוזן — 3 FFs נוספים (FF_PP11, FF_Y0, FF_Y1)
+  </text>
+
+  <!-- Pipeline band -->
+  <rect x="540" y="110" width="140" height="500" rx="10"
+        fill="url(#pipeBand3)" stroke="#cc66ff" stroke-width="1.8" stroke-dasharray="6,4"/>
+  <text x="610" y="100" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">PIPELINE FFs</text>
+
+  <!-- Stage headers -->
+  <rect x="50"  y="80" width="490" height="32" rx="6" fill="rgba(128,200,255,0.10)" stroke="#80c8ff" stroke-width="1.4"/>
+  <text x="295" y="102" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">STAGE 1 (combinational ≤ 270 ps)</text>
+
+  <rect x="680" y="80" width="420" height="32" rx="6" fill="rgba(255,144,80,0.10)" stroke="#ff9050" stroke-width="1.4"/>
+  <text x="890" y="102" text-anchor="middle" fill="#ff9050" font-size="16" font-weight="bold">STAGE 2 (combinational ≤ 150 ps)</text>
+
+  <!-- Inputs -->
+  <g font-size="18" font-weight="bold">
+    <circle cx="70" cy="155" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="161" text-anchor="middle" fill="#cca040">A0</text>
+    <circle cx="70" cy="260" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="266" text-anchor="middle" fill="#cca040">A1</text>
+    <circle cx="70" cy="380" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="386" text-anchor="middle" fill="#cca040">B0</text>
+    <circle cx="70" cy="500" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="70" y="506" text-anchor="middle" fill="#cca040">B1</text>
+  </g>
+
+  <!-- Wires (solid grey — all now registered) -->
+  <g stroke="#5a6e80" stroke-width="1.6" fill="none">
+    <!-- A0 → PP00.in0, PP01.in0 -->
+    <path d="M 90 155 L 220 155 L 220 175 L 250 175"/>
+    <path d="M 220 155 L 220 335 L 250 335"/>
+    <circle cx="220" cy="155" r="3.5" fill="#5a6e80"/>
+    <!-- B0 → PP00.in1, PP10.in1 -->
+    <path d="M 90 380 L 235 380 L 235 185 L 250 185"/>
+    <path d="M 235 380 L 235 245 L 250 245"/>
+    <circle cx="235" cy="380" r="3.5" fill="#5a6e80"/>
+    <!-- A1 → PP10.in0, PP11.in0 -->
+    <path d="M 90 260 L 230 260 L 230 235 L 250 235"/>
+    <path d="M 230 260 L 230 425 L 250 425"/>
+    <circle cx="230" cy="260" r="3.5" fill="#5a6e80"/>
+    <!-- B1 → PP01.in1, PP11.in1 -->
+    <path d="M 90 500 L 245 500 L 245 345 L 250 345"/>
+    <path d="M 245 500 L 245 435 L 250 435"/>
+    <circle cx="245" cy="500" r="3.5" fill="#5a6e80"/>
+
+    <!-- PP00 → FF_Y0 -->
+    <path d="M 320 185 L 555 185"/>
+    <!-- PP10 → XOR1.in0 -->
+    <path d="M 320 245 L 410 245 L 410 285 L 430 285"/>
+    <!-- PP01 → XOR1.in1 -->
+    <path d="M 320 335 L 410 335 L 410 295 L 430 295"/>
+    <!-- XOR1 → FF_Y1 -->
+    <path d="M 490 290 L 555 290"/>
+    <!-- PP10 → AND5.in0 -->
+    <path d="M 320 245 L 420 245 L 420 365 L 440 365"/>
+    <!-- PP01 → AND5.in1 -->
+    <path d="M 320 335 L 425 335 L 425 375 L 440 375"/>
+    <!-- AND5 → FF_C1 -->
+    <path d="M 510 370 L 555 370"/>
+    <!-- PP11 → FF_PP11 -->
+    <path d="M 320 430 L 555 430"/>
+
+    <!-- FF_Y0 → Y0 (synced output) -->
+    <path d="M 665 185 L 1010 185"/>
+    <!-- FF_Y1 → Y1 -->
+    <path d="M 665 290 L 1010 290"/>
+    <!-- FF_C1 → XOR2.in1 + AND6.in1 -->
+    <path d="M 665 370 L 720 370 L 720 425 L 740 425"/>
+    <path d="M 720 425 L 720 540 L 740 540"/>
+    <circle cx="720" cy="425" r="3.5" fill="#5a6e80"/>
+    <!-- FF_PP11 → XOR2.in0 + AND6.in0 -->
+    <path d="M 665 430 L 720 430 L 720 415 L 740 415"/>
+    <path d="M 665 430 L 720 430 L 720 530 L 740 530"/>
+    <!-- XOR2 → Y2 -->
+    <path d="M 800 420 L 1010 420"/>
+    <!-- AND6 → Y3 -->
+    <path d="M 800 535 L 1010 535"/>
+  </g>
+
+  <!-- ════════ PP layer ════════ -->
+  <g>
+    <path d="M 250 162 L 280 162 A 22 22 0 0 1 280 208 L 250 208 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="182" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP00</text>
+    <text x="266" y="197" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+
+    <path d="M 250 222 L 280 222 A 22 22 0 0 1 280 268 L 250 268 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="242" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP10</text>
+    <text x="266" y="257" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+
+    <path d="M 250 322 L 280 322 A 22 22 0 0 1 280 368 L 250 368 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="342" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP01</text>
+    <text x="266" y="357" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+
+    <path d="M 250 412 L 280 412 A 22 22 0 0 1 280 458 L 250 458 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="266" y="432" text-anchor="middle" fill="#80c8ff" font-size="12" font-weight="bold">PP11</text>
+    <text x="266" y="447" text-anchor="middle" fill="#a0c0d0" font-size="10">120 ps</text>
+  </g>
+
+  <!-- ════════ HA1 (XOR1 + AND5) ════════ -->
+  <g>
+    <path d="M 430 265 Q 455 290, 430 315 L 460 315 Q 485 315, 500 290 Q 485 265, 460 265 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
+    <text x="468" y="287" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR1</text>
+    <text x="468" y="303" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+  </g>
+  <g>
+    <path d="M 440 345 L 470 345 A 25 25 0 0 1 470 395 L 440 395 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="458" y="367" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND5</text>
+    <text x="458" y="383" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+  </g>
+
+  <!-- ════════ Pipeline FFs (4 total) ════════
+       FF_C1: from part ג (purple — existing)
+       FF_PP11, FF_Y0, FF_Y1: NEW in part ד (yellow highlight) -->
+  <g>
+    <rect x="555" y="160" width="110" height="50" rx="6"
+          fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
+    <text x="610" y="183" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_Y0 ✨</text>
+    <text x="610" y="200" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ד)</text>
+  </g>
+  <g>
+    <rect x="555" y="265" width="110" height="50" rx="6"
+          fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
+    <text x="610" y="288" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_Y1 ✨</text>
+    <text x="610" y="305" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ד)</text>
+  </g>
+  <g>
+    <rect x="555" y="345" width="110" height="50" rx="6" fill="#1a1428" stroke="#cc66ff" stroke-width="2.4"/>
+    <text x="610" y="368" text-anchor="middle" fill="#cc99ff" font-size="13" font-weight="bold">FF_C1</text>
+    <text x="610" y="385" text-anchor="middle" fill="#a0a0c0" font-size="11">מסעיף ג'</text>
+  </g>
+  <g>
+    <rect x="555" y="405" width="110" height="50" rx="6"
+          fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
+    <text x="610" y="428" text-anchor="middle" fill="#ffe060" font-size="13" font-weight="bold">FF_PP11 ✨</text>
+    <text x="610" y="445" text-anchor="middle" fill="#fff080" font-size="11">★ חדש (ד)</text>
+  </g>
+
+  <!-- ════════ HA2 (XOR2 + AND6) ════════ -->
+  <g>
+    <path d="M 740 397 Q 765 422, 740 447 L 770 447 Q 795 447, 810 422 Q 795 397, 770 397 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2"/>
+    <text x="778" y="419" text-anchor="middle" fill="#80f0a0" font-size="13" font-weight="bold">XOR2</text>
+    <text x="778" y="435" text-anchor="middle" fill="#a0c0d0" font-size="11">150 ps</text>
+  </g>
+  <g>
+    <path d="M 740 512 L 770 512 A 25 25 0 0 1 770 562 L 740 562 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="758" y="534" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND6</text>
+    <text x="758" y="550" text-anchor="middle" fill="#a0c0d0" font-size="11">120 ps</text>
+  </g>
+
+  <!-- ════════ Outputs (all green — synced) ════════ -->
+  <g font-size="18" font-weight="bold">
+    <circle cx="1030" cy="185" r="20" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
+    <text x="1030" y="191" text-anchor="middle" fill="#80f0a0">Y0</text>
+    <circle cx="1030" cy="290" r="20" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
+    <text x="1030" y="296" text-anchor="middle" fill="#80f0a0">Y1</text>
+    <circle cx="1030" cy="420" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
+    <text x="1030" y="426" text-anchor="middle" fill="#80f0a0">Y2</text>
+    <circle cx="1030" cy="535" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.6"/>
+    <text x="1030" y="541" text-anchor="middle" fill="#80f0a0">Y3</text>
+  </g>
+
+  <!-- Sync badge -->
+  <rect x="780" y="150" width="280" height="32" rx="6" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.6"/>
+  <text x="920" y="171" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">✓ Y0..Y3 יוצאים בו-זמנית</text>
+
+  <!-- Bottom summary -->
+  <rect x="40" y="630" width="1060" height="78" rx="10" fill="rgba(64,80,100,0.06)" stroke="#3a4a5a" stroke-width="1.4"/>
+  <text x="570" y="660" text-anchor="middle" fill="#ffc890" font-weight="bold" font-size="18">
+    Latency = 2 cycles · Throughput = 1 vector/clock · Stage 1 ≤ 270 ps · Stage 2 ≤ 150 ps
+  </text>
+  <text x="570" y="688" text-anchor="middle" fill="#c8b090" font-size="15" font-style="italic">
+    סה"כ 4 FFs: FF_C1 מסעיף ג' + 3 חדשים (צהוב) שנוספו בסעיף ד'
+  </text>
+</svg>`,
+        circuit: () => build(() => {
+          // Balanced pipelined 2-bit multiplier — 4 FFs total.
+          // FF_C1 from ג + 3 added in ד (FF_PP11, FF_Y0, FF_Y1).
+          // All outputs now exit at the same cycle.
+          const clk = h.clock(80, 600, 'CLK');
+          const a0 = h.input(80, 100, 'A0');  a0.fixedValue = 1;
+          const a1 = h.input(80, 200, 'A1');  a1.fixedValue = 1;
+          const b0 = h.input(80, 340, 'B0');  b0.fixedValue = 1;
+          const b1 = h.input(80, 440, 'B1');  b1.fixedValue = 1;
+
+          const pp00 = h.gate('AND', 260, 130);
+          const pp10 = h.gate('AND', 260, 220);
+          const pp01 = h.gate('AND', 260, 310);
+          const pp11 = h.gate('AND', 260, 400);
+
+          const xor1 = h.gate('XOR', 460, 265);
+          const and5 = h.gate('AND', 460, 345);
+
+          // Four pipeline FFs (balanced)
+          const ffY0   = h.ffD(620, 130, 'FF_Y0');
+          const ffY1   = h.ffD(620, 265, 'FF_Y1');
+          const ffC1   = h.ffD(620, 345, 'FF_C1');
+          const ffPP11 = h.ffD(620, 400, 'FF_PP11');
+
+          const xor2 = h.gate('XOR', 800, 400);
+          const and6 = h.gate('AND', 800, 480);
+
+          const y0 = h.output(1000, 130, 'Y0');
+          const y1 = h.output(1000, 265, 'Y1');
+          const y2 = h.output(1000, 400, 'Y2');
+          const y3 = h.output(1000, 480, 'Y3');
+
+          return {
+            nodes: [
+              clk, a0, a1, b0, b1,
+              pp00, pp10, pp01, pp11,
+              xor1, and5,
+              ffY0, ffY1, ffC1, ffPP11,
+              xor2, and6,
+              y0, y1, y2, y3,
+            ],
+            wires: [
+              // PP layer
+              h.wire(a0.id, pp00.id, 0),
+              h.wire(b0.id, pp00.id, 1),
+              h.wire(a1.id, pp10.id, 0),
+              h.wire(b0.id, pp10.id, 1),
+              h.wire(a0.id, pp01.id, 0),
+              h.wire(b1.id, pp01.id, 1),
+              h.wire(a1.id, pp11.id, 0),
+              h.wire(b1.id, pp11.id, 1),
+
+              // HA1 combinational
+              h.wire(pp10.id, xor1.id, 0),
+              h.wire(pp01.id, xor1.id, 1),
+              h.wire(pp10.id, and5.id, 0),
+              h.wire(pp01.id, and5.id, 1),
+
+              // Stage 1 outputs → pipeline FFs
+              h.wire(pp00.id, ffY0.id,   0),
+              h.wire(xor1.id, ffY1.id,   0),
+              h.wire(and5.id, ffC1.id,   0),
+              h.wire(pp11.id, ffPP11.id, 0),
+
+              // Shared clock to all 4 FFs
+              h.wire(clk.id, ffY0.id,   1, 0, { isClockWire: true }),
+              h.wire(clk.id, ffY1.id,   1, 0, { isClockWire: true }),
+              h.wire(clk.id, ffC1.id,   1, 0, { isClockWire: true }),
+              h.wire(clk.id, ffPP11.id, 1, 0, { isClockWire: true }),
+
+              // Stage 2 — all see pipelined values
+              h.wire(ffPP11.id, xor2.id, 0),
+              h.wire(ffC1.id,   xor2.id, 1),
+              h.wire(ffPP11.id, and6.id, 0),
+              h.wire(ffC1.id,   and6.id, 1),
+
+              // Outputs — all synced
+              h.wire(ffY0.id, y0.id, 0),
+              h.wire(ffY1.id, y1.id, 0),
+              h.wire(xor2.id, y2.id, 0),
+              h.wire(and6.id, y3.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ה — Hold violation: t_hold = 200 ps requires shortest
+      //   path ≥ 170 ps (with t_clk-q ≈ 30).
+      //   Shortest in multiplier = 120 ps (A0/B0 → PP00 → Y0).
+      //   Fix: BUF (60 ps, or 2 NOTs in series) on the Y0 path.
+      //   New shortest = 180 ps ≥ 170 ✓ (margin 10).
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ה',
+        question: 'נתון כעת: **\\\`t_hold = 200 ps\\\`** (זמן ה-hold הנדרש ע"י ה-FF במורד הזרם). תן פתרון למסלול הבעייתי במעגל מסעיף א\'.',
+        hints: [
+          'אילוץ ה-hold: \\\`T_shortest ≥ t_h − t_clk-q\\\`. עם \\\`t_clk-q ≈ 30 ps\\\` ו-\\\`t_h = 200 ps\\\` → צריך \\\`T_shortest ≥ 170 ps\\\`.',
+          'הנתיב הקצר ביותר במעגל הוא \\\`A0/B0 → PP00 → Y0\\\` = 120 ps. **120 < 170** → הפרת hold!',
+          'הפתרון: להוסיף **delay buffer** על המסלול הקצר.',
+          'איזה רכיב? Buffer (BUF) או זוג inverters בטור. כל BUF מוסיף ~50-100 ps תלוי בטכנולוגיה.',
+          'הוספה של BUF אחד (נניח 60 ps): \\\`120 + 60 = 180 ps ≥ 170\\\` ✓ (margin 10 ps).',
+          'חשוב: הוספת ה-buffer **לא משפיעה על ה-setup** של מסלולים אחרים — הוא רק על המסלול הקצר של Y0.',
+        ],
+        answer:
+`**הפתרון: להוסיף Buffer (BUF) על המסלול \`A0/B0 → PP00 → Y0\`.**
+
+### זיהוי הבעיה
+
+- אילוץ hold: \`T_shortest ≥ t_h − t_clk-q\`
+- עם \`t_h = 200 ps\`, \`t_clk-q ≈ 30 ps\` → **\`T_shortest ≥ 170 ps\`**
+- במעגל הנוכחי, המסלול הקצר ביותר הוא \`A0/B0 → PP00 → Y0\` = **120 ps** (שער AND יחיד)
+- **120 ps < 170 ps** → הפרת hold (race condition)
+
+### הפתרון: Delay Padding
+
+מוסיפים **שער BUF** (או pair of inverters) על המסלול הקצר \`A0/B0 → PP00 → Y0\`. ראה את הדיאגרמה הצבעונית בראש דף התשובה — שני המבנים זה לצד זה, "לפני" ו-"אחרי".
+
+עם BUF של 60 ps: \`120 + 60 = 180 ps ≥ 170 ps\` ✓ — ה-hold עומד בדרישות עם **margin של 10 ps**. ה-margin הזה צר — במציאות נשתמש ב-BUF של 80-100 ps כדי לקבל margin בטוח.
+
+### למה BUF דווקא?
+
+| חלופה | משפיע על? | מתאים? |
+|---|---|:---:|
+| **BUF** | הוספת delay בלבד | ✓ הפתרון הקלאסי |
+| 2 × NOT בטור | הוספת delay (זוג inverters ≡ buffer) | ✓ אם אין BUF cell |
+| FF נוסף | מוסיף cycle latency | ✗ overkill, פוגע ב-latency |
+| Slow AND cell ל-PP00 | משנה את ה-functional behavior גם של אחרים | ✗ |
+| לא לעשות כלום, להאריך clock | hold לא תלוי ב-clock period! | ✗ אין השפעה |
+
+### חשוב: הפתרון **לא** משפיע על ה-setup
+
+- ה-BUF על מסלול Y0 בלבד.
+- מסלולי setup הם על Y2 (390 ps) — לא נוגעים בהם.
+- ה-Fmax לא משתנה.
+
+### בדיקה מלאה — כל המסלולים אחרי התיקון
+
+| מסלול | delay חדש | hold ≥ 170 ✓ ? |
+|---|---:|:---:|
+| A0/B0 → PP00 → **BUF** → Y0 | 180 | ✓ (margin 10) |
+| A1/B1 → PP11 → AND6 → Y3 | 240 | ✓ |
+| A1/B0 → PP10 → XOR1 → Y1 | 270 | ✓ |
+| A0/B1 → PP01 → XOR1 → Y1 | 270 | ✓ |
+| A1/B1 → PP11 → XOR2 → Y2 | 270 | ✓ |
+| A1/B0 → PP10 → AND5 → AND6 → Y3 | 360 | ✓ |
+| A0/B1 → PP01 → AND5 → AND6 → Y3 | 360 | ✓ |
+| A1/B0 → PP10 → AND5 → XOR2 → Y2 | 390 | ✓ |
+| A0/B1 → PP01 → AND5 → XOR2 → Y2 | 390 | ✓ |
+
+כל המסלולים עומדים ב-hold ≥ 170 ps ✓.
+
+### ב-EDA tools
+
+זה נקרא **Hold Fixing** או **Delay Padding**. כלי STA (Synopsys PrimeTime, Cadence Tempus) מזהים אוטומטית הפרות hold, מציעים מיקום אופטימלי ל-buffer cells, ומתאימים את ה-netlist. ב-multipliers הסימטריים יש לעיתים קרובות מספר מסלולים קצרים תאומים — כולם דורשים padding.`,
+        interviewerMindset:
+`**שאלה מעשית.** המראיין מחפש:
+1. **שאתה לא ממליץ על FF** — pipelining פותר setup, לא hold. סטודנט שמציע FF להפרת hold לא הבין את העניין.
+2. **שאתה לא מציע להאריך clock** — clock period לא משפיע על hold. זה בלבול נפוץ מאוד.
+3. **שאתה מציין delay padding** — buffer הוא ה-keyword המדויק.
+4. **שאתה זוכר ש-Y0 = PP00 = AND יחיד** = הקצר במעגל. במחבר השאלה הייתה דומה אבל ה-shortest היה XOR — כאן הוא **קצר אפילו יותר** (120 vs 150).
+
+**שאלת המשך**: "כמה buffers, ואיפה?" → רק על המסלול שמפר. בעיצוב גדול יכולים להיות אלפי הפרות hold שכולן ידרשו buffers ייעודיים.
+
+**שאלת bonus**: "האם buffers מעלים power?" → כן, כל buffer מוסיף switching activity. ב-low-power design זה רגיש. הפתרון: minimum-strength buffers, או fewer-buffer architectures.
+
+**שאלת bonus 2**: "ה-margin של 10 ps בטוח?" → לא! ב-CMOS יש process variation — buffer ב-corner מסוים (slow corner) יכול להיות מהיר מדי ב-fast corner. STA tools דורשות margin של 50-100 ps לפחות לכל corner. בעיצוב אמיתי נבחר BUF גדול יותר (~100 ps) או נוסיף שני BUFs.`,
+        answerSchematic: `
+<svg viewBox="0 0 1100 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Before / after panels — adding a buffer on the Y0 path to fix hold timing in the multiplier.">
+
+  <text x="550" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="26">
+    Delay padding — הוספת BUF על המסלול הקצר Y0
+  </text>
+  <text x="550" y="68" text-anchor="middle" fill="#a0a0c0" font-size="15" font-style="italic">
+    אילוץ: T_shortest ≥ 170 ps (t_h = 200, t_clk-q ≈ 30)
+  </text>
+
+  <!-- ════════════════════ BEFORE panel ════════════════════ -->
+  <rect x="30" y="100" width="510" height="340" rx="12"
+        fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2"/>
+  <text x="285" y="138" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">לפני — הפרת hold ✗</text>
+
+  <!-- A0 input -->
+  <circle cx="80" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+  <text x="80" y="246" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">A0</text>
+  <!-- B0 input -->
+  <circle cx="80" cy="310" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+  <text x="80" y="316" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">B0</text>
+
+  <!-- Wires -->
+  <line x1="100" y1="240" x2="220" y2="240" stroke="#cca040" stroke-width="2"/>
+  <line x1="100" y1="310" x2="220" y2="310" stroke="#cca040" stroke-width="2"/>
+
+  <!-- PP00 (AND) -->
+  <path d="M 220 230 L 280 230 A 50 50 0 0 1 280 320 L 220 320 Z"
+        fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+  <text x="260" y="270" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP00</text>
+  <text x="260" y="290" text-anchor="middle" fill="#a0c0d0" font-size="13">AND · 120 ps</text>
+
+  <!-- PP00 → Y0 (long, direct) -->
+  <line x1="330" y1="275" x2="470" y2="275" stroke="#ff9933" stroke-width="2.2"/>
+
+  <!-- Y0 output -->
+  <circle cx="490" cy="275" r="22" fill="#0a1825" stroke="#ff6060" stroke-width="2.4"/>
+  <text x="490" y="281" text-anchor="middle" fill="#ff6060" font-size="17" font-weight="bold">Y0</text>
+
+  <!-- Delay annotation -->
+  <text x="400" y="262" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">120 ps total</text>
+
+  <!-- Violation badge -->
+  <rect x="80" y="380" width="410" height="40" rx="8" fill="rgba(255,96,96,0.14)" stroke="#ff6060" stroke-width="1.8"/>
+  <text x="285" y="406" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="16">120 &lt; 170 → race condition</text>
+
+  <!-- ════════════════════ AFTER panel ════════════════════ -->
+  <rect x="560" y="100" width="510" height="340" rx="12"
+        fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2"/>
+  <text x="815" y="138" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">אחרי — hold נשמר ✓</text>
+
+  <!-- A0 input -->
+  <circle cx="610" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+  <text x="610" y="246" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">A0</text>
+  <!-- B0 input -->
+  <circle cx="610" cy="310" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+  <text x="610" y="316" text-anchor="middle" fill="#cca040" font-size="16" font-weight="bold">B0</text>
+
+  <!-- Wires -->
+  <line x1="630" y1="240" x2="730" y2="240" stroke="#cca040" stroke-width="2"/>
+  <line x1="630" y1="310" x2="730" y2="310" stroke="#cca040" stroke-width="2"/>
+
+  <!-- PP00 (AND) -->
+  <path d="M 730 230 L 790 230 A 50 50 0 0 1 790 320 L 730 320 Z"
+        fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+  <text x="770" y="270" text-anchor="middle" fill="#80c8ff" font-size="16" font-weight="bold">PP00</text>
+  <text x="770" y="290" text-anchor="middle" fill="#a0c0d0" font-size="13">AND · 120 ps</text>
+
+  <!-- PP00 → BUF -->
+  <line x1="840" y1="275" x2="880" y2="275" stroke="#ff9933" stroke-width="2.2"/>
+
+  <!-- BUF (highlighted yellow) -->
+  <rect x="880" y="250" width="80" height="50" rx="8" fill="#3a3a0a" stroke="#ffe060" stroke-width="2.6"/>
+  <text x="920" y="271" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">BUF</text>
+  <text x="920" y="289" text-anchor="middle" fill="#fff080" font-size="11">+60 ps ★</text>
+
+  <!-- BUF → Y0 -->
+  <line x1="960" y1="275" x2="1000" y2="275" stroke="#ff9933" stroke-width="2.2"/>
+
+  <!-- Y0 output (now green = safe) -->
+  <circle cx="1020" cy="275" r="22" fill="#0a1825" stroke="#80f0a0" stroke-width="2.4"/>
+  <text x="1020" y="281" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">Y0</text>
+
+  <!-- Delay annotation -->
+  <text x="895" y="240" text-anchor="middle" fill="#a0a0c0" font-size="13" font-style="italic">120 + 60 = 180 ps</text>
+
+  <!-- Pass badge -->
+  <rect x="610" y="380" width="410" height="40" rx="8" fill="rgba(128,240,160,0.14)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="815" y="406" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">180 ≥ 170 ✓ (margin 10 ps)</text>
+</svg>`,
+        expectedAnswers: [
+          'buffer', 'BUF', 'באפר',
+          'delay padding', 'pad', 'pad delay',
+          'inverter', 'NOT-NOT', '2 inverters',
+          '170', '180', '60',
+          'hold fix', 'hold fixing',
+          'PP00', 'Y0',
+          'shortest path',
+        ],
+        circuit: () => build(() => {
+          // 8-gate multiplier + a BUF (implemented as 2 NOTs) on the
+          // Y0 path to lift its delay above the 170 ps hold floor.
+          // The student can verify Y0 still computes A0·B0 (functionally
+          // unchanged), only the propagation delay is padded.
+          const a0 = h.input(80,  100, 'A0');  a0.fixedValue = 1;
+          const a1 = h.input(80,  200, 'A1');  a1.fixedValue = 1;
+          const b0 = h.input(80,  340, 'B0');  b0.fixedValue = 1;
+          const b1 = h.input(80,  440, 'B1');  b1.fixedValue = 1;
+
+          const pp00 = h.gate('AND', 260, 130);
+          const pp10 = h.gate('AND', 260, 220);
+          const pp01 = h.gate('AND', 260, 310);
+          const pp11 = h.gate('AND', 260, 400);
+
+          // Delay-padding buffer on the Y0 path (built from 2 NOTs)
+          const padInv1 = h.gate('NOT', 420, 130);
+          const padInv2 = h.gate('NOT', 560, 130);
+
+          const xor1 = h.gate('XOR', 480, 265);
+          const and5 = h.gate('AND', 480, 345);
+
+          const xor2 = h.gate('XOR', 680, 400);
+          const and6 = h.gate('AND', 880, 440);
+
+          const y0 = h.output(1040, 130, 'Y0');
+          const y1 = h.output(1040, 265, 'Y1');
+          const y2 = h.output(1040, 400, 'Y2');
+          const y3 = h.output(1040, 480, 'Y3');
+
+          return {
+            nodes: [
+              a0, a1, b0, b1,
+              pp00, pp10, pp01, pp11,
+              padInv1, padInv2,
+              xor1, and5,
+              xor2, and6,
+              y0, y1, y2, y3,
+            ],
+            wires: [
+              h.wire(a0.id, pp00.id, 0),
+              h.wire(b0.id, pp00.id, 1),
+              h.wire(a1.id, pp10.id, 0),
+              h.wire(b0.id, pp10.id, 1),
+              h.wire(a0.id, pp01.id, 0),
+              h.wire(b1.id, pp01.id, 1),
+              h.wire(a1.id, pp11.id, 0),
+              h.wire(b1.id, pp11.id, 1),
+
+              // BUF on Y0 path: PP00 → INV → INV → Y0
+              h.wire(pp00.id, padInv1.id, 0),
+              h.wire(padInv1.id, padInv2.id, 0),
+              h.wire(padInv2.id, y0.id, 0),
+
+              h.wire(pp10.id, xor1.id, 0),
+              h.wire(pp01.id, xor1.id, 1),
+              h.wire(pp10.id, and5.id, 0),
+              h.wire(pp01.id, and5.id, 1),
+              h.wire(xor1.id, y1.id, 0),
+
+              h.wire(pp11.id, xor2.id, 0),
+              h.wire(and5.id, xor2.id, 1),
+              h.wire(pp11.id, and6.id, 0),
+              h.wire(and5.id, and6.id, 1),
+              h.wire(xor2.id, y2.id, 0),
+              h.wire(and6.id, y3.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ו — Bridge fault between PP10→XOR1.in0 and PP01→XOR1.in1
+      //   Two adjacent partial-product wires that both feed HA1.
+      //   wired-AND collapses both to AND of the two driver values.
+      //   Bridge is transparent when both wires carry the same value.
+      //   Detection vector: A=01, B=11 ⇒ PP10=0, PP01=1 (different)
+      //   → wired-AND makes both 0 → XOR1=0 (was 1), so Y1 = 0 (was 1).
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ו',
+        question: 'במעגל מסעיף א\' מוזרק **bridge fault** בין שני קווים שכנים שיוצאים מ-PP layer: הקו \\\`PP10 → XOR1.in0\\\` והקו \\\`PP01 → XOR1.in1\\\` — מסומנים ב**סגול** בשרטוט. הקצר הוא **wired-AND** — שני הקווים נושאים את ה-AND של ערכיהם המקוריים. **מהו וקטור הקלט המינימלי שמזהה את התקלה?** הסבר מה רואים בפלט.',
+        schematic: `
+<svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Bridge fault between PP10→XOR1 and PP01→XOR1 wires.">
+
+  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+    Bridge fault — wired-AND בין שני קווי ה-PP השכנים
+  </text>
+
+  <!-- Inputs -->
+  <g font-size="17" font-weight="bold">
+    <circle cx="60" cy="100" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="106" text-anchor="middle" fill="#cca040">A1</text>
+    <circle cx="60" cy="170" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="176" text-anchor="middle" fill="#cca040">B0</text>
+    <circle cx="60" cy="260" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="266" text-anchor="middle" fill="#cca040">A0</text>
+    <circle cx="60" cy="330" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="336" text-anchor="middle" fill="#cca040">B1</text>
+  </g>
+
+  <!-- Wires into the PP gates (grey) -->
+  <g stroke="#5a6e80" stroke-width="1.6" fill="none">
+    <path d="M 80 100 L 180 100 L 180 130 L 220 130"/>
+    <path d="M 80 170 L 180 170 L 180 140 L 220 140"/>
+    <path d="M 80 260 L 180 260 L 180 290 L 220 290"/>
+    <path d="M 80 330 L 180 330 L 180 300 L 220 300"/>
+  </g>
+
+  <!-- PP10 (AND, top) -->
+  <path d="M 220 115 L 250 115 A 25 25 0 0 1 250 165 L 220 165 Z"
+        fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+  <text x="240" y="143" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP10</text>
+
+  <!-- PP01 (AND, bottom) -->
+  <path d="M 220 275 L 250 275 A 25 25 0 0 1 250 325 L 220 325 Z"
+        fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+  <text x="240" y="303" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP01</text>
+
+  <!-- ════════ The two BRIDGED wires (purple, highlighted) ════════ -->
+  <g stroke="#cc66ff" stroke-width="3.6" fill="none">
+    <path d="M 280 140 L 580 140"/>     <!-- PP10.out → XOR1.in0 -->
+    <path d="M 280 300 L 580 300"/>     <!-- PP01.out → XOR1.in1 -->
+  </g>
+
+  <!-- Bridge marker -->
+  <line x1="420" y1="140" x2="420" y2="300" stroke="#cc66ff" stroke-width="3" stroke-dasharray="6,4"/>
+  <path d="M 415 200 L 425 205 L 415 213 L 425 220 L 415 228 L 425 235"
+        fill="none" stroke="#ff6060" stroke-width="2.2"/>
+
+  <!-- Bridge label -->
+  <rect x="440" y="200" width="280" height="34" rx="8" fill="rgba(204,102,255,0.16)" stroke="#cc66ff" stroke-width="1.8"/>
+  <text x="580" y="222" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">⚡ BRIDGE — wired-AND</text>
+
+  <!-- XOR1 -->
+  <g>
+    <path d="M 580 200 Q 610 220, 580 240 L 615 240 Q 645 240, 660 220 Q 645 200, 615 200 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
+    <text x="618" y="225" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR1</text>
+  </g>
+  <!-- AND5 (also fed by the same two wires) -->
+  <g>
+    <path d="M 580 270 L 610 270 A 25 25 0 0 1 610 320 L 580 320 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="600" y="298" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND5</text>
+  </g>
+  <!-- Wires to XOR1 / AND5 from bridge nets — the bridge is on the segment up to XOR1 -->
+  <g stroke="#5a6e80" stroke-width="1.6" fill="none">
+    <path d="M 580 140 L 580 220" opacity="0.5"/>
+    <path d="M 580 300 L 580 230" opacity="0.5"/>
+    <path d="M 580 140 L 540 140 L 540 280 L 580 280" opacity="0.4" stroke-dasharray="3,3"/>
+    <path d="M 580 300 L 560 300 L 560 295 L 580 295" opacity="0.4" stroke-dasharray="3,3"/>
+  </g>
+
+  <!-- Outputs of interest -->
+  <text x="720" y="225" fill="#ff9933" font-size="14" font-weight="bold">→ Y1</text>
+  <text x="720" y="299" fill="#ff9933" font-size="14" font-weight="bold">→ C1</text>
+
+  <!-- Context note -->
+  <text x="450" y="370" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+    שני הקווים יוצאים מ-PP10/PP01 וסמוכים פיזית → קצר ביניהם = wired-AND
+  </text>
+  <text x="450" y="396" text-anchor="middle" fill="#ffe080" font-size="14" font-weight="bold">
+    כל וקטור שמעניק להם ערכים זהים — לא מגלה את התקלה (קצר שקוף)
+  </text>
+</svg>`,
+        hints: [
+          'Bridge מתבטא רק כשלשני הקווים יש **ערכים שונים** — אם שניהם 0 או שניהם 1, ה-AND שלהם זהה לכל אחד מהם בנפרד ⇒ הקצר שקוף.',
+          'הקו \\\`PP10.out\\\` מחשב \\\`A1 · B0\\\`. הקו \\\`PP01.out\\\` מחשב \\\`A0 · B1\\\`.',
+          'מתי שני הביטויים שונים? למשל כש-PP10=0 ו-PP01=1: \\\`A1·B0=0\\\` ו-\\\`A0·B1=1\\\` ⇒ \\\`A1=0, A0=1, B0=anything, B1=1\\\`.',
+          'בחר \\\`A=01, B=11\\\` (כלומר A0=1, A1=0, B0=1, B1=1): PP10=0·1=0, PP01=1·1=1. wired-AND עושה את שני הקווים = 0.',
+          'בלי תקלה: Y3..Y0 = 1·3 = 3 = 0011. עם תקלה: XOR1 רואה (0,0) במקום (0,1) ⇒ Y1 = 0 במקום 1.',
+          'מינימום: **1 וקטור בלבד** מספיק לזיהוי.',
+        ],
+        answer:
+`## וקטור הקלט: \`A = 01, B = 11\` (כלומר \`A0=1, A1=0, B0=1, B1=1\`) — **מינימום = 1 וקטור**
+
+---
+
+### למה דווקא הוקטור הזה
+
+Bridge הוא **שקוף** כשהקווים נושאים אותו ערך. הוא **מתעורר** רק כשהקווים שונים.
+
+\`PP10.out = A1 · B0\` · \`PP01.out = A0 · B1\`. מתי הם שונים?
+
+| A0 | A1 | B0 | B1 | PP10 | PP01 | bridge פעיל? |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 | 0 | 0 | ✗ שקוף |
+| 0 | 0 | 1 | 0 | 0 | 0 | ✗ |
+| 1 | 1 | 1 | 1 | 1 | 1 | ✗ |
+| **1** | **0** | **1** | **1** | **0** | **1** | **✓ הבחירה שלנו** |
+| 1 | 1 | 0 | 1 | 0 | 1 | ✓ סימטרי |
+| 0 | 1 | 1 | 0 | 1 | 0 | ✓ סימטרי הפוך |
+
+(\`A=01, B=11\` היא בחירה שעובדת. גם \`A=11, B=01\` ועוד מספר וקטורים אחרים — מספיק וקטור אחד.)
+
+### מה רואים בפלט עם הוקטור \`(A=01, B=11)\` ⇒ A · B = 1 · 3 = **3** = 0011
+
+חישוב ללא תקלה:
+- PP00 = 1·1 = 1, PP10 = 0·1 = 0, PP01 = 1·1 = 1, PP11 = 0·1 = 0
+- Y1 = PP10 ⊕ PP01 = 0 ⊕ 1 = **1**
+- C1 = PP10 · PP01 = 0
+- Y2 = PP11 ⊕ C1 = 0, Y3 = PP11 · C1 = 0
+- **Y3..Y0 = 0011** ✓ (מצופה)
+
+עם wired-AND bridge — שני הקווים = \`0 AND 1 = 0\`:
+- XOR1 רואה (0, 0) ⇒ Y1 = **0** ❌
+- AND5 רואה (0, 0) ⇒ C1 = 0 (זהה למקור — נשאר שקוף ב-C1)
+
+| | ללא תקלה | עם bridge | הבדל |
+|---|:---:|:---:|:---:|
+| Y0 | 1 | 1 | — |
+| **Y1** | **1** | **0** | ✓ נחשף ב-Y1 |
+| Y2 | 0 | 0 | — |
+| Y3 | 0 | 0 | — |
+
+**הפלט הנצפה: 0001 = 1 במקום הצפוי 0011 = 3.**
+
+### מינימום אבסולוטי — 1 וקטור
+
+באותו וקטור גם **ניתן לזהות את סוג ה-bridge**:
+- (Y1 שונה מהצפוי ⇒ wired-AND): כי AND־ינו את 0 ו-1 לקבל 0.
+- (Y1 = 1 לכל וקטור): wired-OR.
+
+### תכונה מעניינת של multipliers
+
+ה-multiplier הסימטרי מתאפיין בכך ש-PP10 ו-PP01 הם **התאומים הסימטריים** — שניהם בעלי משקל קולוני זהה ב-MUL. ב-Wallace/Dadda tree המעבר עליהם דורש hierarchical sorting — וכאן הקצר ביניהם הופך לבעיית DFT מציאותית.`,
+        interviewerMindset:
+`**שאלה אמיתית מ-DFT.** המראיין מחפש:
+1. **שאתה מזהה את התנאי "ערכים שונים"** — bridge הוא **שקוף** כשהקווים נושאים אותו ערך. זו המלכודת.
+2. **שאתה בוחר וקטור שמייצר ערכים שונים בין PP10 ו-PP01** — לא ניסוי בעיוורון.
+3. **שאתה זוכר את התשובה "1 וקטור"** — לא "כמה שצריך".
+4. **שאתה מבין שיש מספר וקטורים שעובדים** — A=01,B=11 או A=11,B=01 — סימטריה.
+
+**שאלת המשך**: "ההבדל בין wired-AND ל-wired-OR ב-bridge?" → תלוי בטכנולוגיה: bipolar pull-up חזק יוצר wired-OR; CMOS עם driver דומיננטי יכול ליצור wired-AND. ATPG תופס שניהם.
+
+**שאלת bonus**: "מה אם הייתי שואל אותך לזהות את **סוג** ה-bridge?" → אותו וקטור מספיק (1 וקטור) — observation של Y1 מבחין:
+- (Y1 = 0 במקום 1): wired-AND (0 AND 1 = 0)
+- (Y1 = 1 כצפוי — בלי שינוי): פתרון 1 — wired-OR יוצר Y1 = (1 XOR 1) = 0... wait. wired-OR בין 0 ו-1 → שניהם 1. אז XOR1 = 1 XOR 1 = 0. גם 0! צריך וקטור אחר.
+
+**שאלת bonus 2**: "איך זה משתנה ב-Wallace tree?" → ב-tree multiplier יש fanout עמוק יותר על partial products, מספר רמות bridge גדל בריבוע. ATPG מסחרי מטפל בזה אוטומטית, אבל פיזית — placement-aware DFT הוא חיוני.`,
+        expectedAnswers: [
+          'bridge', 'בריג', 'קצר',
+          '1', 'one vector', 'וקטור אחד',
+          'A=01', 'B=11', 'A0=1', 'B1=1',
+          'wired-AND', 'wired-OR',
+          'Y1', 'PP10', 'PP01',
+          'different values', 'contrast',
+        ],
+        circuit: () => build(() => {
+          // 8-gate multiplier with a bridge injected between:
+          //   wire-A: PP10.out → XOR1.in0
+          //   wire-B: PP01.out → XOR1.in1
+          // Both reference each other with bridgeMode='and' (wired-AND).
+          //
+          // Default inputs preloaded to the detection vector:
+          //   A0=1, A1=0, B0=1, B1=1   ⇒  PP10=0, PP01=1 (differ → bridge active)
+          //   Without fault Y3..Y0 = 0011 = 3
+          //   With fault    Y3..Y0 = 0001 = 1   (Y1 collapses from 1 to 0)
+          const a0 = h.input(80,  100, 'A0');  a0.fixedValue = 1;
+          const a1 = h.input(80,  200, 'A1');  a1.fixedValue = 0;
+          const b0 = h.input(80,  340, 'B0');  b0.fixedValue = 1;
+          const b1 = h.input(80,  440, 'B1');  b1.fixedValue = 1;
+
+          const pp00 = h.gate('AND', 260, 130);
+          const pp10 = h.gate('AND', 260, 220);
+          const pp01 = h.gate('AND', 260, 310);
+          const pp11 = h.gate('AND', 260, 400);
+
+          const xor1 = h.gate('XOR', 480, 265);
+          const and5 = h.gate('AND', 480, 345);
+
+          const xor2 = h.gate('XOR', 680, 400);
+          const and6 = h.gate('AND', 880, 440);
+
+          const y0 = h.output(1040, 130, 'Y0');
+          const y1 = h.output(1040, 265, 'Y1');
+          const y2 = h.output(1040, 400, 'Y2');
+          const y3 = h.output(1040, 480, 'Y3');
+
+          // Bridged wires — both feed XOR1 (the two PP10/PP01 outputs).
+          // The bridge applies along these wires; the AND5 sees the
+          // (separately routed) PP10 / PP01 outputs unaffected.
+          const wireA = h.wire(pp10.id, xor1.id, 0);    // PP10 → XOR1.in0
+          const wireB = h.wire(pp01.id, xor1.id, 1);    // PP01 → XOR1.in1
+          wireA.bridgedWith = wireB.id;
+          wireA.bridgeMode  = 'and';
+          wireB.bridgedWith = wireA.id;
+          wireB.bridgeMode  = 'and';
+
+          return {
+            nodes: [
+              a0, a1, b0, b1,
+              pp00, pp10, pp01, pp11,
+              xor1, and5,
+              xor2, and6,
+              y0, y1, y2, y3,
+            ],
+            wires: [
+              h.wire(a0.id, pp00.id, 0),
+              h.wire(b0.id, pp00.id, 1),
+              h.wire(a1.id, pp10.id, 0),
+              h.wire(b0.id, pp10.id, 1),
+              h.wire(a0.id, pp01.id, 0),
+              h.wire(b1.id, pp01.id, 1),
+              h.wire(a1.id, pp11.id, 0),
+              h.wire(b1.id, pp11.id, 1),
+              h.wire(pp00.id, y0.id, 0),
+
+              wireA,                                      // BRIDGED
+              wireB,                                      // BRIDGED
+
+              h.wire(pp10.id, and5.id, 0),
+              h.wire(pp01.id, and5.id, 1),
+              h.wire(xor1.id, y1.id, 0),
+
+              h.wire(pp11.id, xor2.id, 0),
+              h.wire(and5.id, xor2.id, 1),
+              h.wire(pp11.id, and6.id, 0),
+              h.wire(and5.id, and6.id, 1),
+              h.wire(xor2.id, y2.id, 0),
+              h.wire(and6.id, y3.id, 0),
+            ],
+          };
+        }),
+      },
+
+      // ─────────────────────────────────────────────────────────
+      // Part ז — Stuck-at-0 on the C1 wire (AND5.out).
+      //   Detection vector: A=B=11 (all ones)  ⇒  C1 should be 1.
+      //   Without fault: Y3..Y0 = 1001 = 9 (since 3·3 = 9).
+      //   With C1 s-a-0:
+      //     XOR2(PP11=1, 0) = 1  → Y2 flips 0→1
+      //     AND6(PP11=1, 0) = 0  → Y3 flips 1→0
+      //   Both Y2 AND Y3 differ — clear detection.
+      // ─────────────────────────────────────────────────────────
+      {
+        label: 'ז',
+        question: 'במעגל מסעיף א\' אחד החוטים מוזרק עם תקלת **\\\`stuck-at-0\\\`** — הקו \\\`AND5.out\\\` (כלומר \\\`C1\\\` תקוע ב-0), מסומן ב**אדום** בשרטוט. **מהו וקטור הקלט המינימלי שמזהה את התקלה ומאשש שאכן הקו הזה הוא הפגום?** הסבר את ה-trade-off של מינימום וקטור לעומת זיהוי ייחודי של מיקום התקלה.',
+        schematic: `
+<svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Stuck-at-0 fault on AND5.out (C1) wire.">
+
+  <text x="450" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="22">
+    Stuck-at-0 fault — C1 תקוע ב-0
+  </text>
+
+  <!-- Inputs -->
+  <g font-size="17" font-weight="bold">
+    <circle cx="60" cy="120" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="126" text-anchor="middle" fill="#cca040">A1</text>
+    <circle cx="60" cy="180" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="186" text-anchor="middle" fill="#cca040">B0</text>
+    <circle cx="60" cy="240" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="246" text-anchor="middle" fill="#cca040">A0</text>
+    <circle cx="60" cy="300" r="20" fill="#0a1825" stroke="#cca040" stroke-width="2.2"/>
+    <text x="60" y="306" text-anchor="middle" fill="#cca040">B1</text>
+  </g>
+
+  <!-- Wires to PP gates -->
+  <g stroke="#5a6e80" stroke-width="1.6" fill="none">
+    <path d="M 80 120 L 180 120 L 180 145 L 220 145"/>
+    <path d="M 80 180 L 180 180 L 180 155 L 220 155"/>
+    <path d="M 80 240 L 180 240 L 180 265 L 220 265"/>
+    <path d="M 80 300 L 180 300 L 180 275 L 220 275"/>
+  </g>
+
+  <!-- PP10 -->
+  <path d="M 220 130 L 250 130 A 25 25 0 0 1 250 180 L 220 180 Z"
+        fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+  <text x="240" y="158" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP10</text>
+
+  <!-- PP01 -->
+  <path d="M 220 250 L 250 250 A 25 25 0 0 1 250 300 L 220 300 Z"
+        fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+  <text x="240" y="278" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">PP01</text>
+
+  <!-- Wires PP10/PP01 → AND5 -->
+  <g stroke="#5a6e80" stroke-width="1.6" fill="none">
+    <path d="M 280 155 L 360 155 L 360 200 L 400 200"/>
+    <path d="M 280 275 L 360 275 L 360 215 L 400 215"/>
+  </g>
+
+  <!-- AND5 -->
+  <path d="M 400 185 L 430 185 A 30 30 0 0 1 430 245 L 400 245 Z"
+        fill="#1a2230" stroke="#80c8ff" stroke-width="2.2"/>
+  <text x="420" y="218" text-anchor="middle" fill="#80c8ff" font-size="14" font-weight="bold">AND5</text>
+
+  <!-- ════════ The STUCK-AT-0 wire (red, highlighted) ════════ -->
+  <g stroke="#ff6060" stroke-width="3.8" fill="none">
+    <path d="M 460 215 L 720 215"/>
+  </g>
+
+  <!-- "stuck-at-0" label -->
+  <rect x="500" y="245" width="180" height="40" rx="8" fill="rgba(255,96,96,0.16)" stroke="#ff6060" stroke-width="1.8"/>
+  <text x="590" y="269" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">✗ stuck-at-0</text>
+  <text x="590" y="207" text-anchor="middle" fill="#ff9999" font-size="13" font-weight="bold" font-style="italic">C1</text>
+
+  <!-- Branches to XOR2 and AND6 -->
+  <g stroke="#5a6e80" stroke-width="1.6" fill="none">
+    <path d="M 720 215 L 760 215 L 760 165 L 780 165"/>
+    <path d="M 720 215 L 760 215 L 760 320 L 780 320"/>
+    <circle cx="720" cy="215" r="3.5" fill="#5a6e80"/>
+  </g>
+
+  <!-- XOR2 -->
+  <g>
+    <path d="M 780 145 Q 808 165, 780 185 L 815 185 Q 845 185, 858 165 Q 845 145, 815 145 Z"
+          fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
+    <text x="818" y="170" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">XOR2</text>
+  </g>
+  <!-- AND6 -->
+  <g>
+    <path d="M 780 295 L 815 295 A 25 25 0 0 1 815 345 L 780 345 Z"
+          fill="#1a2230" stroke="#80c8ff" stroke-width="2"/>
+    <text x="800" y="323" text-anchor="middle" fill="#80c8ff" font-size="13" font-weight="bold">AND6</text>
+  </g>
+
+  <!-- Outputs -->
+  <text x="870" y="170" fill="#ff9933" font-size="14" font-weight="bold">→ Y2</text>
+  <text x="870" y="324" fill="#ff9933" font-size="14" font-weight="bold">→ Y3</text>
+
+  <!-- Context note -->
+  <text x="450" y="380" text-anchor="middle" fill="#c8b090" font-size="14" font-style="italic">
+    C1 = AND5.out → צרכנים: XOR2 (Y2) ו-AND6 (Y3). תקלת s-a-0 משפיעה על שניהם.
+  </text>
+</svg>`,
+        hints: [
+          '\\\`stuck-at-0\\\` נחשף רק כש**הערך הצפוי על החוט הוא 1**. אם הצפי 0 → התקלה שקופה.',
+          'מתי \\\`C1 = AND5.out = 1\\\`? כש-\\\`PP10 = PP01 = 1\\\`, כלומר \\\`A1=B0=1\\\` ו-\\\`A0=B1=1\\\`. כלומר **A0=A1=B0=B1=1** = A=B=3.',
+          'בחר \\\`A=B=11\\\` (כלומר \\\`A·B=9=1001\\\`): מצופה Y3=1, Y2=0, Y1=0, Y0=1.',
+          'C1 משפיע על \\\`XOR2\\\` (לחישוב Y2) ועל \\\`AND6\\\` (לחישוב Y3). תקלת stuck-at-0 ב-C1 תשנה את שניהם.',
+          'עם C1 stuck=0: Y2 = XOR2(PP11=1, 0) = **1** במקום 0, Y3 = AND6(PP11=1, 0) = **0** במקום 1.',
+          'מינימום: **1 וקטור** מזהה את התקלה. אבל כדי **לוודא שזה דווקא C1** (ולא, למשל, PP11 או AND5 עצמו) — צריך וקטורים נוספים להבחנה.',
+        ],
+        answer:
+`## וקטור הקלט: \`A = 11, B = 11\` (כלומר A0=A1=B0=B1=1) — **מינימום = 1 וקטור** לזיהוי
+
+---
+
+### למה דווקא הוקטור הזה
+
+עיקרון בסיסי של stuck-at: לחשוף תקלת \`s-a-0\` על חוט, צריך וקטור שגורם לערך הצפוי על אותו חוט להיות **1**.
+
+1. \`stuck-at-0\` מתבטא רק כש**הצפי על החוט הוא 1**. לכן \`C1 = PP10 · PP01 = 1\` מחייב \`PP10=PP01=1\` ⇒ \`A1·B0=1 ∧ A0·B1=1\` ⇒ \`A0=A1=B0=B1=1\`.
+2. אחרי טעינת הקלט, מציפים את ה-XOR2 וה-AND6 — שני הצרכנים של C1 — ובוחנים את Y2/Y3.
+
+### מה רואים בפלט עם הוקטור \`A=B=11\` ⇒ A·B = 3·3 = **9** = 1001
+
+חישוב ללא תקלה:
+- PP00=1, PP10=1, PP01=1, PP11=1
+- Y1 = PP10 ⊕ PP01 = 1 ⊕ 1 = **0**
+- C1 = PP10 · PP01 = 1 · 1 = **1**
+- Y2 = PP11 ⊕ C1 = 1 ⊕ 1 = **0**
+- Y3 = PP11 · C1 = 1 · 1 = **1**
+- **Y3..Y0 = 1001 = 9** ✓
+
+עם C1 stuck-at-0:
+- C1 = **0** (תקוע) במקום 1
+- Y2 = XOR2(PP11=1, 0) = **1** ❌ (היה 0)
+- Y3 = AND6(PP11=1, 0) = **0** ❌ (היה 1)
+
+| | ללא תקלה | עם stuck-at-0 | הבדל |
+|---|:---:|:---:|:---:|
+| Y0 | 1 | 1 | — |
+| Y1 | 0 | 0 | — |
+| **Y2** | **0** | **1** | ✓ נחשף |
+| **Y3** | **1** | **0** | ✓ נחשף |
+
+**הפלט הנצפה: 0101 = 5 במקום הצפוי 1001 = 9.**
+
+### Trade-off: זיהוי vs לוקליזציה
+
+| מטרה | מספר וקטורים | למה |
+|---|:---:|---|
+| **לזהות שיש תקלה** | 1 (A=B=11) | רואים Y2/Y3 שונים מהצפי |
+| **לקבוע שזה דווקא C1** | 2-3 וקטורים נוספים | להבחין מ-PP11 s-a-0 או AND5 s-a-0 |
+
+**אילו תקלות יוצרות אותו פלט (Y2=1, Y3=0) עם A=B=11?**
+- C1 s-a-0 (התקלה הזו)
+- AND5 s-a-0 (התקלה במקור — לפני האות יוצא)
+- PP11 s-a-0 (גם הוא ייתן Y3=0 דרך AND6, אבל Y2 = 0 ⊕ 1 = 1 — same!)
+
+→ לבדל בין שלושת אלה, צריך וקטור נוסף שבו **רק** C1 צפוי להיות 1 אבל לא PP11 ולא AND5:
+- \`A=01, B=11\` ⇒ PP11=0, AND5=PP10·PP01=0·1=0 → C1 צפוי 0 — לא חושף.
+- \`A=10, B=11\` ⇒ PP11=1·1=1, PP10=A1·B0=1·1=1, PP01=A0·B1=0·1=0 → C1=0 — לא חושף.
+
+הקושי: AND5 ו-C1 הם **אותו גורף** (output node = wire). אי-אפשר להבדיל ביניהם בלי בדיקה פיזית. → ב-fault dictionary, "AND5 output s-a-0" ו-"C1 wire s-a-0" הם **equivalent faults** — class fault model.
+
+### Fault dictionary (concept)
+
+לזיהוי-ייחודי בכל המעגל, ATPG מסחרי בונה **dictionary** של signatures:
+
+| תקלה | A=11,B=11 | A=01,B=11 | A=11,B=01 |
+|---|:---:|:---:|:---:|
+| no fault | 1001 | 0011 | 0110 |
+| C1 s-a-0 | 0101 | 0011 | 0010 |
+| PP11 s-a-0 | 0101 | 0011 | 0010 |  // ← זהה — equivalent class |
+| Y0 s-a-0 | 1000 | 0010 | 0110 |
+
+**ל-stuck-at fault model מסחרי, ATPG מטפל בכל תקלה לפי class — לא תמיד מבחין בין equivalents.**
+
+### בקנבס
+
+המעגל מציג את ה-multiplier עם \`stuck-at-0\` מוזרק על הקו \`AND5.out\` (מסומן ב-✗). הצב \`A0=A1=B0=B1=1\`, צפה ב-Y2 שמציג 1 ב-מקום 0 ו-Y3 שמציג 0 במקום 1.`,
+        interviewerMindset:
+`**שאלה אמיתית מ-DFT.** המראיין מחפש:
+1. **שאתה זוכר את הכלל**: stuck-at-0 = "צפי 1 על החוט". בלי הכלל הזה, התשובה תהיה אקראית.
+2. **שאתה יודע לפענח את הביטוי הבוליאני** של C1: \`PP10·PP01 = (A1·B0)·(A0·B1) = A0A1B0B1\` ⇒ דורש **כל הביטים = 1**.
+3. **שאתה מבחין בין detection ל-localization** — 1 וקטור לזהוי, אבל 2-3 לוקליזציה ייחודית.
+4. **שאתה מזכיר equivalent faults** — AND5 output ו-C1 wire הם תקלות שקולות. כל ATPG פרקטי משתמש ב-fault classes.
+
+**שאלת המשך נפוצה**: "האם אתה יכול לבנות **fault dictionary** מלא ל-8 השערים?" → כל wire יש לו signature ייחודי על פני test set מספק. ATPG מודרני (Mentor TestKompress, Synopsys TestMAX) בונה זאת אוטומטית. ל-2-bit multiplier, ~6-8 וקטורים נותנים coverage מלא של stuck-at + dictionary לזיהוי class-level.
+
+**שאלת bonus**: "מה אם הפגם הוא stuck-at-1 ולא 0?" → אותו עיקרון, פולאריות הפוכה. צפי 0 על החוט. ל-C1 s-a-1: צריך וקטור שגורם ל-C1=0, למשל \`A=10, B=01\` (PP10=0, PP01=0 ⇒ C1=0; עם s-a-1, C1=1 → משפיע על Y2/Y3).
+
+**שאלת bonus 2**: "Multiplier sym לעומת adder — האם DFT שונה?" → כן: multipliers מייצרים יותר fanout (כל input משפיע על כל output), וזה בעצם **טוב ל-fault coverage** — וקטורים מועטים יותר נדרשים. ל-2-bit multiplier יש 16 input vectors שמכסים 100% stuck-at faults. ל-2-bit adder יש 32 ולא הכל נדרשים.`,
+        expectedAnswers: [
+          'stuck-at-0', 's-a-0', 'תקוע ב-0',
+          '1', 'one vector', 'וקטור אחד',
+          'A=11', 'B=11', 'A0=A1=B0=B1=1', 'all ones',
+          'Y2', 'Y3', 'C1', 'AND5',
+          'detection', 'localization', 'fault dictionary',
+          'equivalent fault', 'equivalent class',
+          'PP11',
+        ],
+        circuit: () => build(() => {
+          // 8-gate multiplier with stuck-at-0 injected on the C1 wire
+          // (AND5.out → XOR2 / AND6).
+          //
+          // Default inputs preloaded to the detection vector:
+          //   A0=A1=B0=B1=1   ⇒  A·B = 9 = 1001 (expected)
+          //   With s-a-0 on C1: Y2 flips 0→1, Y3 flips 1→0 → 0101 = 5
+          //
+          // The wire object carries `stuckAt: 0` for the engine; the
+          // schematic above marks it visually with the red ✗.
+          const a0 = h.input(80,  100, 'A0');  a0.fixedValue = 1;
+          const a1 = h.input(80,  200, 'A1');  a1.fixedValue = 1;
+          const b0 = h.input(80,  340, 'B0');  b0.fixedValue = 1;
+          const b1 = h.input(80,  440, 'B1');  b1.fixedValue = 1;
+
+          const pp00 = h.gate('AND', 260, 130);
+          const pp10 = h.gate('AND', 260, 220);
+          const pp01 = h.gate('AND', 260, 310);
+          const pp11 = h.gate('AND', 260, 400);
+
+          const xor1 = h.gate('XOR', 480, 265);
+          const and5 = h.gate('AND', 480, 345);
+
+          const xor2 = h.gate('XOR', 680, 400);
+          const and6 = h.gate('AND', 880, 440);
+
+          const y0 = h.output(1040, 130, 'Y0');
+          const y1 = h.output(1040, 265, 'Y1');
+          const y2 = h.output(1040, 400, 'Y2');
+          const y3 = h.output(1040, 480, 'Y3');
+
+          // Inject stuck-at-0 on both fanout branches of C1.
+          const wireC1toXOR2 = h.wire(and5.id, xor2.id, 1);
+          const wireC1toAND6 = h.wire(and5.id, and6.id, 1);
+          wireC1toXOR2.stuckAt = 0;
+          wireC1toAND6.stuckAt = 0;
+
+          return {
+            nodes: [
+              a0, a1, b0, b1,
+              pp00, pp10, pp01, pp11,
+              xor1, and5,
+              xor2, and6,
+              y0, y1, y2, y3,
+            ],
+            wires: [
+              h.wire(a0.id, pp00.id, 0),
+              h.wire(b0.id, pp00.id, 1),
+              h.wire(a1.id, pp10.id, 0),
+              h.wire(b0.id, pp10.id, 1),
+              h.wire(a0.id, pp01.id, 0),
+              h.wire(b1.id, pp01.id, 1),
+              h.wire(a1.id, pp11.id, 0),
+              h.wire(b1.id, pp11.id, 1),
+
+              h.wire(pp00.id, y0.id, 0),
+              h.wire(pp10.id, xor1.id, 0),
+              h.wire(pp01.id, xor1.id, 1),
+              h.wire(pp10.id, and5.id, 0),
+              h.wire(pp01.id, and5.id, 1),
+              h.wire(xor1.id, y1.id, 0),
+
+              h.wire(pp11.id, xor2.id, 0),
+              wireC1toXOR2,                              // stuck-at-0
+              h.wire(pp11.id, and6.id, 0),
+              wireC1toAND6,                              // stuck-at-0
+
+              h.wire(xor2.id, y2.id, 0),
+              h.wire(and6.id, y3.id, 0),
+            ],
+          };
+        }),
+      },
+    ],
+    source: 'שאלת ראיון אמיתית — תכן לוגי / תזמון וסנכרון (גרסה 2 — multiplier)',
+    tags: ['interview', 'multiplier', 'partial-products', 'gate-level', 'identification', 'combinational', 'timing'],
     circuitRevealsAnswer: true,
   },
 ];
