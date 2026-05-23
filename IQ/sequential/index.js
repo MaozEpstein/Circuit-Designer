@@ -4285,4 +4285,239 @@ S_new = 4 + 2·2 + 1 = 9   ✓  (= 3²)
       };
     }),
   },
+
+  // ─────────────────────────────────────────────────────────────
+  //  Q-5050 — Binary vs One-Hot FSM encoding tradeoffs
+  //  הקטלוג מכיל הרבה FSMs (gallery of detectors, counters,
+  //  divisibility checkers) אבל אף אחת לא דנה ב-encoding tradeoff
+  //  ברמת ניתוח. שאלת ראיון קלאסית של senior VLSI / ASIC.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'fsm-encoding-onehot-vs-binary',
+    difficulty: 'medium',
+    title: 'One-Hot לעומת Binary — בחירת encoding ל-FSM בן 6 מצבים',
+    intro:
+`**הקשר**: אתה מתכנן בקר USB עם FSM בן **6 מצבים**:
+
+\`\`\`
+IDLE  →  SYNC  →  PID  →  DATA  →  CRC  →  EOP  →  IDLE
+\`\`\`
+
+ה-FSM פועל ב-**480 MHz** (USB High-Speed) ומשמש כ-**control path** קריטי-תזמון של ה-chip.
+
+האדריכל שואל: "תקודד אותם איך — בינארי או one-hot?"
+
+**שתי החלופות:**
+- **Binary**: \`⌈log₂ 6⌉ = 3 FFs\`. שטח קטן, פלט מקודד.
+- **One-Hot**: **6 FFs** (אחד פעיל בכל זמן). שטח כפול, פלט מפוענח.
+
+זו שאלה שאין לה תשובה אחת. היא תלויה ב-(א) משאבים שאתה מוכן לשלם בשטח, (ב) עומק combinational logic שאתה מסוגל לסבול, (ג) דרישות זיהוי שגיאות, (ד) האם זה ASIC או FPGA — זה משנה דרמטית את ההמלצה.
+
+ננתח חמישה צירים — **שטח, מהירות, צריכת חשמל, חוסן ל-SEU, וזיהוי מצב לא חוקי** — ובסוף נחליט.`,
+    schematic: `
+<svg viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Binary vs One-Hot FSM encoding for 6 states">
+  <text x="360" y="30" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">Binary vs One-Hot — FSM בן 6 מצבים</text>
+
+  <!-- LEFT PANEL — Binary -->
+  <rect x="20" y="60" width="280" height="380" rx="12" fill="rgba(96,192,255,0.06)" stroke="#80c8ff" stroke-width="1.8"/>
+  <text x="160" y="92" text-anchor="middle" fill="#80c8ff" font-size="20" font-weight="bold">BINARY · 3 FF</text>
+
+  <!-- 3 FFs vertical -->
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="115" y="115" width="50" height="40" rx="6"/>
+    <rect x="115" y="170" width="50" height="40" rx="6"/>
+    <rect x="115" y="225" width="50" height="40" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="16" font-weight="bold">
+    <text x="140" y="140">Q₂</text>
+    <text x="140" y="195">Q₁</text>
+    <text x="140" y="250">Q₀</text>
+  </g>
+
+  <!-- state assignment table -->
+  <text x="160" y="296" text-anchor="middle" fill="#a0c0d0" font-size="16" font-weight="bold">State encoding:</text>
+  <g fill="#c8d8f0" text-anchor="start" font-size="16">
+    <text x="50"  y="320">IDLE = 000</text>
+    <text x="50"  y="338">SYNC = 001</text>
+    <text x="50"  y="356">PID  = 010</text>
+    <text x="170" y="320">DATA = 011</text>
+    <text x="170" y="338">CRC  = 100</text>
+    <text x="170" y="356">EOP  = 101</text>
+  </g>
+  <text x="160" y="390" text-anchor="middle" fill="#f08080" font-size="16" font-weight="bold">⚠ 110, 111 — לא חוקיים</text>
+  <text x="160" y="412" text-anchor="middle" fill="#c8b090" font-size="16" font-style="italic">דורש recovery logic</text>
+
+  <!-- RIGHT PANEL — One-Hot -->
+  <rect x="420" y="60" width="280" height="380" rx="12" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="560" y="92" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">ONE-HOT · 6 FF</text>
+
+  <!-- 6 FFs vertical -->
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="515" y="110" width="50" height="32" rx="6"/>
+    <rect x="515" y="148" width="50" height="32" rx="6"/>
+    <rect x="515" y="186" width="50" height="32" rx="6"/>
+    <rect x="515" y="224" width="50" height="32" rx="6"/>
+    <rect x="515" y="262" width="50" height="32" rx="6"/>
+    <rect x="515" y="300" width="50" height="32" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="16" font-weight="bold">
+    <text x="540" y="131">Q_IDLE</text>
+    <text x="540" y="169">Q_SYNC</text>
+    <text x="540" y="207">Q_PID</text>
+    <text x="540" y="245">Q_DATA</text>
+    <text x="540" y="283">Q_CRC</text>
+    <text x="540" y="321">Q_EOP</text>
+  </g>
+
+  <text x="560" y="356" text-anchor="middle" fill="#a0c0d0" font-size="16" font-weight="bold">State encoding:</text>
+  <g fill="#c8d8f0" text-anchor="start" font-size="16" font-family="'JetBrains Mono', monospace">
+    <text x="450" y="378">IDLE = 100000</text>
+    <text x="450" y="396">SYNC = 010000</text>
+    <text x="450" y="414">PID  = 001000</text>
+    <text x="580" y="378">DATA = 000100</text>
+    <text x="580" y="396">CRC  = 000010</text>
+    <text x="580" y="414">EOP  = 000001</text>
+  </g>
+
+  <!-- bottom note -->
+  <text x="360" y="466" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    ⚠ Binary: 2 הקומבינציות הלא-חוקיות דורשות טיפול. One-Hot: 58 אי-חוקיות, כולן ב-popcount ≠ 1.
+  </text>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'מלא טבלת השוואה על **חמשת הצירים**: שטח, מהירות (עומק combinational ל-next-state), צריכת חשמל (switching activity), חוסן ל-**SEU** (Single Event Upset — קרינה הופכת FF אקראית), וזיהוי מצב לא חוקי. **חשוב**: ההמלצה משתנה לפי ASIC או FPGA — פרט גם את הציר הזה.',
+        hints: [
+          '**שטח**: בינארי = 3 FFs, one-hot = 6 FFs. אבל ב-FPGA כל slice מגיע עם FF "חופשי" צמוד ל-LUT — אז ה-6 FFs כמעט חינם.',
+          '**מהירות**: בינארי דורש לוגיקה לפענוח גם של state הנוכחי וגם של next-state (`D = f(Q₂,Q₁,Q₀,inputs)` — cone לוגי עמוק). one-hot — `D_SYNC = (Q_IDLE & sync_seen) | (Q_SYNC & ¬move)` — 2-3 רמות שערים בלבד.',
+          '**חשמל**: בינארי, מעבר IDLE(000)→DATA(011) הופך 2 ביטים. one-hot — **כל מעבר** הופך בדיוק 2 ביטים (אחד off, אחד on). הצפיפות זהה אבל ב-binary יש משתנות → current spikes.',
+          '**SEU**: אם FF "מתהפך" באקראי, בינארי קופץ ל-state אחר חוקי בלי התראה (יוצא מ-IDLE לפתע ל-CRC). one-hot — מצב לא חוקי הוא 0 או 2+ ביטים פעילים — קל לזהות עם `popcount==1` checker.',
+          '**ASIC vs FPGA**: ב-ASIC, FFs יקרים (transistors), binary מנצח בשטח. ב-FPGA, FFs חינמיים יחסית אבל LUTs יקרים — one-hot מנצח כי next-state רדוד.',
+        ],
+        answer:
+`### טבלת ההשוואה המלאה
+
+| ציר | Binary (3 FF) | One-Hot (6 FF) | מנצח |
+|---|---|---|---|
+| **שטח (ASIC)** | 3 FF + ~7 LUTs | 6 FF + ~3 LUTs | **Binary** |
+| **שטח (FPGA)** | 3 FF + 7 LUTs | 6 FF + 3 LUTs | **One-Hot** (FFs חינם) |
+| **עומק combinational** | ~3-4 רמות שערים | ~2 רמות | **One-Hot** |
+| **Fmax** | בינוני | גבוה | **One-Hot** |
+| **Switching activity** | משתנה (1-3 bits/transition) | קבועה (תמיד 2) | **One-Hot** (צפוי, פחות di/dt) |
+| **חוסן ל-SEU** | קופץ ל-state חוקי שונה — בלתי מזוהה | קל לזהות (popcount≠1) | **One-Hot** |
+| **פיענוח פלט** | דרוש decode logic (\`Y = Q₂ & ¬Q₁ & Q₀\`) | חופשי (Y = Q_state ישירות) | **One-Hot** |
+| **מצבים לא-חוקיים** | 2 (\`110\`, \`111\`) | 58 (\`2⁶ − 6\`), כולם detectable | **Binary** (פחות לטפל) |
+
+### מסקנה — תלוי בקונטקסט
+
+- **ASIC, design קטן, area-budget הדוק** → **Binary**.
+- **ASIC, design קריטי-תזמון (e.g. > 400 MHz)** → **One-Hot** (לוגיקה רדודה = fmax גבוה).
+- **FPGA כמעט תמיד** → **One-Hot** (כלי הסינתזה של Xilinx/Altera ממילא ממירים לכך).
+- **High-reliability (aerospace, automotive ASIL-D)** → **One-Hot** עם בודק \`popcount==1\` שמכפה reset על SEU.
+
+### הרחבה — Gray code (כשהצריכת חשמל קריטית)
+
+אם הסיבה העיקרית לבחירה היא **חיסכון בצריכה** (battery-powered IoT, low-power MCU), **Gray code** מבטיח שמעבר בין סטייטים סמוכים משנה **ביט אחד בלבד**. אותם 3 FFs כמו בינארי, אבל סדר קידוד שונה:
+
+| State | Gray |
+|---|---|
+| IDLE | 000 |
+| SYNC | 001 |
+| PID | 011 |
+| DATA | 010 |
+| CRC | 110 |
+| EOP | 111 |
+
+מעבר IDLE→SYNC הופך ביט אחד (במקום 2 ב-binary), 50% פחות switching activity.`,
+        interviewerMindset:
+`**השאלה הזו בוחנת אם המועמד שואל "ASIC או FPGA?" לפני שעונה.** אם הוא קופץ ל-binary בלי לשאול — איבד נקודה. החזרה הקלאסית: "אם אמרת ASIC בלי הקשר, אני הולך ל-binary. ב-FPGA, ה-default של Vivado הוא דווקא one-hot מסיבה טובה."
+
+**בונוס**: לציין שכלי סינתזה מודרניים יכולים להפוך אוטומטית בין הקידודים ע"י attribute (\`(* fsm_encoding = "one_hot" *)\`). מועמד טוב יודע שזה לא תמיד החלטה ידנית.
+
+**מקפיץ לרעה**: לומר "one-hot מבזבז שטח" בלי לקחת בחשבון את החיסכון ב-LUTs ל-next-state, או בלי להתחשב ב-FPGA vs ASIC.
+
+**שאלת בונוס**: "למה דווקא 2 ביטים מתחלפים ב-one-hot ולא 1?" → תשובה: כי מעבר state = bit אחד off (היוצא) + bit אחד on (הנכנס). בדיוק 2. זה ה-invariant של one-hot.`,
+        expectedAnswers: [
+          'binary', 'one-hot', 'one hot', 'בינארי',
+          '3', '6', 'asic', 'fpga',
+          'popcount', 'seu', 'gray',
+          'shallow', 'רדוד', 'depth',
+          'switching', 'activity',
+        ],
+      },
+      {
+        label: 'ב',
+        question: 'תרחיש סופי: אתה מתכנן את ה-FSM הזה כ-**ASIC ב-7nm**. ה-design הוא חלק מבקר USB ב-**480 MHz**, ה-**area budget הדוק** (השבב כבר חורג), וקיימת דרישת **ASIL-B** (functional safety, automotive). מה תבחר? **נמק**.',
+        hints: [
+          'שני אילוצים מתנגדים: area הדוק (טיעון ל-binary) ו-safety (טיעון ל-one-hot).',
+          'חשוב על **פתרון משולב**: binary עם בדיקת מצבים בלתי חוקיים (`if (state == 110 || state == 111) → goto SAFE_RESET`).',
+          'או, להמיר את הציר "FFs מיותרים" ל-"safety asset" — אם בלאו הכי שילמת 6 FFs לאחסון, השתמש בהם להגנה.',
+          'שקול **חבילה היברידית**: one-hot ל-state עצמו + שכבת checker חיצונית שמוודאת `popcount==1` בכל cycle. ב-ASIL-B אפשר להסתפק בכך + reset על שגיאה.',
+        ],
+        answer:
+`### המלצה: **One-Hot, עם הצדקה רב-צירית**
+
+### הצדקה
+
+**1. Fmax — הדרישה הקשה ביותר:**
+ב-480 MHz, זמן מחזור = 2.08 ns. בינארי דורש 3-4 רמות logic לפענוח next-state — קרוב לקצה ב-7nm. one-hot עם 2 רמות נותן **slack בריא** (~30% margin).
+
+**2. ASIL-B — דרישת safety:**
+ASIL-B דורש **detection-coverage ≥ 90%** על faults לוגיים במהלך mission profile. בודק \`popcount==1\` הוא single-gate (OR ענקי על כל ה-FFs יחד עם תחתרת bits פעילים) שמכסה **~100%** מ-SEUs ב-state register. בינארי דורש parity bit נפרד (FF נוסף + comparator) להגנה דומה — מבטל את יתרון השטח שלו.
+
+**3. Area:**
+- One-hot: 6 FFs × ~1 µm² (7nm) ≈ **6 µm²** ל-state register.
+- Binary: 3 FFs + parity FF = 4 FFs × 1 µm² + checker ~10 µm² ≈ **14 µm²** סך-הכל.
+- One-hot עם popcount checker: 6 FFs + ~10 µm² checker = **16 µm²**.
+
+אז ה-area הוא דומה — אבל ה-fmax של one-hot עדיף משמעותית, ו-safety של popcount היא **גם** הזיהוי שגיאות העיקרי **וגם** בדיקת liveness של ה-FFs.
+
+### תרחיש הפוך לסיכון
+
+אם זה היה **microcontroller IoT ב-50 MHz עם battery של 10 שנים** — binary + Gray היו ניצחון ברור, כי:
+- תזמון לא בעיה
+- שטח/חשמל הם הקריטי
+- safety במקרה הזה אופציונלית (לא automotive)
+
+### לקח כללי
+
+לפני שאומרים "ה-encoding הנכון הוא X", שואלים **3 שאלות**:
+1. **ASIC או FPGA?**
+2. **Critical path הוא קומבינטורי ארוך?** (high fmax)
+3. **יש דרישת safety/reliability?**
+
+התשובות מכתיבות. אין "ברירת מחדל".
+
+### פתרון Senior — Hybrid
+
+הסיכוי שתשובת ראיון תרשים: לציין ש**אפשר לשלב** — one-hot עם **error_detect output** שמופעל כשpopcount ≠ 1, וה-error מזין reset או safe-state. זה הופך את ה-FFs ה-"מיותרים" ל-**safety asset**:
+
+\`\`\`verilog
+wire [2:0] popcount = q[0]+q[1]+q[2]+q[3]+q[4]+q[5];
+wire error = (popcount != 3'd1);
+\`\`\``,
+        interviewerMindset:
+`**זו השאלה שמפרידה בין "מועמד טוב" ל-"senior".**
+
+Senior **מציע פתרון היברידי** — לא בוחר אחד מהשניים אלא לוקח מהטוב של שניהם (one-hot + checker). הזיהוי שגם FFs "מבוזבזים" יכולים להפוך ל-**safety asset** הוא נקודת המפתח.
+
+**שאלת bonus קלאסית**: "כמה זמן לוקח ל-checker שלך לזהות SEU?" → תשובה טובה: 1 cycle (combinational popcount check). תשובה מצוינת: לציין שיש risk window של ~1 cycle בו ה-error מופיע אבל ה-system עוד לא הגיב — לכן ה-error משמש כ-reset trigger ולא assert חמור.
+
+**מקפיץ לרעה**: לבחור binary אוטומטית כי "area budget הדוק" בלי לקחת בחשבון fmax (binary לא יסגור ב-480 MHz בקלות) ובלי לקחת בחשבון את עלות ה-parity ל-safety.
+
+**אזכור הציפייה**: בראיון לחברת automotive (NXP, Infineon, Renesas), one-hot עם checker היא **התשובה הצפויה**. בראיון לחברת FPGA (Xilinx, Altera), one-hot היא ברירת המחדל ההגיונית.`,
+        expectedAnswers: [
+          'one-hot', 'one hot',
+          'popcount', 'checker',
+          'asil', 'safety',
+          'fmax', '480',
+          'fpga', 'asic',
+          'היברידי', 'hybrid', 'משולב', 'parity',
+        ],
+      },
+    ],
+    source: 'מאגר ראיונות — FSM encoding tradeoffs',
+    tags: ['fsm', 'encoding', 'one-hot', 'binary', 'gray', 'state', 'safety', 'seu'],
+  },
 ];

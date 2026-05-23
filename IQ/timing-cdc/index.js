@@ -8719,12 +8719,12 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
   <text x="446" y="296" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
 
   <!-- Internal "async OR" annotation -->
-  <text x="260" y="328" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">RST bypasses CLK</text>
-  <text x="260" y="350" text-anchor="middle" fill="#a0c0d0" font-size="15" font-style="italic">→ Q forced to 0 immediately</text>
+  <text x="260" y="328" text-anchor="middle" fill="#a0c0d0" font-size="16" font-style="italic">RST bypasses CLK</text>
+  <text x="260" y="350" text-anchor="middle" fill="#a0c0d0" font-size="16" font-style="italic">→ Q forced to 0 immediately</text>
 
-  <text x="260" y="430" text-anchor="middle" fill="#ff8080" font-size="17" font-weight="bold">RST asserts → Q=0 (no CLK needed)</text>
-  <text x="260" y="460" text-anchor="middle" fill="#c8b090" font-size="15">⚠ recovery time on deassert</text>
-  <text x="260" y="492" text-anchor="middle" fill="#c8b090" font-size="15">ASIC standard, POR</text>
+  <text x="260" y="430" text-anchor="middle" fill="#ff8080" font-size="18" font-weight="bold">RST asserts → Q=0 (no CLK needed)</text>
+  <text x="260" y="460" text-anchor="middle" fill="#c8b090" font-size="16">⚠ recovery time on deassert</text>
+  <text x="260" y="492" text-anchor="middle" fill="#c8b090" font-size="16">ASIC standard, POR</text>
 
   <!-- ════════ Sync (RIGHT) ════════ -->
   <rect x="520" y="90" width="440" height="460" rx="14" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2.4"/>
@@ -8738,14 +8738,14 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
   <text x="535" y="244" text-anchor="end" fill="#cca040" font-size="18" font-weight="bold">D</text>
 
   <line x1="540" y1="260" x2="580" y2="260" stroke="#80f0a0" stroke-width="2.4"/>
-  <text x="535" y="264" text-anchor="end" fill="#80f0a0" font-size="14">0</text>
+  <text x="535" y="264" text-anchor="end" fill="#80f0a0" font-size="16">0</text>
 
   <line x1="610" y1="300" x2="610" y2="280" stroke="#ff6060" stroke-width="2.4"/>
-  <text x="610" y="318" text-anchor="middle" fill="#ff6060" font-size="14">RST sel</text>
+  <text x="610" y="318" text-anchor="middle" fill="#ff6060" font-size="16">RST sel</text>
 
   <!-- FF body -->
   <rect x="680" y="220" width="180" height="160" rx="10" fill="#0a1825" stroke="#cc66ff" stroke-width="2.6"/>
-  <text x="770" y="305" text-anchor="middle" fill="#cc99ff" font-size="26" font-weight="bold">D-FF</text>
+  <text x="770" y="305" text-anchor="middle" fill="#cc99ff" font-size="28" font-weight="bold">D-FF</text>
 
   <line x1="640" y1="250" x2="680" y2="250" stroke="#a0a0c0" stroke-width="2.4"/>
 
@@ -8757,9 +8757,9 @@ I/O latency = 1 cycle (זהה ל-BEFORE).`,
   <text x="926" y="306" fill="#ff9933" font-size="18" font-weight="bold">Q</text>
 
   <!-- Internal annotation -->
-  <text x="740" y="425" text-anchor="middle" fill="#80f0a0" font-size="17" font-weight="bold">RST gated through MUX → captures on CLK edge</text>
-  <text x="740" y="460" text-anchor="middle" fill="#c8b090" font-size="15">✓ no recovery issue</text>
-  <text x="740" y="492" text-anchor="middle" fill="#c8b090" font-size="15">FPGA standard, deterministic</text>
+  <text x="740" y="425" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">RST gated through MUX → captures on CLK edge</text>
+  <text x="740" y="460" text-anchor="middle" fill="#c8b090" font-size="16">✓ no recovery issue</text>
+  <text x="740" y="492" text-anchor="middle" fill="#c8b090" font-size="16">FPGA standard, deterministic</text>
 </svg>`,
       },
 
@@ -8850,7 +8850,7 @@ MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
   <!-- Forbidden window highlight -->
   <rect x="280" y="200" width="140" height="100" rx="6" fill="rgba(255,96,96,0.15)" stroke="#ff6060" stroke-width="2" stroke-dasharray="4,3"/>
   <text x="350" y="332" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">forbidden window</text>
-  <text x="350" y="356" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">t_removal ←──→ t_recovery</text>
+  <text x="350" y="356" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">t_removal ←──→ t_recovery</text>
 
   <!-- Sample RST waveform (high then low) -->
   <g stroke="#ff6060" stroke-width="3" fill="none">
@@ -8858,14 +8858,14 @@ MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
     <line x1="220" y1="200" x2="220" y2="280"/>
     <line x1="220" y1="280" x2="900" y2="280"/>
   </g>
-  <text x="220" y="190" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">✓ safe deassertion</text>
-  <text x="220" y="416" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">(far before CLK edge)</text>
+  <text x="220" y="190" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">✓ safe deassertion</text>
+  <text x="220" y="416" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">(far before CLK edge)</text>
 
   <!-- Dotted "bad" deassertion inside window -->
   <g stroke="#ff8080" stroke-width="2" fill="none" stroke-dasharray="4,3">
     <line x1="320" y1="200" x2="320" y2="280"/>
   </g>
-  <text x="320" y="416" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">✗ inside window → metastable</text>
+  <text x="320" y="416" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">✗ inside window → metastable</text>
 
   <!-- Bottom: MTBF reminder -->
   <rect x="60" y="430" width="880" height="36" rx="8" fill="rgba(204,102,255,0.06)" stroke="#cc66ff" stroke-width="1.8"/>
@@ -8972,7 +8972,7 @@ MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
   <text x="100" y="196" text-anchor="middle" fill="#ffe060" font-size="20" font-weight="bold">VCC=1</text>
 
   <line x1="140" y1="190" x2="240" y2="190" stroke="#ffe060" stroke-width="2.4"/>
-  <text x="190" y="180" text-anchor="middle" fill="#ffe060" font-size="14">D tied high</text>
+  <text x="190" y="180" text-anchor="middle" fill="#ffe060" font-size="16">D tied high</text>
 
   <!-- FF1 -->
   <rect x="240" y="160" width="130" height="80" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
@@ -8981,7 +8981,7 @@ MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
 
   <!-- FF1 → FF2 -->
   <line x1="370" y1="190" x2="470" y2="190" stroke="#a0a0c0" stroke-width="2.4"/>
-  <text x="420" y="180" text-anchor="middle" fill="#a0a0c0" font-size="14">Q1</text>
+  <text x="420" y="180" text-anchor="middle" fill="#a0a0c0" font-size="16">Q1</text>
 
   <!-- FF2 -->
   <rect x="470" y="160" width="130" height="80" rx="8" fill="#1a1428" stroke="#cc66ff" stroke-width="3"/>
@@ -9002,7 +9002,7 @@ MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
   <!-- nRST_in rail (active-low, dashed red) -->
   <line x1="60" y1="370" x2="640" y2="370" stroke="#ff6060" stroke-width="3" stroke-dasharray="9,5"/>
   <text x="40" y="376" fill="#ff6060" font-size="20" font-weight="bold">nRST_in</text>
-  <text x="660" y="376" fill="#ff8080" font-size="15" font-style="italic">(active-low)</text>
+  <text x="660" y="376" fill="#ff8080" font-size="16" font-style="italic">(active-low)</text>
   <line x1="305" y1="370" x2="305" y2="240" stroke="#ff6060" stroke-width="2.4"/>
   <line x1="535" y1="370" x2="535" y2="240" stroke="#ff6060" stroke-width="2.4"/>
   <polygon points="299,240 311,240 305,252" fill="#ff6060"/>
@@ -9059,7 +9059,7 @@ MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
     const x = 140 + i * 110;
     return `
       <line x1="${x}" y1="100" x2="${x}" y2="500" stroke="#2a3a4a" stroke-width="1"/>
-      <text x="${x + 55}" y="120" text-anchor="middle" fill="#7a8a9a" font-size="14">${i + 1}</text>
+      <text x="${x + 55}" y="120" text-anchor="middle" fill="#7a8a9a" font-size="16">${i + 1}</text>
     `;
   }).join('')}
   <line x1="140" y1="128" x2="800" y2="128" stroke="#3a4a5a" stroke-width="1.4"/>
@@ -9117,8 +9117,8 @@ MTBF = exp(t_avail / τ) / (T_w · f_clk · f_rst)
   })()}
 
   <!-- Annotations -->
-  <text x="${140 + 1 * 110}" y="450" text-anchor="middle" fill="#ff8080" font-size="14" font-weight="bold">⇩ async assert (immediate)</text>
-  <text x="${140 + 4 * 110}" y="470" text-anchor="middle" fill="#80f0a0" font-size="14" font-weight="bold">↑ sync deassert (2 cycles)</text>
+  <text x="${140 + 1 * 110}" y="450" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">⇩ async assert (immediate)</text>
+  <text x="${140 + 4 * 110}" y="470" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">↑ sync deassert (2 cycles)</text>
 
   <!-- Summary -->
   <rect x="60" y="490" width="880" height="50" rx="8" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
@@ -9233,7 +9233,7 @@ STA בודק clock skew ומסמן violations. **Reset skew לא תמיד נכל
     { x: 880, y: 340, label: 'BUF2' },
   ].map(b => `
     <rect x="${b.x - 28}" y="${b.y - 18}" width="56" height="36" rx="6" fill="#1a2230" stroke="#ff8080" stroke-width="2"/>
-    <text x="${b.x}" y="${b.y + 5}" text-anchor="middle" fill="#ff8080" font-size="13">${b.label}</text>
+    <text x="${b.x}" y="${b.y + 5}" text-anchor="middle" fill="#ff8080" font-size="16">${b.label}</text>
   `).join('')}
 
   <!-- 4 FFs at the leaves -->
@@ -9243,10 +9243,10 @@ STA בודק clock skew ומסמן violations. **Reset skew לא תמיד נכל
   `).join('')}
 
   <!-- Skew annotations -->
-  <text x="120" y="476" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">skew = 0</text>
-  <text x="280" y="476" text-anchor="middle" fill="#ffe060" font-size="15" font-weight="bold">skew = 30 ps</text>
-  <text x="720" y="476" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">skew = 60 ps</text>
-  <text x="880" y="476" text-anchor="middle" fill="#ff6060" font-size="15" font-weight="bold">skew = 100 ps</text>
+  <text x="120" y="476" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">skew = 0</text>
+  <text x="280" y="476" text-anchor="middle" fill="#ffe060" font-size="16" font-weight="bold">skew = 30 ps</text>
+  <text x="720" y="476" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">skew = 60 ps</text>
+  <text x="880" y="476" text-anchor="middle" fill="#ff6060" font-size="16" font-weight="bold">skew = 100 ps</text>
 
   <!-- Warning banner -->
   <rect x="60" y="500" width="880" height="46" rx="10" fill="rgba(255,96,96,0.07)" stroke="#ff6060" stroke-width="2"/>
@@ -9429,11 +9429,11 @@ STA בודק clock skew ומסמן violations. **Reset skew לא תמיד נכל
 
   <!-- Pipeline A — direct, releases immediately -->
   <rect x="40" y="90" width="440" height="340" rx="14" fill="rgba(255,96,96,0.05)" stroke="rgba(255,96,96,0.55)" stroke-width="2.4"/>
-  <text x="260" y="128" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="22">Pipeline A — Direct</text>
+  <text x="260" y="128" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">Pipeline A — Direct</text>
 
-  <text x="60" y="170" fill="#cca040" font-size="15" font-weight="bold">RST_in</text>
-  <text x="60" y="220" fill="#cc99ff" font-size="15" font-weight="bold">Q_A1</text>
-  <text x="60" y="270" fill="#cc99ff" font-size="15" font-weight="bold">Q_A2</text>
+  <text x="60" y="170" fill="#cca040" font-size="16" font-weight="bold">RST_in</text>
+  <text x="60" y="220" fill="#cc99ff" font-size="16" font-weight="bold">Q_A1</text>
+  <text x="60" y="270" fill="#cc99ff" font-size="16" font-weight="bold">Q_A2</text>
 
   <!-- Waveforms for A: RST drops at cycle 2, Q_A1 = 1 immediately on CLK 3 -->
   ${(() => {
@@ -9453,16 +9453,16 @@ STA בודק clock skew ומסמן violations. **Reset skew לא תמיד נכל
     `;
   })()}
 
-  <text x="260" y="350" text-anchor="middle" fill="#ff8080" font-size="15" font-weight="bold">Q_A1=1 ב-CLK 3 (מיד אחרי deassertion)</text>
-  <text x="260" y="380" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">⚠ ייתכן recovery violation</text>
+  <text x="260" y="350" text-anchor="middle" fill="#ff8080" font-size="16" font-weight="bold">Q_A1=1 ב-CLK 3 (מיד אחרי deassertion)</text>
+  <text x="260" y="380" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">⚠ ייתכן recovery violation</text>
 
   <!-- Pipeline B — synchronized, 2 cycles delay -->
   <rect x="520" y="90" width="440" height="340" rx="14" fill="rgba(128,240,160,0.05)" stroke="rgba(128,240,160,0.55)" stroke-width="2.4"/>
-  <text x="740" y="128" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="22">Pipeline B — Sync</text>
+  <text x="740" y="128" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">Pipeline B — Sync</text>
 
-  <text x="540" y="170" fill="#cca040" font-size="15" font-weight="bold">RST_in</text>
-  <text x="540" y="220" fill="#cc99ff" font-size="15" font-weight="bold">rst_int</text>
-  <text x="540" y="270" fill="#cc99ff" font-size="15" font-weight="bold">Q_B1</text>
+  <text x="540" y="170" fill="#cca040" font-size="16" font-weight="bold">RST_in</text>
+  <text x="540" y="220" fill="#cc99ff" font-size="16" font-weight="bold">rst_int</text>
+  <text x="540" y="270" fill="#cc99ff" font-size="16" font-weight="bold">Q_B1</text>
 
   ${(() => {
     const X = c => 620 + (c - 1) * 65;
@@ -9481,8 +9481,8 @@ STA בודק clock skew ומסמן violations. **Reset skew לא תמיד נכל
     `;
   })()}
 
-  <text x="740" y="350" text-anchor="middle" fill="#80f0a0" font-size="15" font-weight="bold">Q_B1=1 ב-CLK 5 (2 cycles אחרי deassertion)</text>
-  <text x="740" y="380" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">✓ deterministic, no metastability</text>
+  <text x="740" y="350" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">Q_B1=1 ב-CLK 5 (2 cycles אחרי deassertion)</text>
+  <text x="740" y="380" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">✓ deterministic, no metastability</text>
 
   <!-- Bottom -->
   <text x="500" y="458" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">
@@ -9578,7 +9578,7 @@ F(A, B, C) = A·B + B'·C
   <text x="660" y="146" text-anchor="middle" fill="#ffc080" font-size="16" font-weight="bold">stage 2 — OR (reconverge)</text>
 
   <!-- ════════ Input pads ════════ -->
-  <g font-size="22" font-weight="bold">
+  <g font-size="20" font-weight="bold">
     <circle cx="80" cy="200" r="28" fill="#0a1825" stroke="#cca040" stroke-width="2.6"/>
     <text x="80" y="208" text-anchor="middle" fill="#cca040">A</text>
     <circle cx="80" cy="290" r="28" fill="#0a1825" stroke="#cca040" stroke-width="2.6"/>
@@ -9609,21 +9609,21 @@ F(A, B, C) = A·B + B'·C
 
   <!-- ════════ g1 = AND (top) ════════ -->
   <use href="#and-gate" x="240" y="200" width="80" height="48"/>
-  <text x="280" y="230" text-anchor="middle" fill="#c8d8f0" font-size="15" font-weight="bold">g1 = AND</text>
-  <text x="280" y="270" text-anchor="middle" fill="#80c8ff" font-size="14">A·B · 60 ps</text>
+  <text x="280" y="230" text-anchor="middle" fill="#c8d8f0" font-size="16" font-weight="bold">g1 = AND</text>
+  <text x="280" y="270" text-anchor="middle" fill="#80c8ff" font-size="16">A·B · 60 ps</text>
 
   <!-- ════════ g2 = NOT ════════ -->
   <use href="#not-gate" x="230" y="330" width="80" height="40"/>
-  <text x="270" y="394" text-anchor="middle" fill="#ffe060" font-size="14" font-weight="bold">g2 = NOT B</text>
-  <text x="270" y="412" text-anchor="middle" fill="#a0c0d0" font-size="13">30 ps</text>
+  <text x="270" y="394" text-anchor="middle" fill="#ffe060" font-size="16" font-weight="bold">g2 = NOT B</text>
+  <text x="270" y="412" text-anchor="middle" fill="#a0c0d0" font-size="16">30 ps</text>
 
   <!-- g2 → g3 wire -->
   <path d="M 320 350 L 360 350 L 360 410 L 380 410" stroke="#a0a0c0" stroke-width="2.4" fill="none"/>
 
   <!-- ════════ g3 = AND (bottom) ════════ -->
   <use href="#and-gate" x="380" y="400" width="80" height="48"/>
-  <text x="420" y="395" text-anchor="middle" fill="#c8d8f0" font-size="15" font-weight="bold">g3 = AND</text>
-  <text x="420" y="468" text-anchor="middle" fill="#80c8ff" font-size="14">B'·C · 60 ps</text>
+  <text x="420" y="395" text-anchor="middle" fill="#c8d8f0" font-size="16" font-weight="bold">g3 = AND</text>
+  <text x="420" y="468" text-anchor="middle" fill="#80c8ff" font-size="16">B'·C · 60 ps</text>
 
   <!-- C → g3.in1 (lower input) -->
   <path d="M 240 420 L 360 420 L 360 432 L 380 432" stroke="#a0a0c0" stroke-width="2.4" fill="none"/>
@@ -9641,16 +9641,16 @@ F(A, B, C) = A·B + B'·C
   <!-- ════════ g4 = OR ════════ -->
   <use href="#or-gate" x="580" y="276" width="100" height="56"/>
   <text x="630" y="306" text-anchor="middle" fill="#c8d8f0" font-size="16" font-weight="bold">g4 = OR</text>
-  <text x="630" y="356" text-anchor="middle" fill="#ffc080" font-size="14">50 ps</text>
+  <text x="630" y="356" text-anchor="middle" fill="#ffc080" font-size="16">50 ps</text>
 
   <!-- ════════ Output ════════ -->
   <path d="M 680 304 L 880 304" stroke="#ff9933" stroke-width="2.6" fill="none"/>
   <circle cx="910" cy="304" r="28" fill="#0a1825" stroke="#ff9933" stroke-width="2.6"/>
-  <text x="910" y="312" text-anchor="middle" fill="#ff9933" font-size="22" font-weight="bold">F</text>
+  <text x="910" y="312" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">F</text>
 
   <!-- ════════ Hint banner ════════ -->
   <rect x="80" y="478" width="840" height="32" rx="8" fill="rgba(204,102,255,0.08)" stroke="#cc66ff" stroke-width="1.6"/>
-  <text x="500" y="500" text-anchor="middle" fill="#cc99ff" font-size="15" font-weight="bold">
+  <text x="500" y="500" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">
     AB דרך g1 · B'C דרך g2→g3 · ה-OR מאחד — וב-fanout של B מסתתר ה-hazard
   </text>
 </svg>`,
@@ -9893,7 +9893,7 @@ A=1:    0      1      1      1
     const x = 160 + (t / 150) * 740;
     return `
       <line x1="${x}" y1="495" x2="${x}" y2="505" stroke="#a0a0c0" stroke-width="1.4"/>
-      <text x="${x}" y="528" text-anchor="middle" fill="#a0a0c0" font-size="14">${t} ps</text>
+      <text x="${x}" y="528" text-anchor="middle" fill="#a0a0c0" font-size="16">${t} ps</text>
     `;
   }).join('')}
   <text x="500" y="552" text-anchor="middle" fill="#a0a0c0" font-size="16" font-weight="bold">t</text>
@@ -9928,9 +9928,9 @@ A=1:    0      1      1      1
       segs.push(`<line x1="${prevX}" y1="${prevY}" x2="920" y2="${prevY}" stroke="${r.color}" stroke-width="3.5"/>`);
 
       return `
-        <text x="20" y="${yMid + 5}" fill="${r.color}" font-size="15" font-weight="bold">${r.label}</text>
-        <text x="${X(0) - 16}" y="${yBot + 4}" text-anchor="end" fill="#7a8a9a" font-size="13">0</text>
-        <text x="${X(0) - 16}" y="${yTop + 4}" text-anchor="end" fill="#7a8a9a" font-size="13">1</text>
+        <text x="20" y="${yMid + 5}" fill="${r.color}" font-size="16" font-weight="bold">${r.label}</text>
+        <text x="${X(0) - 16}" y="${yBot + 4}" text-anchor="end" fill="#7a8a9a" font-size="16">0</text>
+        <text x="${X(0) - 16}" y="${yTop + 4}" text-anchor="end" fill="#7a8a9a" font-size="16">1</text>
         ${segs.join('')}
       `;
     }).join('');
@@ -9939,7 +9939,7 @@ A=1:    0      1      1      1
   <!-- Highlight the glitch window -->
   <rect x="${160 + (60/150) * 740}" y="430" width="${(90-60)/150 * 740}" height="40" rx="6"
         fill="rgba(255,96,96,0.25)" stroke="#ff6060" stroke-width="2"/>
-  <text x="${160 + (75/150) * 740}" y="412" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">⚠ glitch 30 ps</text>
+  <text x="${160 + (75/150) * 740}" y="412" text-anchor="middle" fill="#ff6060" font-size="16" font-weight="bold">⚠ glitch 30 ps</text>
 </svg>`,
       },
 
@@ -10095,7 +10095,7 @@ A=1:    0      1      1      1
   <text x="500" y="528" text-anchor="middle" fill="#c8b090" font-size="16">
     A·C מחזיק את F=1 בזמן המעבר של B → אין glitch
   </text>
-  <text x="500" y="550" text-anchor="middle" fill="#a0a0c0" font-size="14" font-style="italic">
+  <text x="500" y="550" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
     עלות: gate אחד נוסף; חסכון: power של glitches + correctness
   </text>
 </svg>`,
@@ -10364,12 +10364,12 @@ A=1:    1      1      1      0
     const x = 160 + (t / 180) * 740;
     return `
       <line x1="${x}" y1="375" x2="${x}" y2="385" stroke="#a0a0c0" stroke-width="1.4"/>
-      <text x="${x}" y="408" text-anchor="middle" fill="#a0a0c0" font-size="13">${t} ps</text>
+      <text x="${x}" y="408" text-anchor="middle" fill="#a0a0c0" font-size="16">${t} ps</text>
     `;
   }).join('')}
 
   <!-- B transition -->
-  <text x="40" y="130" fill="#cca040" font-size="15" font-weight="bold">B</text>
+  <text x="40" y="130" fill="#cca040" font-size="16" font-weight="bold">B</text>
   ${(() => {
     const X = t => 160 + (t / 180) * 740;
     return `
@@ -10380,7 +10380,7 @@ A=1:    1      1      1      0
   })()}
 
   <!-- F output (dynamic hazard - 3 spikes before settling) -->
-  <text x="40" y="240" fill="#ff9933" font-size="15" font-weight="bold">F</text>
+  <text x="40" y="240" fill="#ff9933" font-size="16" font-weight="bold">F</text>
   ${(() => {
     const X = t => 160 + (t / 180) * 740;
     const yHi = 210;
@@ -10399,13 +10399,13 @@ A=1:    1      1      1      0
   })()}
 
   <!-- Spike annotations -->
-  <text x="${160 + (30/180) * 740}" y="280" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">spike 1</text>
-  <text x="${160 + (85/180) * 740}" y="280" text-anchor="middle" fill="#ff6060" font-size="14" font-weight="bold">spike 2</text>
+  <text x="${160 + (30/180) * 740}" y="280" text-anchor="middle" fill="#ff6060" font-size="16" font-weight="bold">spike 1</text>
+  <text x="${160 + (85/180) * 740}" y="280" text-anchor="middle" fill="#ff6060" font-size="16" font-weight="bold">spike 2</text>
 
   <!-- CLK marker with FF capture -->
   <line x1="${160 + (150/180) * 740}" y1="320" x2="${160 + (150/180) * 740}" y2="160" stroke="#cc66ff" stroke-width="2.4" stroke-dasharray="6,3"/>
-  <text x="${160 + (150/180) * 740}" y="350" text-anchor="middle" fill="#cc99ff" font-size="14" font-weight="bold">CLK edge ↑</text>
-  <text x="${160 + (155/180) * 740}" y="200" fill="#80f0a0" font-size="14" font-weight="bold">✓ FF samples 1 (final)</text>
+  <text x="${160 + (150/180) * 740}" y="350" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">CLK edge ↑</text>
+  <text x="${160 + (155/180) * 740}" y="200" fill="#80f0a0" font-size="16" font-weight="bold">✓ FF samples 1 (final)</text>
 
   <!-- Bottom -->
   <rect x="60" y="430" width="880" height="40" rx="8" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.8"/>
@@ -10417,6 +10417,815 @@ A=1:    1      1      1      0
     ],
     source: 'Glitches & Hazards — K-map, consensus, dynamic',
     tags: ['glitch', 'hazard', 'static-hazard', 'dynamic-hazard', 'k-map', 'consensus-term', 'combinational'],
+    circuitRevealsAnswer: true,
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  Q-7001 — STA hands-on: slack על pipeline בן 4 שלבים
+  //  הקטלוג מכיל מושגים (setup/hold, skew, retiming) אבל אין שאלה
+  //  שמבקשת מהתלמיד להציב מספרים ולקבל slack חתום עם זיהוי
+  //  של ה-bottleneck. סוגרת את הפער הזה.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'interview-sta-slack-critical-path',
+    difficulty: 'hard',
+    title: 'STA hands-on — חישוב slack על pipeline בן 4 שלבים',
+    intro:
+`**ניתוח STA — חישוב slack על pipeline.**
+
+נתון pipeline בן 4 שלבים:
+
+\`\`\`
+in → [FF₁] → L₁ → [FF₂] → L₂ → [FF₃] → L₃ → [FF₄] → out
+\`\`\`
+
+ארבעה D-FFs רגיסטרים, שלושה שלבי לוגיקה קומבינטוריים \`L₁ L₂ L₃\`. כולם דוגמים על אותו clock — חוץ מ-skew מקומי בין \`FF₂\` ל-\`FF₃\` שיפורט להלן.
+
+**פרמטרי תזמון (גלובליים, אלא אם צוין אחרת):**
+
+| פרמטר | ערך |
+|---|---|
+| T_clk | **1.00 ns** (= 1000 ps, 1 GHz) |
+| t_CQ (clock-to-Q) | 120 ps |
+| t_setup | 100 ps |
+| t_hold | 80 ps |
+| t_skew (FF₂ → FF₃) | **+150 ps** (clock ל-FF₃ מאחר ב-150 ps אחרי FF₂) |
+| t_skew (כל השאר) | 0 |
+| L₁ delay | max **520 ps** / min **180 ps** |
+| L₂ delay | max **720 ps** / min **200 ps** |
+| L₃ delay | max **600 ps** / min **90 ps** |
+
+המעגל "נסגר" רק אם **כל** ה-setup וה-hold slacks חיוביים. אפילו slack שלילי אחד = MoChip ייכשל בתדר הזה. השאלה: לחשב, לזהות צוואר, להציע פתרון תעשייתי. שים לב ל-skew בין FF₂ ל-FF₃ — הוא **חרב פיפיות** (תורם ל-setup אבל גורע מ-hold).`,
+    schematic: `
+<svg viewBox="0 0 1140 580" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="STA slack on a 4-stage pipeline">
+  <text x="570" y="38" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="32">STA Slack — pipeline 4 שלבים (1 GHz)</text>
+  <text x="570" y="68" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">slack_setup = (T_clk + skew_dst − skew_src) − (t_CQ + L_max + t_setup)</text>
+  <text x="570" y="92" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">slack_hold  = (t_CQ + L_min) − (t_hold + skew_dst − skew_src)</text>
+
+  <!-- FFs at y=275 -->
+  <g stroke="#cc66ff" stroke-width="2.2" fill="#1a1428">
+    <rect x="125" y="240" width="72" height="72" rx="6"/>
+    <rect x="365" y="240" width="72" height="72" rx="6"/>
+    <rect x="605" y="240" width="72" height="72" rx="6"/>
+    <rect x="845" y="240" width="72" height="72" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="20" font-weight="bold">
+    <text x="161" y="282">FF₁</text>
+    <text x="401" y="282">FF₂</text>
+    <text x="641" y="282">FF₃</text>
+    <text x="881" y="282">FF₄</text>
+  </g>
+
+  <!-- Logic stages (L1, L2, L3) -->
+  <g stroke="#80b0e0" stroke-width="1.8" fill="#0a1520">
+    <rect x="200" y="252" width="160" height="48" rx="4"/>
+    <rect x="440" y="252" width="160" height="48" rx="4" stroke="#f08080" stroke-width="2.6"/>
+    <rect x="680" y="252" width="160" height="48" rx="4"/>
+  </g>
+  <g fill="#c8d8f0" text-anchor="middle" font-size="20" font-weight="bold">
+    <text x="280" y="282">L₁</text>
+    <text x="520" y="282">L₂</text>
+    <text x="760" y="282">L₃</text>
+  </g>
+
+  <!-- Delay annotations: max in red, min in blue -->
+  <g text-anchor="middle" font-size="18">
+    <text x="280" y="332" fill="#f08080">max 520</text>
+    <text x="280" y="354" fill="#80c8ff">min 180</text>
+    <text x="520" y="332" fill="#f08080" font-weight="bold">max 720</text>
+    <text x="520" y="354" fill="#80c8ff">min 200</text>
+    <text x="760" y="332" fill="#f08080">max 600</text>
+    <text x="760" y="354" fill="#80c8ff">min 90</text>
+  </g>
+
+  <!-- Connecting wires -->
+  <g stroke="#c8d8f0" stroke-width="1.6" fill="none">
+    <path d="M 197 276 L 200 276"/>
+    <path d="M 360 276 L 365 276"/>
+    <path d="M 437 276 L 440 276"/>
+    <path d="M 600 276 L 605 276"/>
+    <path d="M 677 276 L 680 276"/>
+    <path d="M 840 276 L 845 276"/>
+  </g>
+
+  <!-- Clock arrival annotations above FFs -->
+  <g fill="#f0d080" text-anchor="middle" font-size="18">
+    <text x="161" y="208">t_arr = 0</text>
+    <text x="401" y="208">t_arr = 0</text>
+    <text x="641" y="208" font-weight="bold">t_arr = +150 ps</text>
+    <text x="641" y="228" font-style="italic" fill="#c8b090">(skew)</text>
+    <text x="881" y="208">t_arr = 0</text>
+  </g>
+
+  <!-- Clock symbol on each FF -->
+  <g fill="#f0d080" font-size="24">
+    <text x="161" y="308" text-anchor="middle">▲</text>
+    <text x="401" y="308" text-anchor="middle">▲</text>
+    <text x="641" y="308" text-anchor="middle">▲</text>
+    <text x="881" y="308" text-anchor="middle">▲</text>
+  </g>
+
+  <!-- in / out labels -->
+  <text x="95" y="282" fill="#80f0a0" font-size="18" font-weight="bold" text-anchor="middle">in</text>
+  <text x="945" y="282" fill="#80f0a0" font-size="18" font-weight="bold" text-anchor="middle">out</text>
+
+  <!-- Placeholder table at bottom -->
+  <rect x="110" y="400" width="920" height="160" rx="10" fill="rgba(255,200,144,0.06)" stroke="#ffc890" stroke-width="1.8"/>
+  <text x="570" y="432" text-anchor="middle" fill="#ffc890" font-size="24" font-weight="bold">חשב את ה-slacks (מלא את ה-?)</text>
+  <g text-anchor="middle" font-size="18">
+    <text x="240" y="468" fill="#a0c0d0" font-weight="bold">Path</text>
+    <text x="500" y="468" fill="#a0c0d0" font-weight="bold">slack_setup</text>
+    <text x="780" y="468" fill="#a0c0d0" font-weight="bold">slack_hold</text>
+    <text x="240" y="498" fill="#c8d8f0">FF₁→FF₂ (L₁)</text>
+    <text x="500" y="498" fill="#a0a0c0">?</text>
+    <text x="780" y="498" fill="#a0a0c0">?</text>
+    <text x="240" y="522" fill="#c8d8f0">FF₂→FF₃ (L₂)</text>
+    <text x="500" y="522" fill="#a0a0c0">?</text>
+    <text x="780" y="522" fill="#a0a0c0">?</text>
+    <text x="240" y="546" fill="#c8d8f0">FF₃→FF₄ (L₃)</text>
+    <text x="500" y="546" fill="#a0a0c0">?</text>
+    <text x="780" y="546" fill="#a0a0c0">?</text>
+  </g>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'חשב את ה-**setup slack** וה-**hold slack** של כל אחד מ-3 הנתיבים (FF₁→FF₂, FF₂→FF₃, FF₃→FF₄). הצג את החישוב עם הנוסחה גלויה. הקפד להציב את ה-skew בסימן הנכון בכל נוסחה.',
+        hints: [
+          'הנוסחה ל-setup: `slack_setup = (T_clk + skew_dst − skew_src) − (t_CQ + L_max + t_setup)`. ה-skew **חיובי** כש-clock היעד מאחר.',
+          'הנוסחה ל-hold: `slack_hold = (t_CQ + L_min) − (t_hold + skew_dst − skew_src)`. אותו `skew_dst − skew_src` שגרע מ-setup פה **מחמיר** את hold (טריידאוף הקלאסי).',
+          'בנתיב FF₂→FF₃: `skew_dst − skew_src = +150 − 0 = +150 ps` — מוסיף ל-setup, גורע מ-hold.',
+          'בנתיב FF₃→FF₄: `skew_dst − skew_src = 0 − 150 = −150 ps` — גורע מ-setup, מוסיף ל-hold. שים לב לסימן ההפוך.',
+          'אחרי כל החישובים, ה-slack הקטן ביותר (אבל עדיין חיובי) הוא ה-bottleneck — הצוואר שהמעגל הכי קרוב לכשל בו.',
+        ],
+        answer:
+`### חישוב מלא — 3 נתיבים, כל אחד setup + hold
+
+**Path 1 — FF₁→FF₂ (L₁, skew=0):**
+- \`slack_setup = (1000 + 0 − 0) − (120 + 520 + 100) = **+260 ps**\`
+- \`slack_hold  = (120 + 180) − (80 + 0 − 0) = **+220 ps**\`
+
+**Path 2 — FF₂→FF₃ (L₂, skew_dst − skew_src = +150):**
+- \`slack_setup = (1000 + 150 − 0) − (120 + 720 + 100) = **+210 ps**\`
+- \`slack_hold  = (120 + 200) − (80 + 150 − 0) = **+90 ps**\`  ← **הצוואר**
+
+**Path 3 — FF₃→FF₄ (L₃, skew_dst − skew_src = 0 − 150 = −150):**
+- \`slack_setup = (1000 + 0 − 150) − (120 + 600 + 100) = **+30 ps**\`  ← **הצוואר השני!**
+- \`slack_hold  = (120 + 90) − (80 + 0 − 150) = **+280 ps**\`
+
+### סיכום
+
+| Path | slack_setup | slack_hold |
+|---|---:|---:|
+| FF₁→FF₂ | +260 | +220 |
+| FF₂→FF₃ | +210 | **+90** ← hold-critical |
+| FF₃→FF₄ | **+30** ← setup-critical | +280 |
+
+**כל הנתיבים נסגרים** (כל ה-slacks חיוביים), אבל יש **שני צווארים**:
+1. **L₂ hold = +90 ps** — קרוב לקצה (אם ה-clock-tree לא יציב, ייפול)
+2. **L₃ setup = +30 ps** — גבולי לחלוטין
+
+**שניהם** נגרמים על-ידי אותו skew של +150 ps. הוא תורם ל-setup של L₂ (טוב) אבל גוזל setup מ-L₃ (רע) — כי הוא **מקור** של clock עבור L₃.`,
+        interviewerMindset:
+`**מבחין בין מועמד טוב למצוין:**
+1. **סימן ה-skew** — הטעות הקלאסית: לחבר את ה-skew גם ל-setup וגם ל-hold עם אותו סימן. סימן הפוך לכל נוסחה.
+2. **L_max מול L_min** — מועמדים שוכחים ש-hold משתמש במסלול ה-**קצר** (min), לא הארוך. שאלה בודקת.
+3. **הבנת ה-skew משחק לשני כיוונים** — FF₃ הוא יעד של ה-skew בנתיב 2, אבל **מקור** של ה-skew בנתיב 3. סימן הפוך לחלוטין. רוב המועמדים מפספסים את הנתיב השלישי לגמרי.
+4. **בונוס**: לציין שיש "שני צווארים" — מועמדים מסתפקים בלמצוא אחד.
+
+**שאלת המשך נפוצה**: "אם הגדלנו את ה-skew ל-+200 ps, מה יקרה?" → תשובה: L₃ setup הופך שלילי (-20 ps), L₂ hold יורד ל-+40 ps. ה-setup נכשל קודם.`,
+        expectedAnswers: [
+          '260', '+260', '220', '+220',
+          '210', '+210', '90', '+90',
+          '30', '+30', '280', '+280',
+          'critical', 'הצוואר', 'L2', 'L3', 'skew',
+        ],
+      },
+      {
+        label: 'ב',
+        question: 'איזה נתיב הוא ה-**setup-critical** ואיזה הוא ה-**hold-critical**? למה ה-skew של +150 ps הוא **חרב פיפיות** — איפה הוא עוזר, איפה הוא מזיק?',
+        hints: [
+          '"קריטי" = ה-slack הקטן ביותר (אבל עדיין חיובי). יש לעבור על כל הטבלה ולמצוא את המינימום של setup ואת המינימום של hold בנפרד.',
+          'ה-skew של +150 ps מוסיף ל-T_clk בחישוב setup של נתיב 2 (FF₃ הוא היעד) — תרומה חיובית.',
+          'אותו skew גורם ל-clock של FF₃ להגיע מאוחר — אז כשהוא **מקור** של נתיב 3 (FF₃→FF₄), ה-T_clk הזמין קטן ב-150 ps → setup של נתיב 3 קטן בהתאם.',
+          'זה הרעיון של **useful skew** — בכלים מודרניים (Synopsys PrimeTime) מבקשים מהכלי "תזיז עוד skew" וה-CTS (clock tree synthesis) מבצע את ההזזה אם זה משתלם.',
+        ],
+        answer:
+`### זיהוי הצווארים
+
+**Setup-critical**: **L₃ (FF₃→FF₄)** עם slack_setup = +30 ps.
+
+**Hold-critical**: **L₂ (FF₂→FF₃)** עם slack_hold = +90 ps.
+
+### החרב הפיפיות של ה-skew
+
+ה-skew של +150 ps על clock ל-FF₃ משחק שלושה תפקידים שונים:
+
+| נתיב | תפקיד ה-skew | השפעה על setup | השפעה על hold |
+|---|---|:---:|:---:|
+| FF₁→FF₂ | לא רלוונטי | 0 | 0 |
+| FF₂→FF₃ | FF₃ הוא **יעד** | **+150** (טוב!) | **−150** (רע) |
+| FF₃→FF₄ | FF₃ הוא **מקור** | **−150** (רע) | **+150** (טוב) |
+
+### הבנה עמוקה
+
+זה לא "skew רע" או "skew טוב" — זה **משאב מקומי**:
+
+- כש-clock היעד מאחר → ה-FF היעד מקבל יותר זמן לחישוב (תורם setup) **אבל** פחות זמן בין נעילת המקור לנעילת היעד (גורע hold).
+- אותו skew, אם ה-FF הוא **מקור** של חישוב הבא, מוריד את ה-T_clk הזמין למחשב הבא.
+
+לכן בייצור, ה-skew בין FF₃ ל-FF₄ צריך להיות "כנגד" ה-skew בין FF₂ ל-FF₃ — כדי שהרווח בנתיב אחד יתקזז כנגד ההפסד בנתיב הבא.
+
+### מה לעשות עם זה?
+
+**Useful skew** — כלי STA מציעים אוטומטית הזזת clock על ידי הוספת buffers ל-clock tree, **כשמרוויחים setup יותר ממה שמפסידים hold**. הסטטיסטיקה: בעולם הסיליקון, useful skew מוסיף 2-8% ל-fmax בלי לשנות את הלוגיקה.`,
+        interviewerMindset:
+`רוצה לראות שהמועמד **מבין ש-skew הוא משאב, לא תופעת לוואי**. שאלה בדיקה: "מתי נשתמש ב-useful skew?" — תשובה טובה: כשיש slack מאסיבי ל-hold אבל הדוק ל-setup על אותם FF pairs.
+
+**שאלת המשך**: "האם יש סיכון שכלי ה-STA יוסיף יותר מדי skew?" → כן! אם יוסיף +200 ps, hold יקרוס. הכלים מגיעים עם **margin** ברירת מחדל (~20% מ-hold slack) שמונע משימוש מסוכן.
+
+**הצלחה**: המועמד מציין שזה משחק ב-**שני** הכיוונים. רוב המועמדים מפספסים את ההשפעה הפוכה ב-FF₃ כמקור.`,
+        expectedAnswers: [
+          'L3', 'L₃', 'setup-critical', 'setup critical',
+          'L2', 'L₂', 'hold-critical', 'hold critical',
+          'useful skew', 'משאב', 'יעד', 'מקור', 'destination', 'source',
+          'חרב פיפיות', 'trade', 'trade-off',
+        ],
+      },
+      {
+        label: 'ג',
+        question: 'נניח שכלי ה-clock-tree איזן את ה-skew ל-0 (שני הנתיבים החמים מקבלים את אותו clock). עכשיו slack_setup של L₂ הוא **+60 ps** בלבד — גבולי בייצור. הצע **שני** פתרונות שונים, פרט יתרון וחסרון לכל אחד.',
+        hints: [
+          'הצוואר הוא ש-L₂ ארוך (720 ps) ביחס ל-L₁ (520) ו-L₃ (600). מה אומר **Leiserson-Saxe** על אי-איזון כזה?',
+          'חלופה: להוסיף **pipeline stage נוסף** באמצע L₂. עולה latency אבל קונה fmax מיידי.',
+          'אזכר ש-retiming **משנה את ה-min delay** של ה-stages — אז hold יכול לקפוץ למצב שלילי. תמיד מריצים hold-check אחרי retiming.',
+          'הבחנה חשובה: pipeline split משנה את ה-**latency** של המעגל (cycles נוספים); retiming שומר אותו זהה.',
+        ],
+        answer:
+`### פתרון 1 — **Retiming (Leiserson-Saxe)**
+
+להזיז כמה רמות לוגיקה מ-L₂ ל-L₁ ו/או ל-L₃. דוגמה: להעביר 100 ps מהלוגיקה של L₂ ל-L₁:
+
+| Stage | לפני | אחרי |
+|---|---:|---:|
+| L₁ max | 520 ps | 620 ps |
+| L₂ max | 720 ps | 620 ps |
+| L₃ max | 600 ps | 600 ps |
+
+setup slack חדש (skew=0):
+- L₁: +160 ps
+- L₂: +160 ps ← היה +60
+- L₃: +180 ps
+
+**יתרון**: אותו latency, אותו מספר FFs, אותה פונקציונליות. הכלי עושה את זה אוטומטית.
+
+**חיסרון**: דורש re-verify של הפונקציה (FFs במיקום שונה = state במהלך הריצה שונה). hold חייב להיבדק מחדש (min delay של ה-stages משתנה).
+
+### פתרון 2 — **Pipeline split**
+
+לפצל את L₂ ל-2 sub-stages על-ידי הוספת FF באמצע. כל חצי = ~360 ps (ראה דיאגרמה למטה).
+
+setup slack חדש לכל sub-stage: ~+420 ps. בטוח לחלוטין.
+
+**יתרון**: פתרון מקומי, פשוט, ללא סיכון. עובד בכל מקרה.
+
+**חיסרון**: **+1 latency cycle**. ה-throughput נשמר אבל ה-pipeline depth גדל. אם המעגל הוא חלק מ-control loop (למשל בקרת בלם רכב, או FFT), קשה לקבל את התוספת — עלולה לשבור את הפרוטוקול במעלה הזרם.
+
+### השוואה
+
+| קריטריון | retiming | pipeline split |
+|---|:---:|:---:|
+| Latency | זהה | **+1 cycle** |
+| Fmax | משופר | משופר |
+| שטח | זהה | +1 FF (ברוחב bus) |
+| סיכון hold | בינוני | נמוך |
+| מאמץ אדריכלי | נמוך | **גבוה** (משפיע על מעלה) |
+| כלי | אוטומטי (PrimeTime, Vivado) | ידני (RTL change) |
+
+### תשובת ראיון מצוינת
+
+> "תלוי האם יש לי **budget latency**. אם המודול קריטי-זמן (control loop, automotive ASIL) — אסור להוסיף latency, אז אבחר retiming. אם הוא חלק מ-datapath כללי (DSP, video filter) — pipeline split יותר בטוח ופשוט להסביר ל-verification."`,
+        interviewerMindset:
+`**הסיווג בין senior ל-junior**: senior מבחין בין השניים לפי **קונטקסט מערכת**, לא טכני בלבד.
+
+תשובה ברמת junior: "retiming יותר טוב כי לא מוסיף latency."
+תשובה ברמת senior: "תלוי. אם זה SoC עם 30 IPs שמתואמים על clock cycle בודד — pipeline split אסור. אם זה DSP בלוק עצמאי — שני הפתרונות פתוחים, retiming מהיר יותר ליישם."
+
+**שאלת bonus**: "מה אם גם retiming לא מספיק?" → תשובה: **לחתוך frequency** (להוריד את T_clk) או **לבחור library cell מהיר יותר** (low-Vt). שני אלה משפיעים על power בצורה משמעותית — high-frequency / low-Vt חיים על power budget.
+
+**הצלחה**: המועמד מציין ש-retiming דורש hold-recheck. רוב המועמדים שוכחים.`,
+        expectedAnswers: [
+          'retiming', 'Leiserson', 'Saxe', 'pipeline split', 'pipeline stage',
+          'latency', 'איזון', 'rebalance', 'fmax', 'hold',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Pipeline split: insert FF_NEW inside L2 to halve its delay">
+  <text x="440" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Pipeline split — מוסיפים FF באמצע L₂</text>
+
+  <!-- BEFORE row -->
+  <text x="20" y="92" fill="#a0c0d0" font-size="16" font-weight="bold">לפני:</text>
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="90" y="70" width="56" height="44" rx="6"/>
+    <rect x="290" y="70" width="56" height="44" rx="6"/>
+  </g>
+  <text x="118" y="98" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">FF₂</text>
+  <text x="318" y="98" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">FF₃</text>
+  <rect x="160" y="78" width="116" height="28" rx="4" fill="#0a1520" stroke="#f08080" stroke-width="2"/>
+  <text x="218" y="98" text-anchor="middle" fill="#f08080" font-size="16" font-weight="bold">L₂ · 720 ps</text>
+  <g stroke="#c8d8f0" stroke-width="1.4" fill="none">
+    <path d="M 146 92 L 160 92"/>
+    <path d="M 276 92 L 290 92"/>
+  </g>
+  <text x="218" y="138" text-anchor="middle" fill="#f08080" font-size="16" font-style="italic">setup slack = +60 ps (גבולי)</text>
+
+  <!-- arrow down -->
+  <line x1="440" y1="160" x2="440" y2="195" stroke="#80f0a0" stroke-width="2"/>
+  <polygon points="436,195 444,195 440,205" fill="#80f0a0"/>
+  <text x="465" y="180" fill="#80f0a0" font-size="16" font-weight="bold">הוסף FF</text>
+
+  <!-- AFTER row -->
+  <text x="20" y="244" fill="#a0c0d0" font-size="16" font-weight="bold">אחרי:</text>
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="90" y="222" width="56" height="44" rx="6"/>
+    <rect x="430" y="222" width="56" height="44" rx="6" stroke="#80f0a0"/>
+    <rect x="770" y="222" width="56" height="44" rx="6"/>
+  </g>
+  <text x="118" y="250" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">FF₂</text>
+  <text x="458" y="250" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">FF_NEW</text>
+  <text x="798" y="250" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">FF₃</text>
+  <rect x="160" y="230" width="256" height="28" rx="4" fill="#0a1520" stroke="#80f0a0" stroke-width="1.6"/>
+  <text x="288" y="250" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">L₂a · 360 ps</text>
+  <rect x="500" y="230" width="256" height="28" rx="4" fill="#0a1520" stroke="#80f0a0" stroke-width="1.6"/>
+  <text x="628" y="250" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">L₂b · 360 ps</text>
+  <g stroke="#c8d8f0" stroke-width="1.4" fill="none">
+    <path d="M 146 244 L 160 244"/>
+    <path d="M 416 244 L 430 244"/>
+    <path d="M 486 244 L 500 244"/>
+    <path d="M 756 244 L 770 244"/>
+  </g>
+</svg>`,
+      },
+    ],
+    source: 'מאגר ראיונות — Static Timing Analysis (hands-on slack)',
+    tags: ['sta', 'slack', 'critical-path', 'pipeline', 'setup', 'hold', 'skew', 'retiming'],
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  Q-7002 — Pulse synchronizer (toggle-based, Cummings pattern)
+  //  הקטלוג מכיל 2-FF synchronizer (level) ו-Gray (multi-bit),
+  //  אבל לא את התרחיש הקלאסי של pulse קצר שמוחמץ ע"י הדומיין
+  //  האיטי. הפתרון: XOR-toggle ב-TX + edge-detect ב-RX.
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'interview-pulse-synchronizer-toggle',
+    difficulty: 'hard',
+    title: 'Pulse Synchronizer — pulse של cycle אחד מ-200 MHz ל-50 MHz',
+    intro:
+`**הבעיה**: ב-SoC יש לנו **פעימה (pulse) בודדת ברוחב cycle אחד** שנוצרת בדומיין מהיר ב-200 MHz (T_fast = 5 ns). הפעימה מסמנת אירוע — למשל "התקבל packet". האירוע צריך להגיע לדומיין איטי ב-50 MHz (T_slow = 20 ns) שמספיק לאיזה עיבוד.
+
+**הניסיון הנאיבי — 2-FF synchronizer:**
+
+\`\`\`
+fast_pulse ──→ [FF₁] ──→ [FF₂] ──→ slow_pulse
+                  clk_slow         clk_slow
+\`\`\`
+
+אם הפעימה רחבה רק 5 ns וה-clock של היעד דוגם כל 20 ns, **יש 75% סיכוי שהפעימה תיפול בין שתי דגימות בלי שאף edge יראה אותה**. ה-2-FF synchronizer פותר metastability — לא קוצר פעימות.
+
+צריך מבנה שמתרגם פעימה זמנית ל-**שינוי-מצב מתמשך** שיישרד את המעבר. זה התפקיד של ה-**toggle-based pulse synchronizer** (תבנית Clifford Cummings 2008): השולח הופך **רמה** על כל פעימה, המקבל מסנכרן את הרמה ומזהה את ה-edge מחדש בצד היעד.
+
+ננתח את הכשל של הגישה הנאיבית, נתכנן את הפתרון, ונבחן את המגבלות שלו.`,
+    schematic: `
+<svg viewBox="0 0 1140 800" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Pulse synchronizer: naive vs toggle-based">
+  <text x="570" y="36" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="32">Pulse Synchronizer — 200 MHz → 50 MHz</text>
+
+  <!-- TOP PANEL — naive (failing) -->
+  <rect x="40" y="70" width="1060" height="290" rx="12" fill="rgba(255,80,80,0.05)" stroke="#f08080" stroke-width="2.2"/>
+  <text x="570" y="106" text-anchor="middle" fill="#f08080" font-size="24" font-weight="bold">❌ הניסיון הנאיבי — 2-FF synchronizer בלבד</text>
+
+  <!-- naive datapath -->
+  <text x="100" y="172" fill="#80b0e0" font-size="18" font-weight="bold" text-anchor="middle">pulse</text>
+  <g stroke="#cc66ff" stroke-width="2.2" fill="#1a1428">
+    <rect x="275" y="140" width="70" height="64" rx="6"/>
+    <rect x="465" y="140" width="70" height="64" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="18" font-weight="bold">
+    <text x="310" y="178">FF₁</text>
+    <text x="500" y="178">FF₂</text>
+  </g>
+  <text x="660" y="178" fill="#f08080" font-size="18" font-weight="bold" text-anchor="middle">slow_pulse?</text>
+  <g stroke="#c8d8f0" stroke-width="1.6" fill="none">
+    <path d="M 140 170 L 275 170"/>
+    <path d="M 345 170 L 465 170"/>
+    <path d="M 535 170 L 620 170"/>
+  </g>
+  <text x="405" y="232" fill="#f0d080" text-anchor="middle" font-size="18">↑ clk_slow (50 MHz)</text>
+
+  <!-- waveforms in naive panel -->
+  <text x="60" y="280" fill="#80b0e0" font-size="18" font-weight="bold">pulse</text>
+  <path d="M 140 300 L 200 300 L 200 256 L 207 256 L 207 300 L 1080 300" stroke="#80b0e0" stroke-width="2.2" fill="none"/>
+  <text x="60" y="334" fill="#f0d080" font-size="18" font-weight="bold">clk_slow</text>
+  <g stroke="#f0d080" stroke-width="1.8" fill="none">
+    <path d="M 140 334 L 380 334 L 380 312 L 460 312 L 460 334 L 700 334 L 700 312 L 780 312 L 780 334 L 1080 334"/>
+  </g>
+  <text x="200" y="352" fill="#f08080" text-anchor="middle" font-size="18" font-weight="bold">❌ pulse בין שני edges — miss!</text>
+
+  <!-- BOTTOM PANEL — toggle-based (working) -->
+  <rect x="40" y="385" width="1060" height="395" rx="12" fill="rgba(128,240,160,0.05)" stroke="#80f0a0" stroke-width="2.2"/>
+  <text x="570" y="422" text-anchor="middle" fill="#80f0a0" font-size="24" font-weight="bold">✓ הפתרון — toggle-based pulse synchronizer</text>
+
+  <!-- TX side: XOR + toggle FF — datapath at y≈515 to leave room for title -->
+  <text x="80" y="516" fill="#80b0e0" font-size="18" font-weight="bold" text-anchor="middle">pulse_in</text>
+  <circle cx="220" cy="515" r="22" fill="#0a1520" stroke="#ffb878" stroke-width="2.2"/>
+  <text x="220" y="522" text-anchor="middle" fill="#ffb878" font-size="20" font-weight="bold">⊕</text>
+  <g stroke="#cc66ff" stroke-width="2.2" fill="#1a1428">
+    <rect x="285" y="487" width="70" height="56" rx="6"/>
+  </g>
+  <text x="320" y="521" text-anchor="middle" fill="#cc99ff" font-size="18" font-weight="bold">FF_tog</text>
+  <!-- TX feedback loop — BELOW the FF, leaving the top clean -->
+  <g stroke="#80f0a0" stroke-width="1.6" fill="none">
+    <path d="M 355 515 L 385 515 L 385 575 L 200 575 L 200 527"/>
+  </g>
+  <text x="293" y="595" fill="#80c8a0" font-size="18" text-anchor="middle">level (feedback)</text>
+
+  <!-- wires in -->
+  <g stroke="#c8d8f0" stroke-width="1.6" fill="none">
+    <path d="M 120 515 L 198 515"/>
+    <path d="M 242 515 L 285 515"/>
+  </g>
+
+  <!-- CDC boundary -->
+  <line x1="430" y1="455" x2="430" y2="620" stroke="#806040" stroke-width="2.2" stroke-dasharray="6,4"/>
+  <text x="430" y="472" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">CDC boundary</text>
+
+  <!-- RX side: 2-FF sync + delay FF + XOR + output -->
+  <g stroke="#cc66ff" stroke-width="2.2" fill="#1a1428">
+    <rect x="475" y="487" width="70" height="56" rx="6"/>
+    <rect x="595" y="487" width="70" height="56" rx="6"/>
+    <rect x="715" y="487" width="70" height="56" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="18" font-weight="bold">
+    <text x="510" y="521">FF_s1</text>
+    <text x="630" y="521">FF_s2</text>
+    <text x="750" y="521">FF_d</text>
+  </g>
+  <circle cx="850" cy="515" r="22" fill="#0a1520" stroke="#ffb878" stroke-width="2.2"/>
+  <text x="850" y="522" text-anchor="middle" fill="#ffb878" font-size="20" font-weight="bold">⊕</text>
+  <text x="990" y="521" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">pulse_out</text>
+
+  <!-- RX wires — bypass arc goes BELOW, avoiding title overlap -->
+  <g stroke="#c8d8f0" stroke-width="1.6" fill="none">
+    <path d="M 355 515 L 475 515"/>
+    <path d="M 545 515 L 595 515"/>
+    <path d="M 665 515 L 715 515"/>
+    <path d="M 785 515 L 828 515"/>
+    <path d="M 665 515 L 665 575 L 830 575 L 830 537"/>
+    <path d="M 872 515 L 945 515"/>
+  </g>
+  <text x="747" y="595" fill="#80c8a0" font-size="18" text-anchor="middle">sync (skips delay-FF)</text>
+
+  <!-- Clock labels for TX/RX -->
+  <text x="195" y="640" fill="#f0d080" font-size="18" font-weight="bold">clk_fast (200 MHz)</text>
+  <text x="630" y="640" fill="#f0d080" font-size="18" font-weight="bold">clk_slow (50 MHz)</text>
+
+  <!-- mini waveforms at bottom -->
+  <text x="60" y="678" fill="#80b0e0" font-size="18">pulse_in</text>
+  <path d="M 150 693 L 200 693 L 200 671 L 207 671 L 207 693 L 360 693 L 360 671 L 367 671 L 367 693 L 1080 693" stroke="#80b0e0" stroke-width="1.8" fill="none"/>
+  <text x="60" y="720" fill="#80c8a0" font-size="18">level (staircase)</text>
+  <path d="M 150 735 L 207 735 L 207 713 L 367 713 L 367 735 L 1080 735" stroke="#80c8a0" stroke-width="1.8" fill="none"/>
+  <text x="60" y="762" fill="#80f0a0" font-size="18">pulse_out</text>
+  <path d="M 150 777 L 280 777 L 280 755 L 320 755 L 320 777 L 460 777 L 460 755 L 500 755 L 500 777 L 1080 777" stroke="#80f0a0" stroke-width="2.2" fill="none"/>
+</svg>`,
+    parts: [
+      {
+        label: 'א',
+        question: 'הפעימה ברוחב 5 ns, וה-clock של היעד הוא 50 MHz (T = 20 ns). הסבר **במדויק** באיזה אחוז מהמקרים ה-2-FF synchronizer יחמיץ את הפעימה. צייר תרחיש כשל. למה הוספת עוד FFs בשרשרת **לא** פותרת את הבעיה?',
+        hints: [
+          'שאל את עצמך — באיזה חלון זמן (יחסית ל-edge של clk_slow) חייבת הפעימה להיות *פעילה* כדי שתידגם?',
+          'החלון הוא בדיוק רוחב הפעימה (5 ns) מתוך תקופת ה-clock של היעד (20 ns).',
+          'ההסתברות לדגימה מוצלחת = `pulse_width / T_slow = 5/20 = 25%`. הסתברות לכישלון = **75%**.',
+          'גם אם דגמת — אם הפעימה הייתה ב-±t_setup/hold סביב ה-edge, ה-FF נכנס למטא-יציבות. זה case נפרד שה-2-FF פותר.',
+          'תוספת FFs (3-FF, 4-FF synchronizer) משפרת **MTBF** של metastability, אבל לא משנה את הסתברות הדגימה. השרשרת אורכת יותר, היא לא דוגמת מהר יותר.',
+        ],
+        answer:
+`### חישוב הכישלון
+
+ה-FF הראשון של ה-synchronizer דוגם את \`fast_pulse\` ב-rising edge של \`clk_slow\`. עליו לראות את הפעימה **כשהיא פעילה** (= ערך 1).
+
+הפעימה פעילה למשך 5 ns מתוך כל 20 ns של מחזור clk_slow:
+
+\`\`\`
+P(sample succeeds) = pulse_width / T_slow = 5/20 = 25%
+P(miss)            = 1 − 25% = **75%**
+\`\`\`
+
+### תרחיש כשל
+
+הפעימה הייתה ב-t=2..7, ה-edge הקרוב של clk_slow ב-t=20. כשהדגימה מתבצעת, pulse כבר 0. **miss** — ראה דיאגרמת זמן למטה.
+
+### למה עוד FFs לא עוזרים
+
+הוספת FF נוסף (3-FF, 4-FF) משפרת את MTBF של metastability **במכפלות גדולות** (כל FF נוסף = ~10^3 שיפור). אבל זה לא שינוי **קצב הדגימה** — ה-FF הראשון עדיין דוגם ב-50 MHz. הפעימה הקצרה עדיין נופלת בין שני edges.
+
+### המסקנה הקריטית
+
+**זו לא בעיית metastability — זו בעיית bandwidth.**
+
+זה equivalent דיגיטלי של Nyquist: כדי להעביר אירוע ברוחב X, התדר של המקבל חייב להיות ≥ 1/X. אצלנו זה הפוך — המקבל איטי פי 4 מהשולח. צריך **מבנה אחר**, לא יותר FFs.`,
+        interviewerMindset:
+`**מפריד בין מועמד שלמד את הסכמה למועמד שמבין את הסיבה**:
+
+טעות נפוצה: "צריך עוד FFs בשרשרת". זו תשובה מטעה — הסטטיסטיקה של MTBF משופרת אבל הבעיה הבסיסית של דגימה לא משתנה.
+
+תשובה מצוינת: לזהות את ההפרדה בין שתי הבעיות:
+1. **Metastability** (FF דוגם בקצה ה-pulse, נכנס לרגע ל-X) — נפתרת ע"י שרשרת FFs.
+2. **Sampling rate** (פעימה נופלת בין דגימות) — דורשת מבנה שמתרגם פעימה לרמה.
+
+**שאלת bonus**: "מה אם הפעימה רחבה יותר מ-T_slow?" → אז אין בעיית bandwidth, רק metastability, ו-2-FF synchronizer מספיק.`,
+        expectedAnswers: [
+          '75', '75%', '25', '25%',
+          'miss', 'מחמיץ', 'nyquist', 'sample', 'דגימה', 'bandwidth',
+          'metastability', 'mtbf',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Timing diagram: fast pulse missed by slow clock sample">
+  <text x="360" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">תרחיש כשל — pulse בין שני edges של clk_slow</text>
+
+  <!-- Time axis at top -->
+  <line x1="120" y1="62" x2="680" y2="62" stroke="#a0a0c0" stroke-width="1"/>
+  <g fill="#a0a0c0" text-anchor="middle" font-size="16">
+    <text x="120" y="56">0</text>
+    <text x="232" y="56">5</text>
+    <text x="344" y="56">10</text>
+    <text x="456" y="56">15</text>
+    <text x="568" y="56">20</text>
+    <text x="680" y="56">25 ns</text>
+  </g>
+  <g stroke="#a0a0c0" stroke-width="0.6" opacity="0.4">
+    <line x1="120" y1="62" x2="120" y2="190"/>
+    <line x1="232" y1="62" x2="232" y2="190"/>
+    <line x1="344" y1="62" x2="344" y2="190"/>
+    <line x1="456" y1="62" x2="456" y2="190"/>
+    <line x1="568" y1="62" x2="568" y2="190"/>
+    <line x1="680" y1="62" x2="680" y2="190"/>
+  </g>
+
+  <!-- pulse waveform (2..7 ns, narrow) -->
+  <text x="100" y="100" fill="#80b0e0" font-size="16" text-anchor="end" font-weight="bold">pulse</text>
+  <path d="M 120 110 L 165 110 L 165 80 L 277 80 L 277 110 L 680 110" stroke="#80b0e0" stroke-width="2" fill="none"/>
+  <text x="221" y="76" text-anchor="middle" fill="#80b0e0" font-size="16">5 ns wide</text>
+
+  <!-- clk_slow waveform (period 20 ns, edge at 0, 20, 40...) -->
+  <text x="100" y="155" fill="#f0d080" font-size="16" text-anchor="end" font-weight="bold">clk_slow</text>
+  <path d="M 120 165 L 120 135 L 344 135 L 344 165 L 568 165 L 568 135 L 680 135" stroke="#f0d080" stroke-width="2" fill="none"/>
+
+  <!-- Sample marker at t=20 -->
+  <line x1="568" y1="62" x2="568" y2="190" stroke="#f08080" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="568" y="206" text-anchor="middle" fill="#f08080" font-size="16" font-weight="bold">↑ sample</text>
+  <text x="568" y="224" text-anchor="middle" fill="#f08080" font-size="16">pulse = 0 (miss!)</text>
+</svg>`,
+      },
+      {
+        label: 'ב',
+        question: 'תכנן את המעגל המלא של toggle-based pulse synchronizer. ציין את הרכיבים בכל צד של ה-CDC, את האותות שחוצים, ואת **חוק ה-toggle**.',
+        hints: [
+          'הרעיון: הפעימה לא צריכה לחצות, **הרמה** חוצה. רמה אינה מאבדת מידע כי היא יציבה.',
+          'בצד השולח — איך הופכים פעימה לרמה? `level_q ← level_q XOR pulse`. כש-pulse=1 הרמה הופכת.',
+          'בצד המקבל — ה-level עובר 2-FF synchronizer (פותר meta). אחר כך, איך מזהים שהוא השתנה? edge-detector: FF נוסף + XOR.',
+          'החוט שחוצה את ה-domain הוא **חוט יחיד**, ברמה יציבה לפחות T_fast לפני שינוי הבא. זה מקיים את התנאי לסנכרון בטוח.',
+          'אזהרה: כל toggle בצד השולח חייב להיות מופרד ב-≥ 2 T_slow מהבא, אחרת המקבל יראה רק toggle אחד = אובדן פעימה.',
+        ],
+        answer:
+`### המבנה המלא
+
+\`\`\`verilog
+// ── TX side (clk_fast) ──
+always @(posedge clk_fast)
+  level_q <= level_q ^ pulse_in;   // toggle on every pulse
+
+// ── RX side (clk_slow) ──
+always @(posedge clk_slow) begin
+  sync1   <= level_q;     // 2-FF synchronizer (resolves metastability)
+  sync2   <= sync1;
+  sync_d  <= sync2;       // one-cycle delay
+end
+assign pulse_out = sync2 ^ sync_d;  // edge-detect (rising OR falling)
+\`\`\`
+
+### חוק ה-toggle
+
+כל פעימה ב-TX → **שינוי מצב** של \`level_q\` (0→1 או 1→0). הרמה יציבה לפחות עד הפעימה הבאה.
+
+ב-RX, **כל שינוי** של ה-level המסונכרן = פעימה אחת. לא חשוב הכיוון:
+- אם level עבר 0→1: \`sync2=1, sync_d=0\` → \`pulse_out = 1 ^ 0 = 1\`. ✓
+- אם level עבר 1→0: \`sync2=0, sync_d=1\` → \`pulse_out = 0 ^ 1 = 1\`. ✓
+
+### תוצאה
+
+| צד | פעימה | רוחב | מספר פעימות |
+|---|---|---|---|
+| TX (fast) | pulse_in | 1 cycle fast = 5 ns | N |
+| TX (level) | level_q | בלתי מוגבל (level) | — |
+| RX (pulse_out) | pulse_out | **1 cycle slow = 20 ns** | N (זהה) |
+
+ה-**מספר** של הפעימות נשמר. ה-**רוחב** משתנה (מתרחב פי 4 — הגיוני, כי דומיין איטי).
+
+### מגבלה — minimum gap
+
+כדי שהמקבל יראה את שני ה-toggles, חייבים לפחות **2-3 cycles של clk_slow** ביניהם (~60 ns). כלומר max pulse rate **≈ 16-17 MHz**, לא 50.
+
+ב-fast clock domain זה אומר: אסור שיהיו פעימות צמודות יותר מ-12 cycles fast. אם יש — צריך מנגנון back-pressure (handshake) או FIFO.
+
+### Caveat לסימולציה
+
+המנוע בקנבס משתמש ב-clock יחיד. הציור פה ממחיש את **חוק ה-XOR-toggle** ואת ה-**2-FF סינכרון**, לא את הפרשי התדרים האמיתיים. בסימולציה ה-pulse_in וה-pulse_out יראו אותו דבר; הבדל התדרים הוא תופעת silicon אמיתית.`,
+        interviewerMindset:
+`**רוצה לראות שהמועמד יודע את חוק ה-XOR פעמיים**:
+1. ב-TX — להפיכת פעימה ל-level (\`level ← level XOR pulse\`)
+2. ב-RX — לזיהוי edge (\`pulse ← sync2 XOR sync_d\`)
+
+**בונוס**: לציין שלא משתמשים ב-rising edge בלבד אלא XOR — כי toggle יכול ללכת בכל כיוון.
+
+**שאלת המשך נפוצה**: "מה אם שתי פעימות מגיעות ב-fast clk רצופות (gap = 1 cycle fast)?" → תשובה: שני toggles ב-2 cycles fast, אבל בצד האיטי ה-level הראשון לא הספיק להסתנכרן → המערכת חייבת מנגנון back-pressure (handshake) או FIFO. ה-toggle synchronizer הוא **lossy בקצבים גבוהים**.
+
+**אזהרה לתשובת המועמד**: אם הוא מציע "להגדיל את ה-FF chain ל-3" — סימן שהוא מבלבל בין metastability ל-bandwidth. דגל אדום.`,
+        expectedAnswers: [
+          'xor', 'toggle', 'level', '2-ff', '2 ff', 'edge detect', 'edge-detect',
+          'sync1', 'sync2', 'rising or falling', 'gap', 'מרווח',
+          'cummings',
+        ],
+        circuit: () => build(() => {
+          // Toggle-based pulse synchronizer demo.
+          // Single-clock variant — engine doesn't support multi-domain
+          // clocks but the structure (XOR-toggle + 2-FF + edge-detect)
+          // is identical. Document the limitation in the answer text.
+          const pulseIn = h.input(120, 240, 'pulse_in');
+          pulseIn.stepValues = [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0];
+          const clk = h.clock(120, 480);
+          const xorTx = h.gate('XOR', 320, 240);
+          const ffTog = h.ffD(500, 240, 'FF_tog');
+          const ffS1  = h.ffD(720, 240, 'FF_s1');
+          const ffS2  = h.ffD(900, 240, 'FF_s2');
+          const ffD   = h.ffD(1080, 240, 'FF_d');
+          const xorRx = h.gate('XOR', 1260, 240);
+          const pulseOut = h.output(1440, 240, 'pulse_out');
+
+          return {
+            nodes: [pulseIn, clk, xorTx, ffTog, ffS1, ffS2, ffD, xorRx, pulseOut],
+            wires: [
+              h.wire(pulseIn.id, xorTx.id, 0),
+              h.wire(ffTog.id, xorTx.id, 1),                    // toggle feedback
+              h.wire(xorTx.id, ffTog.id, 0),                    // XOR → toggle.D
+              h.wire(clk.id, ffTog.id, 1, 0, { isClockWire: true }),
+              h.wire(ffTog.id, ffS1.id, 0),                     // level → sync chain
+              h.wire(clk.id, ffS1.id, 1, 0, { isClockWire: true }),
+              h.wire(ffS1.id, ffS2.id, 0),
+              h.wire(clk.id, ffS2.id, 1, 0, { isClockWire: true }),
+              h.wire(ffS2.id, ffD.id, 0),                       // sync2 → delay
+              h.wire(clk.id, ffD.id, 1, 0, { isClockWire: true }),
+              h.wire(ffS2.id, xorRx.id, 0),                     // sync2 → output XOR
+              h.wire(ffD.id, xorRx.id, 1),                      // delay → output XOR
+              h.wire(xorRx.id, pulseOut.id, 0),
+            ],
+          };
+        }),
+      },
+      {
+        label: 'ג',
+        question: 'הסכמה הזו מאבדת פעימות אם הקצב גבוה מ-~16 MHz בצד המהיר. מתי נחליף ל-**full handshake (req/ack)**, ומה ההבדל המבני?',
+        hints: [
+          'ה-toggle synchronizer הוא **חד-כיווני** — השולח לא יודע אם הפעימה נקלטה.',
+          'full handshake מוסיף נתיב חזרה: ack. השולח לא שולח פעימה נוספת עד שקיבל ack.',
+          'עלות: latency כפול (round-trip) + שני 2-FF synchronizers (אחד לכל כיוון).',
+          'יש גם אופציה שלישית — **async FIFO** — לפעימות שמגיעות ב-bursts. אבל זה ל-data, לא רק לעצם הסיגנל "אירוע קרה".',
+        ],
+        answer:
+`### השוואה — שלושת הכלים של CDC
+
+| מבנה | שימוש | latency | guarantee | מורכבות |
+|---|---|---|---|---|
+| **2-FF synchronizer** | level signals בלבד | 1-2 cycles slow | אין (level יציב) | מינימלי |
+| **toggle synchronizer** | pulses ב-low rate | 1-2 cycles slow | אין (lossy בקצבים) | בינוני |
+| **req/ack handshake** | transactions | **4 cycles slow** (round-trip) | **כן** (ack guarantee) | גבוה |
+| **async FIFO** | data bursts | בערך 2 cycles | יש (כל זמן ש-FIFO לא מלא) | גבוה מאוד |
+
+### מתי לבחור מה
+
+**Toggle synchronizer** כש:
+- הקצב הוא הרבה יותר נמוך מ-1/(2·T_slow).
+- אובדן הזדמני של פעימה אינו קריטי (לדוגמה: counter עדכון, debug pulse).
+- latency חייב להיות נמוך (cycle אחד בכל כיוון).
+
+**Full handshake (req/ack)** כש:
+- הקצב מתקרב לקצב היעד (no margin).
+- חייבת להיות **אחריות לאי-אובדן** (transactions, packets, control messages).
+- מותר latency גבוה יותר (4× round-trip).
+
+**Async FIFO** כש:
+- צריך לעבור **data** (not just events) בין domains.
+- יש bursts — קצב משתנה.
+- מותר זיכרון מקומי (FIFO depth).
+
+### המבנה של handshake (קונספט)
+
+בכל transaction חוצים **2 קווי level** (req + ack), כל אחד דורש 2-FF sync = **4 cycles slow** לכל סבב. throughput = **1 transaction לכל ~4 cycles** (ראה דיאגרמה למטה).
+
+### מסקנה לראיון
+
+> "Toggle = 1-cycle latency, lossy. Handshake = 4-cycle latency, guaranteed. אם המעגל הוא bus-level בקרה (master-slave) — handshake. אם זה debug counter — toggle. אם זה data stream — async FIFO."`,
+        interviewerMindset:
+`**בודק שהמועמד מבחין בין שלושת הכלים** ולא חושב ש-"2-FF synchronizer פותר הכל".
+
+**שאלה מצוינת**: "תן דוגמה מ-design אמיתי לכל אחד" →
+- 2-FF: signal status (busy, ready) חוצה domain.
+- Toggle: counter increment (PMU performance counter).
+- Handshake: ARM AHB → APB bridge.
+- Async FIFO: UART RX → CPU.
+
+**הצלחה**: ציון מספרי של ה-throughput tradeoff (1 vs 4 cycles per event). רוב המועמדים נשארים ב-"latency גבוה יותר" בלי לכמת.`,
+        expectedAnswers: [
+          'handshake', 'req', 'ack', 'acknowledge', 'אישור',
+          'latency', 'guarantee', 'async fifo', 'fifo',
+          'lossy', 'אובדן',
+        ],
+        answerSchematic: `
+<svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Full handshake (req/ack) CDC structure">
+  <text x="400" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">Full handshake — req/ack בדו-כיוון</text>
+
+  <!-- TX side box -->
+  <rect x="40" y="60" width="280" height="200" rx="10" fill="rgba(96,192,255,0.06)" stroke="#80c8ff" stroke-width="1.6"/>
+  <text x="180" y="86" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">TX side (clk_fast)</text>
+
+  <!-- RX side box -->
+  <rect x="480" y="60" width="280" height="200" rx="10" fill="rgba(128,240,160,0.06)" stroke="#80f0a0" stroke-width="1.6"/>
+  <text x="620" y="86" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">RX side (clk_slow)</text>
+
+  <!-- TX FFs: req_q, ack_r -->
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="80" y="120" width="60" height="40" rx="6"/>
+    <rect x="80" y="200" width="60" height="40" rx="6"/>
+  </g>
+  <text x="110" y="146" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">req_q</text>
+  <text x="110" y="226" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">ack_r</text>
+
+  <!-- RX FFs: req_r, ack_q -->
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="660" y="120" width="60" height="40" rx="6"/>
+    <rect x="660" y="200" width="60" height="40" rx="6"/>
+  </g>
+  <text x="690" y="146" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">req_r</text>
+  <text x="690" y="226" text-anchor="middle" fill="#cc99ff" font-size="16" font-weight="bold">ack_q</text>
+
+  <!-- 2-FF synchronizers as boxes in the middle -->
+  <g stroke="#a0c0d0" stroke-width="1.4" fill="#0a1520">
+    <rect x="370" y="115" width="100" height="50" rx="6"/>
+    <rect x="370" y="195" width="100" height="50" rx="6"/>
+  </g>
+  <text x="420" y="135" text-anchor="middle" fill="#a0c0d0" font-size="16">2-FF</text>
+  <text x="420" y="153" text-anchor="middle" fill="#a0c0d0" font-size="16">sync</text>
+  <text x="420" y="215" text-anchor="middle" fill="#a0c0d0" font-size="16">2-FF</text>
+  <text x="420" y="233" text-anchor="middle" fill="#a0c0d0" font-size="16">sync</text>
+
+  <!-- Forward arrow: req level → -->
+  <g stroke="#80f0a0" stroke-width="2" fill="none">
+    <path d="M 140 140 L 370 140" marker-end="url(#arr-g)"/>
+  </g>
+  <text x="250" y="130" text-anchor="middle" fill="#80f0a0" font-size="16">req level →</text>
+  <g stroke="#80f0a0" stroke-width="2" fill="none">
+    <path d="M 470 140 L 660 140" marker-end="url(#arr-g)"/>
+  </g>
+
+  <!-- Reverse arrow: ack level ← -->
+  <g stroke="#ffb878" stroke-width="2" fill="none">
+    <path d="M 660 220 L 470 220" marker-end="url(#arr-o)"/>
+  </g>
+  <text x="565" y="252" text-anchor="middle" fill="#ffb878" font-size="16">← ack level</text>
+  <g stroke="#ffb878" stroke-width="2" fill="none">
+    <path d="M 370 220 L 140 220" marker-end="url(#arr-o)"/>
+  </g>
+
+  <!-- CDC boundary -->
+  <line x1="420" y1="60" x2="420" y2="260" stroke="#806040" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/>
+    </marker>
+    <marker id="arr-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffb878"/>
+    </marker>
+  </defs>
+
+  <!-- Bottom annotation -->
+  <text x="400" y="288" text-anchor="middle" fill="#a0a0c0" font-size="16" font-style="italic">
+    Round-trip: req → 2 cycles + ack → 2 cycles = 4 cycles slow לכל transaction
+  </text>
+</svg>`,
+      },
+    ],
+    source: 'מאגר ראיונות — CDC pulse crossing (Cummings 2008 pattern)',
+    tags: ['cdc', 'pulse-synchronizer', 'toggle', 'metastability', 'edge-detect', 'protocol', 'handshake'],
     circuitRevealsAnswer: true,
   },
 ];
