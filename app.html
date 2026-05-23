@@ -623,6 +623,16 @@
     <span class="mem-fault-icon">💥</span> CORRUPT CELL
   </button>
 
+  <!-- Transition (slow-to-rise / slow-to-fall) fault injection — demo-
+       specific, hidden unless the active scene declares
+       `_dft.transitionFaultInjectButton`. Toggles wire.slowToRise (or
+       slowToFall) so RUN TRANSITION SIM produces a non-trivial coverage
+       result and the canvas shows the blue STR/STF badge. The fault is
+       INVISIBLE to RUN FAULT SIM (stuck-at) — that's the demo punchline. -->
+  <button id="btn-trans-fault-inject" class="hidden" title="Inject a slow-to-rise transition fault on the ALU result wire. RUN FAULT SIM still reports 100% stuck-at coverage — the fault is invisible to single-vector testing. RUN TRANSITION SIM exposes it. This is the gap between DC test and at-speed test.">
+    <span class="trans-fault-icon">🐌</span> INJECT SLOW EDGE
+  </button>
+
   <!-- Context Menu -->
   <div id="context-menu" class="hidden">
     <div class="ctx-item" data-action="properties">Properties</div>

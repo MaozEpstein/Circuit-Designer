@@ -305,6 +305,44 @@ _btnMemFaultInject?.addEventListener('click', () => {
   bus.emit('node:props-changed');
 });
 
+// ── Transition (slow-to-rise / slow-to-fall) inject button (demo) ────
+// Parallel to the LBIST stuck-at and MBIST cell-fault buttons. When the
+// active scene declares `_dft.transitionFaultInjectButton = { wireId,
+// kind: 'slowToRise'|'slowToFall', label }`, a floating blue 🐌 button
+// appears. Clicking it toggles the boolean fault flag on the named wire
+// — the engine reads it on the next evaluate and a 2-vector capture
+// returns the prior value. RUN FAULT SIM (stuck-at) stays 100 % because
+// the fault is invisible to single-vector testing; RUN TRANSITION SIM
+// uncovers it. The whole story is the DC-vs-at-speed gap in one click.
+const _btnTransFaultInject = document.getElementById('btn-trans-fault-inject');
+function _updateTransFaultInjectButton() {
+  if (!_btnTransFaultInject) return;
+  const meta = scene._dft && scene._dft.transitionFaultInjectButton;
+  if (!meta) { _btnTransFaultInject.classList.add('hidden'); return; }
+  const wire = scene.wires.find(w => w.id === meta.wireId);
+  const field = (meta.kind === 'slowToFall') ? 'slowToFall' : 'slowToRise';
+  const active = !!(wire && wire[field]);
+  _btnTransFaultInject.classList.remove('hidden');
+  _btnTransFaultInject.classList.toggle('active', active);
+  const armedLabel = (field === 'slowToRise') ? 'EDGE SLOW (STR)' : 'EDGE SLOW (STF)';
+  _btnTransFaultInject.innerHTML = active
+    ? `<span class="trans-fault-icon">⚠️</span> ${armedLabel}`
+    : `<span class="trans-fault-icon">🐌</span> INJECT SLOW EDGE`;
+}
+bus.on('scene:loaded',  _updateTransFaultInjectButton);
+bus.on('scene:cleared', _updateTransFaultInjectButton);
+_btnTransFaultInject?.addEventListener('click', () => {
+  const meta = scene._dft && scene._dft.transitionFaultInjectButton;
+  if (!meta) return;
+  const wire = scene.wires.find(w => w.id === meta.wireId);
+  if (!wire) return;
+  const field = (meta.kind === 'slowToFall') ? 'slowToFall' : 'slowToRise';
+  if (wire[field]) delete wire[field];
+  else             wire[field] = true;
+  _updateTransFaultInjectButton();
+  bus.emit('node:props-changed');
+});
+
 // ── Context Menu ────────────────────────────────────────────
 const ctxMenu = document.getElementById('context-menu');
 let _ctxNodeId = null;
@@ -5261,9 +5299,9 @@ const EXAMPLES = [
   // ── Test & DFT tab — one demo per layer of the DFT track.
   {
     id: 'dft-cpu-mbist-integrated',
-    title: '0.0 DFT — Simple CPU + FULL DFT stack incl. Memory BIST ⭐⭐',
-    desc: 'Crown-jewel showcase: Simple CPU + complete DFT stack on one canvas — scan chain, MISR + signature, logic BIST, ATPG LFSR, and (new) **Memory BIST** with March C− under a TEST_MODE mux collar. Ships with a pre-injected cell-fault at addr=5 (visible as an orange WORD chip in the DFT panel\'s CELL FAULTS grid). HOW IT FLOWS: 1) Press RUN — the CPU executes the program normally (functional mode, TEST_MODE=0); MISR signature evolves on RF_A; the existing logic-BIST workflow is unchanged. 2) The 4 BUS_MUXes between RF/CU and RAM switch under MBIST.TEST_MODE: when MBIST is idle (TEST_MODE=0) the CPU drives ADDR/DATA/WE/RE; when MBIST runs (TEST_MODE=1) it takes over. 3) Pulse MBIST_START to begin memory test — March C− detects the pre-injected fault at addr=5 around tick ~36, FAIL pill lights, failAddr=5 in the panel. To see PASS: click the orange chip thrice to clear, RESET+START again. This is the realistic SoC model: functional CPU + multiple DFT subsystems coexisting on a single canvas.',
-    tags: ['dft', 'mbist', 'bist', 'scan', 'misr', 'cpu', 'march', 'test-mode', 'integration', 'interview'],
+    title: '0.0 DFT — Simple CPU + FULL stack: scan / MISR / BIST / MBIST / at-speed transition ⭐⭐',
+    desc: 'Crown-jewel showcase: Simple CPU + complete DFT stack on one canvas — scan chain, MISR + signature, logic BIST, ATPG LFSR, Memory BIST with March C− under a TEST_MODE mux collar, and (new) **at-speed transition fault testing** (slow-to-rise / slow-to-fall). Ships with three inject buttons for the three fault classes. HOW IT FLOWS: 1) Press RUN — the CPU executes normally; MISR signature evolves on RF_A; LBIST + MBIST both reach PASS. 2) **🐞 INJECT FAULT** — stuck-at-0 on CU.REG_WE; LBIST signature diverges → FAIL. 3) **💥 CORRUPT CELL** — RAM cell 5 whole-word stuck-at-1; MBIST March C− catches it at failAddr=5 (~tick 36). 4) **🐌 INJECT SLOW EDGE** — slow-to-rise on ALU→WB-MUX wire. RUN FAULT SIM still reports 100% stuck-at coverage — the fault is invisible to single-vector testing. RUN TRANSITION SIM uncovers it. This is the gap between DC test (50 MHz testbench) and at-speed test (1 GHz functional clock): the headline reason every modern chip needs 2-vector capture. Each button toggles independently — click again to clear.',
+    tags: ['dft', 'mbist', 'bist', 'scan', 'misr', 'cpu', 'march', 'transition', 'at-speed', 'slow-to-rise', 'test-mode', 'integration', 'interview'],
     file: 'examples/circuits/dft-cpu-mbist-integrated.json',
   },
   {

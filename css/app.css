@@ -6210,12 +6210,15 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   z-index: 9000;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 22px;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  box-sizing: border-box;
+  min-width: 178px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.2px;
   color: #ffb878;
   background: linear-gradient(135deg, #2a1a08 0%, #3a2410 50%, #2a1a08 100%);
   border: 1.5px solid #aa6a2a;
@@ -6223,8 +6226,8 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   cursor: pointer;
   box-shadow:
     0 0 0 1px #1a0a04,
-    0 4px 20px rgba(255, 184, 120, 0.25),
-    0 8px 40px rgba(0, 0, 0, 0.5);
+    0 3px 14px rgba(255, 184, 120, 0.22),
+    0 6px 28px rgba(0, 0, 0, 0.4);
   transition: transform 0.15s ease, box-shadow 0.15s ease,
               color 0.2s ease, border-color 0.2s ease;
   animation: dftRevealPulse 2.4s ease-in-out infinite;
@@ -6242,7 +6245,7 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   transform: translateY(0);
 }
 #btn-dft-reveal .dft-reveal-icon {
-  font-size: 18px;
+  font-size: 14px;
   filter: drop-shadow(0 0 4px rgba(255, 184, 120, 0.6));
 }
 #btn-dft-reveal.revealed {
@@ -6271,32 +6274,53 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   50%      { box-shadow: 0 0 0 1px #1a0a04, 0 4px 28px rgba(255, 184, 120, 0.55), 0 8px 40px rgba(0, 0, 0, 0.5); }
 }
 
-/* ── LBIST fault-injection button (demo-specific) ───────────────
-   Sits just left of the DFT-reveal button. Red-themed; flips to a
-   pulsing yellow-on-red "FAULT ACTIVE" state when a fault is in
-   effect, so the user can clearly see whether the BIST is being
-   run clean or under stimulus. */
-#btn-fault-inject {
+/* ── Demo-specific inject buttons — shared sizing ───────────────
+   Three sibling buttons (logic stuck-at, RAM cell, transition delay)
+   sit in a row to the left of the DFT-reveal button. They share
+   geometry/padding/font; each has its own colour theme and an `active`
+   pulsing state. Sized to be readable but compact so all four
+   (including DFT REVEAL) fit on a single line without crowding.
+   Right-anchored stride ≈ 148 px keeps spacing tight but separated. */
+#btn-fault-inject,
+#btn-mem-fault-inject,
+#btn-trans-fault-inject {
   position: fixed;
   bottom: 28px;
-  right: 312px;
   z-index: 4000;
-  padding: 12px 22px;
-  font: 700 13px/1 'Segoe UI', system-ui, sans-serif;
-  letter-spacing: 1.5px;
-  color: #ffb0b0;
-  background: linear-gradient(180deg, #3a1818 0%, #1f0a0a 100%);
-  border: 1px solid #5a2a2a;
-  border-radius: 24px;
+  padding: 8px 14px;
+  box-sizing: border-box;
+  font: 700 10.5px/1 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.8px;
+  border-radius: 6px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.18s ease, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+#btn-fault-inject:active,
+#btn-mem-fault-inject:active,
+#btn-trans-fault-inject:active { transform: translateY(0); }
+#btn-fault-inject .fault-icon,
+#btn-mem-fault-inject .mem-fault-icon,
+#btn-trans-fault-inject .trans-fault-icon {
+  font-size: 14px;
+}
+
+/* ── LBIST fault-injection button — red theme ───────────────────
+   Sits just left of the DFT-reveal button. Flips to a pulsing yellow-
+   on-red "FAULT ACTIVE" state when armed. */
+#btn-fault-inject {
+  right: 218px;
+  min-width: 140px;
+  color: #ffb0b0;
+  background: linear-gradient(180deg, #3a1818 0%, #1f0a0a 100%);
+  border: 1px solid #5a2a2a;
   box-shadow:
     0 0 0 1px #1a0404,
-    0 4px 20px rgba(255, 80, 80, 0.25),
-    0 8px 40px rgba(0, 0, 0, 0.5);
-  transition: transform 0.18s ease, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+    0 3px 14px rgba(255, 80, 80, 0.22),
+    0 6px 28px rgba(0, 0, 0, 0.4);
 }
 #btn-fault-inject:hover {
   transform: translateY(-2px);
@@ -6304,12 +6328,10 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   border-color: #8a3a3a;
   box-shadow:
     0 0 0 1px #1a0404,
-    0 6px 28px rgba(255, 80, 80, 0.4),
-    0 10px 50px rgba(0, 0, 0, 0.6);
+    0 5px 20px rgba(255, 80, 80, 0.35),
+    0 8px 36px rgba(0, 0, 0, 0.5);
 }
-#btn-fault-inject:active { transform: translateY(0); }
 #btn-fault-inject .fault-icon {
-  font-size: 18px;
   filter: drop-shadow(0 0 4px rgba(255, 120, 120, 0.6));
 }
 #btn-fault-inject.active {
@@ -6320,35 +6342,23 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
 }
 #btn-fault-inject.active:hover { color: #ffffa0; }
 @keyframes faultPulse {
-  0%, 100% { box-shadow: 0 0 0 1px #1a0404, 0 4px 22px rgba(255, 80, 80, 0.5), 0 8px 40px rgba(0, 0, 0, 0.5); }
-  50%      { box-shadow: 0 0 0 1px #1a0404, 0 4px 36px rgba(255, 120, 80, 0.8), 0 8px 40px rgba(0, 0, 0, 0.5); }
+  0%, 100% { box-shadow: 0 0 0 1px #1a0404, 0 3px 16px rgba(255, 80, 80, 0.45), 0 6px 28px rgba(0, 0, 0, 0.4); }
+  50%      { box-shadow: 0 0 0 1px #1a0404, 0 3px 28px rgba(255, 120, 80, 0.75), 0 6px 28px rgba(0, 0, 0, 0.4); }
 }
 
-/* ── MBIST cell-fault injection button (demo-specific) ──────────
-   Sits just left of the LBIST fault button. Purple-themed so the
-   three demo buttons read as a left-to-right narrative:
-   💥 CORRUPT CELL (memory)   🐞 INJECT FAULT (logic)   🔬 SHOW DFT LAYER. */
+/* ── MBIST cell-fault injection button — purple theme ──────────
+   Sits to the left of the LBIST button. Theming reads left→right as a
+   narrative: 🐌 INJECT SLOW EDGE  💥 CORRUPT CELL  🐞 INJECT FAULT  🔬 SHOW DFT LAYER. */
 #btn-mem-fault-inject {
-  position: fixed;
-  bottom: 28px;
-  right: 580px;
-  z-index: 4000;
-  padding: 12px 22px;
-  font: 700 13px/1 'Segoe UI', system-ui, sans-serif;
-  letter-spacing: 1.5px;
+  right: 370px;
+  min-width: 178px;
   color: #d8b0ff;
   background: linear-gradient(180deg, #2a1838 0%, #14081e 100%);
   border: 1px solid #4a2a6a;
-  border-radius: 24px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
   box-shadow:
     0 0 0 1px #0a0414,
-    0 4px 20px rgba(180, 100, 255, 0.25),
-    0 8px 40px rgba(0, 0, 0, 0.5);
-  transition: transform 0.18s ease, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+    0 3px 14px rgba(180, 100, 255, 0.22),
+    0 6px 28px rgba(0, 0, 0, 0.4);
 }
 #btn-mem-fault-inject:hover {
   transform: translateY(-2px);
@@ -6356,12 +6366,10 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   border-color: #7a4aa0;
   box-shadow:
     0 0 0 1px #0a0414,
-    0 6px 28px rgba(180, 100, 255, 0.4),
-    0 10px 50px rgba(0, 0, 0, 0.6);
+    0 5px 20px rgba(180, 100, 255, 0.35),
+    0 8px 36px rgba(0, 0, 0, 0.5);
 }
-#btn-mem-fault-inject:active { transform: translateY(0); }
 #btn-mem-fault-inject .mem-fault-icon {
-  font-size: 18px;
   filter: drop-shadow(0 0 4px rgba(200, 120, 255, 0.6));
 }
 #btn-mem-fault-inject.active {
@@ -6372,6 +6380,47 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
 }
 #btn-mem-fault-inject.active:hover { color: #ffe0ff; }
 @keyframes memFaultPulse {
-  0%, 100% { box-shadow: 0 0 0 1px #0a0414, 0 4px 22px rgba(180, 100, 255, 0.5), 0 8px 40px rgba(0, 0, 0, 0.5); }
-  50%      { box-shadow: 0 0 0 1px #0a0414, 0 4px 36px rgba(220, 120, 255, 0.8), 0 8px 40px rgba(0, 0, 0, 0.5); }
+  0%, 100% { box-shadow: 0 0 0 1px #0a0414, 0 3px 16px rgba(180, 100, 255, 0.45), 0 6px 28px rgba(0, 0, 0, 0.4); }
+  50%      { box-shadow: 0 0 0 1px #0a0414, 0 3px 28px rgba(220, 120, 255, 0.75), 0 6px 28px rgba(0, 0, 0, 0.4); }
+}
+
+/* ── Transition (slow-to-rise / slow-to-fall) inject button ─────
+   Blue theme matches the canvas wire badge (#80c8ff) and the FAULT
+   LIST pill colour. Sits leftmost of the demo row. The 🐌 reads as
+   "slow" at a glance; when armed the icon flips to ⚠️ and the label
+   becomes EDGE SLOW (STR/STF) so the interview audience sees exactly
+   which direction is faulty. */
+#btn-trans-fault-inject {
+  right: 560px;
+  min-width: 178px;
+  color: #b0d8ff;
+  background: linear-gradient(180deg, #0a2238 0%, #04101e 100%);
+  border: 1px solid #2a4a6a;
+  box-shadow:
+    0 0 0 1px #04101a,
+    0 3px 14px rgba(80, 200, 255, 0.22),
+    0 6px 28px rgba(0, 0, 0, 0.4);
+}
+#btn-trans-fault-inject:hover {
+  transform: translateY(-2px);
+  color: #d0e8ff;
+  border-color: #4a7aa0;
+  box-shadow:
+    0 0 0 1px #04101a,
+    0 5px 20px rgba(80, 200, 255, 0.35),
+    0 8px 36px rgba(0, 0, 0, 0.5);
+}
+#btn-trans-fault-inject .trans-fault-icon {
+  filter: drop-shadow(0 0 4px rgba(120, 200, 255, 0.6));
+}
+#btn-trans-fault-inject.active {
+  color: #ffe080;
+  border-color: #4a90c8;
+  background: linear-gradient(180deg, #103a5a 0%, #04182a 100%);
+  animation: transFaultPulse 1.0s ease-in-out infinite;
+}
+#btn-trans-fault-inject.active:hover { color: #ffffa0; }
+@keyframes transFaultPulse {
+  0%, 100% { box-shadow: 0 0 0 1px #04101a, 0 3px 16px rgba(80, 200, 255, 0.45), 0 6px 28px rgba(0, 0, 0, 0.4); }
+  50%      { box-shadow: 0 0 0 1px #04101a, 0 3px 28px rgba(120, 220, 255, 0.75), 0 6px 28px rgba(0, 0, 0, 0.4); }
 }

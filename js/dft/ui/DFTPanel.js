@@ -1624,6 +1624,10 @@ export class DFTPanel {
           <span class="dft-chain-status bad">orphan</span>
           <span class="dft-info-text">Lone SCAN_FF with nothing wired to its TI — not part of any chain.</span>
         </div>
+        <div class="dft-info-row">
+          <span style="color:#80c8a0;font-size:0.85em">⇣ &lt;signal&gt;</span>
+          <span class="dft-info-text">The functional signal each cell captures on its D pin when TE=0. Reveals what slice of internal state the chain observes — e.g. PC[0..3], an RF read port, an ALU result bit.</span>
+        </div>
       </div>
     ` : '';
 
@@ -1678,6 +1682,38 @@ export class DFTPanel {
       return { cls: 'warn', label: 'warn' };
     };
 
+    // Helper — resolve what each SCAN_FF actually captures on its D pin
+    // when TE=0 (functional mode). Resolution order:
+    //   1. If the D wire has a netName, prefer it (the scene author named
+    //      this net deliberately — e.g. "REG_WE_OBS" — and that beats
+    //      mechanical derivations). The "_OBS" suffix is stripped as it
+    //      just marks the wire as an observation tap.
+    //   2. If the D wire's source is a SPLIT, trace one hop upstream and
+    //      label as <bus>[bit] — typical bus-observer pattern.
+    //   3. Otherwise, label as the source's label (+ output index when > 0).
+    // Returns a short human-readable string, or null when D is unwired
+    // (a fairly serious DFT defect worth flagging).
+    const _resolveCapture = (ff) => {
+      const dWire = wires.find(w => w.targetId === ff.id && w.targetInputIndex === 0);
+      if (!dWire) return null;
+      if (dWire.netName) return dWire.netName.replace(/_OBS$/, '');
+      const src = allNodes.find(n => n.id === dWire.sourceId);
+      if (!src) return null;
+      // SPLIT case: trace one hop upstream to label as <bus>[bit].
+      if (src.type === 'SPLIT') {
+        const bit = dWire.sourceOutputIndex || 0;
+        const splitIn = wires.find(w => w.targetId === src.id && w.targetInputIndex === 0);
+        if (!splitIn) return `(SPLIT)[${bit}]`;
+        const busSrc = allNodes.find(n => n.id === splitIn.sourceId);
+        const busLabel = busSrc?.label || busSrc?.id || splitIn.sourceId;
+        return `${busLabel}[${bit}]`;
+      }
+      // Direct case: just label the source node + its output index when > 0.
+      const outIdx = dWire.sourceOutputIndex || 0;
+      const srcLabel = src.label || src.id;
+      return outIdx > 0 ? `${srcLabel}.out[${outIdx}]` : srcLabel;
+    };
+
     const rowsHtml = chains.map((chain, idx) => {
       const ends = describeChainEndpoints(chain, allNodes, wires);
       const orphan = isOrphan(chain);
@@ -1686,10 +1722,17 @@ export class DFTPanel {
       // Build the inline flow: pad → cell → arrow → cell → ... → pad.
       // Arrows live as separate inline elements so they can pick up
       // the chain's amber accent and align baseline with the boxes.
+      // Each cell shows the FF's label on top and (below, smaller) what
+      // it captures from the functional design on TE=0. An unwired D
+      // shows as a dim "(no D)" so the operator notices.
       const cellChunks = [];
       for (let c = 0; c < chain.length; c++) {
         if (c > 0) cellChunks.push(`<span class="dft-chain-arrow">→</span>`);
-        cellChunks.push(`<div class="dft-chain-cell"><strong>${chain[c].label || chain[c].id}</strong></div>`);
+        const cap = _resolveCapture(chain[c]);
+        const capHtml = cap
+          ? `<small style="display:block;color:#80c8a0;font-size:0.78em;margin-top:2px;letter-spacing:0.3px" title="The D pin of this SCAN_FF observes this functional signal; captured on a TE=0 clock.">⇣ ${cap}</small>`
+          : `<small style="display:block;color:#cc6060;font-size:0.78em;margin-top:2px;font-style:italic" title="No wire is driving this SCAN_FF's D pin — TE=0 capture would latch undefined.">(no D)</small>`;
+        cellChunks.push(`<div class="dft-chain-cell" style="text-align:center;padding:4px 6px"><strong>${chain[c].label || chain[c].id}</strong>${capHtml}</div>`);
       }
 
       // TE bar — three flavours of dash pattern carry the meaning:
