@@ -199,6 +199,11 @@ bus.on('clock:step', () => {
   if (scene.hasSequentialElements()) _stepClock();
 });
 
+// Last stepCount we emitted a `sim:tick` for. Tracked module-locally so
+// the render loop (which fires on user actions too) only emits when a
+// genuine clock tick has advanced state.stepCount.
+let _lastEmittedTickStep = -1;
+
 // ── DFT-layer reveal trick (demo-specific UX) ────────────────
 // Scenes that ship with `_dft.revealButton: true` start with their
 // DFT-tagged nodes hidden from the canvas. The floating "🔬 SHOW DFT
@@ -935,6 +940,16 @@ function tick() {
   if (result.nodeValues) {
     Waveform.record(state.stepCount, result.nodeValues, scene.wires);
     if (Waveform.isVisible()) Waveform.render();
+  }
+
+  // Emit a per-tick event for any subscriber that wants to sample
+  // wire values at simulation cadence (e.g. the DFT panel's SCAN
+  // HISTORY display). Throttled to actual tick boundaries — the
+  // render loop also fires on user actions, but only real
+  // stepCount advances are interesting.
+  if (state.stepCount !== _lastEmittedTickStep) {
+    _lastEmittedTickStep = state.stepCount;
+    bus.emit('sim:tick', { stepCount: state.stepCount, wireValues: result.wireValues, nodeValues: result.nodeValues });
   }
 
   // Update debug tools

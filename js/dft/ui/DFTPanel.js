@@ -269,6 +269,13 @@ export class DFTPanel {
     // collide with stuck-at coverage. Pair semantics differ enough that
     // unifying them would obscure both.
     this._lastTransitionSim = null;
+    // Live SCAN HISTORY trace — ring buffer of recent (step, value)
+    // samples for each detected scan-related observation pin (SCAN_OUT,
+    // COMPACT_OUT, MISR SIG …). Populated by sim:tick subscriber.
+    // Stays at most _scanHistoryMax long so memory is bounded.
+    this._scanHistory     = [];
+    this._scanHistoryMax  = 24;
+    this._scanHistorySrcs = null;       // detected lazily on first tick
     // Per-block collapsed state. Each entry is a block-id like
     // `chain_0` (positional, stable per scene) or `lfsr_<nodeId>` (by
     // node id, also stable). The set survives a re-render so the
@@ -710,8 +717,28 @@ export class DFTPanel {
     bus.on('node:removed',   refresh);
     bus.on('wire:added',     refresh);
     bus.on('wire:removed',   refresh);
-    bus.on('scene:loaded',   refresh);
+    bus.on('scene:loaded',   () => { this._scanHistory = []; this._scanHistorySrcs = null; refresh(); });
     bus.on('node:props-changed', refresh);
+
+    // SCAN HISTORY — sample each tick. Throttled re-render (every 4
+    // samples) so a fast-running simulation doesn't repaint the entire
+    // DFT panel 1000×/s. The buffer always stays current; only the DOM
+    // update is throttled.
+    bus.on('sim:tick', ({ stepCount, wireValues }) => {
+      if (!this._scene || !wireValues) return;
+      if (this._scanHistorySrcs === null) this._scanHistorySrcs = this._detectScanHistorySources();
+      if (this._scanHistorySrcs.length === 0) return;
+      const sample = { step: stepCount, values: {} };
+      for (const src of this._scanHistorySrcs) {
+        sample.values[src.id] = wireValues.get(src.wireId);
+      }
+      this._scanHistory.push(sample);
+      if (this._scanHistory.length > this._scanHistoryMax) this._scanHistory.shift();
+      // Throttle re-render: every 4 ticks (sub-second visual update at
+      // typical sim speeds). The buffer is always fresh; only the paint
+      // is throttled. Skips entirely when the panel is hidden.
+      if (this._visible && (stepCount % 4 === 0)) this._render();
+    });
 
     // Live telemetry channel for BIST / JTAG / coverage updates.
     // Layer 0 just stores the latest payload; later layers read it
@@ -887,6 +914,7 @@ export class DFTPanel {
       overview:  this._renderTestabilityOverview(wires, { injStuck, injOpen, injBrdg, injTrans, injTotal }),
       coverage:  this._renderFaultCoverage(),
       scan:      this._renderScanChains(),
+      scanhist:  this._renderScanHistory(),
       lfsr:      this._renderPatternGenerators(),
       misr:      this._renderSignatureCompactors(),
       bist:      this._renderBistControllers(),
@@ -897,11 +925,11 @@ export class DFTPanel {
       faultlist: this._renderFaultList(wires),
     };
     const CATEGORIES = [
-      { id: 'overview', label: 'OVERVIEW',  ids: ['overview', 'coverage']            },
-      { id: 'stimulus', label: 'STIMULUS',  ids: ['scan', 'lfsr', 'misr', 'bist']    },
-      { id: 'memory',   label: 'MEMORY',    ids: ['memtest', 'mbist']                },
-      { id: 'boundary', label: 'BOUNDARY',  ids: ['jtag']                            },
-      { id: 'diagnose', label: 'DIAGNOSE',  ids: ['diagnosis', 'faultlist']          },
+      { id: 'overview', label: 'OVERVIEW',  ids: ['overview', 'coverage']                  },
+      { id: 'stimulus', label: 'STIMULUS',  ids: ['scan', 'scanhist', 'lfsr', 'misr', 'bist'] },
+      { id: 'memory',   label: 'MEMORY',    ids: ['memtest', 'mbist']                      },
+      { id: 'boundary', label: 'BOUNDARY',  ids: ['jtag']                                  },
+      { id: 'diagnose', label: 'DIAGNOSE',  ids: ['diagnosis', 'faultlist']                },
     ];
     this._body.innerHTML = CATEGORIES.map(cat => {
       const inner = cat.ids.map(id => sections[id]).filter(h => h && h.trim()).join('');
@@ -972,6 +1000,83 @@ export class DFTPanel {
       this._updateTraceButtons();
     }
     if (this._visible) this._render();
+  }
+
+  // SCAN HISTORY — detect which wires are worth sampling per tick. Heuristic:
+  // any primary OUTPUT pad whose label matches the scan-observation naming
+  // convention (SCAN_OUT*, COMPACT_OUT, SIG, TDO), plus the inbound wire
+  // feeding it. Returns [{ id, label, wireId }, …] in canonical render order.
+  // Called lazily on the first sim:tick so newly-loaded scenes are picked up.
+  _detectScanHistorySources() {
+    const nodes = this._scene?.nodes || [];
+    const wires = this._scene?.wires || [];
+    const isInteresting = (lbl) => /^(SCAN_OUT|COMPACT_OUT|SIG|TDO)\b/i.test(lbl || '');
+    const out = [];
+    for (const n of nodes) {
+      if (n.type !== 'OUTPUT') continue;
+      if (!isInteresting(n.label)) continue;
+      const w = wires.find(w => w.targetId === n.id);
+      if (!w) continue;
+      out.push({ id: n.id, label: n.label || n.id, wireId: w.id });
+    }
+    return out;
+  }
+
+  // Render the live SCAN HISTORY block. Compact format: per-source row of
+  // last N tick values as a tight 0/1 string with low-glyph for 0 and
+  // high-glyph for 1. Falls back gracefully when sim hasn't ticked yet.
+  // Skipped entirely when no scan sources exist in the scene (returns '').
+  _renderScanHistory() {
+    if (this._scanHistorySrcs === null) this._scanHistorySrcs = this._detectScanHistorySources();
+    if (!this._scanHistorySrcs.length) return '';
+
+    const header = `<span class="dft-section-title">SCAN HISTORY` +
+      `<button class="dft-info-btn" data-action="toggle-info" data-section="scanhist" title="What does this trace show?">i</button>` +
+      `</span>`;
+    const info = this._infoOpen.has('scanhist') ? `
+      <div class="dft-info-panel">
+        <div class="dft-info-lead">Live ring buffer (last ${this._scanHistoryMax} ticks) of each scan-observation output. Updated as the simulation clocks. This is what an ATE would record on its tester pins during a scan-test run.</div>
+        <div class="dft-info-row">
+          <span style="color:#80c8ff;font-family:'JetBrains Mono',monospace">▁ ▔</span>
+          <span class="dft-info-text">Low / High sampled value per tick. Multi-bit values render as hex.</span>
+        </div>
+      </div>` : '';
+
+    if (this._scanHistory.length === 0) {
+      return `
+        <div class="dft-section-header">${header}</div>${info}
+        <div class="dft-empty">Press <b style="color:#80c8a0">RUN</b> — samples will appear as the clock advances. Each tick captures one bit per scan output.</div>
+      `;
+    }
+
+    // Build per-source rows. For single-bit values (the common case for
+    // scan outputs) we render a compact waveform of low/high glyphs; for
+    // multi-bit values (MISR signature) we render as 2-digit hex per tick.
+    const isMultiBit = (v) => v !== 0 && v !== 1 && v != null;
+    const glyph = (v) => v == null ? '·' : (v === 0 ? '▁' : (v === 1 ? '▔' : '?'));
+    const hex2  = (v) => v == null ? '··' : (v & 0xff).toString(16).padStart(2, '0').toUpperCase();
+
+    const firstStep = this._scanHistory[0].step;
+    const lastStep  = this._scanHistory[this._scanHistory.length - 1].step;
+
+    const rows = this._scanHistorySrcs.map(src => {
+      const values = this._scanHistory.map(s => s.values[src.id]);
+      const anyMulti = values.some(v => isMultiBit(v));
+      const cells = anyMulti
+        ? values.map(hex2).join(' ')
+        : values.map(glyph).join('');
+      return `
+        <div class="dft-perf-row" style="grid-template-columns: 130px 1fr; align-items:baseline">
+          <span class="k" style="color:#80c8a0">${src.label}</span>
+          <span class="v" style="font-family:'JetBrains Mono',monospace;font-size:${anyMulti ? '0.88em' : '1.1em'};letter-spacing:${anyMulti ? '0' : '1px'};color:#cce8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cells}</span>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="dft-section-header">${header}</div>${info}
+      <div style="padding:0 1.2em 6px;color:#688;font-size:0.85em">tick range: ${firstStep} → ${lastStep} (${this._scanHistory.length} of ${this._scanHistoryMax} samples)</div>
+      ${rows}
+    `;
   }
 
   // Run the transition (slow-to-rise / slow-to-fall) fault simulator on
