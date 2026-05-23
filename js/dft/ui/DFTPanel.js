@@ -25,6 +25,96 @@ import { diagnoseScene } from '../FaultDictionary.js';
 import { evaluate as evaluateScene } from '../../engine/SimulationEngine.js';
 import { setDftTrace } from '../../rendering/CanvasRenderer.js';
 
+// ─── SCAN TEST (ATE) — module-local helpers ────────────────────
+// These live outside the class because they're pure: no `this`, no
+// DOM. Easy to unit-test in isolation if we ever add scan-test tests.
+
+/**
+ * Parse a user-typed scan vector into a bit array.
+ *
+ * Accepts three formats (whitespace + underscore tolerated):
+ *   • binary:  "1010" or "b1010"
+ *   • hex:     "0xA" or "xA" (4 bits per hex digit, padded)
+ *   • plain:   "1010" (same as binary)
+ *
+ * Bit-order convention: leftmost character = first bit shifted in =
+ * lands at the chain tail after N shifts. So pattern "1010" loaded
+ * into a 4-cell chain leaves the chain holding [0, 1, 0, 1] from
+ * head to tail (the head got the latest shift = pattern[3] = 0).
+ *
+ * Strict length match — no padding, no truncation. Silent padding
+ * hides ATE programmer bugs in production; same rule here.
+ *
+ * @param {string} raw      user input
+ * @param {number} chainLen expected number of bits
+ * @returns {{ bits: number[] | null, err: string | null }}
+ */
+export function parseAtePattern(raw, chainLen) {
+  const s = String(raw || '').replace(/[\s_]/g, '').toLowerCase();
+  if (!s) return { bits: null, err: 'empty pattern' };
+  let bits;
+  if (s.startsWith('0x') || s.startsWith('x')) {
+    const hex = s.replace(/^0?x/, '');
+    if (!/^[0-9a-f]+$/.test(hex)) return { bits: null, err: `bad hex: "${raw}"` };
+    bits = hex.split('').flatMap(d =>
+      parseInt(d, 16).toString(2).padStart(4, '0').split('')
+    ).map(Number);
+    // Strip leading zeros down to chainLen (hex 0xA in a 4-bit chain
+    // is 1010, not 00001010).
+    while (bits.length > chainLen && bits[0] === 0) bits.shift();
+  } else if (s.startsWith('b')) {
+    const b = s.slice(1);
+    if (!/^[01]+$/.test(b)) return { bits: null, err: `bad binary: "${raw}"` };
+    bits = b.split('').map(Number);
+  } else if (/^[01]+$/.test(s)) {
+    bits = s.split('').map(Number);
+  } else {
+    return { bits: null, err: `unrecognized format: "${raw}"` };
+  }
+  if (bits.length !== chainLen) {
+    return { bits: null, err: `length mismatch: pattern has ${bits.length} bits, chain has ${chainLen}` };
+  }
+  return { bits, err: null };
+}
+
+/**
+ * Build the ordered list of scan-test ops for a given mode.
+ *
+ *   manual (2N ticks)   — LOAD (N) → UNLOAD (N)
+ *   loc    (2N+1 ticks) — LOAD (N) → CAPTURE (1, TE=0) → UNLOAD (N)
+ *   los    (2N+1 ticks) — LOAD (N-1) → LAUNCH-SHIFT (1) → CAPTURE (1) → UNLOAD (N)
+ *
+ * Each op = { phase, te, si }. Phase string is purely cosmetic (used
+ * in the trace table to label rows).
+ *
+ * @param {string} mode      'manual' | 'loc' | 'los'
+ * @param {number[]} siBits  bits to shift in (length N)
+ * @param {number} N         chain length
+ * @returns {Array<{ phase: string, te: 0|1, si: 0|1 }>}
+ */
+export function buildAteSequence(mode, siBits, N) {
+  const ops = [];
+  if (mode === 'manual') {
+    for (let i = 0; i < N; i++) ops.push({ phase: 'LOAD',   te: 1, si: siBits[i] });
+    for (let i = 0; i < N; i++) ops.push({ phase: 'UNLOAD', te: 1, si: 0 });
+    return ops;
+  }
+  if (mode === 'loc') {
+    for (let i = 0; i < N; i++) ops.push({ phase: 'LOAD',    te: 1, si: siBits[i] });
+    ops.push({ phase: 'CAPTURE', te: 0, si: 0 });
+    for (let i = 0; i < N; i++) ops.push({ phase: 'UNLOAD',  te: 1, si: 0 });
+    return ops;
+  }
+  if (mode === 'los') {
+    for (let i = 0; i < N - 1; i++) ops.push({ phase: 'LOAD', te: 1, si: siBits[i] });
+    ops.push({ phase: 'LAUNCH',  te: 1, si: siBits[N - 1] });
+    ops.push({ phase: 'CAPTURE', te: 0, si: 0 });
+    for (let i = 0; i < N; i++) ops.push({ phase: 'UNLOAD', te: 1, si: 0 });
+    return ops;
+  }
+  return [];
+}
+
 /**
  * Detect scan chains in a scene.
  *
@@ -272,10 +362,30 @@ export class DFTPanel {
     // Live SCAN HISTORY trace — ring buffer of recent (step, value)
     // samples for each detected scan-related observation pin (SCAN_OUT,
     // COMPACT_OUT, MISR SIG …). Populated by sim:tick subscriber.
-    // Stays at most _scanHistoryMax long so memory is bounded.
+    // 1000 samples ≈ 50KB of JS heap (browser RAM, not the simulated
+    // CPU's RAM) — trivial. The cost is in DOM: each render rebuilds
+    // ~6,000 elements when the section is visible, throttled below.
     this._scanHistory     = [];
-    this._scanHistoryMax  = 24;
+    this._scanHistoryMax  = 400;
     this._scanHistorySrcs = null;       // detected lazily on first tick
+    this._scanHistoryPaused = false;    // user can pause sampling to examine buffer
+    this._renderScheduled = false;      // dedupe rAF-deferred renders
+
+    // SCAN TEST (ATE) — panel emulates ATE-side test program. The user
+    // enters a scan-in pattern + optional expected scan-out, picks a
+    // chain + mode (manual/loc/los), clicks RUN. We orchestrate the
+    // entire scan cycle (Load → optional Capture → Unload) by calling
+    // evaluate() directly in a tight loop, mutating TE/SI/CLOCK on the
+    // primary INPUT nodes, snapshotting + restoring all touched state.
+    // FFStates are CLONED so the live simulation's state.ffStates is
+    // never mutated.
+    this._scanTestRunning   = false;
+    this._scanTestChainIdx  = 0;
+    this._scanTestMode      = 'manual';      // 'manual' | 'loc' | 'los'
+    this._scanTestPattern   = '';
+    this._scanTestExpected  = '';
+    this._scanTestDiag      = null;
+    this._lastScanTest      = null;
     // Per-block collapsed state. Each entry is a block-id like
     // `chain_0` (positional, stable per scene) or `lfsr_<nodeId>` (by
     // node id, also stable). The set survives a re-render so the
@@ -618,6 +728,29 @@ export class DFTPanel {
           this._runATPGAllUndetected();
           return;
         }
+        // SCAN TEST (ATE) — RUN button.
+        const ateRun = e.target.closest('[data-action="ate-run"]');
+        if (ateRun) {
+          e.preventDefault();
+          this._runScanTest();
+          return;
+        }
+        // SCAN HISTORY — Pause / Resume toggle.
+        const histPause = e.target.closest('[data-action="scanhist-pause"]');
+        if (histPause) {
+          e.preventDefault();
+          this._scanHistoryPaused = !this._scanHistoryPaused;
+          if (this._visible) this._render();
+          return;
+        }
+        // SCAN HISTORY — Clear buffer.
+        const histClear = e.target.closest('[data-action="scanhist-clear"]');
+        if (histClear) {
+          e.preventDefault();
+          this._scanHistory = [];
+          if (this._visible) this._render();
+          return;
+        }
         // Per-block (chain / lfsr / misr / bist) collapse.
         const blockHeader = e.target.closest('.dft-chain-block[data-block-id] .dft-chain-header');
         if (blockHeader && !e.target.closest('.dft-chain-status[data-action], button, [data-action]')) {
@@ -660,8 +793,43 @@ export class DFTPanel {
         if (!sel) return;
         if (sel.dataset.action === 'memtest-algo') {
           this._setMemoryTestAlgo(sel.dataset.ramId, sel.value);
+        } else if (sel.dataset.action === 'ate-chain') {
+          this._scanTestChainIdx = parseInt(sel.value, 10) || 0;
+          this._scanTestDiag = null;
+          // Don't re-render — leaving the dropdown selection visible.
+        } else if (sel.dataset.action === 'ate-mode') {
+          this._scanTestMode = sel.value;
+          this._scanTestDiag = null;
         }
       });
+      // <input> text changes for ATE pattern fields. Mutate state on
+      // every keystroke; don't re-render mid-typing (would lose focus).
+      this._body.addEventListener('input', (e) => {
+        const inp = e.target.closest('input[data-action]');
+        if (!inp) return;
+        if (inp.dataset.action === 'ate-pattern') {
+          this._scanTestPattern = inp.value;
+        } else if (inp.dataset.action === 'ate-expected') {
+          this._scanTestExpected = inp.value;
+        }
+      });
+      // SCAN HISTORY — translate vertical wheel deltas into horizontal
+      // scroll when the cursor is over the scrollable trace. Matches
+      // how logic-analyzer / audio-DAW tools behave: wheel walks the
+      // timeline. Without this the user would have to Shift+wheel or
+      // drag the scrollbar — neither is discoverable.
+      //
+      // passive:false because we call preventDefault() to suppress
+      // the default vertical-scroll behavior. Skip when the container
+      // isn't actually overflowing — let the page scroll normally.
+      this._body.addEventListener('wheel', (e) => {
+        const area = e.target.closest('.dft-scanhist-scroll');
+        if (!area) return;
+        if (area.scrollWidth <= area.clientWidth) return;
+        if (e.deltaY === 0) return;
+        e.preventDefault();
+        area.scrollLeft += e.deltaY;
+      }, { passive: false });
       // Keyboard shortcuts inside the LFSR edit input — Enter saves,
       // Escape cancels.
       this._body.addEventListener('keydown', (e) => {
@@ -693,6 +861,8 @@ export class DFTPanel {
     const refresh = () => {
       this._lastSim = null;
       this._lastTransitionSim = null;
+      this._lastScanTest = null;
+      this._scanTestDiag = null;
       // Topology changes invalidate any prior ATPG verdict — the same
       // fault on a different netlist may have a different answer.
       this._atpgRedundant.clear();
@@ -726,6 +896,9 @@ export class DFTPanel {
     // update is throttled.
     bus.on('sim:tick', ({ stepCount, wireValues }) => {
       if (!this._scene || !wireValues) return;
+      // Pause skips both sampling and rendering — frees CPU + lets the
+      // user examine the buffer without it scrolling under their cursor.
+      if (this._scanHistoryPaused) return;
       if (this._scanHistorySrcs === null) this._scanHistorySrcs = this._detectScanHistorySources();
       if (this._scanHistorySrcs.length === 0) return;
       const sample = { step: stepCount, values: {} };
@@ -734,10 +907,12 @@ export class DFTPanel {
       }
       this._scanHistory.push(sample);
       if (this._scanHistory.length > this._scanHistoryMax) this._scanHistory.shift();
-      // Throttle re-render: every 4 ticks (sub-second visual update at
-      // typical sim speeds). The buffer is always fresh; only the paint
-      // is throttled. Skips entirely when the panel is hidden.
-      if (this._visible && (stepCount % 4 === 0)) this._render();
+      // Throttle re-render: every 32 ticks. The buffer is always
+      // fresh (every tick gets sampled); only the paint is throttled.
+      // Schedule on next rAF so the heavy render doesn't bloat the
+      // simulator's tick callback (which would push it over the 50ms
+      // requestAnimationFrame violation threshold on large buffers).
+      if (stepCount % 32 === 0) this._scheduleRender();
     });
 
     // Live telemetry channel for BIST / JTAG / coverage updates.
@@ -757,6 +932,24 @@ export class DFTPanel {
         const tag = ae.tagName;
         if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
       }
+      // Defer to next rAF so we don't bloat the simulator tick that
+      // just emitted this event — a 50ms _render() inside the tick()
+      // callback would push the whole rAF over the violation threshold.
+      this._scheduleRender();
+    });
+  }
+
+  // Schedule a _render() for the next animation frame. Idempotent —
+  // multiple calls within one frame coalesce into a single render.
+  // This decouples the DFT panel paint from the simulator's tick
+  // callback so a heavy render (large SCAN HISTORY buffer, many
+  // sections) can't blow the rAF budget of the simulation itself.
+  _scheduleRender() {
+    if (!this._visible) return;
+    if (this._renderScheduled) return;
+    this._renderScheduled = true;
+    requestAnimationFrame(() => {
+      this._renderScheduled = false;
       if (this._visible) this._render();
     });
   }
@@ -890,6 +1083,31 @@ export class DFTPanel {
   // toggleable.
   _render() {
     if (!this._body || !this._summary) return;
+    // Preserve scroll position across the re-render. innerHTML
+    // reassignment can otherwise drift scrollTop — especially during
+    // wheel/momentum scrolling when the panel auto-refreshes on
+    // sim:tick (every N clocks). Save before, restore after. Also
+    // skip the user's active text-input focus (re-find by data-action
+    // and restore focus + caret) so typing in ATE input fields isn't
+    // interrupted by the re-render.
+    const prevScrollTop = this._body.scrollTop;
+    // Focus preservation: only for genuine text-entry fields (INPUT /
+    // TEXTAREA), where losing focus mid-typing would be infuriating.
+    // For buttons / cells / other clickables, focus preservation is
+    // actively HARMFUL — multiple cells share the same data-action
+    // (e.g. every MBIST cell uses "mbist-cell-toggle"), so
+    // querySelector grabs the first one and .focus() scroll-into-views
+    // it, jumping the panel to the top. The user clicked once; no
+    // further interaction needs the focus held.
+    const activeEl = document.activeElement;
+    const isTextEntry = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+    const activeKey = (isTextEntry && this._body.contains(activeEl))
+      ? activeEl.dataset?.action
+      : null;
+    const activeCaret = activeKey
+      ? { start: activeEl.selectionStart, end: activeEl.selectionEnd }
+      : null;
+
     const wires    = this._scene?.wires || [];
     const wireCnt  = wires.length;
     const injStuck = wires.filter(w => w.stuckAt === 0 || w.stuckAt === 1).length;
@@ -915,6 +1133,7 @@ export class DFTPanel {
       coverage:  this._renderFaultCoverage(),
       scan:      this._renderScanChains(),
       scanhist:  this._renderScanHistory(),
+      ate:       this._renderScanTest(),
       lfsr:      this._renderPatternGenerators(),
       misr:      this._renderSignatureCompactors(),
       bist:      this._renderBistControllers(),
@@ -925,11 +1144,11 @@ export class DFTPanel {
       faultlist: this._renderFaultList(wires),
     };
     const CATEGORIES = [
-      { id: 'overview', label: 'OVERVIEW',  ids: ['overview', 'coverage']                  },
-      { id: 'stimulus', label: 'STIMULUS',  ids: ['scan', 'scanhist', 'lfsr', 'misr', 'bist'] },
-      { id: 'memory',   label: 'MEMORY',    ids: ['memtest', 'mbist']                      },
-      { id: 'boundary', label: 'BOUNDARY',  ids: ['jtag']                                  },
-      { id: 'diagnose', label: 'DIAGNOSE',  ids: ['diagnosis', 'faultlist']                },
+      { id: 'overview', label: 'OVERVIEW',  ids: ['overview', 'coverage']                          },
+      { id: 'stimulus', label: 'STIMULUS',  ids: ['scan', 'scanhist', 'ate', 'lfsr', 'misr', 'bist'] },
+      { id: 'memory',   label: 'MEMORY',    ids: ['memtest', 'mbist']                              },
+      { id: 'boundary', label: 'BOUNDARY',  ids: ['jtag']                                          },
+      { id: 'diagnose', label: 'DIAGNOSE',  ids: ['diagnosis', 'faultlist']                        },
     ];
     this._body.innerHTML = CATEGORIES.map(cat => {
       const inner = cat.ids.map(id => sections[id]).filter(h => h && h.trim()).join('');
@@ -947,6 +1166,25 @@ export class DFTPanel {
     }).join('');
 
     this._applyCollapsibleSections();
+
+    // Restore scroll position + active input focus/caret so the
+    // re-render is visually a no-op for the user. Use rAF to wait
+    // one layout cycle — innerHTML reassignment isn't laid out yet
+    // when we return from setting it, and scrollTop only "sticks"
+    // after the new content's intrinsic height is known.
+    if (prevScrollTop > 0) this._body.scrollTop = prevScrollTop;
+    if (activeKey) {
+      // Restrict to INPUT/TEXTAREA via selector so we don't accidentally
+      // grab the first matching button/cell with the same data-action
+      // (e.g. MBIST cell grid). preventScroll keeps the panel anchored.
+      const reEl = this._body.querySelector(`input[data-action="${activeKey}"], textarea[data-action="${activeKey}"]`);
+      if (reEl) {
+        reEl.focus({ preventScroll: true });
+        if (activeCaret && typeof reEl.setSelectionRange === 'function') {
+          try { reEl.setSelectionRange(activeCaret.start, activeCaret.end); } catch {}
+        }
+      }
+    }
   }
 
   // ── Run the combinational fault simulator on the current scene ─
@@ -1022,10 +1260,10 @@ export class DFTPanel {
     return out;
   }
 
-  // Render the live SCAN HISTORY block. Compact format: per-source row of
-  // last N tick values as a tight 0/1 string with low-glyph for 0 and
-  // high-glyph for 1. Falls back gracefully when sim hasn't ticked yet.
-  // Skipped entirely when no scan sources exist in the scene (returns '').
+  // Render the live SCAN HISTORY block. Single-bit signals render as an
+  // SVG logic-analyzer waveform with proper step transitions; multi-bit
+  // signals (MISR signature) render as hex cells. Skipped entirely when
+  // no scan sources exist in the scene (returns '').
   _renderScanHistory() {
     if (this._scanHistorySrcs === null) this._scanHistorySrcs = this._detectScanHistorySources();
     if (!this._scanHistorySrcs.length) return '';
@@ -1035,48 +1273,548 @@ export class DFTPanel {
       `</span>`;
     const info = this._infoOpen.has('scanhist') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Live ring buffer (last ${this._scanHistoryMax} ticks) of each scan-observation output. Updated as the simulation clocks. This is what an ATE would record on its tester pins during a scan-test run.</div>
-        <div class="dft-info-row">
-          <span style="color:#80c8ff;font-family:'JetBrains Mono',monospace">▁ ▔</span>
-          <span class="dft-info-text">Low / High sampled value per tick. Multi-bit values render as hex.</span>
-        </div>
+        <div class="dft-info-lead">Live logic-analyzer view of each scan-observation output, last ${this._scanHistoryMax} ticks. Single-bit signals render as a waveform (high = top, low = bottom); the MISR signature renders as hex per tick. This is what an ATE would capture on its tester pins during a scan-test run.</div>
       </div>` : '';
 
     if (this._scanHistory.length === 0) {
+      // Empty state — still show controls so a paused user can resume
+      // without first capturing a sample (Clear sets us here from a
+      // paused state, otherwise dead-state).
+      const pausedBadge = this._scanHistoryPaused
+        ? `<span style="display:inline-block;padding:1px 8px;background:#cca040;color:#1a1004;border-radius:8px;font-weight:bold;font-size:0.78em;margin-left:8px">⏸ PAUSED</span>`
+        : '';
       return `
         <div class="dft-section-header">${header}</div>${info}
-        <div class="dft-empty">Press <b style="color:#80c8a0">RUN</b> — samples will appear as the clock advances. Each tick captures one bit per scan output.</div>
+        <div style="display:flex;gap:6px;align-items:center;padding:0 1.2em 6px;font-size:0.85em">
+          <button data-action="scanhist-pause" style="padding:2px 10px;background:#0a1c28;color:#cce8ff;border:1px solid #2a4060;border-radius:3px;font-family:'Segoe UI',sans-serif;cursor:pointer;font-size:0.92em">${this._scanHistoryPaused ? '▶ Resume' : '⏸ Pause'}</button>
+          <button data-action="scanhist-clear" style="padding:2px 10px;background:#0a1c28;color:#cce8ff;border:1px solid #2a4060;border-radius:3px;font-family:'Segoe UI',sans-serif;cursor:pointer;font-size:0.92em">⊘ Clear</button>
+          <span style="color:#688;margin-left:8px">0 of ${this._scanHistoryMax} samples</span>
+          ${pausedBadge}
+        </div>
+        <div class="dft-empty">${this._scanHistoryPaused ? 'Buffer is empty AND sampling is paused — click <b style="color:#80c8a0">▶ Resume</b> then RUN to capture samples.' : 'Press <b style="color:#80c8a0">RUN</b> — samples will appear as the clock advances. Each tick captures one bit per scan output.'}</div>
       `;
     }
 
-    // Build per-source rows. For single-bit values (the common case for
-    // scan outputs) we render a compact waveform of low/high glyphs; for
-    // multi-bit values (MISR signature) we render as 2-digit hex per tick.
     const isMultiBit = (v) => v !== 0 && v !== 1 && v != null;
-    const glyph = (v) => v == null ? '·' : (v === 0 ? '▁' : (v === 1 ? '▔' : '?'));
-    const hex2  = (v) => v == null ? '··' : (v & 0xff).toString(16).padStart(2, '0').toUpperCase();
-
     const firstStep = this._scanHistory[0].step;
     const lastStep  = this._scanHistory[this._scanHistory.length - 1].step;
+    const N = this._scanHistory.length;
 
-    const rows = this._scanHistorySrcs.map(src => {
+    // ── Unified geometry ──
+    // Same cell width for waveform AND hex rows so all signals line up
+    // vertically tick-by-tick. The whole grid lives inside one
+    // horizontally-scrollable container so the user can pan left/right
+    // when the content exceeds the panel width — all rows scroll
+    // together (logic-analyzer style).
+    const CELL_W = 22;        // wide enough for "FF" hex; SVG inherits this
+    const LABEL_W = 110;      // label column on the left of every row
+    const H      = 26;
+    const yHi    = 5;
+    const yLo    = H - 5;
+    const SVG_W  = N * CELL_W;
+
+    const buildWaveform = (values) => {
+      // Background quad-rule + tick separators every 4 ticks.
+      let bg = '';
+      for (let i = 0; i < N; i++) {
+        const x = i * CELL_W;
+        if ((i & 3) === 0 && i > 0) {
+          bg += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#1a2c38" stroke-width="1"/>`;
+        }
+        if ((Math.floor(i / 4) & 1) === 1) {
+          bg += `<rect x="${x}" y="0" width="${CELL_W}" height="${H}" fill="#0a1418" opacity="0.5"/>`;
+        }
+      }
+      // Step path with explicit transitions; unknown values render as a
+      // dim mid-line so they're visually distinct from real samples.
+      let solid = '', unknown = '';
+      let prevY = null;
+      for (let i = 0; i < N; i++) {
+        const v = values[i];
+        const x0 = i * CELL_W;
+        const x1 = (i + 1) * CELL_W;
+        if (v === 0 || v === 1) {
+          const y = v === 1 ? yHi : yLo;
+          if (prevY !== null && prevY !== y) {
+            solid += `M ${x0} ${prevY} L ${x0} ${y} `;
+          }
+          solid += `M ${x0} ${y} L ${x1} ${y} `;
+          prevY = y;
+        } else {
+          const ymid = (yHi + yLo) / 2;
+          unknown += `M ${x0} ${ymid} L ${x1} ${ymid} `;
+          prevY = null;
+        }
+      }
+      return `<svg width="${SVG_W}" height="${H}" viewBox="0 0 ${SVG_W} ${H}" style="display:block">
+        ${bg}
+        <path d="${unknown}" stroke="#4a5a68" stroke-width="1.2" stroke-dasharray="2,2" fill="none"/>
+        <path d="${solid}" stroke="#80f0a0" stroke-width="1.8" fill="none" stroke-linejoin="miter" shape-rendering="crispEdges"/>
+      </svg>`;
+    };
+
+    const buildHexRow = (values) => {
+      // Hex cells aligned to the same CELL_W, quad-rule background and
+      // separator lines matching the SVG so signals line up vertically.
+      const cells = values.map((v, i) => {
+        const txt = v == null ? '··' : (v & 0xff).toString(16).padStart(2, '0').toUpperCase();
+        const bg = (Math.floor(i / 4) & 1) === 1 ? '#0a1418' : 'transparent';
+        const tickMark = ((i & 3) === 0 && i > 0) ? 'border-left:1px solid #1a2c38;' : '';
+        return `<span style="display:inline-block;width:${CELL_W}px;text-align:center;background:${bg};${tickMark}color:#cce8ff">${txt}</span>`;
+      }).join('');
+      return `<div style="font-family:'JetBrains Mono',monospace;font-size:0.78em;line-height:${H}px;height:${H}px;letter-spacing:0;width:${SVG_W}px">${cells}</div>`;
+    };
+
+    // Tick ruler — number every 4 ticks across the full width.
+    const rulerCells = Array.from({ length: N }, (_, i) =>
+      (i & 3) === 0
+        ? `<span style="display:inline-block;width:${CELL_W * 4}px;text-align:left;color:#5a7080;font-size:0.7em">${firstStep + i}</span>`
+        : ''
+    ).join('');
+    const ruler = `<div style="height:11px;font-family:'JetBrains Mono',monospace;margin-bottom:2px;width:${SVG_W}px">${rulerCells}</div>`;
+
+    // Build the inner table: one row per source. Labels are sticky-left
+    // so they stay visible when the user scrolls horizontally on a
+    // narrow panel. The wrapping div provides ONE shared horizontal
+    // scrollbar — all rows pan together.
+    const rowsHtml = this._scanHistorySrcs.map((src) => {
       const values = this._scanHistory.map(s => s.values[src.id]);
       const anyMulti = values.some(v => isMultiBit(v));
-      const cells = anyMulti
-        ? values.map(hex2).join(' ')
-        : values.map(glyph).join('');
+      const body = anyMulti ? buildHexRow(values) : buildWaveform(values);
       return `
-        <div class="dft-perf-row" style="grid-template-columns: 130px 1fr; align-items:baseline">
-          <span class="k" style="color:#80c8a0">${src.label}</span>
-          <span class="v" style="font-family:'JetBrains Mono',monospace;font-size:${anyMulti ? '0.88em' : '1.1em'};letter-spacing:${anyMulti ? '0' : '1px'};color:#cce8ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cells}</span>
-        </div>`;
+        <tr>
+          <td style="position:sticky;left:0;background:#040a10;color:#80c8a0;font-weight:bold;font-family:'JetBrains Mono',monospace;font-size:0.9em;padding:2px 8px 2px 0;vertical-align:middle;width:${LABEL_W}px;z-index:1">${src.label}</td>
+          <td style="padding:0;vertical-align:middle">${body}</td>
+        </tr>`;
     }).join('');
+
+    const rows = `
+      <div class="dft-scanhist-scroll" style="overflow-x:auto;padding:0 1.2em 6px">
+        <table style="border-collapse:collapse;width:max-content">
+          <thead>
+            <tr>
+              <td style="position:sticky;left:0;background:#040a10;width:${LABEL_W}px;z-index:1"></td>
+              <td style="padding:0">${ruler}</td>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    `;
+
+    // Control row — Pause/Resume + Clear. Pause halts BOTH sampling
+    // and re-rendering so a fast simulation can't scroll the buffer
+    // out from under the user's eye. Clear wipes the ring so the next
+    // captured tick starts a fresh window.
+    const pausedBadge = this._scanHistoryPaused
+      ? `<span style="display:inline-block;padding:1px 8px;background:#cca040;color:#1a1004;border-radius:8px;font-weight:bold;font-size:0.78em;margin-left:8px">⏸ PAUSED</span>`
+      : '';
+    const controls = `
+      <div style="display:flex;gap:6px;align-items:center;padding:0 1.2em 6px;font-size:0.85em">
+        <button data-action="scanhist-pause" style="padding:2px 10px;background:#0a1c28;color:#cce8ff;border:1px solid #2a4060;border-radius:3px;font-family:'Segoe UI',sans-serif;cursor:pointer;font-size:0.92em">${this._scanHistoryPaused ? '▶ Resume' : '⏸ Pause'}</button>
+        <button data-action="scanhist-clear" style="padding:2px 10px;background:#0a1c28;color:#cce8ff;border:1px solid #2a4060;border-radius:3px;font-family:'Segoe UI',sans-serif;cursor:pointer;font-size:0.92em">⊘ Clear</button>
+        <span style="color:#688;margin-left:8px">tick range: ${firstStep} → ${lastStep} (${this._scanHistory.length} of ${this._scanHistoryMax} samples)</span>
+        ${pausedBadge}
+      </div>
+    `;
 
     return `
       <div class="dft-section-header">${header}</div>${info}
-      <div style="padding:0 1.2em 6px;color:#688;font-size:0.85em">tick range: ${firstStep} → ${lastStep} (${this._scanHistory.length} of ${this._scanHistoryMax} samples)</div>
+      ${controls}
       ${rows}
     `;
+  }
+
+  // ─── SCAN TEST (ATE) ─────────────────────────────────────────
+  //
+  // Below: the panel-as-ATE orchestration. The pattern mirrors what a
+  // production tester does: snapshot scene state, then in a tight loop
+  // drive TE/SI on primary INPUT pads + pulse CLOCK + read SCAN_OUT,
+  // pushing each tick into a trace table. On exit (success or throw)
+  // restore everything we touched so the live simulation is unchanged.
+  //
+  // Why this is safe to do without pausing the auto-clock: the entire
+  // run is synchronous. JS is single-threaded; the setInterval that
+  // drives the auto-clock cannot fire in the middle of our loop. The
+  // worst case is a one-tick delay in auto-clock cadence — invisible.
+
+  // Render the SCAN TEST (ATE) section. Auto-hides when no chains.
+  _renderScanTest() {
+    const nodes = this._scene?.nodes || [];
+    const wires = this._scene?.wires || [];
+    const scanFFs = nodes.filter(n => n.type === 'SCAN_FF');
+    const chains  = detectScanChains(scanFFs, wires);
+    if (!chains.length) return '';
+
+    // Clamp chain index to available chains.
+    if (this._scanTestChainIdx >= chains.length) this._scanTestChainIdx = 0;
+    const chain  = chains[this._scanTestChainIdx];
+    const chainN = chain.length;
+
+    const header = `<span class="dft-section-title">SCAN TEST (ATE)` +
+      `<button class="dft-info-btn" data-action="toggle-info" data-section="ate" title="What is ATE?">i</button>` +
+      `</span>`;
+    const info = this._infoOpen.has('ate') ? `
+      <div class="dft-info-panel">
+        <div class="dft-info-lead">The DFT panel acts as an <b style="color:#80c8a0">ATE</b> (Automatic Test Equipment) — exactly what Teradyne / Advantest machines do in chip production. You give a test vector + expected response; the panel orchestrates the full <b>Load → (Capture) → Unload</b> scan cycle and reports PASS/FAIL.</div>
+        <div class="dft-info-row">
+          <span style="color:#80c8a0">Manual</span>
+          <span class="dft-info-text">Load N bits, unload N bits. Chain-integrity test (no functional capture).</span>
+        </div>
+        <div class="dft-info-row">
+          <span style="color:#80c8ff">LOC</span>
+          <span class="dft-info-text">Launch-on-Capture. Load → one functional clock (TE=0, captures combinational state) → unload. Standard at-speed transition test.</span>
+        </div>
+        <div class="dft-info-row">
+          <span style="color:#cc99ff">LOS</span>
+          <span class="dft-info-text">Launch-on-Shift. Last shift bit IS the launch vector. Alternative at-speed methodology.</span>
+        </div>
+      </div>` : '';
+
+    // Chain dropdown.
+    const chainOptions = chains.map((c, i) => {
+      const head = c[0].label || c[0].id;
+      const tail = c[c.length - 1].label || c[c.length - 1].id;
+      const sel  = i === this._scanTestChainIdx ? ' selected' : '';
+      return `<option value="${i}"${sel}>chain_${i}  ${head}→${tail}  (${c.length})</option>`;
+    }).join('');
+
+    // Mode dropdown.
+    const modeOpt = (val, label, color) => {
+      const sel = this._scanTestMode === val ? ' selected' : '';
+      return `<option value="${val}"${sel}>${label}</option>`;
+    };
+    const modeOptions = [
+      modeOpt('manual', 'Manual'),
+      modeOpt('loc',    'LOC (Launch-on-Capture)'),
+      modeOpt('los',    'LOS (Launch-on-Shift)'),
+    ].join('');
+
+    // Inline error.
+    const errHtml = this._scanTestDiag
+      ? `<div style="margin:6px 1.2em;padding:6px 10px;background:rgba(204,64,64,0.08);border:1px solid #cc404044;border-radius:4px;color:#ffb0b0;font-size:0.9em">⚠ ${this._scanTestDiag}</div>`
+      : '';
+
+    // Status pill.
+    let pillHtml = '<span style="color:#666;font-size:0.85em;margin-left:8px">no run yet</span>';
+    if (this._lastScanTest) {
+      const v = this._lastScanTest.verdict;
+      if (v === 'PASS') pillHtml = `<span style="display:inline-block;padding:2px 10px;background:#80c8a0;color:#001a08;border-radius:10px;font-weight:bold;margin-left:8px">✓ PASS</span>`;
+      else if (v === 'FAIL') pillHtml = `<span style="display:inline-block;padding:2px 10px;background:#ff6080;color:#1a0008;border-radius:10px;font-weight:bold;margin-left:8px">✗ FAIL @ tick ${this._lastScanTest.firstMismatch + (this._scanTestMode === 'manual' ? chainN : chainN + 1)}</span>`;
+      else pillHtml = `<span style="display:inline-block;padding:2px 10px;background:#688;color:#001a18;border-radius:10px;margin-left:8px">done (no expected)</span>`;
+    }
+
+    // Trace table (when result exists).
+    let traceHtml = '';
+    if (this._lastScanTest) {
+      const t = this._lastScanTest;
+      const expSet = new Set(t.mismatches.map(m => m.idx));
+      const offset = t.mode === 'manual' ? t.chainLen : (t.mode === 'los' ? t.chainLen + 1 : t.chainLen + 1);
+      const rowFor = (entry) => {
+        // For UNLOAD ticks, compute the expected bit index relative
+        // to the start of the unload phase.
+        let exp = null, mismatch = false, unloadIdx = -1;
+        if (entry.phase === 'UNLOAD' && t.expBits) {
+          unloadIdx = entry.tick - offset;
+          if (unloadIdx >= 0 && unloadIdx < t.expBits.length) {
+            exp = t.expBits[unloadIdx];
+            mismatch = expSet.has(unloadIdx);
+          }
+        }
+        const tint = mismatch ? 'background:rgba(255,96,128,0.15);color:#ffb0b0' : '';
+        const checkCell = (entry.phase === 'UNLOAD' && exp !== null)
+          ? (mismatch ? '<span style="color:#ff6080">✗</span>' : '<span style="color:#80c8a0">✓</span>')
+          : '<span style="color:#444">–</span>';
+        const fmt = (v) => v == null ? '·' : String(v);
+        return `<tr style="${tint}">
+          <td style="padding:1px 6px;text-align:right;color:#688">${entry.tick}</td>
+          <td style="padding:1px 6px;color:#a0b0c8">${entry.phase}</td>
+          <td style="padding:1px 6px;text-align:center">${entry.te}</td>
+          <td style="padding:1px 6px;text-align:center">${fmt(entry.si)}</td>
+          <td style="padding:1px 6px;text-align:center;font-weight:bold;color:${entry.so === 1 ? '#cce8ff' : entry.so === 0 ? '#80b0c8' : '#666'}">${fmt(entry.so)}</td>
+          <td style="padding:1px 6px;text-align:center;color:${exp === 1 ? '#cce8ff' : exp === 0 ? '#80b0c8' : '#444'}">${exp == null ? '·' : exp}</td>
+          <td style="padding:1px 6px;text-align:center">${checkCell}</td>
+        </tr>`;
+      };
+      // Truncate display to first 20 + last 5 if trace > 25, but always
+      // keep mismatched-rows visible.
+      let rowsToShow;
+      if (t.trace.length <= 25) {
+        rowsToShow = t.trace;
+      } else {
+        const head = t.trace.slice(0, 20);
+        const tail = t.trace.slice(-5);
+        const middleMismatches = t.trace.slice(20, -5).filter((e, i) => {
+          if (e.phase !== 'UNLOAD') return false;
+          const idx = (20 + i) - offset;
+          return expSet.has(idx);
+        });
+        rowsToShow = head;
+        if (middleMismatches.length) {
+          rowsToShow.push({ tick: '…', phase: '…', te: '…', si: '…', so: '…' });
+          rowsToShow.push(...middleMismatches);
+        }
+        if (t.trace.length > 25) {
+          rowsToShow.push({ tick: '…', phase: '…', te: '…', si: '…', so: '…' });
+        }
+        rowsToShow.push(...tail);
+      }
+      const rows = rowsToShow.map(rowFor).join('');
+      traceHtml = `
+        <div style="padding:0 1.2em 4px;color:#688;font-size:0.85em">
+          ${t.trace.length} ticks · chain ${t.chainLabel} (N=${t.chainLen}) · mode ${t.mode.toUpperCase()}
+          ${t.expBits ? ` · expected ${t.expBits.map(b => b).join('')}` : ''}
+          ${t.observed.length ? ` · observed ${t.observed.map(b => b == null ? '?' : b).join('')}` : ''}
+        </div>
+        <div style="padding:0 1.2em;overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:0.86em">
+            <thead>
+              <tr style="color:#688;border-bottom:1px solid #2a3a40">
+                <th style="padding:2px 6px;text-align:right">#</th>
+                <th style="padding:2px 6px;text-align:left">phase</th>
+                <th style="padding:2px 6px">TE</th>
+                <th style="padding:2px 6px">SI</th>
+                <th style="padding:2px 6px">SO</th>
+                <th style="padding:2px 6px">exp</th>
+                <th style="padding:2px 6px">✓</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="dft-section-header">${header}</div>${info}
+      <div class="dft-perf-row" style="grid-template-columns: 70px 1fr 60px 1fr">
+        <span class="k">Chain</span>
+        <select data-action="ate-chain" style="background:#0a1218;color:#cce8ff;border:1px solid #2a3a40;border-radius:3px;padding:2px 4px;font-family:'JetBrains Mono',monospace;font-size:0.86em">${chainOptions}</select>
+        <span class="k">Mode</span>
+        <select data-action="ate-mode" style="background:#0a1218;color:#cce8ff;border:1px solid #2a3a40;border-radius:3px;padding:2px 4px;font-family:'JetBrains Mono',monospace;font-size:0.86em">${modeOptions}</select>
+      </div>
+      <div class="dft-perf-row" style="grid-template-columns: 70px 1fr 60px">
+        <span class="k">Scan-In</span>
+        <input data-action="ate-pattern" value="${this._scanTestPattern}" placeholder="e.g. 1010 / 0xA / b1010" style="background:#0a1218;color:#cce8ff;border:1px solid #2a3a40;border-radius:3px;padding:3px 6px;font-family:'JetBrains Mono',monospace;font-size:0.92em"/>
+        <span class="v" style="color:#80c8a0;font-size:0.85em">N=${chainN}</span>
+      </div>
+      <div class="dft-perf-row" style="grid-template-columns: 70px 1fr 60px">
+        <span class="k">Expected</span>
+        <input data-action="ate-expected" value="${this._scanTestExpected}" placeholder="(optional, leftmost = first out)" style="background:#0a1218;color:#cce8ff;border:1px solid #2a3a40;border-radius:3px;padding:3px 6px;font-family:'JetBrains Mono',monospace;font-size:0.92em"/>
+        <span class="v" style="color:#688;font-size:0.85em">N=${chainN}</span>
+      </div>
+      <div class="dft-perf-row" style="grid-template-columns: 1fr">
+        <span>
+          <button data-action="ate-run" ${this._scanTestRunning ? 'disabled' : ''} style="padding:4px 14px;background:linear-gradient(180deg,#0a3a5a,#04182a);color:#cce8ff;border:1px solid #4a7aa0;border-radius:4px;font-weight:bold;cursor:pointer;font-family:'Segoe UI',sans-serif;font-size:11px;letter-spacing:0.8px">▶ RUN</button>
+          ${pillHtml}
+        </span>
+      </div>
+      ${errHtml}
+      ${traceHtml}
+    `;
+  }
+
+  // Locate a primary INPUT node by id. Returns null when the named
+  // node isn't a primary INPUT (e.g. it's a gate output) — that means
+  // we can't programmatically drive it from the ATE.
+  _resolveDrivableInput(nodeId) {
+    if (!nodeId) return null;
+    const n = (this._scene?.nodes || []).find(n => n.id === nodeId);
+    return (n && n.type === 'INPUT') ? n : null;
+  }
+
+  // Resolve a scan-in driver for the chain head. The TI pin (index 1)
+  // might be wired directly to a primary INPUT (the easy case for the
+  // 2nd showcase chain) or through a MUX (chain 0 in the showcase goes
+  // through LBIST_MUX). In the MUX case we walk one hop back to find
+  // the "manual" data input (port 0 by convention) and locate the
+  // MUX's sel pin (port 2). If sel is a primary INPUT we record it so
+  // the orchestrator can force it to 0 (selecting the manual port)
+  // during the test and restore it on cleanup.
+  //
+  // Returns { siNode, muxSelects: [{ node, prevValue }] } on success,
+  // or { siNode: null, err: '...' } on failure.
+  _resolveScanInDriver(headFF) {
+    const nodes = this._scene?.nodes || [];
+    const wires = this._scene?.wires || [];
+    const tiWire = wires.find(w => w.targetId === headFF.id && w.targetInputIndex === 1);
+    if (!tiWire) return { siNode: null, err: `chain head ${headFF.label || headFF.id} TI is unwired` };
+    const src = nodes.find(n => n.id === tiWire.sourceId);
+    if (!src) return { siNode: null, err: `chain head TI source not found` };
+    // Direct INPUT — easy path.
+    if (src.type === 'INPUT') return { siNode: src, muxSelects: [] };
+    // MUX hop — handle BUS_MUX (and MUX2). The convention used in the
+    // 2-star showcase: input 0 = manual scan-in pad, input 1 = LFSR,
+    // input 2 = select.
+    if (src.type === 'BUS_MUX' || src.type === 'MUX2') {
+      const manualW = wires.find(w => w.targetId === src.id && w.targetInputIndex === 0);
+      const selW    = wires.find(w => w.targetId === src.id && w.targetInputIndex === 2);
+      if (!manualW) return { siNode: null, err: `MUX ${src.label || src.id} input 0 (manual) is unwired` };
+      const manualSrc = nodes.find(n => n.id === manualW.sourceId);
+      if (!manualSrc || manualSrc.type !== 'INPUT') {
+        return { siNode: null, err: `MUX manual port is fed by ${manualSrc?.type || 'nothing'}, not a primary INPUT — cannot drive scan-in from ATE` };
+      }
+      const muxSelects = [];
+      if (selW) {
+        const selSrc = nodes.find(n => n.id === selW.sourceId);
+        if (selSrc && selSrc.type === 'INPUT') {
+          muxSelects.push({ node: selSrc, prevValue: selSrc.fixedValue });
+        }
+      }
+      return { siNode: manualSrc, muxSelects };
+    }
+    return { siNode: null, err: `chain head TI source is ${src.type}; expected INPUT or MUX` };
+  }
+
+  // Given a completed trace and the mode, extract the "observed
+  // pattern" — i.e. the N bits that emerge from the chain tail after
+  // capture (LOC/LOS) or after the load shifts (manual).
+  //
+  // Bit order: leftmost-first matches the input pattern convention.
+  _extractObservedPattern(trace, mode, N) {
+    // The bits observed during the UNLOAD phase, in order.
+    const unloadBits = trace.filter(t => t.phase === 'UNLOAD').map(t => t.so);
+    // Manual mode: UNLOAD has N ticks → straight read.
+    // LOC/LOS:    same — UNLOAD also N ticks.
+    return unloadBits.slice(0, N);
+  }
+
+  // Bit-by-bit comparison; returns { match, mismatches: [{ idx, exp, got }], firstMismatch | null }
+  _compareScanResult(observed, expected) {
+    if (!expected) return { match: null, mismatches: [], firstMismatch: null };
+    const out = [];
+    let first = null;
+    for (let i = 0; i < expected.length; i++) {
+      if (observed[i] !== expected[i]) {
+        out.push({ idx: i, exp: expected[i], got: observed[i] });
+        if (first === null) first = i;
+      }
+    }
+    return { match: out.length === 0, mismatches: out, firstMismatch: first };
+  }
+
+  _setAteDiag(msg) {
+    this._scanTestDiag = msg;
+    if (this._visible) this._render();
+  }
+
+  // The main orchestrator. Validates, snapshots, runs, restores, scores.
+  _runScanTest() {
+    if (this._scanTestRunning) return;
+    this._scanTestDiag = null;
+
+    const nodes = this._scene?.nodes || [];
+    const wires = this._scene?.wires || [];
+    const scanFFs = nodes.filter(n => n.type === 'SCAN_FF');
+    const chains  = detectScanChains(scanFFs, wires);
+    if (!chains.length)            return this._setAteDiag('no scan chain in scene');
+
+    const chain = chains[this._scanTestChainIdx] || chains[0];
+    const ends  = describeChainEndpoints(chain, nodes, wires);
+    const clk   = nodes.find(n => n.type === 'CLOCK');
+    if (!clk)                      return this._setAteDiag('no CLOCK node in scene');
+
+    const teNode = this._resolveDrivableInput(ends.teSource?.nodeId);
+    if (!teNode)                   return this._setAteDiag('chain TE pin is not driven by a primary INPUT — cannot drive from ATE');
+
+    const siResolve = this._resolveScanInDriver(chain[0]);
+    if (!siResolve.siNode)         return this._setAteDiag(siResolve.err);
+    const siNode = siResolve.siNode;
+    const muxSelects = siResolve.muxSelects || [];
+
+    const tail = chain[chain.length - 1];
+    const soWire = wires.find(w => w.sourceId === tail.id && (w.sourceOutputIndex || 0) === 0);
+    if (!soWire)                   return this._setAteDiag('chain tail Q has no observable consumer');
+
+    const { bits: siBits, err } = parseAtePattern(this._scanTestPattern, chain.length);
+    if (err)                       return this._setAteDiag(err);
+
+    let expBits = null;
+    if (this._scanTestExpected && this._scanTestExpected.trim()) {
+      const r = parseAtePattern(this._scanTestExpected, chain.length);
+      if (r.err)                   return this._setAteDiag(`expected: ${r.err}`);
+      expBits = r.bits;
+    }
+
+    // ── SNAPSHOT ──
+    const snap = {
+      te:  teNode.fixedValue,
+      si:  siNode.fixedValue,
+      clk: clk.value,
+      muxSelects: muxSelects.map(m => ({ node: m.node, prev: m.node.fixedValue })),
+    };
+
+    // ── CLONE ffStates (live state.ffStates is read-only contract) ──
+    const liveFf = (typeof window !== 'undefined') ? window.state?.ffStates : null;
+    const ff = liveFf ? new Map(liveFf) : new Map();
+
+    this._scanTestRunning = true;
+    const trace = [];
+    let threw = null;
+
+    try {
+      // Force any LBIST_MODE_EN-style mux selects to 0 (manual port).
+      for (const m of muxSelects) m.node.fixedValue = 0;
+
+      // Settle once with the current state so combinational outputs
+      // are coherent before the first clock pulse.
+      clk.value = 0;
+      evaluateScene(nodes, wires, ff, 0);
+
+      const seq = buildAteSequence(this._scanTestMode, siBits, chain.length);
+      let step = 1;
+      for (const op of seq) {
+        teNode.fixedValue = op.te;
+        siNode.fixedValue = op.si;
+        // Rising edge — FFs latch here. Read SO from result.wireValues.
+        clk.value = 1;
+        const r = evaluateScene(nodes, wires, ff, step++);
+        const so = r.wireValues.get(soWire.id);
+        // Falling edge — keep cadence consistent (no FF update here
+        // since they latch on the rising edge).
+        clk.value = 0;
+        evaluateScene(nodes, wires, ff, step++);
+        trace.push({
+          tick: trace.length,
+          phase: op.phase,
+          te: op.te,
+          si: op.si,
+          so: (so === 0 || so === 1) ? so : null,
+        });
+      }
+    } catch (e) {
+      threw = e;
+    } finally {
+      // ── RESTORE — inputs first, then mux selects, then clock ──
+      teNode.fixedValue = snap.te;
+      siNode.fixedValue = snap.si;
+      for (const m of snap.muxSelects) m.node.fixedValue = m.prev;
+      clk.value = snap.clk;
+      this._scanTestRunning = false;
+    }
+
+    if (threw) {
+      this._setAteDiag(`evaluator threw: ${threw.message}`);
+      return;
+    }
+
+    // ── SCORE ──
+    const observed = this._extractObservedPattern(trace, this._scanTestMode, chain.length);
+    const cmp = this._compareScanResult(observed, expBits);
+
+    this._lastScanTest = {
+      chainLabel: chain[0].label || chain[0].id,
+      chainLen:   chain.length,
+      mode:       this._scanTestMode,
+      siBits, expBits, observed,
+      trace,
+      verdict: expBits ? (cmp.match ? 'PASS' : 'FAIL') : 'no-expected',
+      mismatches: cmp.mismatches,
+      firstMismatch: cmp.firstMismatch,
+      timestamp: Date.now(),
+    };
+
+    if (this._visible) this._render();
   }
 
   // Run the transition (slow-to-rise / slow-to-fall) fault simulator on
