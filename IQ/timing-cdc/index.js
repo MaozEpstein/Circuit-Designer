@@ -166,6 +166,114 @@ export const QUESTIONS = [
 slack שלילי. בשלב hold-fix אחרי placement, הכלים מוסיפים אוטומטית
 buffer cells לכל path עם slack שלילי, עד שכולם חיוביים.`,
         expectedAnswers: ['buffer', 'בופר', 'delay', 'השהיה', 'insertion delay', 'cts', 'clock tree'],
+        answerSchematic: `
+<svg viewBox="0 0 1000 380" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Hold violation fix: buffer insertion between FFs">
+  <text x="500" y="32" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">תיקון hold violation — הוספת buffer cells בנתיב ה-data</text>
+
+  <!-- ── BEFORE row — broken ── -->
+  <rect x="20" y="60" width="960" height="120" rx="10" fill="rgba(255,80,80,0.05)" stroke="#f08080" stroke-width="1.8"/>
+  <text x="40" y="88" fill="#f08080" font-weight="bold" font-size="18">❌ לפני התיקון</text>
+  <text x="940" y="88" fill="#f08080" font-size="18" text-anchor="end" font-style="italic">race-through: tCQ + tWire &lt; tHold</text>
+
+  <!-- 3 FFs -->
+  <g stroke="#cc66ff" stroke-width="2.2" fill="#1a1428">
+    <rect x="170" y="115" width="64" height="50" rx="6"/>
+    <rect x="475" y="115" width="64" height="50" rx="6"/>
+    <rect x="780" y="115" width="64" height="50" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="18" font-weight="bold">
+    <text x="202" y="146">FF1</text>
+    <text x="507" y="146">FF2</text>
+    <text x="812" y="146">FF3</text>
+  </g>
+  <!-- Short, fast wires (red, with race-through annotation) -->
+  <g stroke="#f08080" stroke-width="2.4" fill="none">
+    <path d="M 234 140 L 475 140" marker-end="url(#arrR1)"/>
+    <path d="M 539 140 L 780 140" marker-end="url(#arrR1)"/>
+  </g>
+  <text x="354" y="106" text-anchor="middle" fill="#f08080" font-size="18">⚡ tWire קצר</text>
+  <text x="659" y="106" text-anchor="middle" fill="#f08080" font-size="18">⚡ tWire קצר</text>
+
+  <!-- ── AFTER row — fixed ── -->
+  <rect x="20" y="220" width="960" height="140" rx="10" fill="rgba(128,240,160,0.05)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="40" y="248" fill="#80f0a0" font-weight="bold" font-size="18">✓ אחרי התיקון</text>
+  <text x="940" y="248" fill="#80f0a0" font-size="18" text-anchor="end" font-style="italic">tCQ + tWire + tBuf &gt; tHold</text>
+
+  <!-- 3 FFs (same x as before, for visual comparison) -->
+  <g stroke="#cc66ff" stroke-width="2.2" fill="#1a1428">
+    <rect x="50" y="290" width="64" height="50" rx="6"/>
+    <rect x="450" y="290" width="64" height="50" rx="6"/>
+    <rect x="850" y="290" width="64" height="50" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="18" font-weight="bold">
+    <text x="82" y="321">FF1</text>
+    <text x="482" y="321">FF2</text>
+    <text x="882" y="321">FF3</text>
+  </g>
+
+  <!-- Buffer cells between FFs — triangular icons -->
+  <g stroke="#80f0a0" stroke-width="2" fill="#0a1c10">
+    <polygon points="200,300 250,315 200,330"/>
+    <polygon points="280,300 330,315 280,330"/>
+    <polygon points="600,300 650,315 600,330"/>
+    <polygon points="680,300 730,315 680,330"/>
+  </g>
+  <text x="265" y="358" text-anchor="middle" fill="#80c8a0" font-size="18">2× buffer</text>
+  <text x="665" y="358" text-anchor="middle" fill="#80c8a0" font-size="18">2× buffer</text>
+
+  <!-- Wires connecting FF → buffers → FF -->
+  <g stroke="#c8d8f0" stroke-width="1.8" fill="none">
+    <path d="M 114 315 L 200 315"/>
+    <path d="M 250 315 L 280 315"/>
+    <path d="M 330 315 L 450 315"/>
+    <path d="M 514 315 L 600 315"/>
+    <path d="M 650 315 L 680 315"/>
+    <path d="M 730 315 L 850 315"/>
+  </g>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrR1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f08080"/>
+    </marker>
+  </defs>
+</svg>`,
+        // Part-level circuit override — when the user clicks "Show answer"
+        // on part ג, the canvas updates to display the FIXED design with
+        // buffer cells inserted between each FF pair (modeled as NOT-NOT,
+        // which is functionally identical to a buffer — same logic, added
+        // propagation delay).
+        circuit: () => build(() => {
+          const inp   = h.input(80, 200, 'input');
+          const clk   = h.clock(80, 460);
+          const ff1   = h.ffD(220, 200, 'DFF1');
+          const buf1a = h.gate('NOT', 380, 200);
+          const buf1b = h.gate('NOT', 490, 200);
+          const ff2   = h.ffD(620, 200, 'DFF2');
+          const buf2a = h.gate('NOT', 780, 200);
+          const buf2b = h.gate('NOT', 890, 200);
+          const ff3   = h.ffD(1020, 200, 'DFF3');
+          const out   = h.output(1180, 200, 'out');
+          inp.fixedValue = 1;
+          return {
+            nodes: [inp, clk, ff1, buf1a, buf1b, ff2, buf2a, buf2b, ff3, out],
+            wires: [
+              h.wire(inp.id,   ff1.id,   0),
+              h.wire(clk.id,   ff1.id,   1),
+              // FF1 → 2× buffer (NOT-NOT) → FF2
+              h.wire(ff1.id,   buf1a.id, 0),
+              h.wire(buf1a.id, buf1b.id, 0),
+              h.wire(buf1b.id, ff2.id,   0),
+              h.wire(clk.id,   ff2.id,   1),
+              // FF2 → 2× buffer → FF3
+              h.wire(ff2.id,   buf2a.id, 0),
+              h.wire(buf2a.id, buf2b.id, 0),
+              h.wire(buf2b.id, ff3.id,   0),
+              h.wire(clk.id,   ff3.id,   1),
+              h.wire(ff3.id,   out.id,   0),
+            ],
+          };
+        }),
       },
       {
         label: 'ד',
@@ -228,6 +336,81 @@ slack שלילי לכל path בעייתי. הכלי מציע אוטומטית "w
 | **תיקון** | buffer + clock balance | pipeline reg, ↓ תדר, 2-FF sync |
 | **שלב flow** | hold-fix אחרי placement | retiming + CDC review |`,
         expectedAnswers: ['pipeline', 'pipeline register', 'synchronizer', '2-ff', 'two flip', 'תדר', 'frequency', 'retiming'],
+        answerSchematic: `
+<svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="Setup violation: three fixes (pipeline reg, lower freq, 2-FF sync)">
+  <text x="500" y="32" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">שלושת הפתרונות ל-setup violation</text>
+
+  <!-- ── FIX 1 — Pipeline register ── -->
+  <rect x="20" y="60" width="960" height="130" rx="10" fill="rgba(128,240,160,0.05)" stroke="#80f0a0" stroke-width="1.8"/>
+  <text x="40" y="88" fill="#80f0a0" font-weight="bold" font-size="18">① Pipeline register — חוצה logic ארוך לשניים</text>
+
+  <!-- FF1 → BIG logic → FF2  (BEFORE: long logic) -->
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="70" y="120" width="56" height="46" rx="6"/>
+    <rect x="370" y="120" width="56" height="46" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="18" font-weight="bold">
+    <text x="98" y="149">FF1</text>
+    <text x="398" y="149">FF2</text>
+  </g>
+  <rect x="140" y="128" width="216" height="30" rx="4" fill="#0a1520" stroke="#f08080" stroke-width="2"/>
+  <text x="248" y="148" text-anchor="middle" fill="#f08080" font-size="18" font-weight="bold">long combo · 1800 ps</text>
+
+  <text x="475" y="148" text-anchor="middle" fill="#80f0a0" font-size="24" font-weight="bold">⇒</text>
+
+  <!-- FF1 → half-logic → FF_NEW → half-logic → FF2  (AFTER) -->
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="510" y="120" width="56" height="46" rx="6"/>
+    <rect x="710" y="120" width="56" height="46" rx="6" stroke="#80f0a0"/>
+    <rect x="910" y="120" width="56" height="46" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="18" font-weight="bold">
+    <text x="538" y="149">FF1</text>
+    <text x="784" y="149" fill="#80f0a0">+FF</text>
+    <text x="938" y="149">FF2</text>
+  </g>
+  <rect x="580" y="128" width="116" height="30" rx="4" fill="#0a1520" stroke="#80f0a0" stroke-width="1.6"/>
+  <text x="638" y="148" text-anchor="middle" fill="#80c8a0" font-size="18">900 ps</text>
+  <rect x="780" y="128" width="116" height="30" rx="4" fill="#0a1520" stroke="#80f0a0" stroke-width="1.6"/>
+  <text x="838" y="148" text-anchor="middle" fill="#80c8a0" font-size="18">900 ps</text>
+  <text x="738" y="184" text-anchor="middle" fill="#80c8a0" font-size="18" font-style="italic">+1 latency cycle, fmax כפול</text>
+
+  <!-- ── FIX 2 — Lower clock frequency ── -->
+  <rect x="20" y="210" width="960" height="100" rx="10" fill="rgba(240,208,128,0.05)" stroke="#f0d080" stroke-width="1.8"/>
+  <text x="40" y="238" fill="#f0d080" font-weight="bold" font-size="18">② Lower clock frequency — אותו design, T_clk גדל</text>
+
+  <!-- Two clock waveforms side-by-side -->
+  <text x="80" y="278" fill="#a0c0d0" font-size="18">לפני:</text>
+  <path d="M 150 282 L 200 282 L 200 262 L 240 262 L 240 282 L 280 282 L 280 262 L 320 262 L 320 282 L 360 282 L 360 262 L 400 262 L 400 282 L 440 282" stroke="#f0d080" stroke-width="2.2" fill="none"/>
+  <text x="295" y="300" text-anchor="middle" fill="#f08080" font-size="18">T_clk קצר → setup נכשל</text>
+
+  <text x="500" y="278" fill="#a0c0d0" font-size="18">אחרי:</text>
+  <path d="M 570 282 L 670 282 L 670 262 L 770 262 L 770 282 L 870 282 L 870 262 L 920 262" stroke="#80f0a0" stroke-width="2.2" fill="none"/>
+  <text x="730" y="300" text-anchor="middle" fill="#80c8a0" font-size="18">T_clk ארוך → setup עובר ✓</text>
+
+  <!-- ── FIX 3 — 2-FF synchronizer (for async inputs) ── -->
+  <rect x="20" y="330" width="960" height="140" rx="10" fill="rgba(128,200,255,0.05)" stroke="#80c8ff" stroke-width="1.8"/>
+  <text x="40" y="358" fill="#80c8ff" font-weight="bold" font-size="18">③ 2-FF synchronizer — אות אסינכרוני נכנס בבטחה</text>
+
+  <text x="100" y="406" fill="#a0c0d0" font-size="18" text-anchor="middle">async_in</text>
+  <g stroke="#cc66ff" stroke-width="2" fill="#1a1428">
+    <rect x="250" y="380" width="64" height="50" rx="6"/>
+    <rect x="450" y="380" width="64" height="50" rx="6"/>
+  </g>
+  <g fill="#cc99ff" text-anchor="middle" font-size="18" font-weight="bold">
+    <text x="282" y="411">FF_s1</text>
+    <text x="482" y="411">FF_s2</text>
+  </g>
+  <text x="660" y="411" fill="#80f0a0" font-size="18" font-weight="bold" text-anchor="middle">sync_out</text>
+  <text x="850" y="411" fill="#c8d8f0" font-size="18">→ לוגיקה</text>
+  <g stroke="#c8d8f0" stroke-width="1.6" fill="none">
+    <path d="M 150 405 L 250 405"/>
+    <path d="M 314 405 L 450 405"/>
+    <path d="M 514 405 L 620 405"/>
+    <path d="M 700 405 L 800 405"/>
+  </g>
+  <text x="383" y="446" text-anchor="middle" fill="#80c8ff" font-size="18">↑ clk שלנו (שני FF צמודים — MTBF גבוה)</text>
+</svg>`,
       },
     ],
     source: 'מאגר ראיונות — שאלה רב-סעיפית',
@@ -281,15 +464,7 @@ slack שלילי לכל path בעייתי. הכלי מציע אוטומטית "w
         answer:
 `**Metastability:** FF שדוגם אות שמשתנה בתוך \`tsetup/thold\` עלול לפלוט \`Q\` במצב ביניים (לא 0 ולא 1) לזמן \`tmet\`. אם \`tmet\` גדול מ-clock period הבא — הערך המטא-יציב מתפשט במעגל ויוצר תקלות.
 
-**הפתרון — 2-FF synchronizer:**
-
-\`\`\`
-async_in ──→ [FF1] ──→ [FF2] ──→ sync_out
-                ↑          ↑
-                clk        clk
-\`\`\`
-
-FF1 עלול להיכנס ל-meta, אבל יש לו **clock period שלם** להתייצב לפני ש-FF2 דוגם.
+**הפתרון — 2-FF synchronizer:** ראה דיאגרמה מתחת. FF1 עלול להיכנס ל-meta, אבל יש לו **clock period שלם** להתייצב לפני ש-FF2 דוגם.
 
 **נוסחת MTBF:**
 
@@ -320,6 +495,66 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
           'mtbf', 'exponential', 'אקספוננציאלי',
           'gray', 'handshake', 'bus', 'τ', 'tau',
         ],
+        answerSchematic: `
+<svg viewBox="0 0 940 280" xmlns="http://www.w3.org/2000/svg" direction="ltr" font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="2-FF synchronizer block diagram">
+  <text x="470" y="32" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">2-FF Synchronizer — מסנן metastability</text>
+
+  <!-- async_in label + wire -->
+  <text x="80" y="135" text-anchor="middle" fill="#f08080" font-size="18" font-weight="bold">async_in</text>
+  <text x="80" y="156" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">(domain אחר)</text>
+  <g stroke="#f08080" stroke-width="2" fill="none">
+    <path d="M 150 130 L 250 130" marker-end="url(#arr-r)"/>
+  </g>
+
+  <!-- FF1 — first stage (may go metastable) -->
+  <g stroke="#cc66ff" stroke-width="2.4" fill="#1a1428">
+    <rect x="260" y="100" width="100" height="70" rx="8"/>
+  </g>
+  <text x="310" y="125" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF1</text>
+  <text x="310" y="152" text-anchor="middle" fill="#f0d080" font-size="18" font-style="italic">(meta?)</text>
+
+  <!-- Wire between FF1 and FF2 -->
+  <g stroke="#c8d8f0" stroke-width="2" fill="none">
+    <path d="M 360 130 L 490 130" marker-end="url(#arr-w)"/>
+  </g>
+  <text x="425" y="116" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">1 clock period</text>
+  <text x="425" y="152" text-anchor="middle" fill="#c8b090" font-size="18" font-style="italic">להתייצב</text>
+
+  <!-- FF2 — second stage (clean) -->
+  <g stroke="#cc66ff" stroke-width="2.4" fill="#1a1428">
+    <rect x="500" y="100" width="100" height="70" rx="8"/>
+  </g>
+  <text x="550" y="125" text-anchor="middle" fill="#cc99ff" font-size="20" font-weight="bold">FF2</text>
+  <text x="550" y="152" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">(clean)</text>
+
+  <!-- sync_out -->
+  <g stroke="#80f0a0" stroke-width="2" fill="none">
+    <path d="M 600 130 L 760 130" marker-end="url(#arr-g)"/>
+  </g>
+  <text x="830" y="125" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">sync_out</text>
+  <text x="830" y="148" text-anchor="middle" fill="#80c8a0" font-size="18" font-style="italic">(לדומיין שלנו)</text>
+
+  <!-- Clock arrows feeding both FFs from below -->
+  <g stroke="#f0d080" stroke-width="2" fill="none">
+    <path d="M 310 240 L 310 175" marker-end="url(#arr-y)"/>
+    <path d="M 550 240 L 550 175" marker-end="url(#arr-y)"/>
+  </g>
+  <text x="310" y="262" text-anchor="middle" fill="#f0d080" font-size="18" font-weight="bold">clk</text>
+  <text x="550" y="262" text-anchor="middle" fill="#f0d080" font-size="18" font-weight="bold">clk</text>
+
+  <!-- Annotation -->
+  <text x="470" y="208" text-anchor="middle" fill="#a0c0d0" font-size="18" font-style="italic">
+    אם FF1 נכנס ל-meta, יש לו מחזור שלם להירגע — FF2 דוגם ערך יציב
+  </text>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f08080"/></marker>
+    <marker id="arr-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#c8d8f0"/></marker>
+    <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
+    <marker id="arr-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#f0d080"/></marker>
+  </defs>
+</svg>`,
         circuitRevealsAnswer: true,
         circuit: () => build(() => {
           const async_in = h.input(140, 220, 'async_in');
@@ -345,295 +580,6 @@ MTBF = exp(t_met / τ) / (T_w · f_clk · f_data)
     ],
     source: 'מאגר ראיונות — הקלאסיק של CDC (asked everywhere)',
     tags: ['cdc', 'metastability', 'synchronizer', 'mtbf', 'timing'],
-  },
-
-  // ───────────────────────────────────────────────────────────────
-  // #4001 — 3 D-FF chain: timing analysis (slide 31)
-  // ───────────────────────────────────────────────────────────────
-  {
-    id: 'three-dff-chain-setup-hold',
-    difficulty: 'medium',
-    title: 'שרשרת 3 D-FFs — ניתוח setup/hold',
-    intro:
-`נתון המעגל הבא: \`input → DFF₁ → DFF₂ → DFF₃ → out\` — שלושה D-FFים בשרשרת חולקים את אותו clock.
-
-3 חלקים:
-- **א.** מה תצפה לראות בפלט \`out\` לאחר 3 מחזורי שעון? (assumes input rises at t=0)
-- **ב.** היציאה עולה ל-\`1\` אחרי **שני** מחזורי שעון בלבד (לא 3) — איזה תנאי **לא** התקיים: \`setup\` או \`hold\`?
-- **ג.** היציאה עולה ל-\`1\` אחרי **ארבעה** מחזורי שעון (לא 3) — איזה תנאי **לא** התקיים?`,
-    schematic: `
-<svg viewBox="0 0 660 240" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="18" role="img" aria-label="3 D-FF chain with shared clock">
-  <defs>
-    <linearGradient id="tdBody" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
-    </linearGradient>
-    <marker id="tdArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
-  </defs>
-
-  <!-- 3 D-FFs -->
-  ${[1, 2, 3].map(i => `
-    <rect x="${100 + (i - 1) * 160}" y="60" width="110" height="100" rx="8" fill="url(#tdBody)" stroke="#80d4ff" stroke-width="1.8"/>
-    <text direction="ltr" x="${155 + (i - 1) * 160}" y="100" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">DFF${i}</text>
-    <text direction="ltr" x="${155 + (i - 1) * 160}" y="120" text-anchor="middle" fill="#a0c0e0" font-size="16">D    Q</text>
-    <text direction="ltr" x="${155 + (i - 1) * 160}" y="148" text-anchor="middle" fill="#80d4ff" font-size="16">↑ clk</text>
-  `).join('')}
-
-  <!-- Input arrow -->
-  <text direction="ltr" x="40" y="116" text-anchor="middle" fill="#f0d080" font-weight="bold">input</text>
-  <line x1="78" y1="112" x2="100" y2="112" stroke="#f0d080" stroke-width="1.6"/>
-  <polygon points="100,112 94,108 94,116" fill="#f0d080"/>
-
-  <!-- Q1 → DFF2.D -->
-  <line x1="210" y1="112" x2="260" y2="112" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="235" y="106" text-anchor="middle" fill="#80d4ff" font-size="16">Q1</text>
-  <polygon points="260,112 254,108 254,116" fill="#80d4ff"/>
-
-  <!-- Q2 → DFF3.D -->
-  <line x1="370" y1="112" x2="420" y2="112" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="395" y="106" text-anchor="middle" fill="#80d4ff" font-size="16">Q2</text>
-  <polygon points="420,112 414,108 414,116" fill="#80d4ff"/>
-
-  <!-- Q3 → out -->
-  <line x1="530" y1="112" x2="600" y2="112" stroke="#80f0a0" stroke-width="2" marker-end="url(#tdArr)"/>
-  <text direction="ltr" x="630" y="116" text-anchor="middle" fill="#80f0a0" font-weight="bold">out</text>
-
-  <!-- Shared clock -->
-  <text direction="ltr" x="330" y="200" text-anchor="middle" fill="#f0d080" font-weight="bold">clk (shared)</text>
-  <line x1="330" y1="184" x2="330" y2="160" stroke="#f0d080" stroke-width="1.4"/>
-</svg>`,
-    circuitRevealsAnswer: true,
-    parts: [
-      {
-        label: 'א',
-        question: 'מה תצפה לראות ב-\`out\` לאחר 3 מחזורי שעון? (assumes input is asserted at start)',
-        hints: [
-          'כל D-FF "מאחר" את הסיגנל ב-cycle אחד.',
-          '3 D-FFs בשרשרת → הסיגנל מתאחר ב-3 cycles.',
-          'אם \`input = 1\` משעה \`t=0\`, אז \`out = 1\` משעה \`t = 3T_clk\` (T_clk = תקופה).',
-        ],
-        answer:
-`**out יעלה ל-\`1\` בדיוק לאחר 3 מחזורי שעון** מהקצה העולה הראשון של ה-clock לאחר ה-\`input = 1\`.
-
-### למה?
-
-כל D-FF "מאחר" את הסיגנל ב-cycle אחד:
-- אחרי clock 1: \`Q1 = input\` (input הועתק ל-DFF1)
-- אחרי clock 2: \`Q2 = Q1 = input\` (התקדם ל-DFF2)
-- אחרי clock 3: \`Q3 = Q2 = input\` ← \`out = 1\` ✓
-
-זוהי **שרשרת shift register** — כל קצה clock מקדם את הסיגנל ב-stage אחד. עומק 3 = שלושה stages = 3 cycles delay (ראה תרשים הזמן מתחת).
-
-זה השימוש הקלאסי של shift register כ-**delay line**.`,
-        answerSchematic: `
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="3-DFF chain timing diagram showing 3-cycle delay">
-  <!-- Title -->
-  <rect x="0" y="0" width="720" height="40" fill="#0c1a28"/>
-  <text direction="ltr" x="360" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
-    3-DFF chain: each clock advances the signal one stage → 3-cycle delay
-  </text>
-
-  <!-- t=0 marker -->
-  <text direction="ltr" x="106" y="64" fill="#f0d080" font-size="16" font-weight="bold">t=0</text>
-  <line x1="120" y1="68" x2="120" y2="360" stroke="#806040" stroke-width="0.6" stroke-dasharray="2 3"/>
-  <polygon points="120,74 116,66 124,66" fill="#f0d080"/>
-
-  <!-- Clock edge markers + labels -->
-  ${[1, 2, 3, 4].map((n, i) => {
-    const x = 180 + i * 100;
-    return `
-      <line x1="${x}" y1="86" x2="${x}" y2="360" stroke="#806040" stroke-width="0.5" stroke-dasharray="2 4"/>
-      <text direction="ltr" x="${x}" y="80" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">${n}</text>
-      <text direction="ltr" x="${x}" y="68" text-anchor="middle" fill="#ff8060" font-size="16">↑</text>
-    `;
-  }).join('')}
-
-  <!-- clk waveform -->
-  <text direction="ltr" x="60" y="120" text-anchor="end" fill="#c8d8f0" font-weight="bold">clk</text>
-  <path d="M 120 130 v -20 h 50 v 20 h 50 v -20 h 50 v 20 h 50 v -20 h 50 v 20 h 50 v -20 h 50 v 20 h 50 v -20 h 50 v 20 h 50 v -20 h 50 v 20"
-        stroke="#f0d080" stroke-width="1.6" fill="none"/>
-
-  <!-- input waveform: high from t=0 -->
-  <text direction="ltr" x="60" y="180" text-anchor="end" fill="#c8d8f0" font-weight="bold">input</text>
-  <path d="M 120 190 v -22 h 530"
-        stroke="#80b0e0" stroke-width="1.8" fill="none"/>
-  <text direction="ltr" x="680" y="174" text-anchor="middle" fill="#80b0e0" font-size="16" font-style="italic">high from t=0</text>
-
-  <!-- Q1 waveform: rises after clk 1 (x=180) -->
-  <text direction="ltr" x="60" y="230" text-anchor="end" fill="#c8d8f0" font-weight="bold">Q1</text>
-  <path d="M 120 240 h 60 v -22 h 470"
-        stroke="#80f0a0" stroke-width="1.8" fill="none"/>
-  <text direction="ltr" x="680" y="224" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">↑ at clk 1</text>
-
-  <!-- Q2 waveform: rises after clk 2 (x=280) -->
-  <text direction="ltr" x="60" y="280" text-anchor="end" fill="#c8d8f0" font-weight="bold">Q2</text>
-  <path d="M 120 290 h 160 v -22 h 370"
-        stroke="#80f0a0" stroke-width="1.8" fill="none"/>
-  <text direction="ltr" x="680" y="274" text-anchor="middle" fill="#80f0a0" font-size="16" font-style="italic">↑ at clk 2</text>
-
-  <!-- Q3=out waveform: rises after clk 3 (x=380) -->
-  <text direction="ltr" x="60" y="330" text-anchor="end" fill="#ffd060" font-weight="bold">Q3=out</text>
-  <path d="M 120 340 h 260 v -22 h 270"
-        stroke="#ffd060" stroke-width="2.2" fill="none"/>
-  <text direction="ltr" x="680" y="324" text-anchor="middle" fill="#ffd060" font-size="16" font-style="italic">↑ at clk 3</text>
-</svg>`,
-        expectedAnswers: [
-          '3', 'three', 'שלושה',
-          'cycle', 'מחזור',
-          'shift register', 'shift-reg',
-          'delay',
-        ],
-      },
-      {
-        label: 'ב',
-        question: 'הפלט עולה אחרי **2** מחזורי שעון בלבד — איזה תנאי לא התקיים, setup או hold?',
-        hints: [
-          '**Hold violation:** הנתון משתנה **מהר מדי** אחרי הקצה — לפני שה-D-FF הספיק "לאחוז" בערך הישן.',
-          'בשרשרת \`DFF1 → DFF2\`: אם \`Q1\` משתנה (מתעדכן ל-input) ובאותו קלוק \`DFF2.D\` (= Q1) הצליח להעביר את הערך החדש ל-\`DFF2\` — זה Hold violation.',
-          'תוצאה: 2 ה-FFים "התעדכנו בו-זמנית" — הסיגנל "דילג" שלב. במקום 3 cycles, רק 2.',
-          'הסיבה: Q1 שינתה ערך **לפני** ש-DFF2 הספיק לסיים את ה-hold time שלה אחרי הקצה הקודם.',
-        ],
-        answer:
-`**הפר תנאי \`hold\`** (Hold time violation).
-
-### הסבר מדויק
-
-תנאי **hold** דורש שהנתון יישאר יציב על D **למשך זמן \`t_hold\` אחרי הקצה העולה של ה-clock**. אם הנתון משתנה מוקדם מדי (לפני שעבר \`t_hold\`), ה-FF עלול לתפוס את **הערך החדש** במקום הישן.
-
-### בשרשרת DFF1 → DFF2
-
-- בקצה k: DFF1 מעדכן את Q1 לערך חדש (= input).
-- אם clk-to-Q של DFF1 + propagation < hold time של DFF2 → ה-Q1 (החדש) מגיע ל-DFF2.D לפני שעבר t_hold → **DFF2 תופס את הערך החדש באותו קצה**.
-- ⇒ הסיגנל "דילג" stage אחד: 3 cycles → 2 cycles.
-
-### תרשים זמן עם Hold violation
-
-\`\`\`
-clk: ‾|_|‾|_|‾
-       ↑ k=1
-input rises just before clk[1]
-Q1 should: rise after clk[1] (after t_clk-to-Q)
-Q1 actual: rises VERY fast → reaches DFF2.D before hold time elapses
-Q2 (DFF2.D=Q1): captured the NEW value at clk[1] instead of OLD
-              ⇒ Q2 rises at clk[1], not clk[2]
-Q3 (DFF3): captures Q2 at clk[2], so out=1 at clk[2]   ← 2 cycles, not 3!
-\`\`\`
-
-### הסיבה בפועל
-
-Hold violations בדרך כלל נגרמות מ:
-- **clk-to-Q time קצר מדי** (DFF1 מהיר מדי).
-- **Propagation delay בין DFFים קטן מדי** (קו קצר).
-- **Clock skew בעיתי**.
-
-### תיקון בעיצוב
-
-מוסיפים **buffer/delay** בין DFF1 ל-DFF2 כדי להאריך את ה-propagation והבטיח \`t_hold\` של DFF2.`,
-        expectedAnswers: [
-          'hold', 'hold time', 'hold violation',
-          'hold לא מתקיים', 'hold violation',
-          'נתון משתנה', 'מהר מדי',
-          'clk-to-q', 'propagation',
-          'skip', 'דילוג',
-        ],
-      },
-      {
-        label: 'ג',
-        question: 'הפלט עולה אחרי **4** מחזורי שעון (איחור של 1) — איזה תנאי לא התקיים?',
-        hints: [
-          '**Setup violation:** הנתון לא הגיע ליציבות **בזמן** לפני הקצה — ה-D-FF מפספס את הקצה.',
-          'בשרשרת \`DFF1 → DFF2\`: אם \`Q1\` עוד לא יציב כש-clk עולה ב-DFF2 → DFF2 שומר את הערך הישן (לא קולט).',
-          'בקצה הבא הוא יקלוט (כשהנתון כבר יציב) → איחור של cycle אחד.',
-          '⇒ 3 cycles הופכים ל-4.',
-        ],
-        answer:
-`**הפר תנאי \`setup\`** (Setup time violation).
-
-### הסבר מדויק
-
-תנאי **setup** דורש שהנתון יהיה יציב על D **למשך זמן \`t_setup\` לפני הקצה העולה של ה-clock**. אם הנתון משתנה מאוחר מדי (פחות מ-\`t_setup\` לפני הקצה), ה-FF עלול לפספס את הקצה ולשמור את הערך הישן.
-
-### בשרשרת DFF1 → DFF2
-
-- בקצה k: DFF1 מעדכן את Q1 לערך חדש (= input).
-- ה-propagation מ-DFF1 ל-DFF2 + clk-to-Q של DFF1 גדול מדי → Q1 מגיע ל-DFF2.D **אחרי** ש-t_setup של הקצה הבא (k+1) כבר התחיל.
-- ⇒ DFF2 מפספס את הקצה k+1 ושומר את הערך הישן. רק בקצה k+2 הוא יקלוט.
-- ⇒ הסיגנל הוסיף stage אחד למסלולו: 3 cycles → 4 cycles.
-
-### תרשים זמן עם Setup violation
-
-\`\`\`
-clk:   ‾|_|‾|_|‾|_|‾|_|‾
-        ↑ k   k+1  k+2  k+3
-input: ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-Q1:    rises just BEFORE clk[k+1], but propagation is slow
-Q2 should: rise at clk[k+1] (capture Q1)
-Q2 actual: Q1 not stable enough → DFF2 misses → Q2 still 0 at clk[k+1]
-Q2:    rises at clk[k+2] instead   ← 1 cycle late
-Q3=out: rises at clk[k+3]          ← 4 cycles total, not 3!
-\`\`\`
-
-### הסיבה בפועל
-
-Setup violations נגרמות מ:
-- **תדר clock גבוה מדי** (לא נשאר זמן בין קצוות).
-- **Combinational delay גדול בין FFים** (נתיב לוגי מסובך).
-- **Process variation** (chip ייצור איטי).
-
-### תיקון בעיצוב
-
-1. **להוריד את תדר ה-clock** — מאריך את t_clk → יש זמן לנתון להיות יציב.
-2. **לחתוך את הלוגיקה ל-pipeline** — DFF נוסף באמצע נתיב ארוך מקטין את ה-combinational depth.
-3. **Retiming** — להעביר logic מצד אחד של FF לצד שני (Synopsys/Vivado עושים את זה אוטומטית).
-
-### סיכום: setup vs hold
-
-| תנאי | משמעות | תופעה | תיקון |
-|------|---------|--------|---------|
-| **Setup** | Data must be stable **before** edge | Output **late** | ↓ frequency, retiming, pipeline |
-| **Hold**  | Data must be stable **after** edge | Output **early** / skip | Insert buffer/delay |
-
-זה בדיוק **STA — Static Timing Analysis** — הניתוח שכל chip עובר לפני tape-out.`,
-        expectedAnswers: [
-          'setup', 'setup time', 'setup violation',
-          'setup לא מתקיים', 'setup violation',
-          'late', 'איחור', 'מאוחר',
-          'frequency', 'תדר',
-          'pipeline', 'retiming',
-          'sta',
-        ],
-      },
-    ],
-    source: 'IQ/PP — מצגת שאלות מעגלים, שקף 31 (3-DFF setup/hold)',
-    tags: ['setup', 'hold', 'timing', 'sta', 'metastability', 'cdc'],
-    // Canvas: 3 D-FFs in series sharing one clock. The simulator gives
-    // visual confirmation: input rises, then Q1, Q2, Q3 rise on successive
-    // clocks — a clean shift register / 3-cycle delay line.
-    circuit: () => build(() => {
-      const clk = h.clock(120, 340);
-      const inp = h.input(120, 200, 'input'); inp.fixedValue = 0;
-      inp.stepValues = [0, 0, 1, 1, 1, 1, 1, 1, 1, 1];   // rises after step 1
-      const ff1 = h.ffD(320, 200, 'DFF1');
-      const ff2 = h.ffD(520, 200, 'DFF2');
-      const ff3 = h.ffD(720, 200, 'DFF3');
-      const out = h.output(960, 200, 'out');
-      return {
-        nodes: [clk, inp, ff1, ff2, ff3, out],
-        wires: [
-          // Chain
-          h.wire(inp.id, ff1.id, 0),
-          h.wire(ff1.id, ff2.id, 0),
-          h.wire(ff2.id, ff3.id, 0),
-          h.wire(ff3.id, out.id, 0),
-          // Shared clock
-          h.wire(clk.id, ff1.id, 1, 0, { isClockWire: true }),
-          h.wire(clk.id, ff2.id, 1, 0, { isClockWire: true }),
-          h.wire(clk.id, ff3.id, 1, 0, { isClockWire: true }),
-        ],
-      };
-    }),
   },
 
   // ─────────────────────────────────────────────────────────────
