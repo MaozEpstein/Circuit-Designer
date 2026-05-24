@@ -4215,143 +4215,164 @@ NAND עם 3 כניסות. שנה את \`A, B, C\` ב-\`(0,0,0)\` עד \`(1,1,1)\
 
 נתון 2 פינים חיצוניים ו-3 chains פנימיים. תכנן את ה-XOR לשני הכיוונים. מה ההגבלות?`,
     schematic: `
-<svg viewBox="0 0 1000 1180" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Scan compression: decompressor XOR network (top) and compactor XOR tree (bottom).">
+<svg viewBox="0 0 1240 800" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="EDT scan compression — horizontal flow: decompressor (left), 3 scan chains (centre), compactor (right).">
+  <defs>
+    <linearGradient id="edtChain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
+    </linearGradient>
+    <linearGradient id="edtDep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#143028"/><stop offset="1" stop-color="#081810"/>
+    </linearGradient>
+    <linearGradient id="edtPin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1f08"/><stop offset="1" stop-color="#180f04"/>
+    </linearGradient>
+    <marker id="edtArE" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#cca040"/></marker>
+    <marker id="edtArC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80c8ff"/></marker>
+    <marker id="edtArO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff9933"/></marker>
+  </defs>
 
-  <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
-    EDT — מ-2 פינים ל-3 chains וחזרה
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1240" height="56" fill="#0c1a28"/>
+  <text x="620" y="32" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    EDT  —  decompressor  →  3 scan chains  →  compactor
   </text>
-  <text x="500" y="68" text-anchor="middle" fill="#a0a0c0" font-size="20" font-style="italic">
-    decompressor (XOR network) → 3 scan chains → compactor (XOR tree)
-  </text>
-
-  <!-- ========== DECOMPRESSOR PANEL ========== -->
-  <rect x="20" y="90" width="960" height="490" rx="12"
-        fill="rgba(204,102,255,0.05)" stroke="rgba(204,102,255,0.55)" stroke-width="2"/>
-  <text x="500" y="128" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="24">
-    DECOMPRESSOR — 2 פינים → 3 chains
-  </text>
-
-  <!-- External inputs e0, e1 (top) -->
-  <circle cx="100" cy="200" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="100" y="206" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">e0</text>
-  <circle cx="100" cy="320" r="22" fill="#0a1825" stroke="#cca040" stroke-width="2.4"/>
-  <text x="100" y="326" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">e1</text>
-  <text x="58" y="160" fill="#a0a0c0" font-size="18" font-style="italic">external</text>
-
-  <!-- XOR gate -->
-  <polygon points="450,250 500,232 540,250 540,290 500,308 450,290" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.2"/>
-  <text x="495" y="276" text-anchor="middle" fill="#80f0a0" font-size="24" font-weight="bold">⊕</text>
-
-  <!-- Wires from e0 to chain0 (s0) and to XOR -->
-  <line x1="122" y1="200" x2="300" y2="200" stroke="#cca040" stroke-width="2.2"/>
-  <line x1="300" y1="200" x2="300" y2="258" stroke="#cca040" stroke-width="2.2"/>
-  <line x1="300" y1="258" x2="450" y2="258" stroke="#cca040" stroke-width="2.2"/>
-  <circle cx="300" cy="200" r="5" fill="#cca040"/>
-  <line x1="300" y1="200" x2="780" y2="200" stroke="#cca040" stroke-width="2.2"/>
-
-  <!-- Wires from e1 -->
-  <line x1="122" y1="320" x2="300" y2="320" stroke="#cca040" stroke-width="2.2"/>
-  <line x1="300" y1="320" x2="300" y2="282" stroke="#cca040" stroke-width="2.2"/>
-  <line x1="300" y1="282" x2="450" y2="282" stroke="#cca040" stroke-width="2.2"/>
-  <circle cx="300" cy="320" r="5" fill="#cca040"/>
-  <line x1="300" y1="320" x2="780" y2="320" stroke="#cca040" stroke-width="2.2"/>
-
-  <!-- XOR output goes down to chain2 -->
-  <line x1="540" y1="270" x2="600" y2="270" stroke="#80f0a0" stroke-width="2.2"/>
-  <line x1="600" y1="270" x2="600" y2="440" stroke="#80f0a0" stroke-width="2.2"/>
-  <line x1="600" y1="440" x2="780" y2="440" stroke="#80f0a0" stroke-width="2.2"/>
-
-  <!-- Chain SCAN_FF blocks (right side) -->
-  <g>
-    <rect x="780" y="170" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="840" y="196" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 0</text>
-    <text x="840" y="215" text-anchor="middle" fill="#c8b090" font-size="18">SI = e0</text>
-  </g>
-  <g>
-    <rect x="780" y="290" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="840" y="316" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 1</text>
-    <text x="840" y="335" text-anchor="middle" fill="#c8b090" font-size="18">SI = e1</text>
-  </g>
-  <g>
-    <rect x="780" y="410" width="120" height="60" rx="6" fill="#1a3a2a" stroke="#80f0a0" stroke-width="2.6"/>
-    <text x="840" y="436" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">chain 2</text>
-    <text x="840" y="455" text-anchor="middle" fill="#c8b090" font-size="18">SI = e0 ⊕ e1</text>
-  </g>
-
-  <text x="500" y="530" text-anchor="middle" fill="#ffe080" font-size="18" font-style="italic">
-    יתרון: 1.5× חיסכון. הגבלה: chain 2 לא עצמאי — תלוי לינארית ב-chain 0 ו-1.
-  </text>
-  <text x="500" y="558" text-anchor="middle" fill="#a0a0c0" font-size="18">
-    ב-EDT אמיתי: LFSR + phase shifter במקום XOR שטוח, מאפשר עד 1000:1
+  <text x="620" y="50" text-anchor="middle" fill="#a0c0e0" font-size="18" font-style="italic">
+    2 external pins  ↔  3 internal chains   (compression 1.5× · industrial EDT scales to 100:1)
   </text>
 
-  <!-- ========== COMPACTOR PANEL ========== -->
-  <rect x="20" y="600" width="960" height="560" rx="12"
-        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="500" y="638" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
-    COMPACTOR — 3 chains → 2 פינים
-  </text>
+  <!-- ═════════════════ DECOMPRESSOR (left) ═════════════════ -->
+  <rect x="20" y="80" width="340" height="600" rx="14"
+        fill="rgba(204,102,255,0.04)" stroke="#cc99ff" stroke-width="1.8"/>
+  <text x="190" y="116" text-anchor="middle" fill="#cc99ff" font-weight="bold" font-size="20">DECOMPRESSOR</text>
+  <text x="190" y="138" text-anchor="middle" fill="#a090b0" font-size="18" font-style="italic">2 in → 3 out (XOR linear network)</text>
 
-  <!-- Chain outputs Q0, Q1, Q2 (left) -->
-  <g>
-    <rect x="100" y="710" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="160" y="736" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 0</text>
-    <text x="160" y="755" text-anchor="middle" fill="#c8b090" font-size="18">Q0</text>
-  </g>
-  <g>
-    <rect x="100" y="840" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="160" y="866" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 1</text>
-    <text x="160" y="885" text-anchor="middle" fill="#c8b090" font-size="18">Q1</text>
-  </g>
-  <g>
-    <rect x="100" y="970" width="120" height="60" rx="6" fill="#0a1825" stroke="#80c8ff" stroke-width="2.2"/>
-    <text x="160" y="996" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="18">chain 2</text>
-    <text x="160" y="1015" text-anchor="middle" fill="#c8b090" font-size="18">Q2</text>
-  </g>
+  <!-- External pins e0, e1 (left side, the user-facing pads) -->
+  <circle cx="80" cy="240" r="24" fill="url(#edtPin)" stroke="#cca040" stroke-width="2.4"/>
+  <text x="80" y="247" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">e0</text>
+  <text x="80" y="200" text-anchor="middle" fill="#806840" font-size="18" font-style="italic">external pin</text>
 
-  <!-- XOR gates for compactor -->
-  <!-- o0 = Q0 ⊕ Q1 -->
-  <polygon points="500,760 550,742 590,760 590,800 550,818 500,800" fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
-  <text x="545" y="786" text-anchor="middle" fill="#ffc080" font-size="24" font-weight="bold">⊕</text>
-  <!-- o1 = Q1 ⊕ Q2 -->
-  <polygon points="500,910 550,892 590,910 590,950 550,968 500,950" fill="#3a2a14" stroke="#ffc080" stroke-width="2.2"/>
-  <text x="545" y="936" text-anchor="middle" fill="#ffc080" font-size="24" font-weight="bold">⊕</text>
+  <circle cx="80" cy="440" r="24" fill="url(#edtPin)" stroke="#cca040" stroke-width="2.4"/>
+  <text x="80" y="447" text-anchor="middle" fill="#cca040" font-size="20" font-weight="bold">e1</text>
 
-  <!-- Wires Q0 → o0 XOR -->
-  <line x1="220" y1="740" x2="500" y2="768" stroke="#80c8ff" stroke-width="2.2"/>
-  <!-- Q1 → both XORs -->
-  <line x1="220" y1="870" x2="400" y2="870" stroke="#80c8ff" stroke-width="2.2"/>
-  <line x1="400" y1="870" x2="400" y2="790" stroke="#80c8ff" stroke-width="2.2"/>
-  <line x1="400" y1="790" x2="500" y2="790" stroke="#80c8ff" stroke-width="2.2"/>
-  <circle cx="400" cy="870" r="5" fill="#80c8ff"/>
-  <line x1="400" y1="870" x2="400" y2="918" stroke="#80c8ff" stroke-width="2.2"/>
-  <line x1="400" y1="918" x2="500" y2="918" stroke="#80c8ff" stroke-width="2.2"/>
-  <!-- Q2 → o1 XOR -->
-  <line x1="220" y1="1000" x2="450" y2="1000" stroke="#80c8ff" stroke-width="2.2"/>
-  <line x1="450" y1="1000" x2="450" y2="940" stroke="#80c8ff" stroke-width="2.2"/>
-  <line x1="450" y1="940" x2="500" y2="940" stroke="#80c8ff" stroke-width="2.2"/>
+  <!-- Decompressor XOR (e0 ⊕ e1) -->
+  <path d="M 220 320 Q 256 340 220 360 M 232 320 Q 268 340 256 350 Q 268 360 232 360 Q 248 340 232 320 Z"
+        fill="url(#edtDep)" stroke="#80f0a0" stroke-width="2.2"/>
+  <text x="252" y="346" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">⊕</text>
+  <text x="244" y="306" text-anchor="middle" fill="#a0d0b0" font-size="18" font-style="italic">e0 ⊕ e1</text>
 
-  <!-- Compactor outputs -->
-  <line x1="590" y1="780" x2="800" y2="780" stroke="#ff9933" stroke-width="2.4"/>
-  <circle cx="830" cy="780" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="830" y="786" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">o0</text>
-  <text x="694" y="770" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">Q0 ⊕ Q1</text>
+  <!-- Wires e0 → (junction → straight to right; tap up to XOR.in0) -->
+  <line x1="104" y1="240" x2="190" y2="240" stroke="#cca040" stroke-width="2.4"/>
+  <circle cx="190" cy="240" r="5" fill="#cca040"/>
+  <line x1="190" y1="240" x2="190" y2="328" stroke="#cca040" stroke-width="2.4"/>
+  <line x1="190" y1="328" x2="226" y2="328" stroke="#cca040" stroke-width="2.4"/>
+  <!-- straight to chain 0 (exits the decompressor box on the right) -->
+  <line x1="190" y1="240" x2="360" y2="240" stroke="#cca040" stroke-width="2.4" marker-end="url(#edtArE)"/>
+  <text x="270" y="232" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">s0 = e0</text>
 
-  <line x1="590" y1="930" x2="800" y2="930" stroke="#ff9933" stroke-width="2.4"/>
-  <circle cx="830" cy="930" r="22" fill="#0a1825" stroke="#ff9933" stroke-width="2.4"/>
-  <text x="830" y="936" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">o1</text>
-  <text x="694" y="920" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">Q1 ⊕ Q2</text>
+  <!-- Wires e1 → (junction → straight to chain 1; tap up to XOR.in1) -->
+  <line x1="104" y1="440" x2="190" y2="440" stroke="#cca040" stroke-width="2.4"/>
+  <circle cx="190" cy="440" r="5" fill="#cca040"/>
+  <line x1="190" y1="440" x2="190" y2="352" stroke="#cca040" stroke-width="2.4"/>
+  <line x1="190" y1="352" x2="226" y2="352" stroke="#cca040" stroke-width="2.4"/>
+  <line x1="190" y1="440" x2="360" y2="440" stroke="#cca040" stroke-width="2.4" marker-end="url(#edtArE)"/>
+  <text x="270" y="432" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">s1 = e1</text>
 
-  <text x="500" y="1080" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
-    בעיה: aliasing — שתי תקלות שונות יכולות לתת אותו וקטור (o0,o1)
-  </text>
-  <text x="500" y="1108" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="20">
-    בעיה: X-states — chain אחד עם X מזהם את כל ה-compactor output
-  </text>
-  <text x="500" y="1140" text-anchor="middle" fill="#a0a0c0" font-size="18" font-style="italic">
-    הפתרון התעשייתי: X-masking + פתרונות EDT מתקדמים יותר
-  </text>
+  <!-- XOR output → chain 2 -->
+  <line x1="276" y1="340" x2="320" y2="340" stroke="#80f0a0" stroke-width="2.4"/>
+  <line x1="320" y1="340" x2="320" y2="640" stroke="#80f0a0" stroke-width="2.4"/>
+  <line x1="320" y1="640" x2="360" y2="640" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#edtArO)"/>
+  <text x="270" y="660" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">s2 = e0 ⊕ e1</text>
+
+  <!-- ═════════════════ SCAN CHAINS (centre) ═════════════════ -->
+  <rect x="400" y="80" width="320" height="600" rx="14"
+        fill="rgba(96,192,255,0.04)" stroke="#80c8ff" stroke-width="1.8"/>
+  <text x="560" y="116" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">SCAN CHAINS</text>
+  <text x="560" y="138" text-anchor="middle" fill="#90a8c0" font-size="18" font-style="italic">internal flip-flop strings</text>
+
+  <!-- chain 0 -->
+  <rect x="440" y="200" width="240" height="80" rx="10" fill="url(#edtChain)" stroke="#80c8ff" stroke-width="2.2"/>
+  <text x="560" y="234" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">chain 0</text>
+  <text x="560" y="260" text-anchor="middle" fill="#a0c0d0" font-size="18">Q0  =  e0</text>
+
+  <!-- chain 1 -->
+  <rect x="440" y="400" width="240" height="80" rx="10" fill="url(#edtChain)" stroke="#80c8ff" stroke-width="2.2"/>
+  <text x="560" y="434" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="20">chain 1</text>
+  <text x="560" y="460" text-anchor="middle" fill="#a0c0d0" font-size="18">Q1  =  e1</text>
+
+  <!-- chain 2 (marked as the linearly-dependent one) -->
+  <rect x="440" y="600" width="240" height="80" rx="10" fill="url(#edtDep)" stroke="#80f0a0" stroke-width="2.4" stroke-dasharray="6 4"/>
+  <text x="560" y="634" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">chain 2</text>
+  <text x="560" y="660" text-anchor="middle" fill="#a0d0b0" font-size="18">Q2  =  e0 ⊕ e1   (linear dep.)</text>
+
+  <!-- ═════════════════ COMPACTOR (right) ═════════════════ -->
+  <rect x="760" y="80" width="460" height="600" rx="14"
+        fill="rgba(255,176,96,0.04)" stroke="#ffc080" stroke-width="1.8"/>
+  <text x="990" y="116" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="20">COMPACTOR</text>
+  <text x="990" y="138" text-anchor="middle" fill="#c8a070" font-size="18" font-style="italic">3 in → 2 out (lossy XOR tree)</text>
+
+  <!-- Compactor XOR for o0 = Q0 ⊕ Q1 (at y=300, between chain 0 and chain 1) -->
+  <path d="M 870 282 Q 906 302 870 322 M 882 282 Q 918 302 906 312 Q 918 322 882 322 Q 898 302 882 282 Z"
+        fill="url(#edtPin)" stroke="#ffc080" stroke-width="2.2"/>
+  <text x="902" y="308" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">⊕</text>
+
+  <!-- Compactor XOR for o1 = Q1 ⊕ Q2 (at y=500, between chain 1 and chain 2) -->
+  <path d="M 870 482 Q 906 502 870 522 M 882 482 Q 918 502 906 512 Q 918 522 882 522 Q 898 502 882 482 Z"
+        fill="url(#edtPin)" stroke="#ffc080" stroke-width="2.2"/>
+  <text x="902" y="508" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">⊕</text>
+
+  <!-- Q0 → XOR0 in0 -->
+  <line x1="680" y1="240" x2="820" y2="240" stroke="#80c8ff" stroke-width="2.4"/>
+  <line x1="820" y1="240" x2="820" y2="290" stroke="#80c8ff" stroke-width="2.4"/>
+  <line x1="820" y1="290" x2="868" y2="290" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="710" y="232" text-anchor="middle" fill="#80c8ff" font-size="18">Q0</text>
+
+  <!-- Q1 → both XORs (fanout from a junction at x=800) -->
+  <line x1="680" y1="440" x2="800" y2="440" stroke="#80c8ff" stroke-width="2.4"/>
+  <circle cx="800" cy="440" r="5" fill="#80c8ff"/>
+  <text x="710" y="432" text-anchor="middle" fill="#80c8ff" font-size="18">Q1</text>
+  <!-- Q1 up to XOR0.in1 -->
+  <line x1="800" y1="440" x2="800" y2="314" stroke="#80c8ff" stroke-width="2.4"/>
+  <line x1="800" y1="314" x2="868" y2="314" stroke="#80c8ff" stroke-width="2.4"/>
+  <!-- Q1 down to XOR1.in0 -->
+  <line x1="800" y1="440" x2="800" y2="490" stroke="#80c8ff" stroke-width="2.4"/>
+  <line x1="800" y1="490" x2="868" y2="490" stroke="#80c8ff" stroke-width="2.4"/>
+
+  <!-- Q2 → XOR1.in1 -->
+  <line x1="680" y1="640" x2="820" y2="640" stroke="#80c8ff" stroke-width="2.4"/>
+  <line x1="820" y1="640" x2="820" y2="514" stroke="#80c8ff" stroke-width="2.4"/>
+  <line x1="820" y1="514" x2="868" y2="514" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="710" y="632" text-anchor="middle" fill="#80c8ff" font-size="18">Q2</text>
+
+  <!-- XOR0 → o0 -->
+  <line x1="926" y1="302" x2="1080" y2="302" stroke="#ff9933" stroke-width="2.4" marker-end="url(#edtArO)"/>
+  <text x="1000" y="292" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">Q0 ⊕ Q1</text>
+
+  <!-- XOR1 → o1 -->
+  <line x1="926" y1="502" x2="1080" y2="502" stroke="#ff9933" stroke-width="2.4" marker-end="url(#edtArO)"/>
+  <text x="1000" y="492" text-anchor="middle" fill="#ffc080" font-size="18" font-weight="bold">Q1 ⊕ Q2</text>
+
+  <!-- Output pins o0, o1 -->
+  <circle cx="1140" cy="302" r="24" fill="url(#edtPin)" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="1140" y="309" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">o0</text>
+  <text x="1140" y="262" text-anchor="middle" fill="#a07040" font-size="18" font-style="italic">external pin</text>
+
+  <circle cx="1140" cy="502" r="24" fill="url(#edtPin)" stroke="#ff9933" stroke-width="2.4"/>
+  <text x="1140" y="509" text-anchor="middle" fill="#ff9933" font-size="20" font-weight="bold">o1</text>
+
+  <!-- ═════════════════ FOOTER NOTES (bottom strip) ═════════════════ -->
+  <rect x="20" y="700" width="600" height="84" rx="10" fill="rgba(128,240,160,0.06)" stroke="#39ff80" stroke-width="1.6"/>
+  <text x="320" y="730" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">חיסכון</text>
+  <text x="320" y="756" text-anchor="middle" fill="#a0c8b0" font-size="18">1.5×  in pins  ·  industrial EDT: phase shifter + LFSR → 100×</text>
+  <text x="320" y="776" text-anchor="middle" fill="#a0c8b0" font-size="18" font-style="italic">limit: ≤ k independent chains for k external pins</text>
+
+  <rect x="640" y="700" width="580" height="84" rx="10" fill="rgba(255,128,128,0.06)" stroke="#ff8080" stroke-width="1.6"/>
+  <text x="930" y="730" text-anchor="middle" fill="#ff8080" font-weight="bold" font-size="18">חולשות</text>
+  <text x="930" y="756" text-anchor="middle" fill="#c0a8a8" font-size="18">aliasing  —  two faults → same (o0, o1) signature</text>
+  <text x="930" y="776" text-anchor="middle" fill="#c0a8a8" font-size="18">X-state contamination  —  a single X spoils the whole tree</text>
 </svg>`,
     parts: [
       {
@@ -5100,7 +5121,13 @@ stuck-at testing בודק וקטור יחיד: מציב inputs, קורא outputs
           // demo is structural rather than capacitance-aware. The
           // student observes that the inverter chain no longer
           // propagates IN; the answer text explains the limitation.
-          const inIn  = h.input(120, 240, 'IN');
+          // IN starts at 1 so the contrast between faulty and clean is
+          // visible at-a-glance: OUT_clean lights up as 1 (the expected
+          // value), OUT_faulty stays dark because the open wire poisons
+          // INV2's input with null → its output is null/0. With IN=0
+          // both outputs would render dark and the fault would not be
+          // demonstrated.
+          const inIn  = h.input(120, 240, 'IN'); inIn.fixedValue = 1;
           const inv1  = h.gate('NOT', 320, 240);
           const inv2  = h.gate('NOT', 540, 240);
           const outOut = h.output(740, 240, 'OUT');
