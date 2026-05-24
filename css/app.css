@@ -4965,12 +4965,23 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
   padding-bottom: 10px;
   border-bottom: 1px dashed #2a4060;
 }
+/* Pack the #NNNN badge and the title onto a single visual row instead
+   of letting the title <div> wrap to the next line. RTL so the title
+   reads naturally from the right edge while the badge anchors the left. */
+.iv-question-title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+}
 .iv-question-title {
   color: #80f0a0;
   font-weight: bold;
   font-size: 28px;
-  line-height: 1.5;
-  margin-bottom: 6px;
+  line-height: 1.3;
+  flex: 1 1 auto;
+  margin: 0;
 }
 .iv-question-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .iv-part-label {
@@ -5586,7 +5597,7 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
 .iv-question-title {
   font-size: 32px;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.25;     /* tighter so the title-row stays compact */
   color: #c8f0d0;        /* slightly warmer than body green */
 }
 

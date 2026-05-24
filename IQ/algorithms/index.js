@@ -814,7 +814,7 @@ function _powersetTreeSvg(arr, activeIds, highlightId, done) {
     const stroke = hl ? '#ffd060' : (active ? '#39ff80' : '#2a4060');
     const fill   = hl ? D.matchGrad : (active ? D.curGrad : D.idleGrad);
     const filter = hl ? `filter="${D.glowGold}"` : (active ? `filter="${D.glowCyan}"` : '');
-    const fontSize = isLeaf ? 18 : 17;
+    const fontSize = isLeaf ? 20 : 18;
     const tw = Math.max(56, label.length * fontSize * 0.62 + 22);
     const th = 34;
 
@@ -1979,12 +1979,12 @@ function _reverseLoopSvg({ original, iter, done, stepLabel }) {
     return `
       <g style="animation: ${D.animPop} 240ms ${s * 12}ms both;">
         <text x="${left + s * CELL + CELL/2}" y="${y - 8}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 8 : 9}"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 16 : 18}"
               fill="#5a7090">${idxLabel}</text>
         <rect x="${left + s * CELL + 2}" y="${y}" width="${CELL - 4}" height="${rowH}" rx="5"
               fill="${fill}" stroke="${stroke}" stroke-width="${isHl || isDoneCell ? 2.4 : 1.2}" ${filter}/>
         <text x="${left + s * CELL + CELL/2}" y="${y + rowH * 0.72}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 15 : 22}" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 18 : 24}" font-weight="bold"
               fill="${bitColor}">${char}</text>
       </g>`;
   }).join('');
@@ -2127,12 +2127,12 @@ function _bitsReverseSvg({ bitsBefore, bitsAfter, swaps = [], stepLabel, done })
     return `
       <g style="animation: ${D.animPop} 240ms ${i * 18}ms both;">
         <text x="${left + i * CELL + CELL / 2}" y="${y - 8}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 9 : 11}"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 16 : 18}"
               fill="#7090b0">[${i}]</text>
         <rect x="${left + i * CELL + 2}" y="${y}" width="${CELL - 4}" height="${CELL_H}" rx="${n > 16 ? 4 : 6}"
               fill="${fill}" stroke="${stroke}" stroke-width="${isHl ? 2.4 : 1.2}" ${filter}/>
         <text x="${left + i * CELL + CELL / 2}" y="${y + CELL_H * 0.7}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 18 : 26}" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 18 : 28}" font-weight="bold"
               fill="${bitColor}">${bit}</text>
       </g>`;
   }).join('');
@@ -2239,14 +2239,14 @@ function _bitsReverseDcSvg({ bitsBefore, bitsAfter, groupSize, stepLabel, done }
     return `
       <g style="animation: ${D.animPop} 240ms ${i * 14}ms both;">
         <text x="${left + i * CELL + CELL/2}" y="${y - 6}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 8 : 10}"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 16 : 18}"
               fill="#5a7090">${i}</text>
         <rect x="${left + i * CELL + 2}" y="${y}" width="${CELL - 4}" height="${CELL_H}"
               rx="${n > 16 ? 4 : 6}"
               fill="${p.fill}" stroke="${p.stroke}" stroke-width="${isDone ? 2.4 : 1.8}"
               filter="${isDone ? D.glowGold : p.glow}" opacity="0.95"/>
         <text x="${left + i * CELL + CELL/2}" y="${y + CELL_H * 0.72}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 17 : 26}" font-weight="bold"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 18 : 28}" font-weight="bold"
               fill="${bitColor}">${bit}</text>
       </g>`;
   }).join('');
@@ -2335,7 +2335,7 @@ function _bitsReverseDcSvg({ bitsBefore, bitsAfter, groupSize, stepLabel, done }
             stroke="${done ? '#ffd060' : '#80d4ff'}" stroke-width="2"
             filter="${done ? D.glowGold : D.glowCyan}"/>
       <text x="${W/2}" y="42" text-anchor="middle"
-            font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 14 : 16}"
+            font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 16 : 18}"
             fill="${done ? '#ffd060' : '#80d4ff'}" font-weight="bold" letter-spacing="1">
         ${done ? '✓ ' + stepLabel : stepLabel}
       </text>
@@ -3217,7 +3217,7 @@ function _bitRowSvg({ bits, hlIdx = [], cleared = [], label, sub, done, showPos 
     return `
       <g style="animation: ${D.animPop} 200ms ${i * 12}ms both;">
         ${showPos ? `<text x="${left + i * CELL + CELL / 2}" y="${top - 8}" text-anchor="middle"
-              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 9 : 10}"
+              font-family="'JetBrains Mono', monospace" font-size="${n > 16 ? 16 : 18}"
               fill="#7090b0">${pos}</text>` : ''}
         <rect x="${left + i * CELL + 2}" y="${top}" width="${CELL - 4}" height="${CELL_H}" rx="${n > 16 ? 4 : 6}"
               fill="${fill}" stroke="${stroke}" stroke-width="${isHl ? 2.4 : 1.2}" ${filter}/>

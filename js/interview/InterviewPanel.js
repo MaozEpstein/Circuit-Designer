@@ -1291,9 +1291,13 @@ export class InterviewPanel {
          </div>`
       : '';
 
-    const qList = this.engine.listQuestions(this.topicId);
+    // Resolve topic from the engine first (set on enter()), fall back to
+    // the panel's active tab. `this.topicId` was used here but never set,
+    // which silently dropped the serial badge from the question view.
+    const topicId = this.engine.topicId || this.activeTopic;
+    const qList = this.engine.listQuestions(topicId);
     const qIdx  = qList.findIndex(x => x.id === q.id);
-    const serial = qIdx >= 0 ? serialFor(this.topicId, qIdx) : null;
+    const serial = qIdx >= 0 ? serialFor(topicId, qIdx) : null;
     // Per-part suffix: append "·<part-label>" (e.g. "5001·א") so each
     // sub-question gets a unique citable identifier. Single-part
     // questions stay as plain "5001".
@@ -1309,8 +1313,10 @@ export class InterviewPanel {
 
     return `
       <div class="iv-question-head">
-        ${fullSerial ? `<span class="iv-question-serial" dir="ltr">#${fullSerial}</span>` : ''}
-        <div class="iv-question-title" dir="rtl">${_esc(q.title)}${titleSuffix}</div>
+        <div class="iv-question-title-row">
+          ${fullSerial ? `<span class="iv-question-serial" dir="ltr">#${fullSerial}</span>` : ''}
+          <div class="iv-question-title" dir="rtl">${_esc(q.title)}${titleSuffix}</div>
+        </div>
         <div class="iv-question-meta">
           ${partLabel}
           ${partProgress}

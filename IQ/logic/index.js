@@ -45,7 +45,7 @@ function _dot(x, y, color = _WIRE) {
 
 // ─── reference inverter — shown as the question's `schematic` ───
 const NOT_INVERTER_SVG = `
-<svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS inverter (NOT gate)">
+<svg viewBox="0 0 260 260" style="max-width: 240px" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS inverter (NOT gate)">
   ${_vdd(140, 20)}
   <line x1="140" y1="20" x2="140" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
   ${_pmos(140, 70, 'P')}
@@ -244,7 +244,7 @@ const DEC24_KMAP_SVG = `
 
 // ─── NOR (answer א) ─────────────────────────────────────────────
 const NOR_SVG = `
-<svg viewBox="0 0 380 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS NOR gate">
+<svg viewBox="0 0 380 360" style="max-width: 340px" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS NOR gate">
   ${_vdd(180, 20)}
   <line x1="180" y1="20" x2="180" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
   ${_pmos(180, 70, 'P1')}
@@ -281,7 +281,7 @@ const NOR_SVG = `
 
 // ─── NAND (answer ב) ─────────────────────────────────────────────
 const NAND_SVG = `
-<svg viewBox="0 0 380 360" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS NAND gate">
+<svg viewBox="0 0 380 360" style="max-width: 340px" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS NAND gate">
   ${_vdd(180, 20)}
   <line x1="130" y1="20" x2="230" y2="20" stroke="${_WIRE}" stroke-width="1.4"/>
   <line x1="130" y1="20" x2="130" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
@@ -318,7 +318,7 @@ const NAND_SVG = `
 
 // ─── (C + B·A)' complex gate (answer ג) ─────────────────────────
 const CBA_SVG = `
-<svg viewBox="0 0 440 460" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS implementation of Y = (C + B·A)'">
+<svg viewBox="0 0 440 460" style="max-width: 380px" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="CMOS implementation of Y = (C + B·A)'">
   ${_vdd(210, 20)}
   <line x1="210" y1="20" x2="210" y2="56" stroke="${_WIRE}" stroke-width="1.4"/>
   ${_pmos(210, 70, 'PC')}
@@ -2095,11 +2095,15 @@ B1_out = B1 ⊕ (B2 ∧ B0)             ← הפיכה בתנאי
     circuit: () => build(() => {
       // 3 single-bit inputs B0, B1, B2 + 1 AND + 1 XOR + 3 outputs.
       // Default: input = 5 (B2=1, B1=0, B0=1) → output should be 7 (B2=1, B1=1, B0=1).
+      //
+      // Layout: AND is lifted off the B1 row to sit between rows B0 and B1,
+      // so the B1→XOR wire runs straight across without visually crossing
+      // the AND box.
       const b0 = h.input(120, 200, 'B0'); b0.fixedValue = 1;
       const b1 = h.input(120, 320, 'B1'); b1.fixedValue = 0;
       const b2 = h.input(120, 440, 'B2'); b2.fixedValue = 1;
-      const and = h.gate('AND', 380, 320);          // B2 ∧ B0
-      const xor = h.gate('XOR', 620, 320);          // B1 ⊕ (B2·B0)
+      const and = h.gate('AND', 480, 240);          // B2 ∧ B0 (between B0 and B1 rows)
+      const xor = h.gate('XOR', 640, 320);          // B1 ⊕ (B2·B0) (on B1 row)
       const out0 = h.output(880, 200, 'out[0] = B0');
       const out1 = h.output(880, 320, 'out[1]');
       const out2 = h.output(880, 440, 'out[2] = B2');
@@ -3257,43 +3261,23 @@ M₂(x, y, z) ⇔ M₃(x, y, z, 1)
           'אופציה אלטרנטיבית: לעטוף Buffer ב-2 Inverters יוצר "delay block" סימטרי. אבל מספר הרכיבים בדרך זו גדול יותר.',
         ],
         answer:
-`**הפתרון: 20 Inverters בסדרה.**
+`**20 Inverters בסדרה.**
 
 \`\`\`
-in → INV → INV → INV → ... (× 20) → out
+in → INV → INV → … (× 20) → out
 \`\`\`
 
-**חישוב:**
-- כל Inverter: rise = 5ns, fall = 5ns (סימטרי).
-- 20 Inverters בסדרה: סך delay = 20 × 5 = **100ns** עבור **כל** קצה.
-- 20 הפיכות → אחרי 20 = 0 הפיכות (זוגי) → פלט **לא הפוך**.
+- כל Inverter סימטרי: \`5ns\` ב-rise וב-fall.
+- \`20 × 5ns = 100ns\` — זהה בשני הקצוות.
+- 20 הפיכות (זוגי) → הפלט **לא הפוך**.
 
-### למה לא Buffer?
+### למה לא Buffer
 
-Buffer: rise = 12ns, fall = 8ns. **לא סימטרי**. בעיה כפולה:
+Buffer א-סימטרי (\`rise=12ns, fall=8ns\`) → כל מעבר דרכו מרחיב את הפולס ב-\`4ns\`. אחרי 9 buffers (\`9 × (12+8)/2 ≈ 100ns\`) הפולס מתעוות ב-\`36ns\` — לא קביל. בנוסף, פולסים קצרים מ-\`4ns\` נעלמים לגמרי כי ה-falling edge מקדים את ה-rising.
 
-1. **רוחב הפולס יתעוות:** אם הקלט הוא פולס של \`100ns\`, אחרי buffer יחיד הפולס נעשה רחב יותר (12ns למעלה, 8ns למטה → +4ns רוחב). אחרי N buffers, רוחב הפולס גדל ב-\`N · 4ns\`. עם 9 buffers נצליח 100ns delay, אבל הפולס יהיה רחב ב-\`9 × 4 = 36ns\` — לא מקובל.
+### מינימום ההכרחי
 
-2. **קיצוץ פולסים קצרים:** אם הפולס הוא קצר מ-\`fall - rise = -4ns\`, הוא ייעלם לגמרי (ה-falling edge מקדים את ה-rising edge).
-
-### למה לא צירוף?
-
-אפשר תיאורטית לשלב Buffer + Inverter כדי לקזז את האסימטריה (Buffer מאריך את הפולס, Inverter סימטרי). אבל זה דורש חישוב מדויק ולא מבטיח 100ns מדויק על שני הקצוות.
-
-הפתרון הנקי = **רק Inverters**.
-
-### חישוב מינימום
-
-- 100ns / 5ns לכל Inverter = **20 Inverters** מינימום.
-- אם נרצה פחות — חייבים להשתמש ב-Buffer, ואז נצטרך לקזז עיוות בעזרת Inverters נוספים → אין כדאיות.
-
-### מקרה אחר (לידיעה): מה אם הקלט הוא **תדר** של 1MHz (period = 1μs)?
-
-100ns delay = 10% מתקופה. בקצוות, השהיה זו ברורה. אבל ה-20 Inverters מוסיפים capacitance load → להבטיח שה-driver יכול לעמוד בעומס.
-
-### שאלה למחשב: מה אם הקלט הוא **0.5MHz** עם duty cycle 90%?
-
-הפולס הוא \`1.8μs\` רחב. 100ns delay = 5.5% — קטן. אין בעיה. ה-20 Inverters יעבירו אותו בסדר.`,
+\`100ns / 5ns = 20\` — אי-אפשר פחות עם הרכיבים הנתונים תוך שמירה על סימטריה.`,
         interviewerMindset:
 `שאלת timing קלאסית. המראיין מחפש:
 

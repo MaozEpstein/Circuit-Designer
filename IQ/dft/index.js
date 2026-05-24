@@ -3121,9 +3121,7 @@ ASIC מודרני: 100K-10M FFs. בלי scan: ATPG לא יוכל למצוא vect
   </g>
 
   <!-- DR transitions -->
-  <g stroke="#80f0a0" stroke-width="1.8" fill="none">
-    <path d="M 308 360 Q 400 320, 510 280" marker-end="url(#tapArr0)"/>     <!-- RTI ← Sel-DR (TMS=0 from RTI to Sel-DR) — actually RTI(1) →TMS=1→Sel-DR(2): use red -->
-  </g>
+  <!-- RTI → Sel-DR (TMS=1) -->
   <g stroke="#ff6080" stroke-width="1.8" fill="none">
     <path d="M 512 282 Q 400 320, 308 360" marker-end="url(#tapArr1)"/>
   </g>
@@ -3171,6 +3169,57 @@ ASIC מודרני: 100K-10M FFs. בלי scan: ATPG לא יוכל למצוא vect
   <text x="820" y="666" fill="#ff6080" font-size="18" font-weight="bold">1</text>
   <path d="M 740 680 Q 670 540, 590 290" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
   <text x="670" y="450" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
+
+  <!-- ── Missing IEEE 1149.1 transitions — completes the 16-state FSM ── -->
+
+  <!-- RTI self-loop (TMS=0) — small loop on left side of RTI -->
+  <path d="M 504 250 Q 462 232, 462 270 Q 462 308, 504 290" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="446" y="275" text-anchor="end" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
+
+  <!-- Sel-IR → TLR (TMS=1) — long arc up to TLR -->
+  <path d="M 830 320 Q 830 200, 696 145" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="800" y="220" fill="#ff6080" font-size="18" font-weight="bold">1</text>
+
+  <!-- DR side: Pause-DR self (0), Pause-DR → Exit2-DR (1) -->
+  <path d="M 56 700 Q 22 720, 22 750 Q 22 780, 60 750" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="8" y="754" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
+  <path d="M 108 744 L 152 780" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="100" y="794" fill="#ff6080" font-size="18" font-weight="bold">1</text>
+
+  <!-- Exit2-DR → Shift-DR (0), Exit2-DR → Upd-DR (1) -->
+  <path d="M 200 770 Q 240 700, 252 600" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="226" y="676" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
+  <path d="M 214 790 L 326 736" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="260" y="780" fill="#ff6080" font-size="18" font-weight="bold">1</text>
+
+  <!-- Upd-DR → Sel-DR (TMS=1) — arc back up to Sel-DR -->
+  <path d="M 326 698 Q 240 540, 264 400" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="240" y="540" fill="#ff6080" font-size="18" font-weight="bold">1</text>
+
+  <!-- IR side mirrors -->
+  <!-- Cap-IR → Exit1-IR (1) -->
+  <path d="M 860 490 Q 920 540, 932 604" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="908" y="570" fill="#ff6080" font-size="18" font-weight="bold">1</text>
+
+  <!-- Exit1-IR → Pause-IR (0) -->
+  <path d="M 968 660 L 1000 696" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="1000" y="676" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
+
+  <!-- Pause-IR self (0), Pause-IR → Exit2-IR (1) -->
+  <path d="M 1046 700 Q 1080 720, 1080 750 Q 1080 780, 1044 750" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="1090" y="754" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
+  <path d="M 992 744 L 950 780" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="1000" y="794" fill="#ff6080" font-size="18" font-weight="bold">1</text>
+
+  <!-- Exit2-IR → Shift-IR (0), Exit2-IR → Upd-IR (1) -->
+  <path d="M 902 770 Q 860 700, 848 600" stroke="#80f0a0" stroke-width="1.8" fill="none" marker-end="url(#tapArr0)"/>
+  <text x="864" y="676" fill="#80f0a0" font-size="18" font-weight="bold">0</text>
+  <path d="M 886 790 L 774 736" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="836" y="780" fill="#ff6080" font-size="18" font-weight="bold">1</text>
+
+  <!-- Upd-IR → Sel-DR (TMS=1) — long cross-arc back to the DR side top -->
+  <path d="M 706 700 Q 480 540, 296 380" stroke="#ff6080" stroke-width="1.8" fill="none" marker-end="url(#tapArr1)"/>
+  <text x="500" y="490" fill="#ff6080" font-size="18" font-weight="bold">1</text>
 
   <!-- Legend -->
   <g transform="translate(40, 110)">
@@ -3353,6 +3402,24 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
           const tdi  = h.input(80, 320, 'TDI');
           const trst = h.input(80, 440, 'TRST');
 
+          // TMS sequence: walk the TAP through the DR-scan path so the
+          // student sees the FSM actually move instead of sitting in RTI.
+          //   tick 0  TMS=0   TLR → RTI
+          //   tick 1  TMS=1   RTI → Sel-DR-Scan
+          //   tick 2  TMS=0   Sel-DR → Capture-DR
+          //   tick 3  TMS=0   Capture-DR → Shift-DR
+          //   tick 4..7 TMS=0  stay in Shift-DR (4 serial shifts of TDI)
+          //   tick 8  TMS=1   Shift-DR → Exit1-DR
+          //   tick 9  TMS=1   Exit1-DR → Update-DR
+          //   tick 10 TMS=0   Update-DR → RTI
+          //   tick 11+ TMS=0  stay in RTI (idle)
+          tms.stepValues = [0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0];
+          // TDI serial pattern shifted in during ticks 4..7 (sees 1,0,1,1)
+          tdi.stepValues = [0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0];
+          // TRST stays inactive after a single-tick deassert pulse — without
+          // an explicit value the TAP can sit pinned in Test-Logic-Reset.
+          trst.fixedValue = 0;
+
           const tap  = h.block('JTAG_TAP', 300, 320, {
             label: 'TAP',
             irBits: 4,
@@ -3367,12 +3434,22 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
           // independently of the TAP — simpler for learning).
           // SO of BSC1 → SI of BSC2 → SO of BSC2 → SI of BSC3.
           // SHIFT and MODE are shared.
+          // PI values chosen so PO column reads "1,0,1" — distinguishable
+          // boundary data instead of an all-zero blob.
           const pi1 = h.input(120, 820, 'PI1');
           const pi2 = h.input(360, 820, 'PI2');
           const pi3 = h.input(600, 820, 'PI3');
+          pi1.fixedValue = 1;
+          pi2.fixedValue = 0;
+          pi3.fixedValue = 1;
 
+          // SHIFT pulses high for a few ticks so the student watches the
+          // boundary chain actually clock data. MODE=0 keeps the cell in
+          // transparent mode: PO = PI, so PO1..PO3 read 1,0,1 immediately.
           const shIn   = h.input(120, 940, 'SHIFT');
           const modeIn = h.input(360, 940, 'MODE');
+          shIn.stepValues = [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0];
+          modeIn.fixedValue = 0;
 
           const bsc1 = h.block('BOUNDARY_SCAN_CELL', 280, 720, { label: 'BSC1' });
           const bsc2 = h.block('BOUNDARY_SCAN_CELL', 520, 720, { label: 'BSC2' });
@@ -3459,13 +3536,13 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
     difficulty: 'hard',
     title: 'תקלות מעבר — Slow-to-Rise / Slow-to-Fall ובדיקת at-speed',
     intro:
-`**תקלת מעבר** (transition fault) היא שער או חוט **איטיים מדי** — הם עוברים בין \`0\` ל-\`1\` (או הפוך), אבל לא מספיקים להתייצב לפני קצה השעון הבא. **stuck-at fault testing** (וקטור יחיד) **לא יתפוס תקלה כזו** כי הוא בודק רק את הערך הסופי בלי תלות בקצב המעבר.
+`**תקלת מעבר** (transition fault) היא שער או חוט **איטיים מדי** — הם עוברים בין \`0\` ל-\`1\` (או הפוך) אבל לא מספיקים להתייצב לפני קצה השעון הבא.
 
 שני סוגים:
 - \`slow-to-rise (STR)\`: מעבר \`0→1\` איטי
 - \`slow-to-fall (STF)\`: מעבר \`1→0\` איטי
 
-מה מבנה ה-test pattern שכן יתפוס את התקלה? כמה וקטורים נדרשים? מה ההבדל בין **launch-on-shift** ל-**launch-on-capture**?`,
+בקנבס: שרשרת \`FF_A → buffer → FF_B\` עם STR על מוצא \`FF_A\`. רוץ ועקוב אחרי \`Q_A\` ו-\`Q_B\`.`,
     schematic: `
 <svg viewBox="0 0 1000 1100" xmlns="http://www.w3.org/2000/svg" direction="ltr"
      font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Transition fault waveforms (normal vs slow-to-rise) and 2-vector test sequence.">
@@ -3582,7 +3659,7 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
     parts: [
       {
         label: 'א',
-        question: 'מהי תקלת מעבר ולמה stuck-at testing **לא תופס** אותה? כמה וקטורי בדיקה דרושים לתפיסת תקלת \`slow-to-rise\`? תאר את ההבדל בין **launch-on-shift (LOS)** ל-**launch-on-capture (LOC)**.',
+        question: 'איך נראה ה-test pattern שמסוגל לתפוס תקלת \`slow-to-rise\`, ובמה הוא נבדל ממה שמספיק עבור stuck-at? תאר את ההבדל בין שתי השיטות המקובלות להפעלתו: **launch-on-shift (LOS)** לעומת **launch-on-capture (LOC)**.',
         hints: [
           'תקלת stuck-at היא מודל "תמיד תקוע בערך \`0\` או \`1\`". וקטור יחיד שמציב את הערך ההפוך חושף אותה.',
           'תקלת מעבר היא **delay**, לא ערך — השער/החוט מצליחים להגיע ליעד **אבל מאוחר מדי**.',
@@ -3591,40 +3668,32 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
           'LOC: ה-vector השני נוצר ע"י clock cycle פונקציונלי (SE=0). יותר נאמן ל-at-speed, אבל ATPG צריך למצוא וקטור שמייצר את ה-state הנדרש דרך הלוגיקה הפונקציונלית.',
         ],
         answer:
-`### למה stuck-at לא תופס
+`### למה stuck-at לא מספיק
 
-**Stuck-at** בודק רק את ה-**ערך הסופי**: וקטור יחיד מציב inputs, capture cycle לוכד outputs, השוואה לצפי. אם השער איטי אבל בסופו של דבר מגיע ליעד **לפני** ה-capture, stuck-at לא רואה בעיה. בעיצוב at-speed מודרני, מעבר שאיחר ב-100ps מבדל בין chip שעובד ב-1GHz לבין chip שלא — ועדיין stuck-at ייתן PASS.
+Stuck-at בודק רק את ה-**ערך הסופי** — וקטור יחיד, capture, השוואה. שער איטי שמגיע ליעד אחרי ה-capture window עדיין ייתן PASS למרות התקלה.
 
-### תקלת מעבר דורשת **2 וקטורים רצופים**
+### Transition fault דורש **2 וקטורים רצופים**
 
-| וקטור | תפקיד | מצב SE | מה קורה |
-|---|---|:---:|---|
-| **V1** (initialization) | מציב את הקצה ההפוך של המעבר | תלוי בסכימה | scan chain טוען state ש-\`A=0\` (לדוגמה) |
-| **V2** (launch) | מפעיל את המעבר | תלוי | משהו גורם ל-\`A\` לעבור ל-\`1\` |
-| Capture | clock יחיד לאחר V2 | \`SE=0\` | FF במרחק כמה שערים מ-\`A\` לוכד את הערך החדש |
+| וקטור | תפקיד |
+|---|---|
+| **V1** initialization | מציב את הקצה ההפוך של המעבר |
+| **V2** launch | מפעיל את ה-transition |
+| Capture | clock פונקציונלי יחיד אחרי V2 |
 
-בלי V1 אין transition מוגדר. בלי V2 הוא לא יוצא לפועל. רק **שניהם יחד** חושפים את התקלה.
+V1 לבד = אין transition. V2 לבד = אין דלתא לעקוב אחריה. רק **שניהם יחד** חושפים את ה-delay.
 
 ### LOS לעומת LOC
 
-**Launch-on-Shift (LOS)**:
-- \`SE=1\` בזמן launch — ה-vector השני מגיע מ-shift בודד של ה-scan chain.
-- היתרון: ATPG פשוט יותר (השליטה ב-V2 מלאה).
-- החיסרון: ה-launch מתבצע ב-clock של scan (איטי יותר), והערך מגיע דרך MUX של ה-scan ולא דרך הלוגיקה הפונקציונלית — לא בדיוק at-speed.
-
-**Launch-on-Capture (LOC)**:
-- \`SE=0\` לאורך שני ה-clocks — ה-vector השני נוצר על-ידי clock cycle פונקציונלי שמפעיל את הלוגיקה האמיתית.
-- היתרון: at-speed אמיתי, תופס תקלות שתלויות בלוגיקה אמיתית.
-- החיסרון: ATPG חייב למצוא state V1 שגורם דרך הלוגיקה ל-V2 הרצוי. לפעמים בלתי-אפשרי → unreachable.
+| | **LOS** (launch-on-shift) | **LOC** (launch-on-capture) |
+|---|---|---|
+| **SE בזמן launch** | \`SE=1\` | \`SE=0\` |
+| **מקור V2** | shift אחרון של scan | clock פונקציונלי דרך הלוגיקה |
+| **ATPG** | פשוט (שליטה ישירה ב-V2) | קשה (חייב להגיע ל-V2 דרך הלוגיקה) |
+| **at-speed** | לא לגמרי | אמיתי |
 
 ### בקנבס
 
-המעגל הוא 2-FF chain עם buffer ביניהם. ה-buffer-output מוזרק עם \`stuckAt = 0\` שמדמה את הקיצוניות של slow-to-rise (לא מצליח לעולם להגיע). הרץ:
-
-1. הצב \`A=0\`, פעם ב-CLK פעם או שתיים → \`FF_A.Q=0\`, ולאחר עוד clock גם \`FF_B.Q=0\`. הכל בסדר.
-2. הצב \`A=1\` → ב-clock הבא \`FF_A.Q=1\`. אבל \`buffer.out\` תקוע ב-\`0\` → \`FF_B.Q\` נשאר \`0\`. **התקלה נתפסה**.
-
-המנוע אינו מדמה delay אמיתי, אז התקלה כאן מוצגת כ-**stuck-at ביציאת השער** כפרוקסי לקיצוניות של slow-to-rise. במציאות, התקלה מתרחשת רק בזמן המעבר ולא בשגרה.`,
+\`stepValues\` על \`A\` מזין \`0,0,1,1...\` — V1 (יציבות ב-0) ואז V2 (launch ל-1). תופעת ה-\`slowToRise\` על מוצא \`FF_A\` חוסמת את ה-edge 0→1 פעם אחת: \`Q_A\` עולה ל-1 כצפוי, אבל \`Q_B\` נשאר \`0\` cycle נוסף במקום לתפוס מיד. זו בדיוק התסמונת ש-LOS/LOC נועדו לחשוף.`,
         interviewerMindset:
 `**שאלה מתקדמת** בראיון DFT/ATE. המראיין מחפש:
 1. **שאתה מבחין בין מודל ערך (stuck-at) למודל זמן (transition)** — שני קטגוריות שונות לחלוטין.
@@ -3645,45 +3714,43 @@ Shift-DR → Exit1-DR (1) → ... אם הולכים ל-Pause-DR ולא ל-Update
           'stuck-at', 'value',
         ],
         circuit: () => build(() => {
-          // Two-FF chain with a buffer (NOT-NOT) between them, used
-          // to demonstrate a transition fault via stuck-at-0 proxy
-          // on the buffer output wire. The student loads FF_A with
-          // different values and observes whether FF_B captures the
-          // transitioned value or stays stuck.
-          //
-          // Why a buffer (NOT-NOT)? In a real CMOS gate the slow-to-
-          // rise fault sits on a transistor; the closest analogue we
-          // have is a wire with stuck-at-0 between two combinational
-          // gates. The two NOT gates act as a buffer (net inversion 0)
-          // so the functional path passes A → FF_A.Q → buffer-out →
-          // FF_B.D, with the proxy fault on the wire feeding FF_B.D.
+          // Two-FF chain with a NOT-NOT buffer between. The real
+          // transition-fault model (`slowToRise`) sits on the wire
+          // RIGHT AFTER FF_A.Q — semantically: the launch FF drives
+          // a slow combinational path. stepValues on A walk V1 → V2
+          // automatically so the student sees the transition launch.
           const clk  = h.clock(80, 480);
           const aIn  = h.input(80, 220, 'A');
+          // V1 = stabilize at 0, V2 = launch to 1. Holding high so
+          // FF_B's lagging capture is visible against FF_A's clean rise.
+          aIn.stepValues = [0, 0, 1, 1, 1, 1, 1, 1];
 
-          const ffA = h.ffD(280, 220, 'FF_A');
+          const ffA  = h.ffD(280, 220, 'FF_A');
           const inv1 = h.gate('NOT', 460, 220);
           const inv2 = h.gate('NOT', 620, 220);
-          const ffB = h.ffD(800, 220, 'FF_B');
+          const ffB  = h.ffD(800, 220, 'FF_B');
 
-          const qaOut = h.output(280, 80, 'Q_A');
-          const qbOut = h.output(800, 80, 'Q_B');
+          // Outputs sit downstream of each FF's Q pin — clearly AFTER
+          // the flip-flop they sample, never before it.
+          const qaOut = h.output(380, 100, 'Q_A');
+          const qbOut = h.output(900, 100, 'Q_B');
 
-          // Stuck-at-0 on the wire feeding FF_B.D — proxy for
-          // an extreme slow-to-rise fault.
-          const buggyWire = h.wire(inv2.id, ffB.id, 0);
-          buggyWire.stuckAt = 0;
+          // Real transition fault — wire stalls the first 0→1 edge,
+          // so FF_B captures the stale 0 instead of the new 1.
+          const slowWire = h.wire(ffA.id, inv1.id, 0);
+          slowWire.slowToRise = true;
 
           return {
             nodes: [clk, aIn, ffA, inv1, inv2, ffB, qaOut, qbOut],
             wires: [
               h.wire(aIn.id, ffA.id, 0),                  // A → FF_A.D
               h.wire(clk.id, ffA.id, 1, 0, { isClockWire: true }),
-              h.wire(ffA.id, inv1.id, 0),                 // FF_A.Q → NOT
+              slowWire,                                   // FF_A.Q → NOT  (SLOW-TO-RISE)
               h.wire(inv1.id, inv2.id, 0),                // NOT → NOT (net buffer)
-              buggyWire,                                  // NOT → FF_B.D (FAULTY)
+              h.wire(inv2.id, ffB.id, 0),                 // NOT → FF_B.D
               h.wire(clk.id, ffB.id, 1, 0, { isClockWire: true }),
-              h.wire(ffA.id, qaOut.id, 0),
-              h.wire(ffB.id, qbOut.id, 0),
+              h.wire(ffA.id, qaOut.id, 0),                // FF_A.Q → Q_A (post-FF)
+              h.wire(ffB.id, qbOut.id, 0),                // FF_B.Q → Q_B (post-FF)
             ],
           };
         }),
@@ -3921,8 +3988,8 @@ Coupling faults נעות. דוגמה: \`CFin(aggressor=5, victim=3, trigger='01'
 
 מהן הקבוצות של תקלות שקולות (equivalent), ומה הרשימה ה-**collapsed** המינימלית? כמה תקלות חוסכים?`,
     schematic: `
-<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="3-input NAND with all 8 stuck-at fault sites and a behavior table.">
+<svg viewBox="0 0 1000 480" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="3-input NAND with 8 stuck-at fault sites marked.">
 
   <text x="500" y="40" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="28">
     NAND עם 3 כניסות — 8 תקלות stuck-at
@@ -3931,7 +3998,6 @@ Coupling faults נעות. דוגמה: \`CFin(aggressor=5, victim=3, trigger='01'
     Y = ¬(A · B · C)
   </text>
 
-  <!-- ===== TOP PANEL: gate diagram ===== -->
   <rect x="20" y="90" width="960" height="380" rx="12"
         fill="rgba(96,192,255,0.04)" stroke="rgba(128,212,255,0.5)" stroke-width="2"/>
 
@@ -3965,58 +4031,6 @@ Coupling faults נעות. דוגמה: \`CFin(aggressor=5, victim=3, trigger='01'
   <!-- Fault legend -->
   <text x="500" y="438" text-anchor="middle" fill="#ff8080" font-size="18" font-style="italic">
     8 fault sites: A_sa0/sa1 · B_sa0/sa1 · C_sa0/sa1 · Y_sa0/sa1
-  </text>
-
-  <!-- ===== BOTTOM PANEL: behavior table ===== -->
-  <rect x="20" y="490" width="960" height="490" rx="12"
-        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
-  <text x="500" y="528" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
-    התנהגות ה-Y בכל קומבינציה של ABC
-  </text>
-
-  <!-- Table header -->
-  <g font-size="18" font-weight="bold">
-    <text x="80" y="582" text-anchor="middle" fill="#cca040">ABC</text>
-    <text x="180" y="582" text-anchor="middle" fill="#80c8ff">Y free</text>
-    <text x="290" y="582" text-anchor="middle" fill="#ff6080">A_sa0</text>
-    <text x="370" y="582" text-anchor="middle" fill="#ff6080">A_sa1</text>
-    <text x="450" y="582" text-anchor="middle" fill="#ff6080">B_sa0</text>
-    <text x="530" y="582" text-anchor="middle" fill="#ff6080">B_sa1</text>
-    <text x="610" y="582" text-anchor="middle" fill="#ff6080">C_sa0</text>
-    <text x="690" y="582" text-anchor="middle" fill="#ff6080">C_sa1</text>
-    <text x="800" y="582" text-anchor="middle" fill="#cc66ff">Y_sa0</text>
-    <text x="900" y="582" text-anchor="middle" fill="#cc66ff">Y_sa1</text>
-  </g>
-
-  <!-- Table separator -->
-  <line x1="40" y1="595" x2="960" y2="595" stroke="#3a4a5a" stroke-width="1.4"/>
-
-  <!-- Table rows for 8 input combinations -->
-  ${[
-    { abc: '000', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
-    { abc: '001', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
-    { abc: '010', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
-    { abc: '011', yFree: 1, vals: [1,0,1,1,1,1,0,1] },  // A_sa1 → ¬(1·1·1)=0
-    { abc: '100', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
-    { abc: '101', yFree: 1, vals: [1,1,1,0,1,1,0,1] },  // B_sa1 → ¬(1·1·1)=0
-    { abc: '110', yFree: 1, vals: [1,1,1,1,1,0,0,1] },  // C_sa1 → ¬(1·1·1)=0
-    { abc: '111', yFree: 0, vals: [1,0,1,0,1,0,0,1] },
-  ].map((r, i) => {
-    const y = 620 + i * 42;
-    const fills = ['#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#cc66ff','#cc66ff'];
-    let html = `<text x="80" y="${y}" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">${r.abc}</text>`;
-    html += `<text x="180" y="${y}" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">${r.yFree}</text>`;
-    const xs = [290, 370, 450, 530, 610, 690, 800, 900];
-    r.vals.forEach((v, j) => {
-      const fill = (v === r.yFree) ? '#c8b090' : fills[j];
-      const weight = (v === r.yFree) ? 'normal' : 'bold';
-      html += `<text x="${xs[j]}" y="${y}" text-anchor="middle" fill="${fill}" font-size="18" font-weight="${weight}">${v}</text>`;
-    });
-    return html;
-  }).join('')}
-
-  <text x="500" y="970" text-anchor="middle" fill="#ffe080" font-size="20" font-style="italic">
-    תאים מודגשים = הפלט שונה מ-Y free — וקטור שמזהה את התקלה
   </text>
 </svg>`,
     parts: [
@@ -4093,6 +4107,61 @@ NAND עם 3 כניסות. שנה את \`A, B, C\` ב-\`(0,0,0)\` עד \`(1,1,1)\
           'collapsing', 'collapse', 'collapsed',
           'dominance', 'dominated',
         ],
+        answerSchematic: `
+<svg viewBox="0 0 1000 540" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Behavior of Y for all 8 input combinations under each of the 8 stuck-at faults — equivalence classes become visible.">
+
+  <rect x="20" y="20" width="960" height="490" rx="12"
+        fill="rgba(255,176,96,0.05)" stroke="rgba(255,176,96,0.55)" stroke-width="2"/>
+  <text x="500" y="58" text-anchor="middle" fill="#ffc080" font-weight="bold" font-size="24">
+    התנהגות ה-Y בכל קומבינציה של ABC
+  </text>
+
+  <!-- Table header -->
+  <g font-size="18" font-weight="bold">
+    <text x="80" y="112" text-anchor="middle" fill="#cca040">ABC</text>
+    <text x="180" y="112" text-anchor="middle" fill="#80c8ff">Y free</text>
+    <text x="290" y="112" text-anchor="middle" fill="#ff6080">A_sa0</text>
+    <text x="370" y="112" text-anchor="middle" fill="#ff6080">A_sa1</text>
+    <text x="450" y="112" text-anchor="middle" fill="#ff6080">B_sa0</text>
+    <text x="530" y="112" text-anchor="middle" fill="#ff6080">B_sa1</text>
+    <text x="610" y="112" text-anchor="middle" fill="#ff6080">C_sa0</text>
+    <text x="690" y="112" text-anchor="middle" fill="#ff6080">C_sa1</text>
+    <text x="800" y="112" text-anchor="middle" fill="#cc66ff">Y_sa0</text>
+    <text x="900" y="112" text-anchor="middle" fill="#cc66ff">Y_sa1</text>
+  </g>
+
+  <!-- Table separator -->
+  <line x1="40" y1="125" x2="960" y2="125" stroke="#3a4a5a" stroke-width="1.4"/>
+
+  <!-- Table rows for 8 input combinations -->
+  ${[
+    { abc: '000', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '001', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '010', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '011', yFree: 1, vals: [1,0,1,1,1,1,0,1] },
+    { abc: '100', yFree: 1, vals: [1,1,1,1,1,1,0,1] },
+    { abc: '101', yFree: 1, vals: [1,1,1,0,1,1,0,1] },
+    { abc: '110', yFree: 1, vals: [1,1,1,1,1,0,0,1] },
+    { abc: '111', yFree: 0, vals: [1,0,1,0,1,0,0,1] },
+  ].map((r, i) => {
+    const y = 150 + i * 42;
+    const fills = ['#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#ff6080','#cc66ff','#cc66ff'];
+    let html = `<text x="80" y="${y}" text-anchor="middle" fill="#cca040" font-size="18" font-weight="bold">${r.abc}</text>`;
+    html += `<text x="180" y="${y}" text-anchor="middle" fill="#80c8ff" font-size="18" font-weight="bold">${r.yFree}</text>`;
+    const xs = [290, 370, 450, 530, 610, 690, 800, 900];
+    r.vals.forEach((v, j) => {
+      const fill = (v === r.yFree) ? '#c8b090' : fills[j];
+      const weight = (v === r.yFree) ? 'normal' : 'bold';
+      html += `<text x="${xs[j]}" y="${y}" text-anchor="middle" fill="${fill}" font-size="18" font-weight="${weight}">${v}</text>`;
+    });
+    return html;
+  }).join('')}
+
+  <text x="500" y="500" text-anchor="middle" fill="#ffe080" font-size="20" font-style="italic">
+    תאים מודגשים = הפלט שונה מ-Y free — וקטור שמזהה את התקלה
+  </text>
+</svg>`,
         circuit: () => build(() => {
           // 3-input NAND with PIs and Y output. The student can
           // right-click any wire and inject stuck-at faults via

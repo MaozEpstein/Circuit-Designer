@@ -718,126 +718,173 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
 
 **שערים:** 2 NOT, 2 AND-2, 1 AND-3, 1 OR-2 (פלוס 2 D-FFים).`,
         answerSchematic: `
-<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="State diagram and K-maps for 11 detector FSM">
-  <!-- State diagram -->
-  <text x="120" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">State Diagram</text>
-
-  <!-- S0 -->
-  <circle cx="60" cy="120" r="28" fill="#0a1520" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="60" y="118" text-anchor="middle" fill="#80f0a0" font-weight="bold">S0</text>
-  <text x="60" y="132" text-anchor="middle" fill="#80f0a0" font-size="16">y=0</text>
-
-  <!-- S1 -->
-  <circle cx="180" cy="120" r="28" fill="#0a1520" stroke="#80f0a0" stroke-width="1.8"/>
-  <text x="180" y="118" text-anchor="middle" fill="#80f0a0" font-weight="bold">S1</text>
-  <text x="180" y="132" text-anchor="middle" fill="#80f0a0" font-size="16">y=0</text>
-
-  <!-- S2 -->
-  <circle cx="180" cy="240" r="28" fill="#0a1520" stroke="#f0a040" stroke-width="2"/>
-  <text x="180" y="238" text-anchor="middle" fill="#f0a040" font-weight="bold">S2</text>
-  <text x="180" y="252" text-anchor="middle" fill="#f0a040" font-size="16">y=1</text>
-
-  <!-- Transitions -->
-  <!-- S0 -> S1, x=1 -->
-  <path d="M 92 115 Q 120 100 152 115" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="120" y="92" text-anchor="middle" fill="#c8d8f0" font-size="16">x=1</text>
-
-  <!-- S1 -> S0, x=0 -->
-  <path d="M 152 130 Q 120 145 92 130" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="120" y="158" text-anchor="middle" fill="#c8d8f0" font-size="16">x=0</text>
-
-  <!-- S1 -> S2, x=1 -->
-  <path d="M 180 148 L 180 212" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="190" y="184" fill="#c8d8f0" font-size="16">x=1</text>
-
-  <!-- S2 -> S0, x=0 -->
-  <path d="M 156 230 Q 100 200 60 152" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="86" y="195" fill="#c8d8f0" font-size="16">x=0</text>
-
-  <!-- S2 -> S2, x=1 (self-loop) -->
-  <path d="M 200 268 Q 240 280 230 250 Q 220 224 200 240" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="240" y="265" fill="#c8d8f0" font-size="16">x=1</text>
-
-  <!-- S0 self-loop, x=0 -->
-  <path d="M 40 95 Q 8 75 18 110 Q 28 145 50 145" fill="none" stroke="#c8d8f0" stroke-width="1.4" marker-end="url(#arrowEnd)"/>
-  <text x="0" y="100" fill="#c8d8f0" font-size="16">x=0</text>
-
-  <!-- Arrow marker -->
+<svg viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="State diagram (triangular layout) and three framed K-maps for the 11-detector FSM">
   <defs>
-    <marker id="arrowEnd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M0,0 L10,5 L0,10 z" fill="#c8d8f0"/>
+    <linearGradient id="fdState" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
+    </linearGradient>
+    <linearGradient id="fdAccept" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1a08"/><stop offset="1" stop-color="#180c04"/>
+    </linearGradient>
+    <marker id="fdAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c8d8f0"/>
     </marker>
   </defs>
 
-  <!-- K-maps -->
-  <text x="500" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="16">K-maps</text>
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1200" height="52" fill="#0c1a28"/>
+  <text x="600" y="32" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    11-detector  —  state diagram  +  K-maps  (Moore, 3 states)
+  </text>
 
-  <!-- D1 K-map -->
-  <text x="380" y="55" fill="#80f0a0" font-weight="bold">D1 = x·(Q1+Q0)</text>
-  <text x="430" y="78" text-anchor="middle" fill="#80b0e0" font-size="16">x</text>
-  <text x="395" y="98" text-anchor="middle" fill="#80b0e0" font-size="16">Q1Q0</text>
-  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
-    <text x="425" y="95">0</text>
-    <text x="455" y="95">1</text>
-    <text x="395" y="115">00</text>
-    <text x="425" y="115">0</text>
-    <text x="455" y="115">0</text>
-    <text x="395" y="135">01</text>
-    <text x="425" y="135">0</text>
-    <text x="455" y="135" fill="#80f0a0" font-weight="bold">1</text>
-    <text x="395" y="155">11</text>
-    <text x="425" y="155" fill="#f0a040">X</text>
-    <text x="455" y="155" fill="#f0a040">X</text>
-    <text x="395" y="175">10</text>
-    <text x="425" y="175">0</text>
-    <text x="455" y="175" fill="#80f0a0" font-weight="bold">1</text>
-  </g>
-  <!-- Group on right column rows 01,11,10 -->
-  <rect x="442" y="125" width="28" height="60" rx="10" fill="none" stroke="#39ff80" stroke-width="2"/>
+  <!-- ═════════════════════ SECTION 1 — STATE DIAGRAM ═════════════════════ -->
+  <text x="60" y="86" fill="#a0b0c0" font-size="18" font-style="italic">state diagram   (encoding: S0=00, S1=01, S2=10 · state 11 = don't-care)</text>
 
-  <!-- D0 K-map -->
-  <text x="510" y="220" fill="#80f0a0" font-weight="bold">D0 = ¬Q1·¬Q0·x</text>
-  <text x="430" y="245" text-anchor="middle" fill="#80b0e0" font-size="16">x</text>
-  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
-    <text x="425" y="262">0</text>
-    <text x="455" y="262">1</text>
-    <text x="395" y="282">00</text>
-    <text x="425" y="282">0</text>
-    <text x="455" y="282" fill="#80f0a0" font-weight="bold">1</text>
-    <text x="395" y="302">01</text>
-    <text x="425" y="302">0</text>
-    <text x="455" y="302">0</text>
-    <text x="395" y="322">11</text>
-    <text x="425" y="322" fill="#f0a040">X</text>
-    <text x="455" y="322" fill="#f0a040">X</text>
-    <text x="395" y="342">10</text>
-    <text x="425" y="342">0</text>
-    <text x="455" y="342">0</text>
-  </g>
-  <circle cx="455" cy="278" r="11" fill="none" stroke="#39ff80" stroke-width="2"/>
+  <!-- Frame around state diagram -->
+  <rect x="40" y="98" width="1120" height="290" rx="12" fill="rgba(96,192,255,0.03)" stroke="#2a4060" stroke-width="1.6"/>
 
-  <!-- y K-map -->
-  <text x="640" y="55" fill="#80f0a0" font-weight="bold">y = Q1</text>
-  <text x="640" y="78" text-anchor="middle" fill="#80b0e0" font-size="16">x</text>
-  <text x="610" y="98" text-anchor="middle" fill="#80b0e0" font-size="16">Q1Q0</text>
-  <g fill="#c8d8f0" font-size="16" text-anchor="middle">
-    <text x="635" y="95">0</text>
-    <text x="665" y="95">1</text>
-    <text x="610" y="115">00</text>
-    <text x="635" y="115">0</text>
-    <text x="665" y="115">0</text>
-    <text x="610" y="135">01</text>
-    <text x="635" y="135">0</text>
-    <text x="665" y="135">0</text>
-    <text x="610" y="155">11</text>
-    <text x="635" y="155" fill="#f0a040">X</text>
-    <text x="665" y="155" fill="#f0a040">X</text>
-    <text x="610" y="175">10</text>
-    <text x="635" y="175" fill="#80f0a0" font-weight="bold">1</text>
-    <text x="665" y="175" fill="#80f0a0" font-weight="bold">1</text>
+  <!-- S0 (top-left) -->
+  <circle cx="220" cy="240" r="58" fill="url(#fdState)" stroke="#80f0a0" stroke-width="2.4"/>
+  <text x="220" y="232" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">S0</text>
+  <text x="220" y="258" text-anchor="middle" fill="#a0c8b0" font-size="18">y = 0</text>
+  <text x="220" y="278" text-anchor="middle" fill="#608060" font-size="18">(00)</text>
+
+  <!-- S1 (top-middle) -->
+  <circle cx="600" cy="240" r="58" fill="url(#fdState)" stroke="#80f0a0" stroke-width="2.4"/>
+  <text x="600" y="232" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">S1</text>
+  <text x="600" y="258" text-anchor="middle" fill="#a0c8b0" font-size="18">y = 0</text>
+  <text x="600" y="278" text-anchor="middle" fill="#608060" font-size="18">(01)</text>
+
+  <!-- S2 (top-right, accepting state) -->
+  <circle cx="980" cy="240" r="62" fill="url(#fdAccept)" stroke="#f0a040" stroke-width="3"/>
+  <circle cx="980" cy="240" r="52" fill="none" stroke="#f0a040" stroke-width="1.4"/>
+  <text x="980" y="232" text-anchor="middle" fill="#f0a040" font-weight="bold" font-size="24">S2</text>
+  <text x="980" y="258" text-anchor="middle" fill="#ffc080" font-size="18">y = 1</text>
+  <text x="980" y="278" text-anchor="middle" fill="#806040" font-size="18">(10)</text>
+
+  <!-- Transitions ─────────────────────────────────────── -->
+  <!-- S0 → S1 (x=1)  upper arc -->
+  <path d="M 278 224 Q 410 168 542 224" fill="none" stroke="#c8d8f0" stroke-width="2" marker-end="url(#fdAr)"/>
+  <text x="410" y="178" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">x=1</text>
+
+  <!-- S1 → S0 (x=0)  lower arc -->
+  <path d="M 542 256 Q 410 312 278 256" fill="none" stroke="#c8d8f0" stroke-width="2" marker-end="url(#fdAr)"/>
+  <text x="410" y="334" text-anchor="middle" fill="#ffd060" font-size="20" font-weight="bold">x=0</text>
+
+  <!-- S1 → S2 (x=1)  upper arc -->
+  <path d="M 658 224 Q 790 168 922 224" fill="none" stroke="#c8d8f0" stroke-width="2" marker-end="url(#fdAr)"/>
+  <text x="790" y="178" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">x=1</text>
+
+  <!-- S2 → S0 (x=0)  big sweeping arc under everything -->
+  <path d="M 952 296 Q 600 388 248 296" fill="none" stroke="#c8d8f0" stroke-width="2" marker-end="url(#fdAr)"/>
+  <text x="600" y="378" text-anchor="middle" fill="#ffd060" font-size="20" font-weight="bold">x=0</text>
+
+  <!-- S0 self-loop (x=0) on the left -->
+  <path d="M 168 218 Q 96 180 96 240 Q 96 300 168 262" fill="none" stroke="#c8d8f0" stroke-width="2" marker-end="url(#fdAr)"/>
+  <text x="64" y="244" text-anchor="middle" fill="#ffd060" font-size="20" font-weight="bold">x=0</text>
+
+  <!-- S2 self-loop (x=1) on the right -->
+  <path d="M 1036 218 Q 1108 180 1108 240 Q 1108 300 1036 262" fill="none" stroke="#c8d8f0" stroke-width="2" marker-end="url(#fdAr)"/>
+  <text x="1140" y="244" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">x=1</text>
+
+  <!-- ═════════════════════ SECTION 2 — K-MAPS ═════════════════════ -->
+  <text x="60" y="426" fill="#a0b0c0" font-size="18" font-style="italic">K-maps   (rows: Q1Q0 in Gray order · columns: x · cells highlighted by group)</text>
+
+  <!-- ─── K-map 1: D1 ─── -->
+  <g transform="translate(40, 444)">
+    <rect x="0" y="0" width="360" height="396" rx="12" fill="rgba(96,192,255,0.03)" stroke="#80c8ff" stroke-width="1.6"/>
+    <text x="180" y="36" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="24">D1  =  x · (Q1 + Q0)</text>
+    <text x="180" y="62" text-anchor="middle" fill="#a0c0e0" font-size="18">next state of Q1</text>
+
+    <!-- Axis labels -->
+    <text x="220" y="106" text-anchor="middle" fill="#80b0e0" font-size="20" font-weight="bold">x</text>
+    <text x="76" y="170" text-anchor="middle" fill="#80b0e0" font-size="20" font-weight="bold">Q1Q0</text>
+
+    <!-- Column headers -->
+    <text x="200" y="146" text-anchor="middle" fill="#c8d8f0" font-size="20">0</text>
+    <text x="280" y="146" text-anchor="middle" fill="#c8d8f0" font-size="20">1</text>
+
+    <!-- Row labels + grid -->
+    ${[
+      { row: '00', vals: ['0','0'], y: 192 },
+      { row: '01', vals: ['0','1'], y: 248 },
+      { row: '11', vals: ['X','X'], y: 304 },
+      { row: '10', vals: ['0','1'], y: 360 },
+    ].map(r => `
+      <text x="130" y="${r.y + 8}" text-anchor="middle" fill="#c8d8f0" font-size="20" font-weight="bold">${r.row}</text>
+      <rect x="160" y="${r.y - 24}" width="80" height="48" fill="rgba(255,255,255,0.02)" stroke="#506080" stroke-width="1"/>
+      <rect x="240" y="${r.y - 24}" width="80" height="48" fill="rgba(255,255,255,0.02)" stroke="#506080" stroke-width="1"/>
+      <text x="200" y="${r.y + 8}" text-anchor="middle" fill="${r.vals[0] === '1' ? '#80f0a0' : (r.vals[0] === 'X' ? '#f0a040' : '#506080')}" font-size="24" font-weight="bold">${r.vals[0]}</text>
+      <text x="280" y="${r.y + 8}" text-anchor="middle" fill="${r.vals[1] === '1' ? '#80f0a0' : (r.vals[1] === 'X' ? '#f0a040' : '#506080')}" font-size="24" font-weight="bold">${r.vals[1]}</text>
+    `).join('')}
+
+    <!-- Group: x=1 column, rows 01,11,10 (using don't-care) -->
+    <rect x="246" y="226" width="68" height="160" rx="20" fill="none" stroke="#39ff80" stroke-width="3"/>
   </g>
-  <!-- Group: rows 10,11 (both columns) -->
-  <rect x="622" y="148" width="58" height="38" rx="14" fill="none" stroke="#39ff80" stroke-width="2"/>
+
+  <!-- ─── K-map 2: D0 ─── -->
+  <g transform="translate(420, 444)">
+    <rect x="0" y="0" width="360" height="396" rx="12" fill="rgba(96,192,255,0.03)" stroke="#80c8ff" stroke-width="1.6"/>
+    <text x="180" y="36" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="24">D0  =  ¬Q1 · ¬Q0 · x</text>
+    <text x="180" y="62" text-anchor="middle" fill="#a0c0e0" font-size="18">next state of Q0</text>
+
+    <text x="220" y="106" text-anchor="middle" fill="#80b0e0" font-size="20" font-weight="bold">x</text>
+    <text x="76" y="170" text-anchor="middle" fill="#80b0e0" font-size="20" font-weight="bold">Q1Q0</text>
+
+    <text x="200" y="146" text-anchor="middle" fill="#c8d8f0" font-size="20">0</text>
+    <text x="280" y="146" text-anchor="middle" fill="#c8d8f0" font-size="20">1</text>
+
+    ${[
+      { row: '00', vals: ['0','1'], y: 192 },
+      { row: '01', vals: ['0','0'], y: 248 },
+      { row: '11', vals: ['X','X'], y: 304 },
+      { row: '10', vals: ['0','0'], y: 360 },
+    ].map(r => `
+      <text x="130" y="${r.y + 8}" text-anchor="middle" fill="#c8d8f0" font-size="20" font-weight="bold">${r.row}</text>
+      <rect x="160" y="${r.y - 24}" width="80" height="48" fill="rgba(255,255,255,0.02)" stroke="#506080" stroke-width="1"/>
+      <rect x="240" y="${r.y - 24}" width="80" height="48" fill="rgba(255,255,255,0.02)" stroke="#506080" stroke-width="1"/>
+      <text x="200" y="${r.y + 8}" text-anchor="middle" fill="${r.vals[0] === '1' ? '#80f0a0' : (r.vals[0] === 'X' ? '#f0a040' : '#506080')}" font-size="24" font-weight="bold">${r.vals[0]}</text>
+      <text x="280" y="${r.y + 8}" text-anchor="middle" fill="${r.vals[1] === '1' ? '#80f0a0' : (r.vals[1] === 'X' ? '#f0a040' : '#506080')}" font-size="24" font-weight="bold">${r.vals[1]}</text>
+    `).join('')}
+
+    <!-- Group: single 1-cell (row 00, x=1) -->
+    <rect x="246" y="172" width="68" height="44" rx="18" fill="none" stroke="#39ff80" stroke-width="3"/>
+  </g>
+
+  <!-- ─── K-map 3: y ─── -->
+  <g transform="translate(800, 444)">
+    <rect x="0" y="0" width="360" height="396" rx="12" fill="rgba(240,160,64,0.04)" stroke="#f0a040" stroke-width="1.6"/>
+    <text x="180" y="36" text-anchor="middle" fill="#f0a040" font-weight="bold" font-size="24">y  =  Q1</text>
+    <text x="180" y="62" text-anchor="middle" fill="#c8b090" font-size="18">Moore output (state only)</text>
+
+    <text x="220" y="106" text-anchor="middle" fill="#80b0e0" font-size="20" font-weight="bold">x</text>
+    <text x="76" y="170" text-anchor="middle" fill="#80b0e0" font-size="20" font-weight="bold">Q1Q0</text>
+
+    <text x="200" y="146" text-anchor="middle" fill="#c8d8f0" font-size="20">0</text>
+    <text x="280" y="146" text-anchor="middle" fill="#c8d8f0" font-size="20">1</text>
+
+    ${[
+      { row: '00', vals: ['0','0'], y: 192 },
+      { row: '01', vals: ['0','0'], y: 248 },
+      { row: '11', vals: ['X','X'], y: 304 },
+      { row: '10', vals: ['1','1'], y: 360 },
+    ].map(r => `
+      <text x="130" y="${r.y + 8}" text-anchor="middle" fill="#c8d8f0" font-size="20" font-weight="bold">${r.row}</text>
+      <rect x="160" y="${r.y - 24}" width="80" height="48" fill="rgba(255,255,255,0.02)" stroke="#506080" stroke-width="1"/>
+      <rect x="240" y="${r.y - 24}" width="80" height="48" fill="rgba(255,255,255,0.02)" stroke="#506080" stroke-width="1"/>
+      <text x="200" y="${r.y + 8}" text-anchor="middle" fill="${r.vals[0] === '1' ? '#f0a040' : (r.vals[0] === 'X' ? '#806040' : '#506080')}" font-size="24" font-weight="bold">${r.vals[0]}</text>
+      <text x="280" y="${r.y + 8}" text-anchor="middle" fill="${r.vals[1] === '1' ? '#f0a040' : (r.vals[1] === 'X' ? '#806040' : '#506080')}" font-size="24" font-weight="bold">${r.vals[1]}</text>
+    `).join('')}
+
+    <!-- Group: rows 11,10 (both columns) — covers Q1=1 -->
+    <rect x="166" y="282" width="148" height="104" rx="18" fill="none" stroke="#f0a040" stroke-width="3"/>
+  </g>
+
+  <!-- Footer -->
+  <text x="600" y="884" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">
+    Cost  =  2 NOT  +  2 AND-2  +  1 AND-3  +  1 OR-2   plus  2 D-FFs
+  </text>
 </svg>
 `,
         interviewerMindset:
@@ -964,59 +1011,126 @@ assign clk_out = pos_high | n;  // 1.5 cycles high, 1.5 cycles low
           'ב-Moore היו צריכים 3 מצבים (גם "ראיתי 11"); ב-Mealy שניים מספיקים — זה הניצחון המבני של Mealy.',
         ],
         answer:
-`**2 מצבים** — מינימום מוחלט.
+`### **2 מצבים** — המינימום המוחלט
 
-- \`S0\` — "הביט האחרון היה 0" (או מצב התחלה).
-- \`S1\` — "הביט האחרון היה 1".
+| מצב | משמעות |
+|---|---|
+| \`S0\` | הביט האחרון היה \`0\` (או מצב התחלה) |
+| \`S1\` | הביט האחרון היה \`1\` |
 
-**מעברים** (פורמט Mealy: \`X / Y\`):
+### טבלת מעברים (Mealy — תווית \`X / Y\` על כל חץ)
 
-| ממצב | X=0 / Y | X=1 / Y |
-|------|---------|---------|
-| S0   | S0 / 0  | S1 / 0  |
-| S1   | S0 / 0  | S1 / **1** ← זיהוי! חופף |
+| ממצב \\ \`X\` | \`X = 0\` | \`X = 1\` |
+|---|---|---|
+| **\`S0\`** | \`S0 / 0\` | \`S1 / 0\` |
+| **\`S1\`** | \`S0 / 0\` | \`S1 / 1\` &nbsp; **← זיהוי**  |
 
-**למה רק 2?** ב-Mealy ה-Y "חי על החץ", לא במצב — אז לא צריך מצב נפרד שמייצג "זה הרגע של הזיהוי". המידע היחיד שצריך לזכור הוא: האם הביט הקודם היה 1.
+### למה דווקא 2 מצבים
 
-**חפיפה (overlap):** מ-\`S1\` עם X=1 חוזרים ל-\`S1\` (לא מאופסים ל-S0) — ולכן רצף "111" נותן Y=1 בשני ה-cycles האחרונים. ב-S1 כל "1" נוסף מייד מפיק זיהוי.`,
+ב-Mealy ה-\`Y\` יושב על **החץ**, לא במצב — אז אין צורך במצב נפרד שמייצג "זה הרגע של הזיהוי". המידע היחיד שדרוש: **האם הביט הקודם היה \`1\`**.
+
+### חפיפה (overlap)
+
+מ-\`S1\` עם \`X = 1\` חוזרים ל-\`S1\` (לא מאפסים ל-\`S0\`). זה אומר שרצף \`"111"\` מפיק \`Y = 1\` ב-**שני** ה-cycles האחרונים — כל \`1\` נוסף בזמן שאנחנו ב-\`S1\` מצית זיהוי מיידי.`,
         answerSchematic: `
-<svg viewBox="0 0 420 260" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Mealy FSM state diagram for 11 detector">
-  <text x="210" y="20" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Mealy FSM — "11" Detector</text>
-  <g stroke="#80b0e0" stroke-width="1.8" fill="#0a1520">
-    <circle cx="120" cy="140" r="36"/>
-    <circle cx="300" cy="140" r="36"/>
-  </g>
-  <g fill="#c8d8f0" text-anchor="middle" font-weight="bold" font-size="18">
-    <text x="120" y="145">S0</text>
-    <text x="300" y="145">S1</text>
-  </g>
-
-  <!-- S0 -> S1  on X=1 / Y=0 -->
-  <path d="M 156 132 L 264 132" stroke="#c8d8f0" fill="none" marker-end="url(#m-arr)"/>
-  <text x="210" y="124" text-anchor="middle" fill="#c8d8f0">X=1 / Y=0</text>
-  <!-- S1 -> S0  on X=0 / Y=0 (lower curve) -->
-  <path d="M 264 152 L 156 152" stroke="#c8d8f0" fill="none" marker-end="url(#m-arr)"/>
-  <text x="210" y="170" text-anchor="middle" fill="#c8d8f0">X=0 / Y=0</text>
-
-  <!-- S0 self loop X=0 / Y=0 -->
-  <path d="M 96 112 C 60 60, 140 60, 120 104" stroke="#c8d8f0" fill="none" marker-end="url(#m-arr)"/>
-  <text x="98" y="50" text-anchor="middle" fill="#c8d8f0">X=0 / Y=0</text>
-
-  <!-- S1 self loop X=1 / Y=1 — green, highlighted -->
-  <path d="M 276 112 C 240 60, 360 60, 324 104" stroke="#39ff80" stroke-width="2" fill="none" marker-end="url(#m-arr-g)"/>
-  <text x="300" y="50" text-anchor="middle" fill="#39ff80" font-weight="bold">X=1 / Y=1</text>
-
+<svg viewBox="0 0 1140 600" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Mealy 11-detector state diagram and transition table">
   <defs>
-    <marker id="m-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <linearGradient id="m7State" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
+    </linearGradient>
+    <linearGradient id="m7Detect" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#143028"/><stop offset="1" stop-color="#081810"/>
+    </linearGradient>
+    <marker id="m7Ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#c8d8f0"/>
     </marker>
-    <marker id="m-arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <marker id="m7ArG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#39ff80"/>
+    </marker>
+    <marker id="m7ArY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffd060"/>
     </marker>
   </defs>
 
-  <text x="210" y="220" text-anchor="middle" fill="#c8d8f0" font-size="16">החץ הירוק (S1→S1, X=1) הוא הרגע שבו רצף "11" מזוהה.</text>
-  <text x="210" y="238" text-anchor="middle" fill="#c8d8f0" font-size="16">בגלל החפיפה — נשארים ב-S1, ולכן "111" → 2 זיהויים רצופים.</text>
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1140" height="52" fill="#0c1a28"/>
+  <text x="570" y="32" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    Mealy "11" detector  —  state diagram  +  transition table
+  </text>
+
+  <!-- ════════════════════ LEFT: STATE DIAGRAM ════════════════════ -->
+  <rect x="20" y="72" width="660" height="510" rx="12" fill="rgba(96,192,255,0.03)" stroke="#2a4060" stroke-width="1.6"/>
+  <text x="350" y="104" text-anchor="middle" fill="#a0b0c0" font-size="18" font-style="italic">state diagram   (label format:  X / Y)</text>
+
+  <!-- S0 -->
+  <circle cx="200" cy="320" r="68" fill="url(#m7State)" stroke="#80c8ff" stroke-width="2.4"/>
+  <text x="200" y="312" text-anchor="middle" fill="#80c8ff" font-weight="bold" font-size="28">S0</text>
+  <text x="200" y="340" text-anchor="middle" fill="#a0c0d0" font-size="18">last bit = 0</text>
+
+  <!-- S1 -->
+  <circle cx="500" cy="320" r="68" fill="url(#m7Detect)" stroke="#80f0a0" stroke-width="2.4"/>
+  <text x="500" y="312" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="28">S1</text>
+  <text x="500" y="340" text-anchor="middle" fill="#a0d0b0" font-size="18">last bit = 1</text>
+
+  <!-- S0 → S1 (X=1/Y=0)  upper arc -->
+  <path d="M 264 296 Q 350 232 436 296" fill="none" stroke="#c8d8f0" stroke-width="2.2" marker-end="url(#m7Ar)"/>
+  <text x="350" y="232" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">X=1  /  Y=0</text>
+
+  <!-- S1 → S0 (X=0/Y=0)  lower arc -->
+  <path d="M 436 344 Q 350 408 264 344" fill="none" stroke="#c8d8f0" stroke-width="2.2" marker-end="url(#m7Ar)"/>
+  <text x="350" y="436" text-anchor="middle" fill="#ffd060" font-size="20" font-weight="bold">X=0  /  Y=0</text>
+
+  <!-- S0 self-loop (X=0/Y=0) — left side -->
+  <path d="M 144 296 Q 64 248 64 320 Q 64 392 144 344" fill="none" stroke="#c8d8f0" stroke-width="2" marker-end="url(#m7ArY)"/>
+  <text x="36" y="326" text-anchor="middle" fill="#ffd060" font-size="20" font-weight="bold">X=0</text>
+  <text x="36" y="350" text-anchor="middle" fill="#ffd060" font-size="20" font-weight="bold">/ Y=0</text>
+
+  <!-- S1 self-loop (X=1/Y=1) — right side, HIGHLIGHTED green -->
+  <path d="M 556 296 Q 644 248 644 320 Q 644 392 556 344" fill="none" stroke="#39ff80" stroke-width="3" marker-end="url(#m7ArG)"/>
+  <text x="664" y="326" text-anchor="middle" fill="#39ff80" font-size="20" font-weight="bold">X=1</text>
+  <text x="664" y="350" text-anchor="middle" fill="#39ff80" font-size="20" font-weight="bold">/ Y=1</text>
+
+  <!-- Detection callout -->
+  <rect x="60" y="494" width="580" height="64" rx="8" fill="rgba(57,255,128,0.06)" stroke="#39ff80" stroke-width="1.6"/>
+  <text x="350" y="520" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">
+    החץ הירוק = רגע הזיהוי ("11")
+  </text>
+  <text x="350" y="546" text-anchor="middle" fill="#a0c0b0" font-size="18">
+    הישארות ב-S1 → רצף "111" מפיק Y=1 פעמיים (חפיפה)
+  </text>
+
+  <!-- ════════════════════ RIGHT: TRANSITION TABLE ════════════════════ -->
+  <rect x="700" y="72" width="420" height="510" rx="12" fill="rgba(240,160,64,0.04)" stroke="#cc8040" stroke-width="1.6"/>
+  <text x="910" y="104" text-anchor="middle" fill="#cca080" font-size="18" font-style="italic">transition table   (next-state  /  Y)</text>
+
+  <!-- Table header -->
+  <rect x="722" y="140" width="376" height="48" fill="#0c1a28" stroke="#3a5575" stroke-width="1.4"/>
+  <text x="790" y="170" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">from</text>
+  <text x="930" y="170" text-anchor="middle" fill="#ffd060" font-size="20" font-weight="bold">X = 0</text>
+  <text x="1050" y="170" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">X = 1</text>
+
+  <!-- Row 1: S0 -->
+  <rect x="722" y="188" width="376" height="64" fill="#0a1825" opacity="0.7"/>
+  <text x="790" y="228" text-anchor="middle" fill="#80c8ff" font-size="24" font-weight="bold">S0</text>
+  <text x="930" y="228" text-anchor="middle" fill="#c8d8f0" font-size="20">S0  /  0</text>
+  <text x="1050" y="228" text-anchor="middle" fill="#c8d8f0" font-size="20">S1  /  0</text>
+
+  <!-- Row 2: S1 -->
+  <rect x="722" y="252" width="376" height="64" fill="#0a1420" opacity="0.7"/>
+  <text x="790" y="292" text-anchor="middle" fill="#80f0a0" font-size="24" font-weight="bold">S1</text>
+  <text x="930" y="292" text-anchor="middle" fill="#c8d8f0" font-size="20">S0  /  0</text>
+  <text x="1050" y="292" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">S1  /  1 ✓</text>
+
+  <!-- Encoding strip -->
+  <text x="910" y="376" text-anchor="middle" fill="#a0b0c0" font-size="18" font-style="italic">binary encoding</text>
+  <rect x="760" y="392" width="300" height="80" rx="8" fill="rgba(96,192,255,0.04)" stroke="#506080" stroke-width="1.4"/>
+  <text x="910" y="422" text-anchor="middle" fill="#c8d8f0" font-size="20">S0  ⇔  Q = 0</text>
+  <text x="910" y="452" text-anchor="middle" fill="#c8d8f0" font-size="20">S1  ⇔  Q = 1</text>
+
+  <!-- Final hardware line -->
+  <text x="910" y="510" text-anchor="middle" fill="#80f0a0" font-size="18" font-weight="bold">→  D = X      Y = Q · X</text>
+  <text x="910" y="540" text-anchor="middle" fill="#a0c0b0" font-size="18" font-style="italic">(1 D-FF + 1 AND, no glue logic)</text>
 </svg>
 `,
         expectedAnswers: [
@@ -2507,112 +2621,7 @@ S2 →(0)→ S1 →(0)→ S2 →(0)→ S1 → … — תקוע באוסילצי�
   },
 
   // ───────────────────────────────────────────────────────────────
-  // #2013 — Counter modulo 5 (from generic counter-to-7) (slide 6)
-  // ───────────────────────────────────────────────────────────────
-  {
-    id: 'counter-mod5-from-mod8',
-    difficulty: 'easy',
-    title: 'מונה עד 5 ממונה עד 7 + שערים',
-    intro:
-`באמצעות **\`counter\`** שסופר עד 7 (3 ביטים: 0..7), רכיבי זיכרון ושערים לוגיים — ממשו **\`counter\` עד 5** (0,1,2,3,4 → חזרה ל-0).
-
-הרעיון: לאתר ידנית כשהמונה מגיע ל-5 ולדחוף אותו חזרה לאפס לפני שהוא ימשיך הלאה.`,
-    circuitRevealsAnswer: true,
-    parts: [
-      {
-        label: 'א',
-        question: 'תכנן את המעגל. אילו ביטים של המונה צריך לבדוק כדי לזהות "מגיע ל-5"? מתי לאפס?',
-        hints: [
-          'הערך 5 ב-3 ביטים = \\\`101\\\` = \\\`Q2 Q1 Q0\\\`. נסמן זאת באמצעות AND/NOT.',
-          'אבל אם נמתין שהמונה ייתן 5 ואז נאפס "בקלוק הבא" — אז יראה ספירה 0,1,2,3,4,**5**,0,1... והערך 5 הופיע. **לא רצוי.**',
-          'הפתרון: לזהות \\\`Q == 4\\\` (= \\\`100\\\`), שזה הערך **לפני** 5. בקצה הבא, במקום \\\`+1\\\`, נאפס.',
-          'במונה סינכרוני עם LOAD: כש-Q==4, אסרט \\\`LOAD\\\` ו-\\\`DATA=0\\\`. בקצה הבא הוא יטען 0.',
-          'במונה סינכרוני עם CLR: כש-Q==4, אסרט \\\`CLR\\\`. אבל לא לרוב המונים יש sync CLR — תלוי במימוש.',
-        ],
-        answer:
-`**זיהוי + מנגנון איפוס סינכרוני.**
-
-\`\`\`
-detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
-\`\`\`
-
-כש-\`detect = 1\`, נטען 0 לתוך המונה בקצה הבא במקום להגדיל. הפלט שיוצא: \`0,1,2,3,4,0,1,2,3,4,...\` בדיוק.
-
-**למה לזהות 4 ולא 5?**
-- מונה רגיל עושה \`Q_next = Q + 1\` בכל clock.
-- אם נזהה \`Q == 5\` ואז נאפס — הערך 5 כבר היה בפלט לקלוק שלם. הספירה הופכת ל-\`0,1,2,3,4,5,0,1,...\`. **שגוי** (יש 6 ערכים).
-- זיהוי \`Q == 4\` והחלפת התוספה באיפוס: ה-Q הבא הוא 0, לא 5. **נכון**.
-
-**רכיבים:**
-- 1 \`counter\` (3-bit).
-- 1 AND (Q2 ∧ ¬Q1 ∧ ¬Q0) — או \`Q2 ∧ NOR(Q1, Q0)\`.
-- 2 NOT (ל-\`¬Q1\` ו-\`¬Q0\`).
-- חיבור ל-\`LOAD\` של המונה עם \`DATA = 0\`.
-
-**שאלת המשך:** "מונה עד **N**"? אותו רעיון — זיהוי \`Q == N-1\` (השלב אחרי האחרון התקין) ⇒ load 0.`,
-        interviewerMindset:
-`שאלה קלאסית, בעיקר לבדיקה של "off-by-one" — האם המועמד יודע לזהות \`Q == N-1\` (לא \`Q == N\`)?
-
-**הסיגנל החזק:** מועמד שמסביר "אסור שערך N יופיע בפלט; אם נזהה N ואז נאפס, הספירה תהיה ארוכה ב-1 מהרצוי". זה ניתוח אינוואריאנטים בסיסי.
-
-**שאלת המשך:** "ומה אם המונה הוא **אסינכרוני** (async CLR)?" — אז זיהוי \`Q == N\` שמיד מאפס באסינכרוני עובד, כי ה-spike של N הוא glitch קצר (לא יציב לקלוק). אבל זה רע ל-STA — מועדף הסינכרוני.`,
-        expectedAnswers: [
-          '101', '100', 'Q == 4', 'Q==4', 'q2', 'q1', 'q0',
-          'load', 'CLR', 'clear', 'איפוס',
-          'detect', 'זיהוי', '4', '5',
-          'sync', 'סינכרוני',
-        ],
-      },
-    ],
-    source: 'IQ/PP — מצגת שאלות מעגלים, שקף 6 (מונה mod 5)',
-    tags: ['counter', 'modulo', 'sequential', 'verilog', 'off-by-one'],
-    circuit: () => build(() => {
-      // 3-bit COUNTER with synchronous CLR triggered when q == 4 (=100).
-      // detect = Q2 ∧ ¬Q1 ∧ ¬Q0   → drives CLR.
-      const clk    = h.clock(140, 460);
-      const enOne  = h.input(140, 200, 'EN=1');  enOne.fixedValue = 1;
-      const cnt    = h.block('COUNTER', 460, 280, { bitWidth: 3, label: 'CNT (mod 5)' });
-      // Bit slices of Q for the detect logic.
-      const split  = h.block('SPLIT', 680, 280, {
-        inBits: 3, slicesSpec: '0, 1, 2', label: 'SPLIT Q',
-      });
-      const notQ1  = h.gate('NOT', 880, 320);
-      const notQ0  = h.gate('NOT', 880, 380);
-      // detect = Q2 ∧ ¬Q1 ∧ ¬Q0 (cascaded ANDs)
-      const a1     = h.gate('AND', 1040, 320);   // ¬Q1 ∧ ¬Q0
-      const detect = h.gate('AND', 1180, 280);   // Q2 ∧ (¬Q1 ∧ ¬Q0)
-      const oQ     = h.output(900, 160, 'Q (count)');
-      const oDet   = h.output(1340, 280, 'detect (=4)');
-      return {
-        nodes: [clk, enOne, cnt, split, notQ1, notQ0, a1, detect, oQ, oDet],
-        wires: [
-          // COUNTER pins: EN(0), LOAD(1), DATA(2), CLR(3), CLK(4)
-          h.wire(enOne.id, cnt.id, 0),                                     // EN
-          h.wire(detect.id, cnt.id, 3),                                    // CLR
-          h.wire(clk.id, cnt.id, 4, 0, { isClockWire: true }),             // CLK
-          // Q → SPLIT
-          h.wire(cnt.id, split.id, 0),
-          // Q2 → AND(detect)  (split out2 = bit 2)
-          h.wire(split.id, detect.id, 0, 2),
-          // Q1 → NOT
-          h.wire(split.id, notQ1.id, 0, 1),
-          // Q0 → NOT
-          h.wire(split.id, notQ0.id, 0, 0),
-          // ¬Q1 ∧ ¬Q0
-          h.wire(notQ1.id, a1.id, 0),
-          h.wire(notQ0.id, a1.id, 1),
-          // detect = Q2 ∧ (¬Q1 ∧ ¬Q0)
-          h.wire(a1.id, detect.id, 1),
-          // Observability
-          h.wire(cnt.id, oQ.id, 0),
-          h.wire(detect.id, oDet.id, 0),
-        ],
-      };
-    }),
-  },
-
-  // ───────────────────────────────────────────────────────────────
-  // #2014 — XOR + D-FF self-feedback (slide 10)
+  // #2013 — XOR + D-FF self-feedback (slide 10)
   // ───────────────────────────────────────────────────────────────
   {
     id: 'xor-dff-self-feedback',
@@ -2822,7 +2831,7 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
   },
 
   // ───────────────────────────────────────────────────────────────
-  // #2015 — mod-8 counter from a given mod-6 counter (slide 15)
+  // #2014 — mod-8 counter from a given mod-6 counter (slide 15)
   // ───────────────────────────────────────────────────────────────
   {
     id: 'counter-mod8-from-mod6',
@@ -2847,230 +2856,100 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
           'פלט: \\\`Y[0] = c[0]\\\`, \\\`Y[1] = c[1] ∨ E\\\`, \\\`Y[2] = c[2] ∨ E\\\`. ראה הסכמה.',
         ],
         answerSchematic: `
-<svg viewBox="0 0 1080 700" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="mod-8 counter built from mod-6 + extra D-FF — gate-level diagram + state cycle table">
+<svg viewBox="0 0 1200 1280" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="mod-8 counter from mod-6 — block diagram with equation boxes + state cycle table">
   <defs>
-    <linearGradient id="m8Body" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="m8src" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
     </linearGradient>
-    <linearGradient id="m8GateGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1a2438"/><stop offset="1" stop-color="#0a1420"/>
+    <linearGradient id="m8ctl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1a14"/><stop offset="1" stop-color="#180c08"/>
     </linearGradient>
-    <marker id="m8ArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
-    <marker id="m8ArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80d4ff"/></marker>
-    <marker id="m8ArrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <linearGradient id="m8out" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14302a"/><stop offset="1" stop-color="#0a1c18"/>
+    </linearGradient>
+    <marker id="m8Ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c8d8f0"/></marker>
+    <marker id="m8ArO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff8060"/></marker>
+    <marker id="m8ArG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
   </defs>
 
   <!-- ─── Title ─── -->
-  <rect x="0" y="0" width="1080" height="44" fill="#0c1a28"/>
-  <text direction="ltr" x="540" y="28" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
-    mod-8  =  mod-6 (given)  +  1 D-FF (E)  +  detect &amp; force-clear logic
+  <rect x="0" y="0" width="1200" height="50" fill="#0c1a28"/>
+  <text direction="ltr" x="600" y="32" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    mod-8  =  mod-6 (given)  +  1 D-FF (E)  +  detect / clear / combine
   </text>
 
-  <!-- ──────────── mod-6 box (top-left) ──────────── -->
-  <rect x="60" y="80" width="160" height="110" rx="10" fill="url(#m8Body)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="140" y="120" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">mod-6</text>
-  <text direction="ltr" x="140" y="140" text-anchor="middle" fill="#a0c0e0" font-size="16">counter (given)</text>
-  <text direction="ltr" x="140" y="160" text-anchor="middle" fill="#a0c0e0" font-size="16">3-bit  Q = c[2:0]</text>
-  <text direction="ltr" x="140" y="180" text-anchor="middle" fill="#ff8060" font-size="16">CLR ← force_clr</text>
+  <!-- ═════════════════ SECTION 1 — building blocks ═════════════════ -->
+  <text direction="ltr" x="60" y="84" fill="#a0b0c0" font-size="18" font-style="italic">building blocks</text>
 
-  <!-- Three explicit c[i] output wires -->
-  <!-- c[2] -->
-  <line x1="220" y1="100" x2="380" y2="100" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="240" y="94" fill="#80d4ff" font-size="16" font-weight="bold">c[2]</text>
-  <circle cx="380" cy="100" r="3.5" fill="#80d4ff"/>
-  <!-- c[1] -->
-  <line x1="220" y1="135" x2="380" y2="135" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="240" y="129" fill="#80d4ff" font-size="16" font-weight="bold">c[1]</text>
-  <circle cx="380" cy="135" r="3.5" fill="#80d4ff"/>
-  <!-- c[0] -->
-  <line x1="220" y1="170" x2="380" y2="170" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="240" y="164" fill="#80d4ff" font-size="16" font-weight="bold">c[0]</text>
-  <circle cx="380" cy="170" r="3.5" fill="#80d4ff"/>
+  <!-- mod-6 box -->
+  <rect x="60" y="96" width="500" height="140" rx="10" fill="url(#m8src)" stroke="#80d4ff" stroke-width="2"/>
+  <text direction="ltr" x="310" y="130" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">mod-6 counter (given)</text>
+  <text direction="ltr" x="310" y="164" text-anchor="middle" fill="#c8d8f0" font-size="20">output bus  →  c[2:0]</text>
+  <text direction="ltr" x="310" y="196" text-anchor="middle" fill="#ff8060" font-size="20">input  CLR  ←  force_clr</text>
 
-  <!-- ──────────── E (D-FF) box (middle-left) ──────────── -->
-  <rect x="60" y="260" width="160" height="80" rx="10" fill="url(#m8Body)" stroke="#ff8060" stroke-width="2"/>
-  <text direction="ltr" x="140" y="294" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="18">E (D-FF)</text>
-  <text direction="ltr" x="140" y="316" text-anchor="middle" fill="#806040" font-size="16">extra MSB-like state</text>
+  <!-- E (D-FF) box -->
+  <rect x="620" y="96" width="520" height="140" rx="10" fill="url(#m8src)" stroke="#ff8060" stroke-width="2"/>
+  <text direction="ltr" x="880" y="130" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="24">E  (extra D-FF)</text>
+  <text direction="ltr" x="880" y="164" text-anchor="middle" fill="#c8d8f0" font-size="20">output       →  E</text>
+  <text direction="ltr" x="880" y="196" text-anchor="middle" fill="#ff8060" font-size="20">input  D    ←  E_next</text>
 
-  <!-- E output -->
-  <line x1="220" y1="290" x2="380" y2="290" stroke="#ff8060" stroke-width="1.8"/>
-  <text direction="ltr" x="240" y="284" fill="#ff8060" font-size="16" font-weight="bold">E</text>
-  <circle cx="380" cy="290" r="4" fill="#ff8060"/>
+  <!-- bus arrows down -->
+  <line x1="310" y1="236" x2="310" y2="276" stroke="#80d4ff" stroke-width="2.5" marker-end="url(#m8Ar)"/>
+  <text direction="ltr" x="324" y="262" fill="#80d4ff" font-size="20" font-weight="bold">c[2:0]</text>
+  <line x1="880" y1="236" x2="880" y2="276" stroke="#ff8060" stroke-width="2.5" marker-end="url(#m8ArO)"/>
+  <text direction="ltr" x="894" y="262" fill="#ff8060" font-size="20" font-weight="bold">E</text>
 
-  <!-- ──────────── DETECT BLOCK (explicit gates) ──────────── -->
-  <!-- c==5 detector: AND of c[2], ¬c[1], c[0] -->
-  <text direction="ltr" x="440" y="76" text-anchor="middle" fill="#a0c0e0" font-size="16" font-weight="bold">c == 5</text>
-  <text direction="ltr" x="440" y="90" text-anchor="middle" fill="#80a0c0" font-size="16">(101)</text>
-  <!-- NOT bubble on c[1] for "c==5" detector -->
-  <line x1="380" y1="135" x2="404" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
-  <circle cx="410" cy="135" r="5" fill="#0a1420" stroke="#80d4ff" stroke-width="1.4"/>
-  <line x1="415" y1="135" x2="430" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
-  <!-- AND gate -->
-  <path d="M 430 100 L 460 100 Q 490 100 490 135 Q 490 170 460 170 L 430 170 Z"
-        fill="url(#m8GateGrad)" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="455" y="139" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">AND</text>
-  <!-- c[2] going into AND -->
-  <line x1="380" y1="100" x2="430" y2="100" stroke="#80d4ff" stroke-width="1.4"/>
-  <!-- c[0] going into AND -->
-  <line x1="380" y1="170" x2="430" y2="170" stroke="#80d4ff" stroke-width="1.4"/>
-  <!-- AND output → "is5" -->
-  <line x1="490" y1="135" x2="540" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="510" y="129" fill="#80d4ff" font-size="16">is5</text>
+  <!-- ═════════════════ SECTION 2 — next-state logic ═════════════════ -->
+  <text direction="ltr" x="60" y="306" fill="#a0b0c0" font-size="18" font-style="italic">next-state logic  (combinational)</text>
 
-  <!-- c==1 detector: AND of ¬c[2], ¬c[1], c[0] (tap c[2] and c[1] further right) -->
-  <text direction="ltr" x="440" y="216" text-anchor="middle" fill="#a0c0e0" font-size="16" font-weight="bold">c == 1</text>
-  <text direction="ltr" x="440" y="230" text-anchor="middle" fill="#80a0c0" font-size="16">(001)</text>
+  <!-- DETECT box -->
+  <rect x="60" y="320" width="500" height="160" rx="10" fill="url(#m8ctl)" stroke="#cca080" stroke-width="2"/>
+  <text direction="ltr" x="310" y="354" text-anchor="middle" fill="#cca080" font-weight="bold" font-size="20">detect  (compare c against constants)</text>
+  <text direction="ltr" x="310" y="400" text-anchor="middle" fill="#c8d8f0" font-size="24">is5  =  c[2] · ¬c[1] · c[0]</text>
+  <text direction="ltr" x="310" y="446" text-anchor="middle" fill="#c8d8f0" font-size="24">is1  =  ¬c[2] · ¬c[1] · c[0]</text>
 
-  <!-- c[2] tap going DOWN to c==1 detector -->
-  <line x1="380" y1="100" x2="380" y2="220" stroke="#80d4ff" stroke-width="1.4"/>
-  <line x1="380" y1="220" x2="404" y2="220" stroke="#80d4ff" stroke-width="1.4"/>
-  <circle cx="410" cy="220" r="5" fill="#0a1420" stroke="#80d4ff" stroke-width="1.4"/>
-  <line x1="415" y1="220" x2="430" y2="220" stroke="#80d4ff" stroke-width="1.4"/>
+  <!-- COMBINE box -->
+  <rect x="620" y="320" width="520" height="160" rx="10" fill="url(#m8ctl)" stroke="#ff8060" stroke-width="2"/>
+  <text direction="ltr" x="880" y="354" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="20">combine  (with E)</text>
+  <text direction="ltr" x="880" y="400" text-anchor="middle" fill="#c8d8f0" font-size="24">a = is5 · ¬E        b = is1 ·  E</text>
+  <text direction="ltr" x="880" y="446" text-anchor="middle" fill="#ff8060" font-size="24" font-weight="bold">force_clr  =  a ∨ b</text>
 
-  <!-- AND gate for c==1 -->
-  <path d="M 430 220 L 460 220 Q 490 220 490 235 Q 490 250 460 250 L 430 250 Z"
-        fill="url(#m8GateGrad)" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="455" y="240" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">AND</text>
+  <!-- arrow detect → combine -->
+  <line x1="560" y1="400" x2="620" y2="400" stroke="#cca080" stroke-width="2.5" marker-end="url(#m8Ar)"/>
+  <text direction="ltr" x="590" y="394" text-anchor="middle" fill="#cca080" font-size="18" font-weight="bold">is5, is1</text>
 
-  <!-- c[1] tap to NOT bubble for c==1 -->
-  <line x1="380" y1="135" x2="380" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
-  <circle cx="380" cy="135" r="3.5" fill="#80d4ff"/>
-  <line x1="380" y1="235" x2="404" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
-  <circle cx="410" cy="235" r="5" fill="#0a1420" stroke="#80d4ff" stroke-width="1.4"/>
-  <line x1="415" y1="235" x2="430" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
+  <!-- E_NEXT box -->
+  <rect x="60" y="510" width="1080" height="80" rx="10" fill="url(#m8ctl)" stroke="#ff8060" stroke-width="2"/>
+  <text direction="ltr" x="600" y="560" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="24">E_next  =  E  ⊕  force_clr</text>
 
-  <!-- c[0] tap to c==1 AND -->
-  <line x1="380" y1="170" x2="380" y2="250" stroke="#80d4ff" stroke-width="1.4"/>
-  <line x1="380" y1="250" x2="430" y2="250" stroke="#80d4ff" stroke-width="1.4"/>
+  <!-- FEEDBACK row -->
+  <rect x="60" y="610" width="1080" height="74" rx="10" fill="#1a1410" stroke="#cc7050" stroke-width="1.6" stroke-dasharray="6 3"/>
+  <text direction="ltr" x="280" y="654" text-anchor="middle" fill="#ff8060" font-size="20" font-weight="bold">force_clr  →  mod-6.CLR</text>
+  <text direction="ltr" x="900" y="654" text-anchor="middle" fill="#ff8060" font-size="20" font-weight="bold">E_next  →  E.D</text>
 
-  <!-- c==1 AND output → "is1" -->
-  <line x1="490" y1="235" x2="540" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
-  <text direction="ltr" x="510" y="229" fill="#80d4ff" font-size="16">is1</text>
+  <!-- ═════════════════ SECTION 3 — output combine ═════════════════ -->
+  <text direction="ltr" x="60" y="724" fill="#a0b0c0" font-size="18" font-style="italic">output combine</text>
 
-  <!-- ── a = is5 ∧ ¬E (AND gate at x=600 y=160) ── -->
-  <line x1="540" y1="135" x2="560" y2="135" stroke="#80d4ff" stroke-width="1.4"/>
-  <!-- ¬E for a (tap E and invert) -->
-  <line x1="380" y1="290" x2="380" y2="175" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="380" y1="175" x2="554" y2="175" stroke="#ff8060" stroke-width="1.4"/>
-  <circle cx="560" cy="175" r="5" fill="#0a1420" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="565" y1="175" x2="565" y2="155" stroke="#ff8060" stroke-width="1.4"/>
-  <!-- AND for a -->
-  <path d="M 560 130 L 590 130 Q 620 130 620 155 Q 620 180 590 180 L 560 180 Z"
-        fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="585" y="158" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">a</text>
-  <!-- a output -->
-  <line x1="620" y1="155" x2="680" y2="155" stroke="#ff8060" stroke-width="1.4"/>
-  <text direction="ltr" x="640" y="149" fill="#ff8060" font-size="16">a</text>
+  <rect x="60" y="738" width="1080" height="160" rx="10" fill="url(#m8out)" stroke="#80f0a0" stroke-width="2"/>
+  <text direction="ltr" x="600" y="770" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">3-bit Y output  =  c bits ∨ E (high bit pair)</text>
+  <text direction="ltr" x="600" y="816" text-anchor="middle" fill="#c8d8f0" font-size="24">Y[2]  =  c[2]  ∨  E</text>
+  <text direction="ltr" x="600" y="852" text-anchor="middle" fill="#c8d8f0" font-size="24">Y[1]  =  c[1]  ∨  E</text>
+  <text direction="ltr" x="600" y="888" text-anchor="middle" fill="#c8d8f0" font-size="24">Y[0]  =  c[0]</text>
 
-  <!-- ── b = is1 ∧ E (AND gate) ── -->
-  <line x1="540" y1="235" x2="560" y2="235" stroke="#80d4ff" stroke-width="1.4"/>
-  <!-- E tap (no inversion) for b -->
-  <line x1="380" y1="290" x2="554" y2="290" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="554" y1="290" x2="554" y2="260" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="554" y1="260" x2="560" y2="260" stroke="#ff8060" stroke-width="1.4"/>
-  <!-- AND for b -->
-  <path d="M 560 220 L 590 220 Q 620 220 620 245 Q 620 270 590 270 L 560 270 Z"
-        fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="585" y="248" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">b</text>
-  <!-- b output -->
-  <line x1="620" y1="245" x2="680" y2="245" stroke="#ff8060" stroke-width="1.4"/>
-  <text direction="ltr" x="640" y="259" fill="#ff8060" font-size="16">b</text>
-
-  <!-- ── OR: force_clr = a ∨ b ── -->
-  <path d="M 680 130 Q 705 200 680 270 Q 700 270 720 250 Q 740 200 720 150 Q 700 130 680 130 Z"
-        fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="708" y="204" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="16">OR</text>
-  <line x1="680" y1="155" x2="688" y2="155" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="680" y1="245" x2="688" y2="245" stroke="#ff8060" stroke-width="1.4"/>
-
-  <!-- force_clr output -->
-  <line x1="740" y1="200" x2="810" y2="200" stroke="#ff8060" stroke-width="2" marker-end="url(#m8ArrO)"/>
-  <text direction="ltr" x="775" y="194" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">force_clr</text>
-
-  <!-- ── force_clr feedback loop → mod-6.CLR ── -->
-  <line x1="775" y1="200" x2="775" y2="60" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
-  <line x1="775" y1="60" x2="30" y2="60" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
-  <line x1="30" y1="60" x2="30" y2="180" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
-  <line x1="30" y1="180" x2="60" y2="180" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3" marker-end="url(#m8ArrO)"/>
-  <text direction="ltr" x="400" y="54" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">force_clr → mod-6.CLR</text>
-
-  <!-- ── XOR: E_next = E ⊕ force_clr ── -->
-  <!-- E tap for XOR -->
-  <line x1="380" y1="290" x2="380" y2="350" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="380" y1="350" x2="780" y2="350" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="780" y1="350" x2="780" y2="320" stroke="#ff8060" stroke-width="1.4"/>
-  <!-- XOR gate (D-shape with extra curve) -->
-  <path d="M 778 280 Q 798 320 778 360" fill="none" stroke="#ff8060" stroke-width="1.4"/>
-  <path d="M 786 280 Q 818 300 838 320 Q 818 340 786 360 Q 806 320 786 280 Z"
-        fill="url(#m8GateGrad)" stroke="#ff8060" stroke-width="1.6"/>
-  <text direction="ltr" x="810" y="326" text-anchor="middle" fill="#ff8060" font-weight="bold" font-size="16">⊕</text>
-  <!-- force_clr tap (from force_clr line) into XOR -->
-  <circle cx="775" cy="280" r="4" fill="#ff8060"/>
-  <line x1="775" y1="280" x2="786" y2="280" stroke="#ff8060" stroke-width="1.4"/>
-  <!-- XOR output: E_next → loops back to E.D -->
-  <line x1="838" y1="320" x2="870" y2="320" stroke="#ff8060" stroke-width="2"/>
-  <text direction="ltr" x="855" y="314" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">E_next</text>
-  <!-- E_next loop -->
-  <line x1="870" y1="320" x2="870" y2="400" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
-  <line x1="870" y1="400" x2="30" y2="400" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
-  <line x1="30" y1="400" x2="30" y2="290" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3"/>
-  <line x1="30" y1="290" x2="60" y2="290" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="6 3" marker-end="url(#m8ArrO)"/>
-  <text direction="ltr" x="440" y="416" text-anchor="middle" fill="#ff8060" font-size="16" font-weight="bold">E_next → E.D</text>
-
-  <!-- ──────────── OUTPUT COMBINE — explicit OR gates ──────────── -->
-  <text direction="ltr" x="970" y="78" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">output combine</text>
-
-  <!-- Y[0] = c[0] direct -->
-  <line x1="380" y1="170" x2="900" y2="170" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#m8ArrG)"/>
-  <text direction="ltr" x="930" y="166" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[0]</text>
-
-  <!-- Y[1] = c[1] ∨ E -->
-  <!-- OR gate for Y[1] -->
-  <path d="M 820 100 Q 845 130 820 160 Q 840 160 855 145 Q 875 130 855 115 Q 840 100 820 100 Z"
-        fill="url(#m8GateGrad)" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="848" y="135" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">OR</text>
-  <!-- c[1] → OR.in0 (tap from c[1] line at x=380) -->
-  <circle cx="380" cy="135" r="0" fill="#80d4ff"/>
-  <line x1="380" y1="135" x2="800" y2="135" stroke="#80d4ff" stroke-width="1.4" stroke-dasharray="4 2"/>
-  <line x1="800" y1="135" x2="800" y2="115" stroke="#80d4ff" stroke-width="1.4" stroke-dasharray="4 2"/>
-  <line x1="800" y1="115" x2="820" y2="115" stroke="#80d4ff" stroke-width="1.4"/>
-  <!-- E → OR.in1 (tap from E line) -->
-  <line x1="380" y1="290" x2="800" y2="290" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="4 2"/>
-  <line x1="800" y1="290" x2="800" y2="145" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="4 2"/>
-  <line x1="800" y1="145" x2="820" y2="145" stroke="#ff8060" stroke-width="1.4"/>
-  <!-- OR output → Y[1] -->
-  <line x1="875" y1="130" x2="900" y2="130" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#m8ArrG)"/>
-  <text direction="ltr" x="930" y="126" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[1]</text>
-
-  <!-- Y[2] = c[2] ∨ E (OR gate higher up) -->
-  <path d="M 820 80 Q 845 105 820 130 Q 840 130 855 115 Q 875 100 855 88 Q 840 80 820 80 Z"
-        fill="url(#m8GateGrad)" stroke="#80f0a0" stroke-width="1.6"/>
-  <!-- c[2] → OR.in0 -->
-  <line x1="380" y1="100" x2="800" y2="100" stroke="#80d4ff" stroke-width="1.4" stroke-dasharray="4 2"/>
-  <line x1="800" y1="100" x2="800" y2="92" stroke="#80d4ff" stroke-width="1.4" stroke-dasharray="4 2"/>
-  <line x1="800" y1="92" x2="820" y2="92" stroke="#80d4ff" stroke-width="1.4"/>
-  <!-- E → OR.in1 (re-use E rail) — actually different tap height -->
-  <line x1="800" y1="290" x2="800" y2="115" stroke="#ff8060" stroke-width="0"/>
-  <line x1="804" y1="115" x2="820" y2="115" stroke="#ff8060" stroke-width="1.4"/>
-  <line x1="804" y1="115" x2="804" y2="290" stroke="#ff8060" stroke-width="1.4" stroke-dasharray="4 2"/>
-  <!-- OR output → Y[2] -->
-  <line x1="875" y1="103" x2="900" y2="103" stroke="#80f0a0" stroke-width="1.8" marker-end="url(#m8ArrG)"/>
-  <text direction="ltr" x="930" y="100" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y[2]</text>
-
-  <!-- ──────────── STATE CYCLE TABLE ──────────── -->
-  <text direction="ltr" x="540" y="460" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
-    state cycle:  8 unique configurations of (E, c) → Y
+  <!-- ═════════════════ SECTION 4 — state cycle table ═════════════════ -->
+  <text direction="ltr" x="600" y="944" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    state cycle  —  8 unique (E, c) → Y, then wraps
   </text>
 
   <!-- Table header -->
-  <rect x="80" y="476" width="920" height="32" fill="#0c1a28" stroke="#3a5575" stroke-width="1"/>
+  <rect x="40" y="960" width="1120" height="40" fill="#0c1a28" stroke="#3a5575" stroke-width="1.6"/>
   ${['step','E','c[2]','c[1]','c[0]','c (dec)','Y','transition'].map((h, i) => {
-    const x = [120, 220, 290, 350, 410, 490, 580, 760][i];
-    return `<text direction="ltr" x="${x}" y="498" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">${h}</text>`;
+    const x = [110, 230, 320, 410, 500, 620, 730, 940][i];
+    return `<text direction="ltr" x="${x}" y="988" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">${h}</text>`;
   }).join('')}
 
   <!-- Table rows -->
@@ -3080,31 +2959,31 @@ detect = Q2 ∧ ¬Q1 ∧ ¬Q0       (Q == 4 = 100)
     { step: 2, E: 0, c2: 0, c1: 1, c0: 0, dec: 2, Y: 2, trans: 'count up' },
     { step: 3, E: 0, c2: 0, c1: 1, c0: 1, dec: 3, Y: 3, trans: 'count up' },
     { step: 4, E: 0, c2: 1, c1: 0, c0: 0, dec: 4, Y: 4, trans: 'count up' },
-    { step: 5, E: 0, c2: 1, c1: 0, c0: 1, dec: 5, Y: 5, trans: 'count up — c==5 detected!' },
+    { step: 5, E: 0, c2: 1, c1: 0, c0: 1, dec: 5, Y: 5, trans: 'c==5 detected!' },
     { step: 6, E: 1, c2: 0, c1: 0, c0: 0, dec: 0, Y: 6, trans: 'force_clr fired, E toggled', hl: '#ff8060' },
-    { step: 7, E: 1, c2: 0, c1: 0, c0: 1, dec: 1, Y: 7, trans: 'count up — c==1 detected!' },
-    { step: 0, E: 0, c2: 0, c1: 0, c0: 0, dec: 0, Y: 0, trans: 'force_clr fired, E back to 0', hl: '#ff8060' },
+    { step: 7, E: 1, c2: 0, c1: 0, c0: 1, dec: 1, Y: 7, trans: 'c==1 detected!' },
+    { step: 0, E: 0, c2: 0, c1: 0, c0: 0, dec: 0, Y: 0, trans: 'force_clr fired, E → 0', hl: '#ff8060' },
   ].map((r, i) => {
-    const y = 522 + i * 19;
+    const y = 1028 + i * 28;
     const isWrap = r.hl;
     const fill = isWrap ? '#1a1410' : (i % 2 ? '#0a1420' : '#0a1825');
     const Yhl = r.Y === 6 || r.Y === 7;
     return `
-      <rect x="80" y="${y - 14}" width="920" height="19" fill="${fill}" opacity="0.7"/>
-      <text direction="ltr" x="120" y="${y}" text-anchor="middle" fill="#a0c0e0" font-size="16">${r.step}</text>
-      <text direction="ltr" x="220" y="${y}" text-anchor="middle" fill="${r.E === 1 ? '#ff8060' : '#80a0c0'}" font-size="16" font-weight="${r.E === 1 ? 'bold' : 'normal'}">${r.E}</text>
-      <text direction="ltr" x="290" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.c2}</text>
-      <text direction="ltr" x="350" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.c1}</text>
-      <text direction="ltr" x="410" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.c0}</text>
-      <text direction="ltr" x="490" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="16">${r.dec}</text>
-      <text direction="ltr" x="580" y="${y}" text-anchor="middle" fill="${Yhl ? '#ffd060' : '#80f0a0'}" font-size="18" font-weight="bold">${r.Y}</text>
-      <text direction="ltr" x="760" y="${y}" text-anchor="middle" fill="${isWrap ? '#ff8060' : '#a0a0c0'}" font-size="16" font-style="italic">${r.trans}</text>
+      <rect x="40" y="${y - 22}" width="1120" height="28" fill="${fill}" opacity="0.85"/>
+      <text direction="ltr" x="110" y="${y}" text-anchor="middle" fill="#a0c0e0" font-size="18">${r.step}</text>
+      <text direction="ltr" x="230" y="${y}" text-anchor="middle" fill="${r.E === 1 ? '#ff8060' : '#80a0c0'}" font-size="20" font-weight="${r.E === 1 ? 'bold' : 'normal'}">${r.E}</text>
+      <text direction="ltr" x="320" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="18">${r.c2}</text>
+      <text direction="ltr" x="410" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="18">${r.c1}</text>
+      <text direction="ltr" x="500" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="18">${r.c0}</text>
+      <text direction="ltr" x="620" y="${y}" text-anchor="middle" fill="#80a0c0" font-size="18">${r.dec}</text>
+      <text direction="ltr" x="730" y="${y}" text-anchor="middle" fill="${Yhl ? '#ffd060' : '#80f0a0'}" font-size="20" font-weight="bold">${r.Y}</text>
+      <text direction="ltr" x="940" y="${y}" text-anchor="middle" fill="${isWrap ? '#ff8060' : '#a0a0c0'}" font-size="18" font-style="italic">${r.trans}</text>
     `;
   }).join('')}
 
   <!-- Footer -->
-  <text direction="ltr" x="540" y="688" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">
-    Total extra components beyond mod-6:  1 D-FF (E)  +  ~8 gates  (2 detect ANDs, 2 inner ANDs, 1 OR, 1 XOR, 2 OR for Y[1]/Y[2])
+  <text direction="ltr" x="600" y="1262" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">
+    Cost  =  1 D-FF (E)  +  ~8 gates  beyond the given mod-6
   </text>
 </svg>`,
         answer:
@@ -3170,10 +3049,121 @@ Y[2] = c[2] ∨ E                              (לערכים 6,7 מקבל 1 מ-E
     ],
     source: 'IQ/PP — מצגת שאלות מעגלים, שקף 15 (mod-8 from mod-6)',
     tags: ['counter', 'modulo', 'state-extension', 'sequential', 'ff'],
+    circuit: () => build(() => {
+      // mod-8 = "given mod-6 counter" + 1 extra D-FF (E) + detect/CLR
+      // logic. Mapping (E, c) → Y:
+      //   (E=0, c=0..5) → Y=0..5
+      //   (E=1, c=0)    → Y=6
+      //   (E=1, c=1)    → Y=7
+      // detect_5 fires wrap 5→6 (E↑, c→0); detect_1 fires wrap 7→0
+      // (E↓, c→0). force_clr drives BOTH cnt.CLR and the XOR that
+      // toggles E, so the two state transitions happen on the same
+      // clock edge that fires the detector.
+      const clk    = h.clock(60, 540);
+      const enOne  = h.input(60, 260, 'EN=1');  enOne.fixedValue = 1;
+
+      const cnt    = h.block('COUNTER', 220, 300, { bitWidth: 3, label: 'mod-6 (CNT)' });
+      const split  = h.block('SPLIT', 400, 300, {
+        inBits: 3, slicesSpec: '0, 1, 2', label: 'SPLIT c',
+      });
+
+      const ffE    = h.ffD(220, 540, 'E');
+
+      const notC1  = h.gate('NOT', 580, 260);   // ¬c[1] (shared by is5, is1)
+      const notC2  = h.gate('NOT', 580, 360);   // ¬c[2]
+      const notE   = h.gate('NOT', 580, 520);   // ¬E
+
+      const is5    = h.gate('AND', 740, 260); is5.inputCount = 3;  // c[2]·¬c[1]·c[0]
+      const is1    = h.gate('AND', 740, 380); is1.inputCount = 3;  // ¬c[2]·¬c[1]·c[0]
+
+      const aGate  = h.gate('AND', 900, 260);   // is5 · ¬E
+      const bGate  = h.gate('AND', 900, 380);   // is1 · E
+      const fclr   = h.gate('OR',  1060, 320);  // force_clr = a ∨ b
+
+      const xor    = h.gate('XOR', 900, 540);   // E_next = E ⊕ force_clr
+
+      const orY1   = h.gate('OR', 1060, 140);   // Y[1] = c[1] ∨ E
+      const orY2   = h.gate('OR', 1060,  60);   // Y[2] = c[2] ∨ E
+
+      const yOut2   = h.output(1220,  60, 'Y[2]');
+      const yOut1   = h.output(1220, 140, 'Y[1]');
+      const yOut0   = h.output(1220, 220, 'Y[0]');
+      const fclrOut = h.output(1220, 320, 'force_clr');
+      const eOut    = h.output(1220, 540, 'E');
+
+      return {
+        nodes: [
+          clk, enOne, cnt, split, ffE,
+          notC1, notC2, notE,
+          is5, is1, aGate, bGate, fclr, xor,
+          orY1, orY2,
+          yOut2, yOut1, yOut0, fclrOut, eOut,
+        ],
+        wires: [
+          // COUNTER pins: EN(0), LOAD(1), DATA(2), CLR(3), CLK(4)
+          h.wire(enOne.id, cnt.id, 0),
+          h.wire(fclr.id,  cnt.id, 3),
+          h.wire(clk.id,   cnt.id, 4, 0, { isClockWire: true }),
+
+          // E FF: D(0), CLK(1)
+          h.wire(xor.id, ffE.id, 0),
+          h.wire(clk.id, ffE.id, 1, 0, { isClockWire: true }),
+
+          // COUNTER → SPLIT
+          h.wire(cnt.id, split.id, 0),
+
+          // Inverters
+          h.wire(split.id, notC1.id, 0, 1),       // c[1] → notC1
+          h.wire(split.id, notC2.id, 0, 2),       // c[2] → notC2
+          h.wire(ffE.id,   notE.id,  0),          // E    → notE
+
+          // is5 = c[2] · ¬c[1] · c[0]
+          h.wire(split.id, is5.id, 0, 2),         // c[2]
+          h.wire(notC1.id, is5.id, 1),            // ¬c[1]
+          h.wire(split.id, is5.id, 2, 0),         // c[0]
+
+          // is1 = ¬c[2] · ¬c[1] · c[0]
+          h.wire(notC2.id, is1.id, 0),            // ¬c[2]
+          h.wire(notC1.id, is1.id, 1),            // ¬c[1] (fanout)
+          h.wire(split.id, is1.id, 2, 0),         // c[0]  (fanout)
+
+          // a = is5 · ¬E ;  b = is1 · E
+          h.wire(is5.id,  aGate.id, 0),
+          h.wire(notE.id, aGate.id, 1),
+          h.wire(is1.id,  bGate.id, 0),
+          h.wire(ffE.id,  bGate.id, 1),
+
+          // force_clr = a ∨ b
+          h.wire(aGate.id, fclr.id, 0),
+          h.wire(bGate.id, fclr.id, 1),
+
+          // E_next = E ⊕ force_clr
+          h.wire(ffE.id,  xor.id, 0),
+          h.wire(fclr.id, xor.id, 1),
+
+          // Y[0] = c[0]
+          h.wire(split.id, yOut0.id, 0, 0),
+
+          // Y[1] = c[1] ∨ E
+          h.wire(split.id, orY1.id, 0, 1),
+          h.wire(ffE.id,   orY1.id, 1),
+          h.wire(orY1.id,  yOut1.id, 0),
+
+          // Y[2] = c[2] ∨ E
+          h.wire(split.id, orY2.id, 0, 2),
+          h.wire(ffE.id,   orY2.id, 1),
+          h.wire(orY2.id,  yOut2.id, 0),
+
+          // Observability
+          h.wire(fclr.id, fclrOut.id, 0),
+          h.wire(ffE.id,  eOut.id,    0),
+        ],
+      };
+    }),
   },
 
   // ───────────────────────────────────────────────────────────────
-  // #2016 — DFA: divisibility by 5 (slide 22)
+  // #2015 — DFA: divisibility by 5 (slide 22)
   // ───────────────────────────────────────────────────────────────
   {
     id: 'dfa-divisibility-by-5',
@@ -3503,7 +3493,7 @@ D0 = ¬Q2·¬Q1·x   +  ¬Q2·Q1·Q0·¬x  +  Q2·¬Q1·¬Q0·¬x     (~6 שער
   },
 
   // ───────────────────────────────────────────────────────────────
-  // #2017 — Marathon priority latch (first winner) (slide 24)
+  // #2016 — Marathon priority latch (first winner) (slide 24)
   // ───────────────────────────────────────────────────────────────
   {
     id: 'marathon-priority-latch',
@@ -3819,7 +3809,7 @@ y[0] = F₁ ∨ F₃          (low bit = 1 if F1 or F3 won)
   },
 
   // ───────────────────────────────────────────────────────────────
-  // #2018 — People counter with 2 sensors (slide 26)
+  // #2017 — People counter with 2 sensors (slide 26)
   // ───────────────────────────────────────────────────────────────
   {
     id: 'people-counter-two-sensors',
@@ -4032,7 +4022,7 @@ S3 (לא חוקי, recovery → IDLE) = 11
   },
 
   // ───────────────────────────────────────────────────────────────
-  // #2019 — Stream of squares, no MUX (slide 30)
+  // #2018 — Stream of squares, no MUX (slide 30)
   // ───────────────────────────────────────────────────────────────
   {
     id: 'squares-stream-no-mux',
@@ -4053,154 +4043,161 @@ Output: 1, 4, 9, 16, 25, 36, ..., 100, ...
         label: 'א',
         question: 'תכנן את המעגל. רמז: יש זהות חישובית פשוטה בין ריבועים עוקבים.',
         hints: [
-          'הזהות הקסומה: \\\`(k+1)² - k² = 2k + 1\\\`. ⇒ אם אנחנו יודעים את \\\`k²\\\`, ההפרש לריבוע הבא הוא \\\`2k + 1\\\`.',
-          'נחזיק שני רגיסטרים: \\\`k\\\` (counter רגיל) ו-\\\`S\\\` (=k², הפלט).',
-          'בכל קצה clock: \\\`S_new = S + 2k + 1\\\`, \\\`k_new = k + 1\\\`.',
-          'איך מחשבים \\\`2k\\\` בלי MUX? **shift left by 1 = wire shift** (פשוט מחברים חזרה את הביטים, כל ביט עולה שלב אחד). או \\\`k + k\\\` (יותר יקר).',
-          'איך מחשבים \\\`S + 2k + 1\\\`? Adder עם carry-in = 1 (כל adder עם carry-in פשוט מוסיף 1 חינם!).',
-          'אתחול: \\\`k = 1\\\`, \\\`S = 1\\\`. אחרי clock 1: \\\`k = 2\\\`, \\\`S = 1 + 2·1 + 1 = 4\\\` ✓.',
+          'הזהות: \\\`(n+1)² = n² + 2·n + 1\\\`. אם נחזיק את \\\`n²\\\` באוגר, נוכל לעדכן אותו ל-\\\`n² + 2n + 1\\\` בלי כפל.',
+          'איך מחשבים \\\`2n\\\` בלי MUX ובלי שער? **shift left by 1 = חיווט בלבד** — ביט \\\`i\\\` של \\\`n\\\` הולך לביט \\\`i+1\\\` של \\\`2n\\\`, וביט 0 של \\\`2n\\\` קבוע ל-0.',
+          'איך מוסיפים \\\`+1\\\` בלי adder נוסף? **\\\`Cin = 1\\\`** ב-Full Adder — חינם, "בא עם החומרה".',
+          'הדאטא-פאת הוא **לולאת משוב סביב אוגר אחד**: Full Adder עם \\\`A=2n\\\`, \\\`B=Q_reg\\\`, \\\`Cin=1\\\` → SUM → \\\`D\\\` של האוגר → \\\`Q\\\` חוזר ל-\\\`B\\\` וגם יוצא כ-Output.',
+          'אתחול: רוצים \\\`Output_first = 1\\\` עבור \\\`n=1\\\`? אז האוגר צריך Preset/SET שמאתחל אותו ל-1. אם מתחילים מ-\\\`n=0\\\`, \\\`S=0\\\` ראשוני עובד בלי אתחול מיוחד והפלט: 0, 1, 4, 9, 16, …',
         ],
         answerSchematic: `
-<svg viewBox="0 0 1080 520" xmlns="http://www.w3.org/2000/svg" direction="ltr"
-     font-family="'JetBrains Mono', monospace" font-size="16" role="img" aria-label="Stream of squares: 3 ALU pipeline implementing S_new = S + 2k + 1">
+<svg viewBox="0 0 1100 670" xmlns="http://www.w3.org/2000/svg" direction="ltr"
+     font-family="'JetBrains Mono', monospace" font-size="20" role="img" aria-label="Stream of squares: single FULL ADDER + REGISTER feedback loop, A=2n, B=Q, Cin=1">
   <defs>
-    <linearGradient id="sqBody" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="sqB" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#143049"/><stop offset="1" stop-color="#0a1825"/>
     </linearGradient>
-    <marker id="sqArrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <linearGradient id="sqA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a2a14"/><stop offset="1" stop-color="#0a1808"/>
+    </linearGradient>
+    <marker id="sqAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c8d8f0"/></marker>
+    <marker id="sqArG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#80f0a0"/></marker>
-    <marker id="sqArrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#80d4ff"/></marker>
-    <marker id="sqArrY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <marker id="sqArY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#f0d080"/></marker>
   </defs>
 
-  <!-- Title -->
-  <rect x="0" y="0" width="1080" height="50" fill="#0c1a28"/>
-  <text direction="ltr" x="540" y="22" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">
-    Identity:  (k+1)² − k² = 2k + 1   ⇒   S_new = S + 2k + 1
+  <!-- Title bar -->
+  <rect x="0" y="0" width="1100" height="56" fill="#0c1a28"/>
+  <text direction="ltr" x="550" y="26" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    Stream of squares  —  no MUX, no multiplier
   </text>
-  <text direction="ltr" x="540" y="40" text-anchor="middle" fill="#80a0c0" font-size="16">
-    Implementation:  3 ALU stages (because ALU has 2 operands; the "+1" is its own stage)
+  <text direction="ltr" x="550" y="48" text-anchor="middle" fill="#a0c0e0" font-size="18" font-style="italic">
+    Identity:  (n+1)² = n² + 2·n + 1     ⇒     S_next  =  S  +  2n  +  1
   </text>
 
-  <!-- ── COUNTER k (top-left) ── -->
-  <rect x="80" y="100" width="140" height="80" rx="8" fill="url(#sqBody)" stroke="#f0d080" stroke-width="2"/>
-  <text direction="ltr" x="150" y="136" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="18">COUNTER k</text>
-  <text direction="ltr" x="150" y="156" text-anchor="middle" fill="#a08040" font-size="16">EN=1, auto +1</text>
-  <text direction="ltr" x="150" y="172" text-anchor="middle" fill="#a08040" font-size="16">init = 1</text>
+  <!-- ════════════════ DATAPATH ROW ════════════════ -->
 
-  <!-- k output going right -->
-  <line x1="220" y1="140" x2="310" y2="140" stroke="#f0d080" stroke-width="1.6" marker-end="url(#sqArrY)"/>
-  <text direction="ltr" x="265" y="132" text-anchor="middle" fill="#f0d080" font-size="16" font-weight="bold">k</text>
+  <!-- Input n (left) -->
+  <rect x="40" y="220" width="140" height="100" rx="10" fill="url(#sqB)" stroke="#f0d080" stroke-width="2"/>
+  <text direction="ltr" x="110" y="258" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="24">Input  n</text>
+  <text direction="ltr" x="110" y="284" text-anchor="middle" fill="#c8b070" font-size="18">k-bit</text>
+  <text direction="ltr" x="110" y="306" text-anchor="middle" fill="#c8b070" font-size="18">(0, 1, 2, …)</text>
 
-  <!-- ── ALU stage 1: SHL (k << 1 = 2k) ── -->
-  <rect x="310" y="100" width="140" height="80" rx="8" fill="url(#sqBody)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="380" y="130" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">ALU SHL</text>
-  <text direction="ltr" x="380" y="150" text-anchor="middle" fill="#a0c0e0" font-size="16">A=k, B=1</text>
-  <text direction="ltr" x="380" y="166" text-anchor="middle" fill="#a0c0e0" font-size="16">OP=SHL → k&lt;&lt;1</text>
+  <!-- n bus going right into shifter -->
+  <line x1="180" y1="270" x2="240" y2="270" stroke="#f0d080" stroke-width="2.4" marker-end="url(#sqArY)"/>
 
-  <!-- 2k output -->
-  <line x1="450" y1="140" x2="540" y2="140" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#sqArrB)"/>
-  <text direction="ltr" x="495" y="132" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">2k</text>
+  <!-- Wire shifter (dashed = "not a real gate") -->
+  <rect x="240" y="220" width="180" height="100" rx="10" fill="none" stroke="#f0d080" stroke-width="2" stroke-dasharray="6 4"/>
+  <text direction="ltr" x="330" y="258" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="20">&lt;&lt; 1  (wires)</text>
+  <text direction="ltr" x="330" y="284" text-anchor="middle" fill="#806840" font-size="18">bit i  →  bit i+1</text>
+  <text direction="ltr" x="330" y="306" text-anchor="middle" fill="#806840" font-size="18">bit 0  =  GND</text>
 
-  <!-- ── ALU stage 2: ADD (2k + 1) ── -->
-  <rect x="540" y="100" width="140" height="80" rx="8" fill="url(#sqBody)" stroke="#80d4ff" stroke-width="2"/>
-  <text direction="ltr" x="610" y="130" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="18">ALU ADD</text>
-  <text direction="ltr" x="610" y="150" text-anchor="middle" fill="#a0c0e0" font-size="16">A=2k, B=1</text>
-  <text direction="ltr" x="610" y="166" text-anchor="middle" fill="#a0c0e0" font-size="16">OP=ADD → 2k+1</text>
+  <!-- 2n bus going right -->
+  <line x1="420" y1="270" x2="500" y2="270" stroke="#f0d080" stroke-width="2.4" marker-end="url(#sqArY)"/>
+  <text direction="ltr" x="460" y="262" text-anchor="middle" fill="#f0d080" font-weight="bold" font-size="20">2n</text>
 
-  <!-- 2k+1 output -->
-  <line x1="680" y1="140" x2="780" y2="140" stroke="#80d4ff" stroke-width="1.6"/>
-  <text direction="ltr" x="730" y="132" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">2k+1</text>
-  <line x1="780" y1="140" x2="780" y2="240" stroke="#80d4ff" stroke-width="1.6"/>
-  <line x1="780" y1="240" x2="800" y2="240" stroke="#80d4ff" stroke-width="1.6" marker-end="url(#sqArrB)"/>
+  <!-- Cin = 1 (top, into FA) -->
+  <rect x="540" y="100" width="160" height="60" rx="10" fill="url(#sqB)" stroke="#cca080" stroke-width="2"/>
+  <text direction="ltr" x="620" y="138" text-anchor="middle" fill="#cca080" font-weight="bold" font-size="20">Cin  =  1</text>
+  <line x1="620" y1="160" x2="620" y2="218" stroke="#cca080" stroke-width="2.4" marker-end="url(#sqAr)"/>
 
-  <!-- ── ALU stage 3: ADD (S + (2k+1)) ── -->
-  <rect x="800" y="200" width="160" height="80" rx="8" fill="url(#sqBody)" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="880" y="230" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">ALU ADD</text>
-  <text direction="ltr" x="880" y="250" text-anchor="middle" fill="#a0c0e0" font-size="16">A=S, B=2k+1</text>
-  <text direction="ltr" x="880" y="266" text-anchor="middle" fill="#a0c0e0" font-size="16">OP=ADD → S_new</text>
+  <!-- FULL ADDER -->
+  <rect x="500" y="220" width="240" height="180" rx="12" fill="url(#sqA)" stroke="#80f0a0" stroke-width="2.4"/>
+  <text direction="ltr" x="620" y="260" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">FULL ADDER</text>
+  <text direction="ltr" x="620" y="288" text-anchor="middle" fill="#608060" font-size="18">A + B + Cin</text>
+  <!-- Pin labels inside box -->
+  <text direction="ltr" x="514" y="312" fill="#c8d8f0" font-size="20" font-weight="bold">A ◄</text>
+  <text direction="ltr" x="514" y="364" fill="#c8d8f0" font-size="20" font-weight="bold">B ◄</text>
+  <text direction="ltr" x="700" y="338" fill="#c8d8f0" font-size="20" font-weight="bold">► SUM</text>
 
-  <!-- S input to stage 3 (from REGISTER S) -->
-  <line x1="280" y1="360" x2="800" y2="280" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="500" y="324" fill="#80f0a0" font-size="16" font-weight="bold">S</text>
+  <!-- SUM going right into REGISTER -->
+  <line x1="740" y1="330" x2="820" y2="330" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#sqArG)"/>
+  <text direction="ltr" x="780" y="322" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="20">S_next</text>
 
-  <!-- ── REGISTER S (bottom-left) ── -->
-  <rect x="200" y="320" width="160" height="80" rx="8" fill="url(#sqBody)" stroke="#80f0a0" stroke-width="2"/>
-  <text direction="ltr" x="280" y="356" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">REGISTER S</text>
-  <text direction="ltr" x="280" y="378" text-anchor="middle" fill="#608060" font-size="16">init = 1, EN=1</text>
+  <!-- REGISTER S -->
+  <rect x="820" y="260" width="200" height="140" rx="12" fill="url(#sqB)" stroke="#80f0a0" stroke-width="2.4"/>
+  <text direction="ltr" x="920" y="296" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">REGISTER  S</text>
+  <text direction="ltr" x="920" y="322" text-anchor="middle" fill="#608060" font-size="18">D  ◄─  S_next</text>
+  <text direction="ltr" x="920" y="346" text-anchor="middle" fill="#608060" font-size="18">Q  ─►  output</text>
+  <text direction="ltr" x="920" y="378" text-anchor="middle" fill="#806040" font-size="18">init  =  0  (or SET=1)</text>
 
-  <!-- S_new feedback loop: ALU3.out → REG.D -->
-  <line x1="960" y1="240" x2="1010" y2="240" stroke="#80f0a0" stroke-width="1.6"/>
-  <text direction="ltr" x="985" y="232" text-anchor="middle" fill="#80f0a0" font-size="16" font-weight="bold">S_new</text>
-  <line x1="1010" y1="240" x2="1010" y2="440" stroke="#80f0a0" stroke-width="1.6" stroke-dasharray="6 3"/>
-  <line x1="1010" y1="440" x2="280" y2="440" stroke="#80f0a0" stroke-width="1.6" stroke-dasharray="6 3"/>
-  <line x1="280" y1="440" x2="280" y2="400" stroke="#80f0a0" stroke-width="1.6" stroke-dasharray="6 3" marker-end="url(#sqArrG)"/>
+  <!-- Q output rising up and right to Y -->
+  <line x1="1020" y1="330" x2="1060" y2="330" stroke="#80f0a0" stroke-width="2.4" marker-end="url(#sqArG)"/>
+  <text direction="ltr" x="1078" y="336" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="24">Y</text>
+  <text direction="ltr" x="1080" y="358" text-anchor="middle" fill="#608060" font-size="18">= n²</text>
 
-  <!-- S → output Y -->
-  <circle cx="360" cy="360" r="4" fill="#80f0a0"/>
-  <line x1="360" y1="360" x2="960" y2="360" stroke="#80f0a0" stroke-width="2" marker-end="url(#sqArrG)"/>
-  <text direction="ltr" x="1010" y="356" text-anchor="middle" fill="#80f0a0" font-weight="bold" font-size="18">Y = k²</text>
+  <!-- ────── Feedback path: Q → FA.B ────── -->
+  <circle cx="1020" cy="330" r="5" fill="#80f0a0"/>
+  <line x1="1020" y1="330" x2="1020" y2="468" stroke="#80f0a0" stroke-width="2" stroke-dasharray="6 3"/>
+  <line x1="1020" y1="468" x2="468" y2="468" stroke="#80f0a0" stroke-width="2" stroke-dasharray="6 3"/>
+  <line x1="468" y1="468" x2="468" y2="358" stroke="#80f0a0" stroke-width="2" stroke-dasharray="6 3"/>
+  <line x1="468" y1="358" x2="498" y2="358" stroke="#80f0a0" stroke-width="2" stroke-dasharray="6 3" marker-end="url(#sqArG)"/>
+  <text direction="ltr" x="744" y="490" text-anchor="middle" fill="#80f0a0" font-size="20" font-weight="bold">feedback  Q  →  B  (current S)</text>
 
-  <!-- Sequence example -->
-  <text direction="ltr" x="540" y="476" text-anchor="middle" fill="#80d4ff" font-size="16" font-weight="bold">Sequence after each clock:</text>
-  <text direction="ltr" x="540" y="496" text-anchor="middle" fill="#a0c0e0" font-size="16" font-family="monospace">
-    k:   1    2    3    4    5    6    7    8    9    10
+  <!-- ════════════════ SEQUENCE TABLE ════════════════ -->
+  <text direction="ltr" x="550" y="540" text-anchor="middle" fill="#80d4ff" font-weight="bold" font-size="24">
+    Live trace  (REGISTER and counter both start at 0)
   </text>
-  <text direction="ltr" x="540" y="514" text-anchor="middle" fill="#80f0a0" font-size="16" font-family="monospace">
-    S:   1    4    9   16   25   36   49   64   81   100
-  </text>
+
+  <rect x="40" y="556" width="1020" height="36" fill="#0c1a28" stroke="#3a5575" stroke-width="1.6"/>
+  ${['tick','0','1','2','3','4','5','6','7','8','9','10'].map((h, i) => {
+    const x = i === 0 ? 100 : 200 + (i - 1) * 78;
+    return `<text direction="ltr" x="${x}" y="580" text-anchor="middle" fill="#80d4ff" font-size="20" font-weight="bold">${h}</text>`;
+  }).join('')}
+
+  ${['n', 'Y = n²'].map((label, row) => {
+    const y = 612 + row * 26;
+    const vals = row === 0 ? [0,1,2,3,4,5,6,7,8,9,10] : [0,1,4,9,16,25,36,49,64,81,100];
+    const color = row === 0 ? '#f0d080' : '#80f0a0';
+    const bg = row === 0 ? '#0a1825' : '#0a1420';
+    return `
+      <rect x="40" y="${y - 20}" width="1020" height="26" fill="${bg}" opacity="0.85"/>
+      <text direction="ltr" x="100" y="${y}" text-anchor="middle" fill="${color}" font-weight="bold" font-size="20">${label}</text>
+      ${vals.map((v, i) => `<text direction="ltr" x="${200 + i * 78}" y="${y}" text-anchor="middle" fill="${color}" font-size="20">${v}</text>`).join('')}
+    `;
+  }).join('')}
 </svg>`,
         answer:
-`**אלגוריתם דיפרנציאלי — \`S_new = S + 2k + 1\`.**
+`### העיקרון
 
-### העיקרון
+זהות: \`(n+1)² = n² + 2n + 1\`. אם נחזיק את \`S = n²\` באוגר, נוכל לעדכן אותו בכל קצה שעון ל-\`S + 2n + 1\` — **בלי מכפיל**.
 
-מתמטית: \`(k+1)² = k² + 2k + 1\`. אז אם נשמור את \`S = k²\` ברגיסטר, נוכל לעדכן אותו בכל קלוק בלי לחשב את הריבוע מחדש — רק להוסיף \`2k + 1\`.
+### Datapath — Full Adder יחיד + Register + לולאת משוב
 
-### רכיבים
+| מרכיב | תפקיד | מימוש פיזי |
+|---|---|---|
+| **2·n** | מכפיל את ה-Input ב-2 | **חיווט בלבד** — ביט \`i\` של n → ביט \`i+1\` של 2n; ביט 0 קבוע ל-GND. אפס שערים. |
+| **Cin = 1** | תוספת ה-+1 | קבוע ל-1 בכניסת ה-Carry-in של ה-Full Adder. "חינם" — כל adder תומך בזה. |
+| **Full Adder** | מחשב \`(2n) + Q + 1\` | רכיב יחיד: \`A=2n\`, \`B=Q\` (המשוב מהאוגר), \`Cin=1\`. SUM = ערך הבא של \`S\`. |
+| **Register S** | מחזיק את \`n²\` הנוכחי | \`D = SUM\`. \`Q\` יוצא כ-Output **וגם** סוגר את הלולאה חזרה ל-\`B\` של ה-Adder. |
 
-| רכיב | תיאור |
-|------|---------|
-| **COUNTER k** | רגיסטר מונה, אתחול 1, מתעדכן \`k_new = k + 1\` |
-| **\`<<1\`** | שיפט-שמאל = הזזת ה-wires (לא רכיב אמיתי) → מחשב \`2k\` |
-| **Adder** | מחשב \`S + 2k + 1\` — ה-+1 מגיע מ-\`Cin = 1\` בקצה הנמוך |
-| **REGISTER S** | רגיסטר \`k²\`, אתחול 1, מתעדכן \`S_new = ADDER.out\` |
+### למה אין MUX ואין מכפיל
 
-### למה אין צורך ב-MUX
-
-- ההזזה ב-1 ימינה (\`<<1\`) היא **חיווט בלבד** — לא רכיב לוגי. בעצם, מחברים את ביט i של k אל ביט i+1 של אות חדש.
-- ה-+1 הוא **\`Cin = 1\`** למחבר — כל מחבר תומך בזה inherently, ללא MUX.
-- אין צורך לבחור בין מקורות נתונים → אין MUX.
+- **אין MUX**: אין צורך לבחור בין מקורות — כל מסילה מחוברת קבוע. הזרימה היא איטרציה צרופה.
+- **אין מכפיל**: לא מחשבים \`n²\` ישירות; הוא **נצבר** באמצעות עדכוני \`+2n+1\` (שיטת **הפרשים סופיים**).
 
 ### אתחול
 
-\`\`\`
-k_init = 1, S_init = 1
-\`\`\`
+הסדרה תלויה במצב ההתחלתי של האוגר:
 
-אחרי קלוק 1:
-\`\`\`
-k = 2
-S_new = 1 + 2·1 + 1 = 4   ✓  (= 2²)
-\`\`\`
+| Init | פלט (tick 0, 1, 2, …) |
+|---|---|
+| \`S = 1\`, \`n\` מתחיל מ-1 (Preset/SET באוגר) | \`1, 4, 9, 16, 25, …\` |
+| \`S = 0\`, \`n\` מתחיל מ-0 (ברירת מחדל בסימולטור) | \`0, 1, 4, 9, 16, …\` |
 
-אחרי קלוק 2:
-\`\`\`
-k = 3
-S_new = 4 + 2·2 + 1 = 9   ✓  (= 3²)
-\`\`\`
+הסימולטור משתמש בגרסה השנייה (אין Preset לאוגר הסטנדרטי).
 
-### יתרון על "חישוב ישיר"
+### עלות לעומת חישוב ישיר
 
-חישוב ישיר: \`Y = k · k\` דורש **מכפיל** — רכיב יקר (O(N²) שערים).
+| גישה | שערים |
+|---|---|
+| כפל ישיר (\`Y = n · n\`) | **O(N²)** — מכפיל |
+| הפרשים סופיים (גישה זו) | **O(N)** — adder יחיד |
 
-האלגוריתם הדיפרנציאלי: **מחבר** + שיפט (=חיווט) — \`O(N)\` שערים. **חיסכון משמעותי בשטח.**
+### הכללה
 
-### הכללה — \`k³\` בזרם
-
-\`(k+1)³ - k³ = 3k² + 3k + 1\`. אבל \`3k²\` עצמו דורש מכפיל. אלא אם נשמור גם \`3k²\` ברגיסטר ונעדכן אותו בנפרד: \`3(k+1)² = 3k² + 6k + 3\`. עוד adder + שיפט. אפשרי לבנות **רגיסטרים מקושרים** שיוצרים כל פולינום בעלות לינארית. זוהי **שיטת ההפרשים הסופיים** (finite differences) — מבוססת רגיסטרים בלבד.`,
+לכל פולינום \`f(n)\` ממעלה \`d\` ניתן לבנות שרשרת של \`d+1\` אוגרים שמעדכנים זה את זה בהפרשים סופיים — בלי מכפילים. זה היה הרעיון שעמד מאחורי **Difference Engine** של Babbage (1822).`,
         interviewerMindset:
 `שאלה אהובה לבדיקת **חשיבה מבנית**. המראיין מחפש:
 
@@ -4226,61 +4223,61 @@ S_new = 4 + 2·2 + 1 = 9   ✓  (= 3²)
     ],
     source: 'IQ/PP — מצגת שאלות מעגלים, שקף 30 (Squares stream, no MUX)',
     tags: ['stream', 'incremental', 'finite-differences', 'adder', 'sequential'],
-    // Canvas: incremental squares using COUNTER k + REGISTER S + ALU (ADD).
-    // Each clock: S_new = S + 2k + 1.  Output Y = S.
-    //
-    // Default init: k = 1, S = 1.  After ticks: S = 4, 9, 16, 25, 36, ...
+    // Canvas: stream of squares via the clean user-spec datapath.
+    //   COUNTER n → MERGE(<<1, wires only) → FULL_ADDER(A=2n, B=Q, Cin=1)
+    //   → REGISTER S → output Y, also fed back to FA.B.
+    // REGISTER has no Preset, so both COUNTER and REGISTER start at 0.
+    // The output sequence is 0², 1², 2², 3², … = 0, 1, 4, 9, 16, 25, 36, …
     circuit: () => build(() => {
-      const clk = h.clock(80, 460);
-      // Constants
-      const enOne = h.input(80, 120, 'EN=1');   enOne.fixedValue = 1;
-      const one   = h.input(80, 280, 'B=1');    one.fixedValue = 1;   // for "+1" via Cin alt: B operand
-      const opAdd = h.input(80, 360, 'OP=ADD'); opAdd.fixedValue = 0; // ALU op 0 = ADD
-      // COUNTER k (3-bit for demo, counts 0,1,2,...,7 then wraps; init handled in engine separately)
-      const cntK = h.block('COUNTER', 260, 120, { bitWidth: 4, label: 'CNT k' });
-      // Left-shift k by 1 → 2k. We can achieve this without a dedicated shifter
-      // by using ALU SHL: A=k, B=1, OP=SHL(5).
-      const opShl = h.input(80, 200, 'OP=SHL'); opShl.fixedValue = 5;
-      const aluShl = h.block('ALU', 460, 160, { bitWidth: 8, label: 'ALU 2k = k<<1' });
-      // ALU_add: result = (2k) + S + Cin(1).  Use ADD with B=S and feed in (2k).
-      // Wait — ALU has 2 operands. We want (2k + 1) + S = three terms.
-      // Approach: two ALU stages.
-      //   Stage 1: A = 2k, B = 1, OP = ADD → outputs (2k + 1).
-      //   Stage 2: A = (2k+1), B = S, OP = ADD → outputs S_new.
-      const aluAdd1 = h.block('ALU', 640, 240, { bitWidth: 8, label: 'ALU 2k+1' });
-      const aluAdd2 = h.block('ALU', 820, 320, { bitWidth: 8, label: 'ALU S+(2k+1)' });
-      // S register (8-bit)
-      const regS = h.block('REGISTER', 460, 360, { bitWidth: 8, label: 'REG S=k²' });
-      // Outputs
-      const oY = h.output(1040, 320, 'Y = S = k²');
-      const oK = h.output(460, 60,  'k');
+      const clk    = h.clock(80, 500);
+      const enOne  = h.input(80, 120, 'EN=1');   enOne.fixedValue = 1;
+      const zeroIn = h.input(80, 200, '0');      zeroIn.fixedValue = 0; // MERGE bit-0 pad
+      const one    = h.input(80, 280, 'Cin=1');  one.fixedValue = 1;    // FA carry-in
+
+      // n source (counter that auto-increments 0,1,2,...,15)
+      const cntN = h.block('COUNTER', 260, 220, { bitWidth: 4, label: 'COUNTER n' });
+
+      // Wire-shift left by 1: MERGE outBits=8 with slicesSpec '0, 4:1'
+      //   slot 0 (1 bit) → bit 0 of output = constant 0
+      //   slot 1 (4 bits) → bits 4:1 of output = counter Q
+      // Result: 2n (8-bit field). Zero gates — pure routing.
+      const shl = h.block('MERGE', 460, 220, {
+        outBits: 8, slicesSpec: '0, 4:1', label: '2n  (<<1, wires)',
+      });
+
+      // Single FULL_ADDER: A + B + Cin
+      const fa = h.block('FULL_ADDER', 660, 280, { bitWidth: 8, label: 'FULL ADDER' });
+
+      // Accumulator register S = current n²
+      const regS = h.block('REGISTER', 860, 280, { bitWidth: 8, label: 'REG  S = n²' });
+
+      const oY = h.output(1040, 280, 'Y = n²');
+      const oN = h.output(260, 60, 'n');
+
       return {
-        nodes: [clk, enOne, one, opAdd, opShl,
-                cntK, aluShl, aluAdd1, aluAdd2, regS,
-                oY, oK],
+        nodes: [clk, enOne, zeroIn, one, cntN, shl, fa, regS, oY, oN],
         wires: [
-          // CNT k: EN=1, CLK
-          h.wire(enOne.id, cntK.id, 0),
-          h.wire(clk.id, cntK.id, 4, 0, { isClockWire: true }),
-          // ALU SHL: A=k, B=1, OP=SHL → 2k
-          h.wire(cntK.id, aluShl.id, 0),
-          h.wire(one.id,  aluShl.id, 1),
-          h.wire(opShl.id, aluShl.id, 2),
-          // ALU ADD1: A=2k, B=1, OP=ADD → 2k+1
-          h.wire(aluShl.id, aluAdd1.id, 0),
-          h.wire(one.id,    aluAdd1.id, 1),
-          h.wire(opAdd.id,  aluAdd1.id, 2),
-          // ALU ADD2: A=S, B=2k+1, OP=ADD → S_new
-          h.wire(regS.id,    aluAdd2.id, 0),
-          h.wire(aluAdd1.id, aluAdd2.id, 1),
-          h.wire(opAdd.id,   aluAdd2.id, 2),
-          // S register: DATA=ALU_ADD2.out, EN=1, CLK
-          h.wire(aluAdd2.id, regS.id, 0),
-          h.wire(enOne.id,   regS.id, 1),
-          h.wire(clk.id, regS.id, 3, 0, { isClockWire: true }),
-          // Outputs
+          // COUNTER n: EN(0), LOAD(1), DATA(2), CLR(3), CLK(4)
+          h.wire(enOne.id, cntN.id, 0),
+          h.wire(clk.id,   cntN.id, 4, 0, { isClockWire: true }),
+
+          // MERGE: slot 0 = constant 0, slot 1 = counter Q
+          h.wire(zeroIn.id, shl.id, 0),
+          h.wire(cntN.id,   shl.id, 1),
+
+          // FULL_ADDER: A(0)=2n, B(1)=Q (feedback), Cin(2)=1
+          h.wire(shl.id,  fa.id, 0),
+          h.wire(regS.id, fa.id, 1),
+          h.wire(one.id,  fa.id, 2),
+
+          // REGISTER S: DATA(0)=FA.SUM, EN(1)=1, CLK(3)
+          h.wire(fa.id,    regS.id, 0),
+          h.wire(enOne.id, regS.id, 1),
+          h.wire(clk.id,   regS.id, 3, 0, { isClockWire: true }),
+
+          // Observability
           h.wire(regS.id, oY.id, 0),
-          h.wire(cntK.id, oK.id, 0),
+          h.wire(cntN.id, oN.id, 0),
         ],
       };
     }),
