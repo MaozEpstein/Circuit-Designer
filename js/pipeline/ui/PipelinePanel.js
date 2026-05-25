@@ -425,6 +425,16 @@ export class PipelinePanel {
 
   _render(r) {
     if (!this._body || !this._summary) return;
+    // Mid-interaction guard: analyze() fires on every sim tick and rebuilds
+    // _body.innerHTML, which would steal an in-flight mousedown/mouseup pair
+    // (breaks SELECT dropdowns opening, BUTTON click events, INPUT typing).
+    // Skip while focus is on an interactive control in the panel — the next
+    // tick re-renders once the user is done.
+    const ae = document.activeElement;
+    if (ae && this._body.contains(ae) &&
+        (ae.tagName === 'SELECT' || ae.tagName === 'INPUT' || ae.tagName === 'BUTTON')) {
+      return;
+    }
     // Always push violations + hazards to the renderer (null when no data).
     setPipelineViolations(r?.violations?.length ? r.violations : null);
     setPipelineHazards(r?.hazards?.length ? r.hazards : null);
@@ -888,7 +898,18 @@ export class PipelinePanel {
         saveBtn.classList.add('hidden');
       });
       const cmpBtn = document.getElementById('pipe-predictor-compare');
-      cmpBtn?.addEventListener('click', () => this._renderPredictorCompare());
+      // mousedown, not click — analyze() re-renders the panel every sim tick,
+      // and the click event fires only when mousedown and mouseup target the
+      // same node (which fails after re-render). Same workaround as the info
+      // button below.
+      cmpBtn?.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this._cmpVisible = true;
+        this._renderPredictorCompare();
+      });
+      // Restore the compare table after each re-render — _body.innerHTML would
+      // otherwise blank #pipe-predictor-compare-table on every sim tick.
+      if (this._cmpVisible) this._renderPredictorCompare();
     }
 
     // CDC section (Phase 13 stretch) — only when the scene has ≥2 clocks.
