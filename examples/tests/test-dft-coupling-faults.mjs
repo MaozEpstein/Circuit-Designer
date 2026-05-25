@@ -207,6 +207,124 @@ function buildRam(addrBits, dataBits) {
         `causedBy=${JSON.stringify(r.firstFail?.causedBy)}`);
 }
 
+// Per-bit semantics — partial-word transitions (e.g. 0x0 → 0xA) trigger
+// the corresponding bits of the victim. This is what makes Checkerboard
+// catch coupling between adjacent cells the way the physical model
+// expects: the bits that flip in the aggressor flip in the victim too.
+{
+  // Aggressor=7 written AFTER victim=6 — checkerboard's sequential write
+  // phase finishes the aggressor write while no later write touches
+  // victim=6, so the corruption survives to the read phase.
+  const ram = buildRam(4, 8);   // 16 cells × 8-bit
+  ram.couplingFaults = [{ aggressor: 7, victim: 6, type: 'CFin', trigger: 'any' }];
+  const r = runMemoryTest(ram, getRamPattern('checkerboard', 4, 8));
+  check('Checkerboard catches CFin(7→6, any) on partial-word transition',
+        !r.passed && r.firstFail?.addr === 6,
+        r.passed ? 'unexpectedly passed' : `firstFail.addr=${r.firstFail?.addr}`);
+  check('Checkerboard fail attributed to aggressor 7',
+        r.firstFail?.causedBy?.type === 'CFin' && r.firstFail?.causedBy?.aggressor === 7,
+        `causedBy=${JSON.stringify(r.firstFail?.causedBy)}`);
+}
+
+// Per-bit CFin: only the bits that transitioned in the aggressor flip in
+// the victim. Aggressor=3 written 0x00→0xA (bits 1 and 3 go 0→1); victim=5
+// starts at 0 — should end up with exactly bits 1+3 set, i.e. 0xA.
+{
+  const mem = { 5: 0 };
+  const cfaults = [{ aggressor: 3, victim: 5, type: 'CFin', trigger: '01' }];
+  applyCouplingOnWrite(cfaults, 3, 0, 0xA, mem, 4);
+  check('CFin per-bit: 0x0→0xA flips only bits 1+3 of victim',
+        mem[5] === 0xA, `mem[5]=0x${mem[5].toString(16)}`);
+}
+
+// Per-bit CFid: only the triggered bits are forced; the rest of the
+// victim word survives unchanged.
+{
+  const mem = { 5: 0x6 };   // 0110 — bit 1 and bit 2 set
+  const cfaults = [{ aggressor: 3, victim: 5, type: 'CFid', trigger: '01', forceTo: 1 }];
+  applyCouplingOnWrite(cfaults, 3, 0, 0xA, mem, 4);   // bits 1+3 of agg go up
+  // Force bits 1+3 of victim to 1, leave bits 0,2 alone.
+  // Victim 0x6 = 0110; force bits 1,3 to 1 → 1110 = 0xE.
+  check('CFid per-bit: forces only triggered bits, others survive',
+        mem[5] === 0xE, `mem[5]=0x${mem[5].toString(16)}`);
+}
+
+// Per-bit CFst — "AND-bridge" between two adjacent cells. The aggressor
+// pulls each victim bit to 0 wherever the aggressor itself holds 0.
+// Checkerboard now catches this: when victim=6 reads 0xAA and aggressor=7
+// holds 0x55, the bridge forces victim bits 0,2,4,6 to 0 → read returns
+// 0xAA & 0x55 = 0x00, mismatch with expected 0xAA.
+{
+  const ram = buildRam(4, 8);   // 16 cells × 8-bit
+  ram.couplingFaults = [{
+    aggressor: 7, victim: 6, type: 'CFst',
+    bits: 0xFF, aggressorPattern: 0x00, forcePattern: 0x00,
+  }];
+  const r = runMemoryTest(ram, getRamPattern('checkerboard', 4, 8));
+  check('Checkerboard catches CFst AND-bridge between adjacent cells',
+        !r.passed && r.firstFail?.addr === 6,
+        r.passed ? 'unexpectedly passed' : `firstFail.addr=${r.firstFail?.addr}`);
+  check('Bridge fail attributed to CFst from aggressor 7',
+        r.firstFail?.causedBy?.type === 'CFst' && r.firstFail?.causedBy?.aggressor === 7,
+        `causedBy=${JSON.stringify(r.firstFail?.causedBy)}`);
+}
+
+// Per-bit CFst — "OR-bridge": any 1 bit in the aggressor pulls the
+// corresponding victim bit up to 1. Checkerboard catches this too.
+{
+  const ram = buildRam(4, 8);
+  ram.couplingFaults = [{
+    aggressor: 7, victim: 6, type: 'CFst',
+    bits: 0xFF, aggressorPattern: 0xFF, forcePattern: 0xFF,
+  }];
+  const r = runMemoryTest(ram, getRamPattern('checkerboard', 4, 8));
+  // Aggressor cell 7 holds 0x55 after the write phase, so bits 0,2,4,6
+  // of the aggressor are 1 → victim bits 0,2,4,6 forced to 1.
+  // Victim cell 6 was supposed to hold 0xAA; observed becomes 0xAA|0x55=0xFF.
+  check('Checkerboard catches CFst OR-bridge between adjacent cells',
+        !r.passed && r.firstFail?.addr === 6,
+        r.passed ? 'unexpectedly passed' : `firstFail.addr=${r.firstFail?.addr}`);
+}
+
+// Per-bit CFst on a single bit-line only — only bit 0 is bridged.
+// The other bits read clean. Useful for modelling a defect localised
+// to one specific bit-line, not the whole word.
+{
+  const mem = { 3: 0xA, 5: 0x0 };
+  const cfaults = [{
+    aggressor: 3, victim: 5, type: 'CFst',
+    bits: 0x1, aggressorPattern: 0x0, forcePattern: 0x1,
+  }];
+  // bit 0 of aggressor (mem[3]=0xA=1010) is 0 → matches pattern → force
+  // bit 0 of victim to 1. Other bits of victim survive.
+  const v = applyCFstOnRead(cfaults, 5, 0x0, mem, 4);
+  check('Per-bit CFst forces only the bridged bit',
+        v === 0x1, `got 0x${v.toString(16)}`);
+}
+
+// Per-bit CFst does NOT fire when the bridged bit of the aggressor
+// holds a non-matching value — the victim survives unchanged.
+{
+  const mem = { 3: 0x1, 5: 0x6 };   // aggressor bit 0 = 1 ≠ pattern 0
+  const cfaults = [{
+    aggressor: 3, victim: 5, type: 'CFst',
+    bits: 0x1, aggressorPattern: 0x0, forcePattern: 0x1,
+  }];
+  const v = applyCFstOnRead(cfaults, 5, 0x6, mem, 4);
+  check('Per-bit CFst is silent when the aggressor bit mismatches',
+        v === 0x6, `got 0x${v.toString(16)}`);
+}
+
+// Legacy whole-word CFst is unaffected by the per-bit extension.
+{
+  const mem = { 3: 0xF, 5: 0xA };
+  const cfaults = [{ aggressor: 3, victim: 5, type: 'CFst',
+                     aggressorValue: 1, forceTo: 0 }];
+  const v = applyCFstOnRead(cfaults, 5, 0xA, mem, 4);
+  check('Legacy whole-word CFst still works (regression)',
+        v === 0, `got 0x${v.toString(16)}`);
+}
+
 // Clean RAM (no coupling) — all 7 patterns still PASS.
 {
   const ram = buildRam(3, 4);

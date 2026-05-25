@@ -907,12 +907,17 @@ export class DFTPanel {
       }
       this._scanHistory.push(sample);
       if (this._scanHistory.length > this._scanHistoryMax) this._scanHistory.shift();
-      // Throttle re-render: every 32 ticks. The buffer is always
+      // Throttle re-render: every 64 ticks. The buffer is always
       // fresh (every tick gets sampled); only the paint is throttled.
       // Schedule on next rAF so the heavy render doesn't bloat the
       // simulator's tick callback (which would push it over the 50ms
       // requestAnimationFrame violation threshold on large buffers).
-      if (stepCount % 32 === 0) this._scheduleRender();
+      // 64 (down from 32) halves the paint rate to keep the main thread
+      // responsive enough that wheel events don't queue up behind a
+      // forced-reflow chain — the panel still updates ~15× per second
+      // at the default tick rate, which is plenty for marchStep and
+      // SCAN HISTORY scrolling.
+      if (stepCount % 64 === 0) this._scheduleRender();
     });
 
     // Live telemetry channel for BIST / JTAG / coverage updates.
@@ -950,7 +955,17 @@ export class DFTPanel {
     this._renderScheduled = true;
     requestAnimationFrame(() => {
       this._renderScheduled = false;
-      if (this._visible) this._render();
+      if (!this._visible) return;
+      // innerHTML-replacing the body destroys any open <select> popup
+      // and any focused <input>/<textarea>, so skip the paint while the
+      // user is interacting with a form control. The next sim:tick (or
+      // any other event) will reschedule, so nothing is lost.
+      const ae = document.activeElement;
+      if (ae && this._body && this._body.contains(ae)) {
+        const tag = ae.tagName;
+        if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+      }
+      this._render();
     });
   }
 
@@ -3552,6 +3567,10 @@ export class DFTPanel {
         trigger: '01',
         forceTo: 1,
         aggressorValue: 1,
+        // For CFst only: 'whole' is the legacy all-0/all-1 trigger;
+        // 'bridgeAnd' / 'bridgeOr' are the per-bit physical bit-line
+        // short presets that fire on Checkerboard-style partial patterns.
+        cfstMode: 'whole',
       });
       this._couplingPending.delete(ramId);
     }
@@ -3569,11 +3588,28 @@ export class DFTPanel {
     if (draft.type === 'CFin' || draft.type === 'CFid') {
       entry.trigger = draft.trigger;
     }
-    if (draft.type === 'CFid' || draft.type === 'CFst') {
+    if (draft.type === 'CFid') {
       entry.forceTo = draft.forceTo;
     }
     if (draft.type === 'CFst') {
-      entry.aggressorValue = draft.aggressorValue;
+      const mode = draft.cfstMode || 'whole';
+      const dataBits = Math.max(1, (ram.dataBits | 0) || 4);
+      const mask = dataBits >= 32 ? Math.pow(2, dataBits) - 1 : (1 << dataBits) - 1;
+      if (mode === 'bridgeAnd') {
+        // Every 0 bit of aggressor pulls the matching victim bit to 0.
+        entry.bits = mask;
+        entry.aggressorPattern = 0;
+        entry.forcePattern = 0;
+      } else if (mode === 'bridgeOr') {
+        // Every 1 bit of aggressor pulls the matching victim bit to 1.
+        entry.bits = mask;
+        entry.aggressorPattern = mask;
+        entry.forcePattern = mask;
+      } else {
+        // Whole-word legacy schema — preserved for textbook scenarios.
+        entry.aggressorValue = draft.aggressorValue;
+        entry.forceTo = draft.forceTo;
+      }
     }
     ram.couplingFaults.push(entry);
     this._couplingDraft.delete(ramId);
@@ -3701,14 +3737,31 @@ export class DFTPanel {
            ${radio('trigger', 'any', 'any',  'Either direction triggers')}
          </div>`
       : '';
-    const aggValueRow = (draft.type === 'CFst')
+    // CFst has two flavours:
+    //   • 'whole'    — textbook: aggressor must hold 0x00 or 0xFF
+    //   • 'bridgeAnd' — physical bit-line short, AND-bridge: any 0 bit
+    //                   of aggressor pulls the matching victim bit to 0
+    //   • 'bridgeOr'  — OR-bridge: any 1 bit of aggressor pulls the
+    //                   matching victim bit to 1
+    // The bridge modes are what catches Checkerboard-style stimulus
+    // where the aggressor never holds all-0 or all-1.
+    const cfstMode = draft.cfstMode || 'whole';
+    const cfstModeRow = (draft.type === 'CFst')
+      ? `<div class="dft-couple-form-row">
+           <span class="lbl">MODE</span>
+           ${radio('cfstMode', 'whole',     'whole-word', 'Textbook CFst — fires only when aggressor holds all-0 or all-1')}
+           ${radio('cfstMode', 'bridgeAnd', 'AND-bridge', 'Per-bit short: every 0 bit in aggressor pulls the matching victim bit down to 0')}
+           ${radio('cfstMode', 'bridgeOr',  'OR-bridge',  'Per-bit short: every 1 bit in aggressor pulls the matching victim bit up to 1')}
+         </div>`
+      : '';
+    const aggValueRow = (draft.type === 'CFst' && cfstMode === 'whole')
       ? `<div class="dft-couple-form-row">
            <span class="lbl">AGG STATE</span>
            ${radio('aggressorValue', 0, 'all-0', 'Trigger while aggressor holds 0x0')}
            ${radio('aggressorValue', 1, 'all-1', 'Trigger while aggressor holds all-ones')}
          </div>`
       : '';
-    const forceRow = (draft.type === 'CFid' || draft.type === 'CFst')
+    const forceRow = (draft.type === 'CFid' || (draft.type === 'CFst' && cfstMode === 'whole'))
       ? `<div class="dft-couple-form-row">
            <span class="lbl">FORCE VICTIM</span>
            ${radio('forceTo', 0, 'all-0', 'Force victim to 0x0')}
@@ -3727,6 +3780,7 @@ export class DFTPanel {
           ${radio('type', 'CFst', 'CFst', 'State coupling: while aggressor holds a state, victim reads as a forced value')}
         </div>
         ${triggerRow}
+        ${cfstModeRow}
         ${aggValueRow}
         ${forceRow}
         <div class="dft-couple-form-actions">
@@ -3745,7 +3799,18 @@ export class DFTPanel {
       let detail = '';
       if (cf.type === 'CFin') detail = `trigger ${cf.trigger}`;
       else if (cf.type === 'CFid') detail = `trigger ${cf.trigger} · force ${cf.forceTo ? 'all-1' : 'all-0'}`;
-      else if (cf.type === 'CFst') detail = `agg=${cf.aggressorValue ? 'all-1' : 'all-0'} · force ${cf.forceTo ? 'all-1' : 'all-0'}`;
+      else if (cf.type === 'CFst') {
+        if (cf.bits !== undefined) {
+          // Per-bit bridge — classify by the preset signature.
+          const isAnd = cf.aggressorPattern === 0 && cf.forcePattern === 0;
+          const isOr  = cf.aggressorPattern === cf.bits && cf.forcePattern === cf.bits;
+          detail = isAnd ? 'AND-bridge (per-bit)'
+                 : isOr  ? 'OR-bridge (per-bit)'
+                 : `per-bit · bits=0x${cf.bits.toString(16)}`;
+        } else {
+          detail = `agg=${cf.aggressorValue ? 'all-1' : 'all-0'} · force ${cf.forceTo ? 'all-1' : 'all-0'}`;
+        }
+      }
       return `
         <div class="dft-couple-list-row">
           <code class="addr">${cf.aggressor}</code>
