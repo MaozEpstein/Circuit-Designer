@@ -34,6 +34,7 @@ import { PipelineAnalyzer } from './pipeline/PipelineAnalyzer.js';
 import { evaluate as evaluatePipeline } from './pipeline/StageEvaluator.js';
 import { PipelinePanel } from './pipeline/ui/PipelinePanel.js';
 import { DFTPanel } from './dft/ui/DFTPanel.js';
+import { BackendPanel } from './backend/ui/BackendPanel.js';
 import * as PipelineTelemetry from './pipeline/Telemetry.js';
 import { StageOverlay } from './pipeline/ui/StageOverlay.js';
 import { suggestRetime } from './pipeline/Retimer.js';
@@ -57,6 +58,7 @@ const simCtrl  = new SimulationController();
 const pipelineAnalyzer = new PipelineAnalyzer(scene);
 const pipelinePanel    = new PipelinePanel(pipelineAnalyzer);
 const dftPanel         = new DFTPanel(scene);
+const backendPanel     = new BackendPanel(scene);
 const stageOverlay     = new StageOverlay(pipelineAnalyzer);
 
 // Pipeline panel asks to mutate a CU's props (e.g. branchPredictor dropdown);
@@ -2585,7 +2587,7 @@ document.getElementById('btn-mem-close')?.addEventListener('click', _toggleMemIn
     startX = e.clientX; startY = e.clientY;
     startW = r.width;   startH = r.height;
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'nwse-resize';
+    document.body.style.cursor = 'nesw-resize';
     e.preventDefault();
     e.stopPropagation();
   });
@@ -2848,6 +2850,10 @@ bus.on('palette:action', (action) => {
     }
     case 'toggle-pipeline-panel': pipelinePanel.toggle(); break;
     case 'toggle-dft-panel':      dftPanel.toggle(); break;
+    case 'toggle-backend-panel':
+      if (pipelinePanel._visible) pipelinePanel.hide();
+      backendPanel.toggle();
+      break;
     case 'insert-stall': _insertPipeControl('stall'); break;
     case 'insert-flush': _insertPipeControl('flush'); break;
     case 'suggest-retime': _showRetimeSuggestion(); break;
@@ -3009,6 +3015,11 @@ window.addEventListener('keydown', (e) => {
   if (match === 'dft-panel-toggle') {
     e.preventDefault();
     bus.emit('palette:action', 'toggle-dft-panel');
+    return;
+  }
+  if (match === 'backend-panel-toggle') {
+    e.preventDefault();
+    bus.emit('palette:action', 'toggle-backend-panel');
     return;
   }
   if (match === 'dft-run-fault-sim') {
@@ -5579,6 +5590,28 @@ const EXAMPLES = [
     tags: ['verilog', 'phase5', 'phase5b', 'alu', 'ir', 'cpu'],
     file: 'examples/circuits/verilog-phase5b-alu-ir.json',
   },
+  // ── Backend Design demos ──
+  {
+    id: 'sta-setup-pass',
+    title: '1. STA — Setup Pass',
+    desc: 'Simple reg-to-reg path through 3 gates (AND → OR → NOT). With a 2 ns clock the timing is comfortably MET. Open the Backend panel (B) and click RUN STA to see the positive slack.',
+    tags: ['backend', 'STA', 'timing', 'setup'],
+    file: 'examples/circuits/sta-setup-pass.json',
+  },
+  {
+    id: 'sta-setup-violation',
+    title: '2. STA — Setup Violation',
+    desc: 'Long combinational chain of 8 gates between two flip-flops. With a tight clock period the data cannot arrive in time, producing a setup violation (negative slack). Click a path row to highlight it on the canvas.',
+    tags: ['backend', 'STA', 'timing', 'violation'],
+    file: 'examples/circuits/sta-setup-violation.json',
+  },
+  {
+    id: 'sta-multi-path',
+    title: '3. STA — Multi-Path Critical Selection',
+    desc: 'One source FF fans out to two parallel paths of different lengths, merging at a destination FF. The STA engine identifies the longer path as the critical path. Click each row in the paths table to compare.',
+    tags: ['backend', 'STA', 'timing', 'critical-path'],
+    file: 'examples/circuits/sta-multi-path.json',
+  },
 ];
 
 const examplesOverlay = document.getElementById('examples-overlay');
@@ -5592,6 +5625,7 @@ const EXAMPLES_CATEGORIES = [
   { id: 'cache',        label: 'Cache & Memory'   },
   { id: 'dft',          label: 'Test & DFT'       },
   { id: 'verilog',      label: 'VERILOG'          },
+  { id: 'backend',      label: 'Backend Design'   },
 ];
 let _examplesActiveTab = 'beginner';
 

@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    { "type": "CLOCK",    "x": 0,    "y": 250,  "value": 0, "id": "clk",  "label": "CLK" },
+    { "type": "FF_SLOT",  "x": -350, "y": 0,    "gate": "D","id": "ff_a", "label": "FF_SRC" },
+    { "type": "GATE_SLOT","x": -220, "y": 0,    "gate": "AND","id":"g1",  "label": "AND1" },
+    { "type": "GATE_SLOT","x": -120, "y": 0,    "gate": "XOR","id":"g2",  "label": "XOR1" },
+    { "type": "GATE_SLOT","x": -20,  "y": 0,    "gate": "AND","id":"g3",  "label": "AND2" },
+    { "type": "GATE_SLOT","x": 80,   "y": 0,    "gate": "OR", "id":"g4",  "label": "OR1" },
+    { "type": "GATE_SLOT","x": 180,  "y": 0,    "gate": "XOR","id":"g5",  "label": "XOR2" },
+    { "type": "GATE_SLOT","x": 280,  "y": 0,    "gate": "AND","id":"g6",  "label": "AND3" },
+    { "type": "GATE_SLOT","x": 380,  "y": 0,    "gate": "OR", "id":"g7",  "label": "OR2" },
+    { "type": "GATE_SLOT","x": 480,  "y": 0,    "gate": "NOT","id":"g8",  "label": "NOT1" },
+    { "type": "FF_SLOT",  "x": 620,  "y": 0,    "gate": "D","id": "ff_b", "label": "FF_DST" },
+    { "type": "INPUT",    "x": -350, "y": -120, "fixedValue": 1, "id": "in_d", "label": "D_IN" },
+    { "type": "INPUT",    "x": -120, "y": -120, "fixedValue": 0, "id": "in_b", "label": "B" }
+  ],
+  "wires": [
+    { "sourceId": "clk",  "targetId": "ff_a", "targetInputIndex": 2, "sourceOutputIndex": 0, "isClockWire": true, "id": "wc1" },
+    { "sourceId": "clk",  "targetId": "ff_b", "targetInputIndex": 2, "sourceOutputIndex": 0, "isClockWire": true, "id": "wc2" },
+    { "sourceId": "in_d", "targetId": "ff_a", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wd" },
+    { "sourceId": "ff_a", "targetId": "g1",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w1" },
+    { "sourceId": "in_b", "targetId": "g1",   "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w1b" },
+    { "sourceId": "g1",   "targetId": "g2",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w2" },
+    { "sourceId": "in_b", "targetId": "g2",   "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w2b" },
+    { "sourceId": "g2",   "targetId": "g3",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w3" },
+    { "sourceId": "in_b", "targetId": "g3",   "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w3b" },
+    { "sourceId": "g3",   "targetId": "g4",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w4" },
+    { "sourceId": "in_b", "targetId": "g4",   "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w4b" },
+    { "sourceId": "g4",   "targetId": "g5",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w5" },
+    { "sourceId": "in_b", "targetId": "g5",   "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w5b" },
+    { "sourceId": "g5",   "targetId": "g6",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w6" },
+    { "sourceId": "in_b", "targetId": "g6",   "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w6b" },
+    { "sourceId": "g6",   "targetId": "g7",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w7" },
+    { "sourceId": "in_b", "targetId": "g7",   "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w7b" },
+    { "sourceId": "g7",   "targetId": "g8",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w8" },
+    { "sourceId": "g8",   "targetId": "ff_b", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w9" }
+  ]
+}

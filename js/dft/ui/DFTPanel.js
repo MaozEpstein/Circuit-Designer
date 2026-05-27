@@ -826,9 +826,14 @@ export class DFTPanel {
         const area = e.target.closest('.dft-scanhist-scroll');
         if (!area) return;
         if (area.scrollWidth <= area.clientWidth) return;
-        if (e.deltaY === 0) return;
+        // Normalize deltaMode (0=px, 1=lines→~16px, 2=pages→clientHeight)
+        // and accept either axis — touchpad horizontal swipes and Shift+wheel
+        // emit deltaX instead of deltaY, both should walk the timeline.
+        const factor = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? area.clientHeight : 1);
+        const raw    = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+        if (raw === 0) return;
         e.preventDefault();
-        area.scrollLeft += e.deltaY;
+        area.scrollLeft += raw * factor;
       }, { passive: false });
       // Keyboard shortcuts inside the LFSR edit input — Enter saves,
       // Escape cancels.
@@ -1106,6 +1111,11 @@ export class DFTPanel {
     // and restore focus + caret) so typing in ATE input fields isn't
     // interrupted by the re-render.
     const prevScrollTop = this._body.scrollTop;
+    // Preserve horizontal scroll of the SCAN HISTORY trace — its inner
+    // .dft-scanhist-scroll container is rebuilt on every render, which
+    // would reset scrollLeft to 0 every ~64 ticks and make wheel-scroll
+    // visually jump back to the start mid-pan.
+    const prevHistScrollLeft = this._body.querySelector('.dft-scanhist-scroll')?.scrollLeft ?? 0;
     // Focus preservation: only for genuine text-entry fields (INPUT /
     // TEXTAREA), where losing focus mid-typing would be infuriating.
     // For buttons / cells / other clickables, focus preservation is
@@ -1188,6 +1198,10 @@ export class DFTPanel {
     // when we return from setting it, and scrollTop only "sticks"
     // after the new content's intrinsic height is known.
     if (prevScrollTop > 0) this._body.scrollTop = prevScrollTop;
+    if (prevHistScrollLeft > 0) {
+      const histEl = this._body.querySelector('.dft-scanhist-scroll');
+      if (histEl) histEl.scrollLeft = prevHistScrollLeft;
+    }
     if (activeKey) {
       // Restrict to INPUT/TEXTAREA via selector so we don't accidentally
       // grab the first matching button/cell with the same data-action

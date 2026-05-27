@@ -162,6 +162,7 @@ export function render(nodes, wires, nodeValues, wireValues, ffStates, hoveredNo
   if (_retimePreview) _drawRetimePreview(nodes, wires);
   // Pipeline critical path (yellow dashed, sits above wires).
   if (_pipelineCriticalPath?.length) _drawCriticalPath(nodes);
+  if (_staCriticalPath?.length) _drawStaCriticalPath(nodes);
   _drawNodes(nodes, nodeValues, ffStates, hoveredNodeId, selectedNodeId);
 
   // Wire mode: show anchor dots on hovered node (before source is picked)
@@ -288,6 +289,40 @@ function _drawCriticalPath(nodes) {
   ctx.lineWidth = 3;
   ctx.globalAlpha = 0.8;
   ctx.setLineDash([8, 4]);
+  ctx.beginPath();
+  let first = true;
+  for (const id of ids) {
+    const n = nodeById.get(id);
+    if (!n) continue;
+    if (first) { ctx.moveTo(n.x, n.y); first = false; }
+    else       ctx.lineTo(n.x, n.y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+// ── STA (Static Timing Analysis) overlay ──
+let _staCriticalPath = null;
+let _staPathStatus = 'met';
+export function setStaCriticalPath(nodeIds, status) {
+  _staCriticalPath = nodeIds;
+  _staPathStatus = status || 'met';
+}
+
+function _drawStaCriticalPath(nodes) {
+  const ids = _staCriticalPath;
+  if (!ids || ids.length < 2) return;
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  ctx.save();
+  ctx.strokeStyle = _staPathStatus === 'violated' ? '#ff4444' : '#44ff88';
+  ctx.lineWidth = 3.5;
+  ctx.globalAlpha = 0.85;
+  ctx.setLineDash([8, 6]);
+  ctx.lineDashOffset = -(Date.now() / 80) % 14;
+  ctx.shadowColor = _staPathStatus === 'violated'
+    ? 'rgba(255,68,68,0.5)' : 'rgba(68,255,136,0.5)';
+  ctx.shadowBlur = 10;
   ctx.beginPath();
   let first = true;
   for (const id of ids) {

@@ -37,6 +37,8 @@ const DEFAULT_SHORTCUTS = {
   'edit-delete2':     { key: 'Backspace',         label: 'Delete Selected',   group: 'Editing' },
   // Pipeline (Phase 13)
   'pipe-panel-toggle':     { key: 'KeyP',             label: 'Toggle Pipeline Panel',  group: 'Pipeline' },
+  // Backend Design
+  'backend-panel-toggle':  { key: 'KeyB',             label: 'Toggle Backend Panel',   group: 'Backend' },
   // DFT (Design For Test)
   'dft-panel-toggle':      { key: 'KeyT',             label: 'Toggle DFT Panel',       group: 'Test' },
   'dft-run-fault-sim':     { key: 'shift+KeyR',       label: 'Run Fault Simulation',   group: 'Test' },

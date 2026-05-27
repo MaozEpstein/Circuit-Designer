@@ -31,6 +31,7 @@
           <button id="btn-mem-toggle" class="btn-secondary" title="Toggle Memory Inspector" style="background:#1a1430;border-color:#5a3d8a;color:#c0a0f0">MEM</button>
           <button id="btn-pipeline-toggle" class="btn-secondary" title="Toggle Analysis Panel — pipeline, hazards, performance, branch predictor (P)" style="background:#0d2030;border-color:#2a6a8a;color:#8fd4ff">ANALYSIS</button>
           <button id="btn-dft-toggle" class="btn-secondary" title="Toggle DFT Panel — fault list, scan chains, BIST, JTAG (T)" style="background:#2a1a08;border-color:#aa6a2a;color:#ffb878">DFT</button>
+          <button id="btn-backend-toggle" class="btn-secondary" title="Toggle Backend Design Panel — STA, synthesis, floorplan (B)" style="background:#142e1c;border-color:#50cc70;color:#a8ffd6">BACKEND</button>
           <div id="step-count">STEP: 0</div>
         </div>
         <div id="sim-controls-row">
@@ -547,6 +548,26 @@
     </div>
     <div id="dft-panel-summary"></div>
     <div id="dft-panel-body"></div>
+  </div>
+
+  <!-- Backend Design Panel — STA, synthesis, floorplan, opened with B -->
+  <div id="backend-panel" class="hidden">
+    <div id="backend-resize-grip" title="Drag to resize"></div>
+    <div id="backend-panel-header">
+      <span class="backend-panel-title">BACKEND DESIGN</span>
+      <div class="backend-header-tiers">
+        <div class="backend-header-actions">
+          <button id="btn-backend-run" class="btn-secondary backend-action-run" title="Run Static Timing Analysis on the current circuit">RUN STA</button>
+        </div>
+        <div class="backend-header-meta">
+          <button id="btn-backend-fullscreen" class="btn-secondary backend-meta-btn" title="Toggle fullscreen (Esc to exit)">FULLSCREEN</button>
+          <button id="btn-backend-close" class="btn-secondary backend-meta-btn" title="Close panel">CLOSE</button>
+        </div>
+      </div>
+    </div>
+    <div id="backend-panel-tabs"></div>
+    <div id="backend-panel-summary"></div>
+    <div id="backend-panel-body"></div>
   </div>
 
   <!-- Debug toggle button (fixed) -->
