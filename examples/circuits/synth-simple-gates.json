@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    { "type": "CLOCK",    "x": 0,    "y": 220,  "value": 0, "id": "clk", "label": "CLK" },
+    { "type": "INPUT",    "x": -300, "y": -60,  "fixedValue": 1, "id": "a",   "label": "A" },
+    { "type": "INPUT",    "x": -300, "y": 40,   "fixedValue": 1, "id": "b",   "label": "B" },
+    { "type": "GATE_SLOT","x": -120, "y": -10,  "gate": "AND",  "id": "g1",  "label": "AND1" },
+    { "type": "GATE_SLOT","x":  20,  "y": -10,  "gate": "OR",   "id": "g2",  "label": "OR1" },
+    { "type": "GATE_SLOT","x":  160, "y": -10,  "gate": "NOT",  "id": "g3",  "label": "NOT1" },
+    { "type": "FF_SLOT",  "x":  320, "y": -10,  "gate": "D",    "id": "ff",  "label": "FF_Q" },
+    { "type": "OUTPUT",   "x":  480, "y": -10,                  "id": "q",   "label": "Q" }
+  ],
+  "wires": [
+    { "sourceId": "clk", "targetId": "ff", "targetInputIndex": 2, "sourceOutputIndex": 0, "isClockWire": true, "id": "wc" },
+    { "sourceId": "a",   "targetId": "g1", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w1" },
+    { "sourceId": "b",   "targetId": "g1", "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w2" },
+    { "sourceId": "g1",  "targetId": "g2", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w3" },
+    { "sourceId": "b",   "targetId": "g2", "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "w4" },
+    { "sourceId": "g2",  "targetId": "g3", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w5" },
+    { "sourceId": "g3",  "targetId": "ff", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w6" },
+    { "sourceId": "ff",  "targetId": "q",  "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "w7" }
+  ]
+}

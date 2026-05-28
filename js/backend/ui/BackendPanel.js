@@ -5,11 +5,12 @@
  */
 
 import { analyzeTimingPaths, pathDetail } from '../STAEngine.js';
+import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion } from '../SynthesisEngine.js';
 import { setStaCriticalPath }             from '../../rendering/CanvasRenderer.js';
 
 const TABS = [
   { id: 'sta',       label: 'STA',       enabled: true  },
-  { id: 'synthesis',  label: 'Synthesis',  enabled: false },
+  { id: 'synthesis',  label: 'Synthesis',  enabled: true  },
   { id: 'floorplan',  label: 'Floorplan',  enabled: false },
   { id: 'placement',  label: 'Placement',  enabled: false },
   { id: 'signoff',    label: 'Signoff',    enabled: false },
@@ -33,8 +34,13 @@ export class BackendPanel {
     this._renderScheduled = false;
     this._activeTab      = 'sta';
     this._lastResult     = null;
+    this._lastSynth      = null;
+    this._lastSdc        = null;
+    this._lastGroups     = null;
+    this._lastCongestion = null;
+    this._synthMode      = 'topological';
     this._selectedPath   = -1;
-    this._collapsedSections = new Set(['hist-info']);
+    this._collapsedSections = new Set(['hist-info', 'synth-info']);
 
     // STA parameters
     this._clockPeriodPs  = 2000;
@@ -72,7 +78,10 @@ export class BackendPanel {
 
   _bindEvents() {
     document.getElementById('btn-backend-toggle')?.addEventListener('click', () => this.toggle());
-    document.getElementById('btn-backend-run')?.addEventListener('click', () => this._runSta());
+    document.getElementById('btn-backend-run')?.addEventListener('click', () => {
+      if (this._activeTab === 'synthesis') this._runSynthesis();
+      else this._runSta();
+    });
     document.getElementById('btn-backend-close')?.addEventListener('click', () => this.hide());
     document.getElementById('btn-backend-fullscreen')?.addEventListener('click', () => this._toggleFullscreen());
 
@@ -116,6 +125,28 @@ export class BackendPanel {
       } else if (action === 'apply-clock') {
         this._readClockInputs();
         this._runSta();
+      } else if (action === 'copy-netlist') {
+        if (this._lastSynth?.netlist && navigator.clipboard) {
+          navigator.clipboard.writeText(this._lastSynth.netlist);
+          btn.textContent = 'COPIED';
+          setTimeout(() => { btn.textContent = 'COPY'; }, 1200);
+        }
+      } else if (action === 'copy-sdc') {
+        if (this._lastSdc?.sdc && navigator.clipboard) {
+          navigator.clipboard.writeText(this._lastSdc.sdc);
+          btn.textContent = 'COPIED';
+          setTimeout(() => { btn.textContent = 'COPY'; }, 1200);
+        }
+      } else if (action === 'set-synth-mode') {
+        this._synthMode = btn.dataset.mode;
+        this._scheduleRender();
+      } else if (action === 'select-group') {
+        const grp = this._lastGroups?.groups?.[btn.dataset.group];
+        if (grp?.nodeIds?.length) {
+          setStaCriticalPath(grp.nodeIds, 'met');
+          btn.textContent = 'HIGHLIGHTED';
+          setTimeout(() => { btn.textContent = 'HIGHLIGHT'; }, 1500);
+        }
       }
     });
 
@@ -125,7 +156,8 @@ export class BackendPanel {
       if (!tab) return;
       this._activeTab = tab.dataset.tab;
       this._selectedPath = -1;
-      setStaCriticalPath(null);
+      // Clear STA overlay when leaving STA tab
+      if (this._activeTab !== 'sta') setStaCriticalPath(null);
       this._scheduleRender();
     });
   }
@@ -194,12 +226,31 @@ export class BackendPanel {
 
   _render() {
     this._renderTabs();
+    this._updateRunButtonLabel();
     if (this._activeTab === 'sta') {
       this._renderSummary(this._lastResult);
       this._renderStaBody(this._lastResult);
+    } else if (this._activeTab === 'synthesis') {
+      this._renderSynthSummary(this._lastSynth);
+      this._renderSynthBody(this._lastSynth);
     } else {
       this._renderSummary(null);
       this._renderPlaceholder(this._activeTab);
+    }
+  }
+
+  _updateRunButtonLabel() {
+    const btn = document.getElementById('btn-backend-run');
+    if (!btn) return;
+    if (this._activeTab === 'synthesis') {
+      btn.textContent = 'RUN SYNTH';
+      btn.title = 'Run logic synthesis: map gates to standard cells, compute area, generate netlist';
+    } else if (this._activeTab === 'sta') {
+      btn.textContent = 'RUN STA';
+      btn.title = 'Run Static Timing Analysis on the current circuit';
+    } else {
+      btn.textContent = '—';
+      btn.title = 'Not available on this tab';
     }
   }
 
@@ -376,5 +427,242 @@ export class BackendPanel {
 
   _truncate(s, n) {
     return s && s.length > n ? s.slice(0, n - 1) + '…' : (s || '');
+  }
+
+  // ── Synthesis tab ────────────────────────────────────────────
+
+  _runSynthesis() {
+    if (!this._scene) return;
+    const scene = { nodes: this._scene.nodes, wires: this._scene.wires };
+    this._lastSynth      = synthesize(scene);
+    this._lastSdc        = generateSDC(scene);
+    this._lastGroups     = classifyGroupPaths(scene);
+    this._lastCongestion = estimateCongestion(scene, 8);
+    this._scheduleRender();
+  }
+
+  _renderSynthSummary(r) {
+    if (!this._summaryEl) return;
+    if (!r) { this._summaryEl.innerHTML = ''; return; }
+    const sv = (label, value, cls = '') =>
+      `<div><span class="backend-summary-label">${label}</span><br><span class="backend-summary-value ${cls}">${value}</span></div>`;
+    this._summaryEl.innerHTML = [
+      sv('Total Cells',  r.totalCells),
+      sv('Comb', r.numCombinational),
+      sv('Seq',  r.numSequential),
+      sv('Area', `${r.totalAreaUm2} µm²`),
+      sv('Logic Levels', r.logicLevels),
+    ].join('');
+  }
+
+  _renderSynthBody(r) {
+    if (!this._bodyEl) return;
+    if (!r) {
+      this._bodyEl.innerHTML = '<div class="backend-coming-soon"><p>Click <b>RUN SYNTH</b> to map your circuit to standard cells</p></div>';
+      return;
+    }
+    let html = '';
+    html += this._renderSection('synth-overview',
+      `Synthesis Overview <button class="backend-info-btn" data-action="toggle-section" data-section="synth-info" title="What is synthesis?">i</button>`,
+      this._renderSynthOverview(r));
+    html += this._renderSection('flow-diagram', 'Synthesis Flow — Inputs &amp; Outputs', this._renderFlowDiagram());
+    html += this._renderSection('synth-mode', 'Synthesis Mode', this._renderModeSection());
+    html += this._renderSection('group-paths', `Group Paths (${this._lastGroups?.totalPaths ?? 0} total)`, this._renderGroupPaths());
+    html += this._renderSection('cell-breakdown', `Cell Library Breakdown (${Object.keys(r.cellHistogram).length} types)`, this._renderCellTable(r));
+    html += this._renderSection('sdc', 'SDC — Design Constraints (TCL)', this._renderSdcSection());
+    html += this._renderSection('netlist', 'Gate-Level Netlist (structural Verilog)', this._renderNetlist(r));
+    if (r.unmappedTypes.length) {
+      html += `<div class="backend-warning">⚠ Unmapped types: ${r.unmappedTypes.join(', ')}</div>`;
+    }
+    this._bodyEl.innerHTML = html;
+  }
+
+  // ── Flow diagram (inputs → SYNTHESIS → outputs) ──
+  _renderFlowDiagram() {
+    const inputs = [
+      { label: 'Verilog Sources', have: true,  note: 'RTL (your schematic)' },
+      { label: 'STD Cells',       have: true,  note: 'Cell library views' },
+      { label: 'Process LEF',     have: false, note: 'Foundry tech file' },
+      { label: 'Constraints',     have: false, note: 'User-defined SDC inputs' },
+      { label: 'FLP',             have: false, note: 'Floorplan (topological only)' },
+    ];
+    const outputs = [
+      { label: 'GL Netlist', have: true, note: 'Verilog structural' },
+      { label: 'SDC',        have: true, note: 'Synopsys Design Constraints' },
+      { label: 'DEF View',   have: false, note: 'Physical placement (n/a)' },
+    ];
+    const chip = (c, side) =>
+      `<div class="backend-flow-chip ${c.have ? 'have' : 'missing'}" title="${c.note}">
+        <span class="backend-flow-mark">${c.have ? '✓' : '○'}</span>
+        ${c.label}
+      </div>`;
+    return `<div class="backend-flow-diagram">
+      <div class="backend-flow-col">${inputs.map(c => chip(c, 'in')).join('')}</div>
+      <div class="backend-flow-arrow">&#10142;</div>
+      <div class="backend-flow-box">SYNTHESIS</div>
+      <div class="backend-flow-arrow">&#10142;</div>
+      <div class="backend-flow-col">${outputs.map(c => chip(c, 'out')).join('')}</div>
+    </div>
+    <div class="backend-flow-legend">
+      <span><b style="color:#90ffc8">✓</b> generated by this tool</span>
+      <span><b style="color:#88ccaa">○</b> not yet supported</span>
+    </div>`;
+  }
+
+  // ── Mode toggle + congestion preview ──
+  _renderModeSection() {
+    const isTopo = this._synthMode === 'topological';
+    let html = `<div class="backend-mode-pills">
+      <button class="backend-mode-pill ${isTopo ? 'active' : ''}" data-action="set-synth-mode" data-mode="topological">Topological</button>
+      <button class="backend-mode-pill ${!isTopo ? 'active' : ''}" data-action="set-synth-mode" data-mode="non-topological">Non-Topological</button>
+    </div>`;
+    html += `<table class="backend-info-table" style="margin-top:8px">
+      <tr><th></th><th>Topological</th><th>Non-Topological</th></tr>
+      <tr><td>Considers FLP</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+      <tr><td>Path buffering by distance</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+      <tr><td>Placement congestion estimate</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+      <tr><td>Route congestion estimate</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+    </table>`;
+    if (isTopo && this._lastCongestion) html += this._renderCongestion(this._lastCongestion);
+    else if (!isTopo) html += `<div style="margin-top:8px;font-size:10px;color:#88ccaa;font-style:italic">Non-topological mode skips FLP — no congestion preview available.</div>`;
+    return html;
+  }
+
+  _renderCongestion(c) {
+    if (!c.maxDensity) return '<div style="margin-top:8px;color:#88ccaa;font-size:10px">No physical cells to estimate congestion.</div>';
+    let html = `<div class="backend-congestion-title">Placement Congestion Estimate (${c.gridSize}×${c.gridSize} grid)</div>
+      <div class="backend-congestion-grid" style="grid-template-columns:repeat(${c.gridSize}, 1fr)">`;
+    for (let y = 0; y < c.gridSize; y++) {
+      for (let x = 0; x < c.gridSize; x++) {
+        const v = c.grid[y][x];
+        const t = c.maxDensity > 0 ? v / c.maxDensity : 0;
+        // Green → Yellow → Red gradient
+        const hue = Math.round(120 - t * 120);
+        const sat = v === 0 ? 0 : 60;
+        const lum = v === 0 ? 16 : 30 + t * 25;
+        html += `<div class="backend-congestion-cell" style="background:hsl(${hue}, ${sat}%, ${lum}%)" title="cell (${x},${y}): ${v} node(s)">${v || ''}</div>`;
+      }
+    }
+    html += `</div>
+      <div class="backend-congestion-legend">
+        <span style="color:#90ffc8">■ low</span>
+        <span style="color:#ffd054">■ medium</span>
+        <span style="color:#ff5454">■ high</span>
+      </div>`;
+    return html;
+  }
+
+  // ── Group paths table ──
+  _renderGroupPaths() {
+    const g = this._lastGroups?.groups;
+    if (!g) return '';
+    const rows = [
+      ['in2reg',  g.in2reg],
+      ['reg2reg', g.reg2reg],
+      ['reg2out', g.reg2out],
+      ['in2out',  g.in2out],
+    ];
+    let html = `<table class="backend-group-table">
+      <tr><th>Group</th><th>Description</th><th>Count</th><th>Action</th></tr>`;
+    for (const [name, data] of rows) {
+      const disabled = data.count === 0;
+      html += `<tr>
+        <td><b>${name}</b></td>
+        <td>${data.desc}</td>
+        <td>${data.count}</td>
+        <td>${disabled ? '—' : `<button class="backend-copy-btn" data-action="select-group" data-group="${name}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button>`}</td>
+      </tr>`;
+    }
+    html += `</table>`;
+    html += `<div style="margin-top:6px;font-size:9px;color:#88ccaa">Click HIGHLIGHT to color the nodes of that group on the canvas. Synthesis optimizes each group independently against its own slack target.</div>`;
+    return html;
+  }
+
+  // ── SDC viewer ──
+  _renderSdcSection() {
+    if (!this._lastSdc) return '';
+    const esc = (this._lastSdc.sdc || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let warns = '';
+    if (this._lastSdc.warnings?.length) {
+      warns = `<div class="backend-sdc-warn">${this._lastSdc.warnings.map(w => `⚠ ${w}`).join('<br>')}</div>`;
+    }
+    return `<button class="backend-copy-btn" data-action="copy-sdc" title="Copy SDC to clipboard">COPY</button>
+            ${warns}
+            <pre class="backend-sdc">${esc}</pre>`;
+  }
+
+  _renderSynthOverview(r) {
+    const infoOpen = !this._collapsedSections.has('synth-info');
+    let html = '';
+    if (infoOpen) {
+      html += `<div class="backend-info-box">
+        <div class="backend-info-formula">Synthesis: RTL &rarr; Gate-Level Netlist</div>
+        <div class="backend-info-formula-detail">map(node) &rarr; STD cell &nbsp;|&nbsp; Σ areaUm² &nbsp;|&nbsp; depth = longest combinational chain</div>
+        <p><b>Synthesis</b> translates the logical description of a circuit (RTL — what you drew) into a netlist of <b>standard cells</b> from a silicon vendor's library. Each gate becomes a specific cell with a known area, delay, and physical footprint.</p>
+        <table class="backend-info-table">
+          <tr><td>STD Cell</td><td>Pre-designed building block (e.g. AND2X1 = 2-input AND, drive strength X1)</td></tr>
+          <tr><td>Area (µm²)</td><td>Physical silicon area the cell occupies on the die</td></tr>
+          <tr><td>Logic Levels</td><td>Longest combinational chain between two flip-flops — affects max clock frequency</td></tr>
+          <tr><td>Max Fanout</td><td>Number of cells driven by one output — high fanout slows the path</td></tr>
+        </table>
+      </div>`;
+    }
+    // Composition bar
+    const nSpec = r.numSpecial || 0;
+    const total = Math.max(1, r.numCombinational + r.numSequential + r.numComplex + nSpec);
+    const pComb = (r.numCombinational / total) * 100;
+    const pSeq  = (r.numSequential   / total) * 100;
+    const pCplx = (r.numComplex      / total) * 100;
+    const pSpec = (nSpec             / total) * 100;
+    html += `<div class="backend-stats-bar" title="Cell composition">
+      <div class="backend-stats-seg comb" style="width:${pComb}%" title="Combinational: ${r.numCombinational}">${r.numCombinational > 0 ? r.numCombinational : ''}</div>
+      <div class="backend-stats-seg seq"  style="width:${pSeq}%"  title="Sequential: ${r.numSequential}">${r.numSequential > 0 ? r.numSequential : ''}</div>
+      <div class="backend-stats-seg cplx" style="width:${pCplx}%" title="Complex: ${r.numComplex}">${r.numComplex > 0 ? r.numComplex : ''}</div>
+      <div class="backend-stats-seg spec" style="width:${pSpec}%" title="Memory/Special: ${nSpec}">${nSpec > 0 ? nSpec : ''}</div>
+    </div>
+    <div class="backend-stats-legend">
+      <span><i class="dot comb"></i> Combinational</span>
+      <span><i class="dot seq"></i> Sequential</span>
+      <span><i class="dot cplx"></i> Complex</span>
+      <span><i class="dot spec"></i> Memory</span>
+    </div>`;
+    const depthHint = r.logicLevels === 0 && (r.numComplex + r.numSpecial) > 0
+      ? '<br><span style="font-size:8px;color:#88ccaa">(0 = no GATE_SLOT chains — all logic is in macros)</span>'
+      : '';
+    html += `<div class="backend-mini-grid">
+      <div><span class="backend-summary-label">Max Fanout</span><br><b>${r.maxFanout}</b></div>
+      <div title="Longest combinational chain of basic gates (GATE_SLOT) between sequential elements"><span class="backend-summary-label">Logic Depth</span><br><b>${r.logicLevels}</b>${depthHint}</div>
+      <div><span class="backend-summary-label">Total Area</span><br><b>${r.totalAreaUm2} µm²</b></div>
+    </div>`;
+    return html;
+  }
+
+  _renderCellTable(r) {
+    const entries = Object.entries(r.cellHistogram).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return '<div style="color:#88ccaa;font-size:10px">No cells to show</div>';
+    // Aggregate area per cell type
+    const areaByCell = {};
+    for (const ci of r.cellInstances) {
+      areaByCell[ci.cellName] = (areaByCell[ci.cellName] || 0) + ci.areaUm2;
+    }
+    // Look up fn from first matching instance
+    const fnByCell = {};
+    for (const ci of r.cellInstances) {
+      if (!fnByCell[ci.cellName]) fnByCell[ci.cellName] = ci.fn;
+    }
+    let html = '<table class="backend-cell-table"><tr><th>Cell</th><th>Function</th><th>Count</th><th>Unit (µm²)</th><th>Total (µm²)</th></tr>';
+    for (const [cell, count] of entries) {
+      const a = areaByCell[cell] || 0;
+      const unit = (count > 0 ? a / count : 0);
+      html += `<tr><td><b>${cell}</b></td><td style="color:#88ccaa">${fnByCell[cell] || ''}</td><td>${count}</td><td>${unit.toFixed(2)}</td><td><b>${a.toFixed(2)}</b></td></tr>`;
+    }
+    html += '</table>';
+    return html;
+  }
+
+  _renderNetlist(r) {
+    const escaped = (r.netlist || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return `<button class="backend-copy-btn" data-action="copy-netlist" title="Copy netlist to clipboard">COPY</button>
+            <pre class="backend-netlist">${escaped}</pre>`;
   }
 }

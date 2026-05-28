@@ -4980,6 +4980,300 @@ body:has(#pipeline-panel.pipeline-fullscreen) {
 }
 #backend-panel.backend-fullscreen #backend-resize-grip { display: none; }
 
+/* ── Synthesis tab specific styles ─────────────────────── */
+.backend-cell-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  margin-top: 4px;
+}
+.backend-cell-table th {
+  text-align: left;
+  color: #88ccaa;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-bottom: 1px solid #3a8a4a;
+}
+.backend-cell-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(58,138,74,0.15);
+  color: #eeffee;
+}
+.backend-cell-table tr:hover { background: rgba(58,138,74,0.08); }
+.backend-cell-table td:first-child { color: #a8ffd6; }
+
+.backend-netlist {
+  background: #0a160f;
+  border: 1px solid #2a6a3a;
+  border-radius: 4px;
+  color: #a8ffd6;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  margin: 6px 0 0 0;
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre;
+}
+.backend-copy-btn {
+  font-size: 9px;
+  padding: 3px 10px;
+  background: #1a3a22;
+  border: 1px solid #50cc70;
+  border-radius: 3px;
+  color: #a8ffd6;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  font-family: inherit;
+  margin-bottom: 4px;
+}
+.backend-copy-btn:hover {
+  background: #224a2c;
+  color: #eeffee;
+}
+
+.backend-stats-bar {
+  display: flex;
+  width: 100%;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(20,46,28,0.6);
+  border: 1px solid #3a8a4a;
+  margin: 8px 0 4px 0;
+}
+.backend-stats-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #eeffee;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 0 0 3px rgba(0,0,0,0.6);
+  transition: width 0.3s ease;
+  min-width: 0;
+}
+.backend-stats-seg.comb { background: #3aaa5a; }
+.backend-stats-seg.seq  { background: #5066cc; }
+.backend-stats-seg.cplx { background: #cc8844; }
+.backend-stats-seg.spec { background: #aa44aa; }
+.backend-stats-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 9px;
+  color: #88ccaa;
+  margin-bottom: 10px;
+}
+.backend-stats-legend i {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.backend-stats-legend i.comb { background: #3aaa5a; }
+.backend-stats-legend i.seq  { background: #5066cc; }
+.backend-stats-legend i.cplx { background: #cc8844; }
+.backend-stats-legend i.spec { background: #aa44aa; }
+
+.backend-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(20,46,28,0.4);
+  border-radius: 4px;
+  border: 1px solid rgba(58,138,74,0.3);
+  margin-top: 6px;
+}
+.backend-mini-grid b {
+  color: #a8ffd6;
+  font-size: 13px;
+}
+
+.backend-warning {
+  background: rgba(170,60,40,0.15);
+  border: 1px solid #cc6633;
+  border-radius: 4px;
+  color: #ffaa88;
+  padding: 6px 10px;
+  font-size: 10px;
+  margin-top: 8px;
+}
+
+/* ── Synthesis Phase 2: flow diagram, mode toggle, congestion, groups, SDC ── */
+.backend-flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px;
+  background: rgba(20,46,28,0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(58,138,74,0.3);
+}
+.backend-flow-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.backend-flow-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 9px;
+  border: 1px solid #3a8a4a;
+  white-space: nowrap;
+  cursor: help;
+  transition: background 0.15s;
+}
+.backend-flow-chip.have    { background: rgba(58,138,74,0.25); color: #a8ffd6; border-color: #50cc70; }
+.backend-flow-chip.missing { background: rgba(40,50,60,0.25);  color: #88aaaa; border-color: #4a6a5a; opacity: 0.7; }
+.backend-flow-chip:hover   { background: rgba(58,138,74,0.4); }
+.backend-flow-mark { font-weight: bold; font-size: 10px; }
+.backend-flow-arrow {
+  font-size: 18px;
+  color: #50cc70;
+  flex-shrink: 0;
+}
+.backend-flow-box {
+  background: linear-gradient(135deg, #1a5a2a, #2a8a4a);
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 2px solid #90ffc8;
+  text-align: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(80,204,112,0.3);
+}
+.backend-flow-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+  font-size: 9px;
+  color: #88ccaa;
+}
+
+/* Mode pills (topological / non-topological) */
+.backend-mode-pills {
+  display: inline-flex;
+  border: 1px solid #3a8a4a;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.backend-mode-pill {
+  padding: 4px 14px;
+  font-size: 10px;
+  font-family: inherit;
+  background: rgba(20,46,28,0.4);
+  color: #88ccaa;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+}
+.backend-mode-pill.active {
+  background: #2a8a4a;
+  color: #ffffff;
+  font-weight: bold;
+}
+.backend-mode-pill:not(.active):hover { background: rgba(58,138,74,0.25); color: #a8ffd6; }
+
+/* Congestion grid heatmap */
+.backend-congestion-title {
+  margin-top: 10px;
+  font-size: 10px;
+  color: #88ccaa;
+  margin-bottom: 4px;
+}
+.backend-congestion-grid {
+  display: grid;
+  gap: 2px;
+  background: #0a160f;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid #2a6a3a;
+}
+.backend-congestion-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: bold;
+  color: rgba(255,255,255,0.9);
+  border-radius: 2px;
+  transition: transform 0.15s;
+  cursor: help;
+}
+.backend-congestion-cell:hover { transform: scale(1.15); z-index: 2; }
+.backend-congestion-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+  font-size: 9px;
+}
+
+/* Group paths table */
+.backend-group-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  margin-top: 4px;
+}
+.backend-group-table th {
+  text-align: left;
+  color: #88ccaa;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-bottom: 1px solid #3a8a4a;
+}
+.backend-group-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(58,138,74,0.15);
+  color: #eeffee;
+}
+.backend-group-table td:first-child { color: #a8ffd6; }
+.backend-group-table tr:hover { background: rgba(58,138,74,0.08); }
+
+/* SDC pre block (same as netlist but tcl-flavored) */
+.backend-sdc {
+  background: #0a160f;
+  border: 1px solid #2a6a3a;
+  border-left: 3px solid #6688cc;
+  border-radius: 4px;
+  color: #d0e8ff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  margin: 6px 0 0 0;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre;
+}
+.backend-sdc-warn {
+  background: rgba(180,140,40,0.12);
+  border: 1px solid #aa8833;
+  color: #ffd070;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 9px;
+  margin: 4px 0;
+}
+
 /* ── Interview Prep panel — green, mirrors #tutorial-panel palette ──── */
 #interview-panel {
   position: fixed;

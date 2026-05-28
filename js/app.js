@@ -5612,6 +5612,20 @@ const EXAMPLES = [
     tags: ['backend', 'STA', 'timing', 'critical-path'],
     file: 'examples/circuits/sta-multi-path.json',
   },
+  {
+    id: 'synth-simple-gates',
+    title: '4. Synthesis — Simple Gates',
+    desc: 'Three combinational gates (AND → OR → NOT) feeding a D flip-flop. Open the Backend panel, switch to the Synthesis tab, and click RUN SYNTH to see the standard-cell mapping, area breakdown, and generated gate-level Verilog netlist.',
+    tags: ['backend', 'synthesis', 'cells', 'netlist'],
+    file: 'examples/circuits/synth-simple-gates.json',
+  },
+  {
+    id: 'synth-with-hierarchy',
+    title: '5. Synthesis — Complex Cells',
+    desc: 'Mixed design with XOR, AND, MUX2X1, and HAX1 (half adder) plus three flip-flops. Demonstrates how synthesis maps complex gates to dedicated standard cells and how the area breakdown reflects cell complexity.',
+    tags: ['backend', 'synthesis', 'complex'],
+    file: 'examples/circuits/synth-with-hierarchy.json',
+  },
 ];
 
 const examplesOverlay = document.getElementById('examples-overlay');

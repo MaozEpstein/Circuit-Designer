@@ -1,0 +1,43 @@
+{
+  "nodes": [
+    { "type": "CLOCK",    "x": 0,    "y": 280,  "value": 0,       "id": "clk", "label": "CLK" },
+    { "type": "INPUT",    "x": -380, "y": -100, "fixedValue": 1,  "id": "a",   "label": "A" },
+    { "type": "INPUT",    "x": -380, "y":  -20, "fixedValue": 0,  "id": "b",   "label": "B" },
+    { "type": "INPUT",    "x": -380, "y":  60,  "fixedValue": 1,  "id": "sel", "label": "SEL" },
+
+    { "type": "FF_SLOT",  "x": -200, "y": -100, "gate": "D",      "id": "ffa", "label": "FF_A" },
+    { "type": "FF_SLOT",  "x": -200, "y":  -20, "gate": "D",      "id": "ffb", "label": "FF_B" },
+
+    { "type": "GATE_SLOT","x": -40,  "y": -100, "gate": "XOR",    "id": "x1",  "label": "XOR1" },
+    { "type": "GATE_SLOT","x": -40,  "y":  -20, "gate": "AND",    "id": "a1",  "label": "AND1" },
+
+    { "type": "GATE_SLOT","x": 100,  "y": -50,  "gate": "MUX",    "id": "mx",  "label": "MUX1" },
+    { "type": "GATE_SLOT","x": 240,  "y": -50,  "gate": "HALF_ADDER", "id": "ha", "label": "HA1" },
+
+    { "type": "FF_SLOT",  "x": 400,  "y": -50,  "gate": "D",      "id": "ffr", "label": "FF_R" },
+    { "type": "OUTPUT",   "x": 560,  "y": -50,                    "id": "q",   "label": "Q" }
+  ],
+  "wires": [
+    { "sourceId": "clk", "targetId": "ffa", "targetInputIndex": 2, "sourceOutputIndex": 0, "isClockWire": true, "id": "wc1" },
+    { "sourceId": "clk", "targetId": "ffb", "targetInputIndex": 2, "sourceOutputIndex": 0, "isClockWire": true, "id": "wc2" },
+    { "sourceId": "clk", "targetId": "ffr", "targetInputIndex": 2, "sourceOutputIndex": 0, "isClockWire": true, "id": "wc3" },
+
+    { "sourceId": "a",   "targetId": "ffa", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wd1" },
+    { "sourceId": "b",   "targetId": "ffb", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wd2" },
+
+    { "sourceId": "ffa", "targetId": "x1",  "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wx1" },
+    { "sourceId": "ffb", "targetId": "x1",  "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "wx2" },
+    { "sourceId": "ffa", "targetId": "a1",  "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wa1" },
+    { "sourceId": "ffb", "targetId": "a1",  "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "wa2" },
+
+    { "sourceId": "x1",  "targetId": "mx",  "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wm1" },
+    { "sourceId": "a1",  "targetId": "mx",  "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "wm2" },
+    { "sourceId": "sel", "targetId": "mx",  "targetInputIndex": 2, "sourceOutputIndex": 0, "id": "wm3" },
+
+    { "sourceId": "mx",  "targetId": "ha",  "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wh1" },
+    { "sourceId": "sel", "targetId": "ha",  "targetInputIndex": 1, "sourceOutputIndex": 0, "id": "wh2" },
+
+    { "sourceId": "ha",  "targetId": "ffr", "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wr1" },
+    { "sourceId": "ffr", "targetId": "q",   "targetInputIndex": 0, "sourceOutputIndex": 0, "id": "wq" }
+  ]
+}
