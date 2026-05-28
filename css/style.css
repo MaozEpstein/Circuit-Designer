@@ -157,6 +157,7 @@ html, body {
 body { zoom: 0.8; }
 #dft-panel { zoom: 1.25; }
 #backend-panel { zoom: 1.25; }
+#pipeline-panel { zoom: 1.25; }
 /* #pipeline-panel.pipeline-fullscreen counter-zoom lives in app.css next
    to the other fullscreen rules so they cascade together. */
 

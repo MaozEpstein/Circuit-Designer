@@ -326,6 +326,16 @@ export function detectScanChains(scanFFs, wires) {
   return chains;
 }
 
+// Tab structure for the panel. Each tab groups a fixed set of section IDs;
+// only the active tab's sections render in the body. Mirrors Backend panel.
+const DFT_TABS = [
+  { id: 'overview',  label: 'OVERVIEW',    ids: ['overview', 'coverage']            },
+  { id: 'scan-ate',  label: 'SCAN & ATE',  ids: ['scan', 'scanhist', 'ate']         },
+  { id: 'bist',      label: 'BIST',        ids: ['lfsr', 'misr', 'bist']            },
+  { id: 'memory',    label: 'MEMORY',      ids: ['memtest', 'mbist']                },
+  { id: 'jtag-diag', label: 'JTAG & DIAG', ids: ['jtag', 'diagnosis', 'faultlist']  },
+];
+
 export class DFTPanel {
   constructor(sceneRef = null) {
     // Optional scene reference. When provided, sections like FAULT LIST
@@ -396,6 +406,9 @@ export class DFTPanel {
     // BOUNDARY / DIAGNOSE). Survives re-render so the user's fold
     // choices aren't undone by a fault-sim tick.
     this._collapsedCategories = new Set();
+    // Active tab — the panel now uses tabs (like Backend) instead of
+    // stacked categories. Default to overview.
+    this._activeTab = 'overview';
     // Coupling-fault UI state, per RAM id:
     //   _couplingMode    — 'stuck' (default) | 'couple'
     //   _couplingPending — the address waiting for its partner (aggressor)
@@ -506,6 +519,26 @@ export class DFTPanel {
     if (this._traceToggleBtn) this._traceToggleBtn.addEventListener('click', () => this._toggleTrace());
     if (this._tracePrevBtn)   this._tracePrevBtn  .addEventListener('click', () => this._stepTrace(-1));
     if (this._traceNextBtn)   this._traceNextBtn  .addEventListener('click', () => this._stepTrace(+1));
+
+    // Tab switcher — bind on the panel element so we never miss a click
+    // even if the tabs container is re-rendered. Use mousedown for the
+    // same reason the body uses it: clicks on mid-tick re-rendered nodes
+    // would otherwise be lost.
+    if (this._el) {
+      this._el.addEventListener('mousedown', (e) => {
+        const tab = e.target.closest('.dft-tab');
+        if (!tab) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const id = tab.dataset.dftTab;
+        if (!id) return;
+        if (id === this._activeTab) return;
+        this._activeTab = id;
+        // Force immediate render — bypass scheduled flag in case another
+        // _scheduleRender from a sim tick is in-flight.
+        if (this._visible) this._render();
+      });
+    }
 
     // Event delegation for clicks inside the body — used by inline
     // toggle widgets like the [source ▸/▾] tag in the FAULT COVERAGE
@@ -1006,7 +1039,7 @@ export class DFTPanel {
   _toggleFullscreen() {
     if (!this._el) return;
     const on = this._el.classList.toggle('dft-fullscreen');
-    if (this._fsBtn) this._fsBtn.textContent = on ? 'EXIT FS' : 'FULLSCREEN';
+    if (this._fsBtn) this._fsBtn.textContent = on ? '⛶ EXIT' : '⛶';
     if (this._collapseAllBtn) this._collapseAllBtn.style.display = on ? '' : 'none';
     if (this._editAllBtn)     this._editAllBtn.style.display     = on ? '' : 'none';
     if (on) {
@@ -1168,27 +1201,27 @@ export class DFTPanel {
       diagnosis: this._renderDiagnosis(),
       faultlist: this._renderFaultList(wires),
     };
-    const CATEGORIES = [
-      { id: 'overview', label: 'OVERVIEW',  ids: ['overview', 'coverage']                          },
-      { id: 'stimulus', label: 'STIMULUS',  ids: ['scan', 'scanhist', 'ate', 'lfsr', 'misr', 'bist'] },
-      { id: 'memory',   label: 'MEMORY',    ids: ['memtest', 'mbist']                              },
-      { id: 'boundary', label: 'BOUNDARY',  ids: ['jtag']                                          },
-      { id: 'diagnose', label: 'DIAGNOSE',  ids: ['diagnosis', 'faultlist']                        },
-    ];
-    this._body.innerHTML = CATEGORIES.map(cat => {
-      const inner = cat.ids.map(id => sections[id]).filter(h => h && h.trim()).join('');
-      if (!inner) return '';
-      const collapsed = this._collapsedCategories?.has(cat.id);
-      return `
-        <div class="dft-category${collapsed ? ' dft-category-collapsed' : ''}" data-category="${cat.id}">
-          <div class="dft-category-header" data-action="cat-toggle" data-cat-id="${cat.id}">
-            <span class="dft-category-toggle">${collapsed ? '▸' : '▾'}</span>
-            <span class="dft-category-label">${cat.label}</span>
-            <span class="dft-category-rule"></span>
-          </div>
-          <div class="dft-category-body">${inner}</div>
-        </div>`;
-    }).join('');
+    // Render the tab strip into its dedicated container (above the body).
+    const tabsEl = document.getElementById('dft-panel-tabs');
+    if (tabsEl) {
+      tabsEl.innerHTML = DFT_TABS.map(t =>
+        `<button class="dft-tab${t.id === this._activeTab ? ' active' : ''}" data-dft-tab="${t.id}">${t.label}</button>`
+      ).join('');
+    }
+
+    // Body: only the active tab's sections.
+    const activeTab = DFT_TABS.find(t => t.id === this._activeTab) || DFT_TABS[0];
+    const inner = activeTab.ids.map(id => sections[id]).filter(h => h && h.trim()).join('');
+    if (inner) {
+      this._body.innerHTML = inner;
+    } else {
+      const expected = activeTab.ids.map(id => id.toUpperCase()).join(' · ');
+      this._body.innerHTML = `<div class="dft-tab-empty">
+        <h3>${activeTab.label}</h3>
+        <p>No data to show in the current scene.</p>
+        <p class="dft-tab-empty-hint">This tab will populate when the scene contains: <b>${expected}</b></p>
+      </div>`;
+    }
 
     this._applyCollapsibleSections();
 
@@ -1302,7 +1335,8 @@ export class DFTPanel {
       `</span>`;
     const info = this._infoOpen.has('scanhist') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Live logic-analyzer view of each scan-observation output, last ${this._scanHistoryMax} ticks. Single-bit signals render as a waveform (high = top, low = bottom); the MISR signature renders as hex per tick. This is what an ATE would capture on its tester pins during a scan-test run.</div>
+        <div class="info-headline"><div class="info-formula" style="font-size:11px">live waveform · last <code>${this._scanHistoryMax}</code> ticks · what an ATE sees on its tester pins</div></div>
+        <div class="dft-info-lead">Logic-analyzer view of scan-observation outputs. Single bits as waveform, MISR signature as hex.</div>
       </div>` : '';
 
     if (this._scanHistory.length === 0) {
@@ -1485,7 +1519,21 @@ export class DFTPanel {
       `</span>`;
     const info = this._infoOpen.has('ate') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">The DFT panel acts as an <b style="color:#80c8a0">ATE</b> (Automatic Test Equipment) — exactly what Teradyne / Advantest machines do in chip production. You give a test vector + expected response; the panel orchestrates the full <b>Load → (Capture) → Unload</b> scan cycle and reports PASS/FAIL.</div>
+        <div class="info-headline">
+          <div class="info-sequence">
+            <span class="info-pill p1">LOAD</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p3">CAPTURE</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p5">UNLOAD</span>
+            <span class="info-sequence-sep">=</span>
+            <span class="info-pill p2">PASS</span>
+            <span class="info-sequence-sep">/</span>
+            <span class="info-pill p4">FAIL</span>
+          </div>
+          <div class="info-caption">ATE = Automatic Test Equipment (Teradyne / Advantest) — full scan-test cycle</div>
+        </div>
+        <div class="dft-info-lead">The DFT panel emulates an ATE. Give it a test vector + expected response; it runs the full scan cycle.</div>
         <div class="dft-info-row">
           <span style="color:#80c8a0">Manual</span>
           <span class="dft-info-text">Load N bits, unload N bits. Chain-integrity test (no functional capture).</span>
@@ -2239,7 +2287,15 @@ export class DFTPanel {
       `</span>`;
     const cvInfo = this._infoOpen.has('coverage') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Fraction of the scene's possible faults that the active test vectors actually flag — the headline metric of any DFT flow. The bar is coloured by industry tiers: &lt;70 % red, 70–90 % amber, ≥90 % green.</div>
+        <div class="info-headline">
+          <div class="info-formula">
+            <var>Coverage</var><span class="op">=</span>
+            <code>detected_faults</code><span class="op">/</span><code>total_faults</code>
+            <span class="op">×</span><code>100%</code>
+          </div>
+          <div class="info-caption">Industry tiers: &lt;70 % <span style="color:#ff7766">red</span> · 70–90 % <span style="color:#ffaa66">amber</span> · ≥90 % <span style="color:#88dd99">green</span></div>
+        </div>
+        <div class="dft-info-lead">The headline metric of any DFT flow — fraction of possible faults flagged by the active test vectors.</div>
       </div>` : '';
     // Diagnostic banner — surfaces why a click on RUN FAULT SIM / GEN
     // RANDOM didn't change anything (empty scene, no inputs, etc.).
@@ -2441,7 +2497,8 @@ export class DFTPanel {
       `</span>`;
     const ovInfo = this._infoOpen.has('overview') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Top-line counts for the scene: how many wires (each is two potential stuck-at sites), how many flip-flops, and how many faults you've manually injected via the wire context menu.</div>
+        <div class="info-headline"><div class="info-formula" style="font-size:11px">Possible faults <span class="op">=</span> <code>2 × wires</code> <span class="op">(stuck-at-0 + stuck-at-1)</span></div></div>
+        <div class="dft-info-lead">Top-line counts: wires, flip-flops, and manually injected faults.</div>
       </div>` : '';
     return `
       <div class="dft-overview-header dft-section-header">${ovHeader}</div>${ovInfo}
@@ -2479,7 +2536,21 @@ export class DFTPanel {
       `</span>`;
     const chainInfoPanel = this._infoOpen.has('chains') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Scan chains shift test vectors serially through every flip-flop, replacing the design's normal datapath during test mode. Status flags wiring completeness.</div>
+        <div class="info-headline">
+          <div class="info-diagram">
+            <span class="info-box muted">SI</span>
+            <span class="info-arrow">→</span>
+            <span class="info-box safe">SFF₀</span>
+            <span class="info-arrow">→</span>
+            <span class="info-box safe">SFF₁</span>
+            <span class="info-arrow">→</span>
+            <span class="info-box safe">SFF₂</span>
+            <span class="info-arrow">→</span>
+            <span class="info-box muted">SO</span>
+          </div>
+          <div class="info-caption"><code>TE=1</code> shift · <code>TE=0</code> capture from datapath D pins</div>
+        </div>
+        <div class="dft-info-lead">Scan chains shift test vectors serially through every flip-flop during test mode. Status flags wiring completeness.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status ok">healthy</span>
           <span class="dft-info-text">scan-in + scan-out wired AND a single TE source feeds every cell.</span>
@@ -2838,7 +2909,11 @@ export class DFTPanel {
     const open = this._infoOpen.has('patterns');
     const infoPanel = open ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">LFSRs as test-pattern sources for BIST. Status combines polynomial quality with whether the LFSR is actually wired into a scan path.</div>
+        <div class="info-headline">
+          <div class="info-formula" style="font-size:11px">primitive poly <span class="op">⇒</span> max-length orbit <span class="op">=</span> <code>2ⁿ − 1</code> states</div>
+          <div class="info-caption">All 2ⁿ−1 patterns visited before repeating · LFSR feeds scan chain via Q→SI</div>
+        </div>
+        <div class="dft-info-lead">LFSR test-pattern sources for BIST. Status combines polynomial quality with wiring into a scan path.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status ok">BIST source</span>
           <span class="dft-info-text">Primitive polynomial AND Q wired to scan-in. All good.</span>
@@ -2952,7 +3027,14 @@ export class DFTPanel {
       `</span>`;
     const infoPanel = this._infoOpen.has('misrs') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">MISRs sit at the END of a scan chain and compress the test responses into a compact signature. Comparing it against the pre-computed "golden" value tells you instantly if any fault corrupted the response.</div>
+        <div class="info-headline">
+          <div class="info-formula">
+            <var>Sig<sub>new</sub></var><span class="op">=</span>
+            <code>(Sig<sub>prev</sub> &lt;&lt; 1) ⊕ tap_xor ⊕ data_in</code>
+          </div>
+          <div class="info-caption">Polynomial example: <code>1 + x³ + x⁵ + x⁷ + x⁸</code> · Sig matches golden → PASS, else FAIL</div>
+        </div>
+        <div class="dft-info-lead">MISRs sit at the END of a scan chain and compress test responses into a compact signature. Compare to "golden" to detect faults.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status ok">match</span>
           <span class="dft-info-text">Current signature equals the golden value — no detected fault.</span>
@@ -3119,7 +3201,17 @@ export class DFTPanel {
       `</span>`;
     const infoPanel = this._infoOpen.has('bist') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Each BIST_CONTROLLER orchestrates one self-test run: assert TEST_MODE for runLength cycles while LFSR + MISR do their work, then compare the captured signature to the golden value and latch PASS or FAIL.</div>
+        <div class="info-headline">
+          <div class="info-diagram">
+            <span class="info-box safe">LFSR<small>seed→patterns</small></span>
+            <span class="info-arrow">→</span>
+            <span class="info-box">DUT<small>scan chain</small></span>
+            <span class="info-arrow">→</span>
+            <span class="info-box safe">MISR<small>compact</small></span>
+          </div>
+          <div class="info-caption">Loop for <code>runLength</code> cycles · final signature <code>== golden</code> → PASS</div>
+        </div>
+        <div class="dft-info-lead">One self-test run: TEST_MODE high for <code>runLength</code> cycles while LFSR feeds patterns and MISR compresses responses.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status warn">idle</span>
           <span class="dft-info-text">Waiting for START. Pulse the START input to begin the run.</span>
@@ -3229,7 +3321,8 @@ export class DFTPanel {
       `</span>`;
     const infoPanel = this._infoOpen.has('memtests') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Panel-driven RAM test runner. No MBIST_CONTROLLER needed — pick a pattern, click RUN, see pass/fail. Patterns apply <code>cellFaults</code> exactly as the engine does, so an injected cell fault yields the same observable here as it would under a March C− run.</div>
+        <div class="info-headline"><div class="info-formula" style="font-size:11px">pick pattern <span class="op">→</span> RUN <span class="op">→</span> PASS / FAIL</div><div class="info-caption">Panel-driven · no MBIST_CONTROLLER needed · same engine fault model as March C−</div></div>
+        <div class="dft-info-lead">Standalone RAM test runner. Pick a pattern, click RUN.</div>
         <table class="dft-memtest-algo-table">
           <thead>
             <tr>
@@ -3854,7 +3947,23 @@ export class DFTPanel {
       `</span>`;
     const infoPanel = this._infoOpen.has('mbist') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Each MBIST_CONTROLLER walks a connected RAM through the March C− algorithm: { ⇕w0; ⇑r0,w1; ⇑r1,w0; ⇓r0,w1; ⇓r1,w0; ⇕r0 }. Drives ADDR / DATA / WE / RE through an optional 4-mux TEST_MODE collar; monitors RAM.Q via DATA_IN.</div>
+        <div class="info-headline">
+          <div class="info-sequence">
+            <span class="info-pill p1">⇕ w0</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p2">⇑ r0,w1</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p3">⇑ r1,w0</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p4">⇓ r0,w1</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p5">⇓ r1,w0</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p6">⇕ r0</span>
+          </div>
+          <div class="info-caption">March C− algorithm · <code>⇕</code> any order · <code>⇑</code> ascending addr · <code>⇓</code> descending · <b>≈ 15·N cycles</b> for N cells</div>
+        </div>
+        <div class="dft-info-lead">MBIST_CONTROLLER walks a connected RAM through March C−. Drives ADDR / DATA / WE / RE through a 4-mux TEST_MODE collar; monitors RAM.Q via DATA_IN.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status warn">idle</span>
           <span class="dft-info-text">Waiting for START. Pulse START to begin the March test (≈ 15·N cycles for N cells).</span>
@@ -4155,7 +4264,23 @@ export class DFTPanel {
       `</span>`;
     const infoPanel = this._infoOpen.has('jtag') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Each JTAG TAP runs the IEEE 1149.1 16-state FSM. TMS on posedge TCK walks states; Shift-IR/DR clock TDI through the IR / DR registers and emit TDO. Boundary-scan cells form the chain that lets a tester poke and read every IO pin.</div>
+        <div class="info-headline">
+          <div class="info-sequence">
+            <span class="info-pill p1">TLR</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p2">RTI</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p3">Shift-IR</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p4">Update-IR</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p5">Shift-DR</span>
+            <span class="info-sequence-sep">→</span>
+            <span class="info-pill p6">Update-DR</span>
+          </div>
+          <div class="info-caption">IEEE 1149.1 · TMS on ↑TCK walks 16 states · TDI shifts in, TDO emits out</div>
+        </div>
+        <div class="dft-info-lead">JTAG TAP runs the IEEE 1149.1 FSM. Boundary-scan cells let a tester poke and read every IO pin.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status warn">TLR</span>
           <span class="dft-info-text">Test-Logic-Reset — TAP idle, IR cleared. Reached after 5×TMS=1 from anywhere.</span>
@@ -4265,7 +4390,8 @@ export class DFTPanel {
       `</span>`;
     const infoPanel = this._infoOpen.has('diagnosis') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Single-fault diagnosis. Given an observed output mismatch, rank wire-level faults by how well their detection signature matches the observation. Top-1 with score 1.0 = exact match. Equivalent faults (e.g. an AND's input stuck-at-0 vs its output stuck-at-0) tie at the same score — the diagnoser cannot distinguish them from the boundary alone.</div>
+        <div class="info-headline"><div class="info-formula" style="font-size:11px">match <span class="op">=</span> <code>signature ⊕ observed</code> <span class="op">→</span> rank faults by Hamming distance</div><div class="info-caption">Top-1 score 1.0 = exact match · equivalent faults tie</div></div>
+        <div class="dft-info-lead">Given an output mismatch, rank wire faults by signature match against the fault dictionary.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status warn">no sim</span>
           <span class="dft-info-text">Run RUN FAULT SIM first to build the dictionary that diagnosis matches against.</span>
@@ -4387,7 +4513,16 @@ export class DFTPanel {
       `</span>`;
     const flInfoPanel = this._infoOpen.has('faultlist') ? `
       <div class="dft-info-panel">
-        <div class="dft-info-lead">Every wire is a potential fault site. The four columns are the fault models the simulator can inject; "injected" shows which are currently active.</div>
+        <div class="info-headline">
+          <div class="info-sequence">
+            <span class="info-pill p1">s-a-0 / s-a-1</span>
+            <span class="info-pill p2">open</span>
+            <span class="info-pill p3">bridge</span>
+            <span class="info-pill p4">transition</span>
+          </div>
+          <div class="info-caption">4 fault models the simulator can inject · each wire is a candidate site</div>
+        </div>
+        <div class="dft-info-lead">Every wire is a fault site. Columns show which models are active.</div>
         <div class="dft-info-row">
           <span class="dft-chain-status warn">s-a-0 / s-a-1</span>
           <span class="dft-info-text">Stuck-at fault — the wire is forced to 0 (or 1) regardless of its driver.</span>

@@ -29,8 +29,8 @@
           <button id="btn-reset" class="btn-secondary" title="Reset simulation to step 0 (registers, memory, PC all cleared to initial values)" style="padding:4px 10px;font-size:9px"><span style="font-size:14px;vertical-align:-1px;margin-right:3px">&#8634;</span>RESET</button>
           <button id="btn-waveform" title="Toggle waveform display (W)">WAVEFORM</button>
           <button id="btn-mem-toggle" class="btn-secondary" title="Toggle Memory Inspector" style="background:#1a1430;border-color:#5a3d8a;color:#c0a0f0">MEM</button>
-          <button id="btn-pipeline-toggle" class="btn-secondary" title="Toggle Analysis Panel — pipeline, hazards, performance, branch predictor (P)" style="background:#0d2030;border-color:#2a6a8a;color:#8fd4ff">ANALYSIS</button>
-          <button id="btn-dft-toggle" class="btn-secondary" title="Toggle DFT Panel — fault list, scan chains, BIST, JTAG (T)" style="background:#2a1a08;border-color:#aa6a2a;color:#ffb878">DFT</button>
+          <button id="btn-pipeline-toggle" class="btn-secondary" title="Toggle Analysis Panel — pipeline, hazards, performance, branch predictor (P)" style="background:#0e1620;border-color:#3a8aaa;color:#a8dcff">ANALYSIS</button>
+          <button id="btn-dft-toggle" class="btn-secondary" title="Toggle DFT Panel — fault list, scan chains, BIST, JTAG (T)" style="background:#3a2814;border-color:#d08850;color:#ffc890">DFT</button>
           <button id="btn-backend-toggle" class="btn-secondary" title="Toggle Backend Design Panel — STA, synthesis, floorplan (B)" style="background:#142e1c;border-color:#50cc70;color:#a8ffd6">BACKEND</button>
           <div id="step-count">STEP: 0</div>
         </div>
@@ -500,7 +500,7 @@
       <div>
         <button id="btn-stageview-toggle" class="btn-secondary" style="font-size:9px" title="Toggle Stage View — colour nodes by pipeline stage">STAGES</button>
         <button id="btn-pipeline-retime" class="btn-secondary" style="font-size:9px" title="Suggest Retiming — balance pipeline stages by moving a PIPE_REG">RETIME</button>
-        <button id="btn-pipeline-fullscreen" class="btn-secondary" style="font-size:9px" title="Toggle fullscreen (Esc to exit)">FULLSCREEN</button>
+        <button id="btn-pipeline-fullscreen" class="btn-secondary pipe-meta-fs" title="Toggle fullscreen (Esc to exit)">⛶</button>
         <span class="pipe-export-wrap">
           <button id="btn-pipeline-export" class="btn-secondary" style="font-size:9px;background:rgba(160,96,255,0.12);border-color:#a060ff;color:#d0b0ff" title="Export analysis snapshot">EXPORT</button>
           <div id="pipe-export-menu" class="pipe-export-menu hidden">
@@ -511,10 +511,11 @@
             <button data-export="copyjson" title="Copy full snapshot JSON to clipboard">Copy JSON to clipboard</button>
           </div>
         </span>
-        <button id="btn-pipeline-close" class="btn-secondary" style="font-size:9px">CLOSE</button>
+        <button id="btn-pipeline-close" class="btn-secondary pipe-meta-close" title="Close panel">×</button>
       </div>
     </div>
     <div id="pipeline-panel-summary"></div>
+    <div id="pipeline-panel-tabs"></div>
     <div id="pipeline-panel-body"></div>
   </div>
 
@@ -529,8 +530,8 @@
             <button id="btn-dft-gen" class="btn-secondary dft-action-gen" title="Pick a wire-pattern algorithm: walking-1, walking-0, exhaustive, etc.">GEN ▾</button>
             <div id="dft-pattern-popup" class="dft-pattern-popup hidden"></div>
           </div>
-          <button id="btn-dft-run" class="btn-secondary dft-action-run" title="Run combinational fault simulation against the scene's current test vectors">RUN FAULT SIM</button>
-          <button id="btn-dft-run-trans" class="btn-secondary dft-action-run" title="Run 2-vector transition fault simulation (slow-to-rise / slow-to-fall). Vectors are paired consecutively from the scene's current set; needs ≥ 2 vectors.">RUN TRANSITION SIM</button>
+          <button id="btn-dft-run" class="btn-secondary dft-action-run" title="Run combinational fault simulation against the scene's current test vectors">▶ FAULT</button>
+          <button id="btn-dft-run-trans" class="btn-secondary dft-action-run" title="Run 2-vector transition fault simulation (slow-to-rise / slow-to-fall). Vectors are paired consecutively from the scene's current set; needs ≥ 2 vectors.">▶ TRANS</button>
           <span class="dft-trace-cluster">
             <button id="btn-dft-trace" class="btn-secondary dft-trace-btn" title="Toggle live wire-diff overlay. Highlights wires whose value differs between the fault-free (golden) run and the current run, for the selected vector.">TRACE</button>
             <button id="btn-dft-trace-prev" class="btn-secondary dft-trace-step" title="Previous vector" disabled>◀</button>
@@ -541,12 +542,13 @@
         <div class="dft-header-meta">
           <button id="btn-dft-collapse-all" class="btn-secondary dft-meta-btn dft-fs-only" style="display:none" title="Collapse / expand every section and per-block item at once">▾ COLLAPSE ALL</button>
           <button id="btn-dft-edit-all" class="btn-secondary dft-meta-btn dft-fs-only" style="display:none" title="Open every editable field across the panel for parallel editing. Click again to save them all.">✎ EDIT ALL</button>
-          <button id="btn-dft-fullscreen" class="btn-secondary dft-meta-btn" title="Toggle fullscreen (Esc to exit)">FULLSCREEN</button>
-          <button id="btn-dft-close" class="btn-secondary dft-meta-btn" title="Close panel">CLOSE</button>
+          <button id="btn-dft-fullscreen" class="btn-secondary dft-meta-btn dft-meta-fs" title="Toggle fullscreen (Esc to exit)">⛶</button>
+          <button id="btn-dft-close" class="btn-secondary dft-meta-btn dft-meta-close" title="Close panel">×</button>
         </div>
       </div>
     </div>
     <div id="dft-panel-summary"></div>
+    <div id="dft-panel-tabs"></div>
     <div id="dft-panel-body"></div>
   </div>
 

@@ -71,6 +71,22 @@ function _esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+/**
+ * Tab structure — mirrors Backend / DFT panel pattern. Each tab lists the
+ * `data-section` IDs to SHOW; all other sections are hidden via the
+ * existing `.pipe-section-hidden` CSS rule (which fades + display:none).
+ * The `stages-area` "section" is the stage list at the top of the body —
+ * we treat it as part of OVERVIEW so the user always sees the pipeline
+ * shape on entry.
+ */
+const PIPE_TABS = [
+  { id: 'overview',    label: 'OVERVIEW',    show: ['stages-area', 'violations'] },
+  { id: 'hazards',     label: 'HAZARDS',     show: ['hazards', 'prog', 'forwards', 'loops'] },
+  { id: 'performance', label: 'PERFORMANCE', show: ['perf', 'runtime', 'cache', 'diag'] },
+  { id: 'predictor',   label: 'PREDICTOR',   show: ['pred'] },
+  { id: 'system',      label: 'SYSTEM',      show: ['cdc', 'lip'] },
+];
+
 export class PipelinePanel {
   constructor(analyzer) {
     this._analyzer = analyzer;
@@ -111,7 +127,11 @@ export class PipelinePanel {
     // holds open section keys so the popover survives re-renders.
     this._infoOpen = new Set();
     this._wireExportMenu();
-    this._buildPresetBar();
+
+    // Tab state (replaces the old PRESETS bar).
+    this._activeTab = 'overview';
+    this._buildTabBar();
+    this._bindTabClicks();
 
     const fsBtn = document.getElementById('btn-pipeline-fullscreen');
     fsBtn?.addEventListener('click', () => this._toggleFullscreen());
@@ -161,63 +181,61 @@ export class PipelinePanel {
   }
   toggle() { this._visible ? this.hide() : this.show(); }
 
-  _buildPresetBar() {
-    if (!this._summary) return;
-    if (document.getElementById('pipe-preset-bar')) return;
-    const bar = document.createElement('div');
-    bar.id = 'pipe-preset-bar';
-    bar.className = 'pipe-preset-bar';
-    const active = this._loadActivePreset();
-    bar.innerHTML =
-      '<span class="pipe-preset-label">View:</span>' +
-      '<span class="pipe-preset-hint">focus on a task — sections that don’t fit are hidden, not deleted</span>' +
-      '<span class="pipe-preset-buttons">' +
-      Object.entries(PRESETS).map(([id, p]) =>
-        `<button class="pipe-preset-btn${id === active ? ' active' : ''}" data-preset="${id}" title="${p.title}">${p.label}</button>`
-      ).join('') +
-      '</span>' +
-      '<span class="pipe-preset-status" id="pipe-preset-status"></span>';
-    bar.addEventListener('click', (e) => {
-      const id = e.target?.dataset?.preset;
-      if (!id) return;
-      this._setActivePreset(id);
-      this._applyActivePreset({ animate: true });
-      bar.querySelectorAll('.pipe-preset-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.preset === id);
-      });
+  // ── Tab bar (replaces the old PRESETS bar). Mirrors Backend / DFT pattern. ──
+  _buildTabBar() {
+    const tabsEl = document.getElementById('pipeline-panel-tabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = PIPE_TABS.map(t =>
+      `<button class="pipe-tab${t.id === this._activeTab ? ' active' : ''}" data-pipe-tab="${t.id}">${t.label}</button>`
+    ).join('');
+  }
+
+  _bindTabClicks() {
+    if (!this._el) return;
+    // Bind on the panel itself with mousedown — same pattern that fixed
+    // the DFT tab clicks (avoids being intercepted by other listeners on
+    // sim-tick re-renders).
+    this._el.addEventListener('mousedown', (e) => {
+      const tab = e.target.closest('.pipe-tab');
+      if (!tab) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = tab.dataset.pipeTab;
+      if (!id || id === this._activeTab) return;
+      this._activeTab = id;
+      // Refresh tab button states + body section visibility
+      this._buildTabBar();
+      this._applyActiveTab({ animate: true });
     });
-    this._summary.parentNode.insertBefore(bar, this._summary);
   }
 
-  _loadActivePreset() {
-    try { return localStorage.getItem('pipe-panel-preset') || 'overview'; }
-    catch { return 'overview'; }
-  }
-  _setActivePreset(id) {
-    try { localStorage.setItem('pipe-panel-preset', id); } catch {}
-  }
-  _applyActivePreset({ animate = false } = {}) {
+  /**
+   * Show only the sections that belong to the active tab; hide all others
+   * via the existing `.pipe-section-hidden` CSS rule (animated fade or
+   * instant toggle). Stages-area is a special top-of-body block that lives
+   * outside `.pipe-section`, so it's handled separately.
+   */
+  _applyActiveTab({ animate = false } = {}) {
     if (!this._body) return;
-    const id = this._loadActivePreset();
-    const preset = PRESETS[id] || PRESETS.all;
-    const hide = new Set(preset.hide);
-    const sections = this._body.querySelectorAll(':scope > .pipe-section');
-    let hiddenCount = 0;
-    let totalCount  = sections.length;
+    const tab = PIPE_TABS.find(t => t.id === this._activeTab) || PIPE_TABS[0];
+    const show = new Set(tab.show);
 
+    // Stages-area: visible only when OVERVIEW lists it.
+    const stagesArea = this._body.querySelector('#pipe-stages-area');
+    if (stagesArea) {
+      stagesArea.style.display = show.has('stages-area') ? '' : 'none';
+    }
+
+    const sections = this._body.querySelectorAll(':scope > .pipe-section');
     sections.forEach(sec => {
-      const shouldHide = hide.has(sec.dataset.section);
+      const shouldHide = !show.has(sec.dataset.section);
       const isHidden   = sec.classList.contains('pipe-section-hidden');
-      if (shouldHide) hiddenCount++;
 
       if (!animate) {
         sec.classList.toggle('pipe-section-hidden', shouldHide);
         sec.classList.remove('pipe-section-fading');
         return;
       }
-
-      // Animated transitions: opacity fades over 200 ms, then display:none
-      // takes the section out of the grid (or vice versa on un-hide).
       if (shouldHide && !isHidden) {
         sec.classList.add('pipe-section-fading');
         setTimeout(() => {
@@ -232,21 +250,13 @@ export class PipelinePanel {
           requestAnimationFrame(() => sec.classList.remove('pipe-section-fading')));
       }
     });
-
-    // Update the "X of Y hidden" status indicator.
-    const status = document.getElementById('pipe-preset-status');
-    if (status) {
-      status.textContent = hiddenCount === 0
-        ? `all ${totalCount} sections shown`
-        : `${hiddenCount} of ${totalCount} hidden`;
-    }
   }
 
   _toggleFullscreen() {
     if (!this._el) return;
     const on = this._el.classList.toggle('pipeline-fullscreen');
     const btn = document.getElementById('btn-pipeline-fullscreen');
-    if (btn) btn.textContent = on ? 'EXIT FS' : 'FULLSCREEN';
+    if (btn) btn.textContent = on ? '⛶ EXIT' : '⛶';
     if (on) {
       this._fsSaved = {
         width:    this._el.style.width,
@@ -994,31 +1004,57 @@ export class PipelinePanel {
   // CSS rename across two UIs that share the same theme).
   static _INFO = {
     violations: {
-      lead: 'Structural pipeline violations the analyzer found in the wiring — cross-stage signals without a PIPE register, missing reset paths, etc. Each item points at the offending wire.',
+      headline: `<div class="info-headline"><div class="info-formula" style="font-size:11px">Cross-stage wire <span class="op">∧</span> no PIPE_REG <span class="op">⇒</span> <span style="color:#ff8866">violation</span></div></div>`,
+      lead: 'Structural pipeline violations — wires that cross stage boundaries without a PIPE_REG, missing reset paths, etc.',
       rows: [],
     },
     prog: {
-      lead: 'Inter-instruction data hazards extracted from the active program. Each row pairs the producing instruction with the consuming one and labels the dependency type (RAW / WAR / WAW).',
+      headline: `<div class="info-headline"><div class="info-diagram"><span class="info-box safe">producer</span><span class="info-arrow">→</span><span class="info-box muted">…cycles…</span><span class="info-arrow">→</span><span class="info-box danger">consumer</span></div><div class="info-caption">Inter-instruction data dependency · RAW / WAR / WAW</div></div>`,
+      lead: 'Inter-instruction hazards from the active program. Each row pairs producer with consumer.',
       rows: [],
     },
     runtime: {
-      lead: 'Live counters from the running engine — branch flushes and cache hit/miss snapshots. Updates only while AUTO CLK is on; static otherwise.',
+      headline: `<div class="info-headline"><div class="info-formula" style="font-size:11px">live counters · updates only while <code>AUTO CLK</code> is on</div></div>`,
+      lead: 'Live counters from the running engine — branch flushes + cache hits/misses.',
       rows: [],
     },
     diag: {
-      lead: 'Time × instruction diagram of the program executing on the pipeline. Each row is one instruction, each column one cycle; coloured cells mark which stage that instruction is in.',
+      headline: `<div class="info-headline"><div class="info-formula" style="font-size:11px">rows = instructions · columns = cycles · colors = stages</div></div>`,
+      lead: 'Time × instruction Gantt. Coloured cells show which pipe stage each instruction occupies on each cycle.',
       rows: [],
     },
     loops: {
-      lead: 'Loops detected in the schedule — back-edges in the program flow that branch to an earlier PC. Useful for sizing branch-predictor budgets.',
+      headline: `<div class="info-headline"><div class="info-formula" style="font-size:11px">back-edge count <span class="op">→</span> branch-predictor pressure</div></div>`,
+      lead: 'Loops in the schedule — back-edges to an earlier PC. Useful for sizing predictor budgets.',
       rows: [],
     },
     forwards: {
-      lead: 'Forwarding paths the engine inserts to resolve RAW hazards without stalling — a producer\'s result is bypassed directly to the consumer one or more stages downstream.',
+      headline: `<div class="info-headline">
+        <div class="info-diagram">
+          <span class="info-box safe">ADD<small>EX → MEM</small></span>
+          <span class="info-arrow">→</span>
+          <span class="info-box muted">…</span>
+          <span class="info-arrow">↘</span>
+          <span class="info-box safe">SUB<small>ID needs r1</small></span>
+        </div>
+        <div class="info-caption">Producer's result bypassed to consumer — RAW hazard resolved without a stall</div>
+      </div>`,
+      lead: 'Bypass paths that resolve RAW hazards without stalling.',
       rows: [],
     },
     hazards: {
-      lead: 'Pipeline data + control hazards detected by the analyzer. Each one stalls the pipeline unless forwarding or reordering can resolve it.',
+      headline: `<div class="info-headline">
+        <div class="info-diagram-grid" style="grid-template-columns:auto repeat(6, 1fr)">
+          <span class="info-diagram-label">CLK</span>
+          <span class="info-cell">▮</span><span class="info-cell">▯</span><span class="info-cell">▮</span><span class="info-cell">▯</span><span class="info-cell">▮</span><span class="info-cell">▯</span>
+          <span class="info-diagram-label">ADD r1</span>
+          <span class="info-cell">IF</span><span class="info-cell">ID</span><span class="info-cell active">EX</span><span class="info-cell">MEM</span><span class="info-cell">WB</span><span></span>
+          <span class="info-diagram-label">SUB r1</span>
+          <span></span><span class="info-cell">IF</span><span class="info-cell danger">STALL</span><span class="info-cell">ID</span><span class="info-cell">EX</span><span class="info-cell">MEM</span>
+        </div>
+        <div class="info-caption">RAW hazard: SUB reads <code>r1</code> before ADD writes it back → 1 stall</div>
+      </div>`,
+      lead: 'Pipeline data + control hazards. Each stalls the pipe unless forwarding or reordering resolves it.',
       rows: [
         ['warn', 'RAW',        'Read-After-Write — a stage reads a register a later stage hasn\'t written yet. The classic data dependency.'],
         ['warn', 'WAR',        'Write-After-Read — anti-dependency; matters in out-of-order designs, free in strict in-order pipes.'],
@@ -1028,7 +1064,15 @@ export class PipelinePanel {
       ],
     },
     perf: {
-      lead: 'Steady-state throughput metrics for the running design. Lower CPI / higher IPC means more useful work per cycle.',
+      headline: `<div class="info-headline">
+        <div class="info-formula">
+          <var>CPI</var><span class="op">=</span><code>cycles</code><span class="op">/</span><code>instructions</code>
+          <span class="op">&nbsp;·&nbsp;</span>
+          <var>IPC</var><span class="op">=</span><code>1 / CPI</code>
+        </div>
+        <div class="info-caption">Ideal in-order CPI = 1.0 · stalls and flushes push it higher</div>
+      </div>`,
+      lead: 'Steady-state throughput. Lower CPI = more work per cycle.',
       rows: [
         ['ok',   'CPI',          'Cycles Per Instruction. Ideal in-order pipe = 1.0; stalls and flushes push it higher.'],
         ['ok',   'IPC',          '1 / CPI — instructions retired per cycle. Higher is better; the headline throughput metric.'],
@@ -1038,7 +1082,19 @@ export class PipelinePanel {
       ],
     },
     pred: {
-      lead: 'Branch predictor model + live accuracy. The CU\'s currently-active predictor is highlighted; SAVE persists a different choice.',
+      headline: `<div class="info-headline">
+        <div class="info-sequence">
+          <span class="info-pill p1">SN</span>
+          <span class="info-sequence-sep">↔</span>
+          <span class="info-pill p2">WN</span>
+          <span class="info-sequence-sep">↔</span>
+          <span class="info-pill p3">WT</span>
+          <span class="info-sequence-sep">↔</span>
+          <span class="info-pill p4">ST</span>
+        </div>
+        <div class="info-caption">2-bit saturating counter — needs <b>two</b> wrong predictions in a row to flip direction</div>
+      </div>`,
+      lead: 'Branch predictor model + live accuracy. The CU\'s active predictor is highlighted.',
       rows: [
         ['ok',   'static BTFN',         'Backward Taken / Forward Not-taken. Heuristic: loop branches usually go back.'],
         ['ok',   '1-bit',               'Predicts whatever happened last time at this PC. Simplest dynamic predictor.'],
@@ -1048,7 +1104,19 @@ export class PipelinePanel {
       ],
     },
     cdc: {
-      lead: 'Crossings between different CLOCK domains. Without a synchronizer the receiving register can go metastable — its output undefined for arbitrary time.',
+      headline: `<div class="info-headline">
+        <div class="info-diagram">
+          <span class="info-box muted">CLK_A</span>
+          <span class="info-arrow">→</span>
+          <span class="info-box danger">FF₁<small>metastable</small></span>
+          <span class="info-arrow">→</span>
+          <span class="info-box safe">FF₂<small>resolved</small></span>
+          <span class="info-arrow">→</span>
+          <span class="info-box muted">CLK_B</span>
+        </div>
+        <div class="info-caption">2-FF synchronizer — second FF settles before user logic samples it</div>
+      </div>`,
+      lead: 'Wires crossing CLOCK domains. Without a synchronizer the receiver goes metastable.',
       rows: [
         ['warn', 'crossing',     'A wire whose source and destination are clocked by different CLOCK nodes.'],
         ['ok',   'safe',         'The crossing already passes through a 2-FF synchronizer (one of the fix patterns the analyzer recognises).'],
@@ -1058,7 +1126,18 @@ export class PipelinePanel {
       ],
     },
     lip: {
-      lead: 'Latency-Insensitive Protocol checks on HANDSHAKE pairs (valid + ready). Violations mean the producer and consumer can deadlock or lose data.',
+      headline: `<div class="info-headline">
+        <div class="info-diagram-grid" style="grid-template-columns:auto 1fr auto">
+          <span class="info-box safe">Producer</span>
+          <span style="text-align:center">
+            <div>──── <b>valid</b> ───►</div>
+            <div>◄──── <b>ready</b> ────</div>
+          </span>
+          <span class="info-box safe">Consumer</span>
+        </div>
+        <div class="info-caption">Transfer happens on a cycle where <code>valid &amp; ready</code> are both high</div>
+      </div>`,
+      lead: 'LIP checks on HANDSHAKE pairs. Violations cause deadlock or data loss.',
       rows: [
         ['warn', 'unregistered valid', 'The valid signal is combinational — a glitch can falsely declare data ready. Should be a reg.'],
         ['warn', 'unregistered ready', 'Same on the consumer side; ready glitches can cause false accept.'],
@@ -1083,8 +1162,10 @@ export class PipelinePanel {
          <span class="dft-chain-status ${cls}">${label}</span>
          <span class="dft-info-text">${text}</span>
        </div>`).join('');
+    const headlineHtml = info.headline || '';
     return `
       <div class="dft-info-panel">
+        ${headlineHtml}
         <div class="dft-info-lead">${info.lead}</div>
         ${rowsHtml}
       </div>`;
@@ -1181,7 +1262,7 @@ export class PipelinePanel {
     }
 
     this._applySectionOrderAndDrag();
-    this._applyActivePreset();
+    this._applyActiveTab();
   }
 
   _loadSectionOrder() {

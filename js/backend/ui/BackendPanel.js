@@ -620,7 +620,23 @@ export class BackendPanel {
       ['in2out',  g.in2out],
     ];
     const showDesc = !this._collapsedSections.has('group-info');
-    let html = `<table class="backend-group-table">
+    let html = '';
+    if (showDesc) {
+      html += `<div class="info-headline" style="color:#88ccaa;border-color:rgba(58,138,74,0.5);margin-top:4px">
+        <div class="info-diagram-grid" style="grid-template-columns:auto 1fr">
+          <span class="info-diagram-label" style="text-align:left">in2reg</span>
+          <span><span class="info-box muted">PORT</span> <span class="info-arrow">→ comb →</span> <span class="info-box safe">FF</span></span>
+          <span class="info-diagram-label" style="text-align:left">reg2reg</span>
+          <span><span class="info-box safe">FF</span> <span class="info-arrow">→ comb →</span> <span class="info-box safe">FF</span></span>
+          <span class="info-diagram-label" style="text-align:left">reg2out</span>
+          <span><span class="info-box safe">FF</span> <span class="info-arrow">→ comb →</span> <span class="info-box muted">PORT</span></span>
+          <span class="info-diagram-label" style="text-align:left">in2out</span>
+          <span><span class="info-box muted">PORT</span> <span class="info-arrow">→ comb →</span> <span class="info-box muted">PORT</span></span>
+        </div>
+        <div class="info-caption">Synthesis optimizes each group independently against its own slack target</div>
+      </div>`;
+    }
+    html += `<table class="backend-group-table">
       <tr><th>Group</th>${showDesc ? '<th>Description</th>' : ''}<th>Count</th><th>Action</th></tr>`;
     for (const [name, data] of rows) {
       const disabled = data.count === 0;
@@ -648,7 +664,7 @@ export class BackendPanel {
     }
     const wireLoadHint = this._collapsedSections.has('sdc-info') ? '' : `<div class="backend-info-chip">
       <span class="backend-info-chip-icon">i</span>
-      <span><b>Wire Load Model</b> (<code>set_wire_load_model</code>) is a statistical pre-placement estimate of net RC based on fanout. After placement &amp; route, real extracted delays replace it.</span>
+      <span><b>Wire Load Model</b> — statistical pre-placement RC estimate per fanout. Real extracted delays replace it after route.<br><code>set_wire_load_model -name ForQA -library saed90nm_typ</code></span>
     </div>`;
     return `<button class="backend-copy-btn" data-action="copy-sdc" title="Copy SDC to clipboard">COPY</button>
             ${warns}
@@ -731,7 +747,7 @@ export class BackendPanel {
     const escaped = (r.netlist || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const hint = this._collapsedSections.has('netlist-info') ? '' : `<div class="backend-info-chip">
       <span class="backend-info-chip-icon">i</span>
-      <span>GL netlists contain only standard-cell instances and <code>assign</code> statements. No <code>always</code> blocks, no <code>if/case</code> — those exist only in RTL.</span>
+      <span><b>GL netlists</b> contain only standard-cell instances + <code>assign</code> statements. No <code>always</code>, <code>if</code>, or <code>case</code> — those live only in RTL.<br><code>AND2X1 U1 (.A(a), .B(b), .Y(n1));</code></span>
     </div>`;
     return `${hint}<button class="backend-copy-btn" data-action="copy-netlist" title="Copy netlist to clipboard">COPY</button>
             <pre class="backend-netlist">${escaped}</pre>`;
