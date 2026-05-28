@@ -1,7 +1,7 @@
 // SynthesisEngine unit tests.
 // Run:  node examples/tests/test-synthesis-engine.mjs
 
-import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion } from '../../js/backend/SynthesisEngine.js';
+import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF } from '../../js/backend/SynthesisEngine.js';
 import { cellFor, isPhysicalCell } from '../../js/backend/CellLibrary.js';
 import { readFileSync }         from 'fs';
 import { fileURLToPath }        from 'url';
@@ -290,6 +290,79 @@ console.log('\n=== SynthesisEngine Tests ===\n');
   check('contains module-level constraints', sdc.includes('current_design'));
   check('contains CLK port', sdc.includes('CLK'));
   check('contains output port Q', /\bQ\b/.test(sdc));
+}
+
+// --- T17: synthesisSteps returns 5 phases ---
+{
+  console.log('\nT17: synthesisSteps');
+  const scene = loadCircuit('synth-simple-gates.json');
+  const steps = synthesisSteps(scene);
+  check('5 phases', steps.length === 5);
+  check('phase names', steps.map(s => s.name).join('|') === 'Elaborate|Translate|Optimize|Map|Optimize+');
+  check('each has metrics', steps.every(s => s.metrics && typeof s.metrics === 'object'));
+  check('each has status', steps.every(s => ['done','warn','error'].includes(s.status)));
+}
+
+// --- T18: synthesisSteps Map count matches synthesize ---
+{
+  console.log('\nT18: synthesisSteps Map count');
+  const scene = loadCircuit('synth-with-hierarchy.json');
+  const steps = synthesisSteps(scene);
+  const r = synthesize(scene);
+  const mapStep = steps.find(s => s.name === 'Map');
+  check('mapped = totalCells', mapStep.metrics.mapped === r.totalCells, `got ${mapStep.metrics.mapped} vs ${r.totalCells}`);
+}
+
+// --- T19: generateDEF basic structure ---
+{
+  console.log('\nT19: generateDEF structure');
+  const scene = loadCircuit('synth-simple-gates.json');
+  const { def } = generateDEF(scene);
+  check('has VERSION 5.8', def.includes('VERSION 5.8'));
+  check('has DESIGN top', def.includes('DESIGN top'));
+  check('has COMPONENTS', def.includes('COMPONENTS'));
+  check('has END COMPONENTS', def.includes('END COMPONENTS'));
+  check('has PINS', def.includes('PINS'));
+  check('has END DESIGN', def.includes('END DESIGN'));
+  check('cells are UNPLACED', def.includes('+ UNPLACED'));
+}
+
+// --- T20: DEF lists one component per physical cell ---
+{
+  console.log('\nT20: DEF component count');
+  const scene = loadCircuit('synth-simple-gates.json');
+  const { def } = generateDEF(scene);
+  const r = synthesize(scene);
+  // Count lines starting with "- U" inside the components section
+  const cellLines = def.split('\n').filter(l => /^- U\d+\s/.test(l));
+  check('component count = physical cell count', cellLines.length === r.totalCells, `got ${cellLines.length} vs ${r.totalCells}`);
+}
+
+// --- T21: DEF lists one PIN per INPUT/OUTPUT/CLOCK ---
+{
+  console.log('\nT21: DEF pin count');
+  const scene = loadCircuit('synth-simple-gates.json');
+  const { def } = generateDEF(scene);
+  const ports = scene.nodes.filter(n => n.type === 'INPUT' || n.type === 'OUTPUT' || n.type === 'CLOCK');
+  const pinLines = def.split('\n').filter(l => /^- \w+ \+ NET/.test(l));
+  check('pin count matches port count', pinLines.length === ports.length, `got ${pinLines.length} vs ${ports.length}`);
+}
+
+// --- T22: SDC with customGroups ---
+{
+  console.log('\nT22: SDC customGroups');
+  const scene = loadCircuit('synth-simple-gates.json');
+  const { sdc } = generateSDC(scene, {
+    customGroups: [
+      { name: 'critical1', from: 'ff_a', to: 'ff_b' },
+      { name: 'critical2', from: 'reg_x', to: 'reg_y' },
+    ],
+  });
+  check('has custom group section', sdc.includes('Custom group paths'));
+  check('emits set_group_path -name critical1', sdc.includes('set_group_path -name critical1'));
+  check('emits set_group_path -name critical2', sdc.includes('set_group_path -name critical2'));
+  check('uses get_pins ff_a/Q', sdc.includes('get_pins ff_a/Q'));
+  check('uses get_pins ff_b/D', sdc.includes('get_pins ff_b/D'));
 }
 
 console.log(`\n${'─'.repeat(40)}`);

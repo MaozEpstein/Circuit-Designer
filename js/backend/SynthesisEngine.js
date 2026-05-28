@@ -263,6 +263,7 @@ export function generateSDC(scene, opts = {}) {
     maxTransitionNs = 0.5,
     inputDelayNs    = 0.2,
     outputDelayNs   = 0.2,
+    customGroups    = [],
   } = opts;
   const nodes = scene.nodes || [];
   const warnings = [];
@@ -319,6 +320,19 @@ export function generateSDC(scene, opts = {}) {
   lines.push('');
   lines.push('# --- Operating conditions ---');
   lines.push('set_operating_conditions -analysis_type single typ');
+
+  // Custom group paths (user-defined optimization buckets)
+  const valid = (customGroups || []).filter(g => g && (g.from || g.to));
+  if (valid.length) {
+    lines.push('');
+    lines.push('# --- Custom group paths (user-defined) ---');
+    for (const g of valid) {
+      const name = _sanitize(g.name || 'custom_grp');
+      const fromClause = g.from ? `-from [get_pins ${_sanitize(g.from)}/Q] ` : '';
+      const toClause   = g.to   ? `-to [get_pins ${_sanitize(g.to)}/D] `   : '';
+      lines.push(`set_group_path -name ${name} ${fromClause}${toClause}-weight 1.0`);
+    }
+  }
 
   return { sdc: lines.join('\n'), warnings };
 }
@@ -443,4 +457,120 @@ export function estimateCongestion(scene, gridSize = 8) {
   let maxDensity = 0;
   for (const row of grid) for (const v of row) if (v > maxDensity) maxDensity = v;
   return { grid, maxDensity, gridSize };
+}
+
+/**
+ * Internal phases of a real synthesis tool (DC compile_ultra style).
+ * Educational — metrics are best-effort estimates derived from the scene.
+ */
+export function synthesisSteps(scene) {
+  const nodes = scene.nodes || [];
+  const wires = scene.wires || [];
+  const physical = nodes.filter(isPhysicalCell);
+  const r = synthesize(scene, { includeNetlist: false });
+  // Heuristics for the educational metrics
+  const nets = wires.filter(w => !w.isClockWire).length;
+  const sharing = Math.max(0, physical.length - r.totalCells);
+  // Approximate "buffered" as nodes with fanout > 1 (would need buffers in real flow)
+  const succCount = new Map();
+  for (const w of wires) {
+    if (w.isClockWire) continue;
+    succCount.set(w.sourceId, (succCount.get(w.sourceId) || 0) + 1);
+  }
+  let buffered = 0;
+  for (const v of succCount.values()) if (v > 2) buffered++;
+  return [
+    {
+      name: 'Elaborate',
+      desc: 'Parse RTL, build module hierarchy, resolve generics & parameters',
+      status: 'done',
+      metrics: { modules: 1, nets },
+    },
+    {
+      name: 'Translate',
+      desc: 'Convert RTL constructs to generic gates (technology-independent)',
+      status: 'done',
+      metrics: { generic_gates: physical.length },
+    },
+    {
+      name: 'Optimize',
+      desc: 'Constant folding, dead-code elimination, sub-expression sharing',
+      status: 'done',
+      metrics: { removed: 0, shared: sharing },
+    },
+    {
+      name: 'Map',
+      desc: 'Bind generic gates to vendor STD cells from the timing library',
+      status: r.unmappedTypes.length ? 'warn' : 'done',
+      metrics: { mapped: r.totalCells, unmapped: r.unmappedTypes.length },
+    },
+    {
+      name: 'Optimize+',
+      desc: 'Post-map: buffering high-fanout nets, gate sizing, retiming',
+      status: 'done',
+      metrics: { buffered, sized: r.totalCells },
+    },
+  ];
+}
+
+/**
+ * Minimal DEF (Design Exchange Format) — what synthesis writes before
+ * placement runs. Real synthesis emits cells with `+ UNPLACED` and
+ * pins with placeholder coordinates; real placement fills the geometry.
+ */
+export function generateDEF(scene) {
+  const nodes = scene.nodes || [];
+  const warnings = [];
+  const physical = nodes.filter(isPhysicalCell);
+  const ports = nodes.filter(n => n.type === 'INPUT' || n.type === 'OUTPUT' || n.type === 'CLOCK');
+
+  if (physical.length === 0) warnings.push('Empty design — DEF has no components');
+
+  const lines = [];
+  lines.push('# =========================================================');
+  lines.push('# Auto-generated DEF (Design Exchange Format)');
+  lines.push('# Pre-placement: components UNPLACED, pins at placeholder');
+  lines.push('# =========================================================');
+  lines.push('VERSION 5.8 ;');
+  lines.push('DIVIDERCHAR "/" ;');
+  lines.push('BUSBITCHARS "[]" ;');
+  lines.push('DESIGN top ;');
+  lines.push('UNITS DISTANCE MICRONS 1000 ;');
+  lines.push('DIEAREA ( 0 0 ) ( 100000 100000 ) ;');
+  lines.push('');
+
+  // Components
+  lines.push(`COMPONENTS ${physical.length} ;`);
+  let i = 0;
+  for (const n of physical) {
+    i++;
+    const cell = (require_synth_cell(n)).cellName;
+    lines.push(`- U${i} ${cell} + UNPLACED ;`);
+  }
+  lines.push('END COMPONENTS');
+  lines.push('');
+
+  // Pins
+  if (ports.length) {
+    lines.push(`PINS ${ports.length} ;`);
+    for (const p of ports) {
+      const nm = _sanitize(p.label || p.id);
+      const dir = p.type === 'INPUT' ? 'INPUT'
+                : p.type === 'OUTPUT' ? 'OUTPUT'
+                : 'INPUT';
+      const use = p.type === 'CLOCK' ? 'CLOCK' : 'SIGNAL';
+      lines.push(`- ${nm} + NET ${nm} + DIRECTION ${dir} + USE ${use} + LAYER metal1 ( -1000 -1000 ) ( 1000 1000 ) + PLACED ( 0 0 ) N ;`);
+    }
+    lines.push('END PINS');
+    lines.push('');
+  }
+
+  lines.push('END DESIGN');
+  return { def: lines.join('\n'), warnings };
+}
+
+// Cell lookup helper local to DEF generation to avoid extra import noise.
+function require_synth_cell(node) {
+  // cellFor is already imported at the top of this module
+  return cellFor(node);
 }

@@ -5,7 +5,7 @@
  */
 
 import { analyzeTimingPaths, pathDetail } from '../STAEngine.js';
-import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion } from '../SynthesisEngine.js';
+import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF } from '../SynthesisEngine.js';
 import { setStaCriticalPath }             from '../../rendering/CanvasRenderer.js';
 
 const TABS = [
@@ -38,9 +38,20 @@ export class BackendPanel {
     this._lastSdc        = null;
     this._lastGroups     = null;
     this._lastCongestion = null;
+    this._lastSteps      = null;
+    this._lastDef        = null;
     this._synthMode      = 'topological';
+    this._customGroups   = [];      // [{ name, from, to }]
+    this._cgDraft        = { name: '', from: '', to: '' };
     this._selectedPath   = -1;
-    this._collapsedSections = new Set(['hist-info', 'synth-info']);
+    this._collapsedSections = new Set([
+      'hist-info',     // STA: slack distribution explanation
+      'synth-info',    // Synthesis: overview (now also contains flow diagram)
+      'mode-info',     // Synthesis: topo vs non-topo table
+      'group-info',    // Synthesis: group paths descriptions
+      'sdc-info',      // Synthesis: wire load model
+      'netlist-info',  // Synthesis: GL netlist assign hint
+    ]);
 
     // STA parameters
     this._clockPeriodPs  = 2000;
@@ -147,7 +158,39 @@ export class BackendPanel {
           btn.textContent = 'HIGHLIGHTED';
           setTimeout(() => { btn.textContent = 'HIGHLIGHT'; }, 1500);
         }
+      } else if (action === 'copy-def') {
+        if (this._lastDef?.def && navigator.clipboard) {
+          navigator.clipboard.writeText(this._lastDef.def);
+          btn.textContent = 'COPIED';
+          setTimeout(() => { btn.textContent = 'COPY'; }, 1200);
+        }
+      } else if (action === 'cg-add') {
+        this._readCgDraftFromDom();
+        const d = this._cgDraft;
+        if (d.from || d.to) {
+          this._customGroups.push({
+            name: d.name || `grp${this._customGroups.length + 1}`,
+            from: d.from,
+            to:   d.to,
+          });
+          this._cgDraft = { name: '', from: '', to: '' };
+          // Re-run synthesis so SDC reflects the new custom group
+          this._runSynthesis();
+        }
+      } else if (action === 'cg-remove') {
+        const idx = parseInt(btn.dataset.idx, 10);
+        if (Number.isInteger(idx)) {
+          this._customGroups.splice(idx, 1);
+          this._runSynthesis();
+        }
       }
+    });
+
+    // Track draft input for custom group fields (input event — no re-render)
+    this._bodyEl?.addEventListener('input', e => {
+      const field = e.target?.dataset?.cgField;
+      if (!field) return;
+      this._cgDraft[field] = e.target.value;
     });
 
     // Tab clicks
@@ -435,9 +478,11 @@ export class BackendPanel {
     if (!this._scene) return;
     const scene = { nodes: this._scene.nodes, wires: this._scene.wires };
     this._lastSynth      = synthesize(scene);
-    this._lastSdc        = generateSDC(scene);
+    this._lastSdc        = generateSDC(scene, { customGroups: this._customGroups });
     this._lastGroups     = classifyGroupPaths(scene);
     this._lastCongestion = estimateCongestion(scene, 8);
+    this._lastSteps      = synthesisSteps(scene);
+    this._lastDef        = generateDEF(scene);
     this._scheduleRender();
   }
 
@@ -463,14 +508,23 @@ export class BackendPanel {
     }
     let html = '';
     html += this._renderSection('synth-overview',
-      `Synthesis Overview <button class="backend-info-btn" data-action="toggle-section" data-section="synth-info" title="What is synthesis?">i</button>`,
+      `Synthesis Overview <button class="backend-info-btn" data-action="toggle-section" data-section="synth-info" title="What is synthesis? — text explanation + inputs/outputs flow diagram">i</button>`,
       this._renderSynthOverview(r));
-    html += this._renderSection('flow-diagram', 'Synthesis Flow — Inputs &amp; Outputs', this._renderFlowDiagram());
-    html += this._renderSection('synth-mode', 'Synthesis Mode', this._renderModeSection());
-    html += this._renderSection('group-paths', `Group Paths (${this._lastGroups?.totalPaths ?? 0} total)`, this._renderGroupPaths());
+    html += this._renderSection('internal-steps', 'Internal Steps (inside the SYNTHESIS box)', this._renderInternalSteps());
+    html += this._renderSection('synth-mode',
+      `Synthesis Mode <button class="backend-info-btn" data-action="toggle-section" data-section="mode-info" title="Topological vs Non-Topological comparison">i</button>`,
+      this._renderModeSection());
+    html += this._renderSection('group-paths',
+      `Group Paths (${this._lastGroups?.totalPaths ?? 0} total) <button class="backend-info-btn" data-action="toggle-section" data-section="group-info" title="Show description of each group type">i</button>`,
+      this._renderGroupPaths() + this._renderCustomGroupForm());
     html += this._renderSection('cell-breakdown', `Cell Library Breakdown (${Object.keys(r.cellHistogram).length} types)`, this._renderCellTable(r));
-    html += this._renderSection('sdc', 'SDC — Design Constraints (TCL)', this._renderSdcSection());
-    html += this._renderSection('netlist', 'Gate-Level Netlist (structural Verilog)', this._renderNetlist(r));
+    html += this._renderSection('sdc',
+      `SDC — Design Constraints (TCL) <button class="backend-info-btn" data-action="toggle-section" data-section="sdc-info" title="Explain Wire Load Model">i</button>`,
+      this._renderSdcSection());
+    html += this._renderSection('def', 'DEF — Design Exchange Format', this._renderDefSection());
+    html += this._renderSection('netlist',
+      `Gate-Level Netlist (structural Verilog) <button class="backend-info-btn" data-action="toggle-section" data-section="netlist-info" title="What's in a GL netlist?">i</button>`,
+      this._renderNetlist(r));
     if (r.unmappedTypes.length) {
       html += `<div class="backend-warning">⚠ Unmapped types: ${r.unmappedTypes.join(', ')}</div>`;
     }
@@ -478,7 +532,8 @@ export class BackendPanel {
   }
 
   // ── Flow diagram (inputs → SYNTHESIS → outputs) ──
-  _renderFlowDiagram() {
+  // Now embedded inside the Synthesis Overview info box (Phase 4).
+  _renderFlowDiagramContent() {
     const inputs = [
       { label: 'Verilog Sources', have: true,  note: 'RTL (your schematic)' },
       { label: 'STD Cells',       have: true,  note: 'Cell library views' },
@@ -489,7 +544,7 @@ export class BackendPanel {
     const outputs = [
       { label: 'GL Netlist', have: true, note: 'Verilog structural' },
       { label: 'SDC',        have: true, note: 'Synopsys Design Constraints' },
-      { label: 'DEF View',   have: false, note: 'Physical placement (n/a)' },
+      { label: 'DEF View',   have: true,  note: 'Pre-placement design exchange (cells UNPLACED)' },
     ];
     const chip = (c, side) =>
       `<div class="backend-flow-chip ${c.have ? 'have' : 'missing'}" title="${c.note}">
@@ -516,13 +571,15 @@ export class BackendPanel {
       <button class="backend-mode-pill ${isTopo ? 'active' : ''}" data-action="set-synth-mode" data-mode="topological">Topological</button>
       <button class="backend-mode-pill ${!isTopo ? 'active' : ''}" data-action="set-synth-mode" data-mode="non-topological">Non-Topological</button>
     </div>`;
-    html += `<table class="backend-info-table" style="margin-top:8px">
-      <tr><th></th><th>Topological</th><th>Non-Topological</th></tr>
-      <tr><td>Considers FLP</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
-      <tr><td>Path buffering by distance</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
-      <tr><td>Placement congestion estimate</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
-      <tr><td>Route congestion estimate</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
-    </table>`;
+    if (!this._collapsedSections.has('mode-info')) {
+      html += `<table class="backend-info-table" style="margin-top:8px">
+        <tr><th></th><th>Topological</th><th>Non-Topological</th></tr>
+        <tr><td>Considers FLP</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+        <tr><td>Path buffering by distance</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+        <tr><td>Placement congestion estimate</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+        <tr><td>Route congestion estimate</td><td style="color:#90ffc8">Yes</td><td style="color:#ff8888">No</td></tr>
+      </table>`;
+    }
     if (isTopo && this._lastCongestion) html += this._renderCongestion(this._lastCongestion);
     else if (!isTopo) html += `<div style="margin-top:8px;font-size:10px;color:#88ccaa;font-style:italic">Non-topological mode skips FLP — no congestion preview available.</div>`;
     return html;
@@ -562,19 +619,22 @@ export class BackendPanel {
       ['reg2out', g.reg2out],
       ['in2out',  g.in2out],
     ];
+    const showDesc = !this._collapsedSections.has('group-info');
     let html = `<table class="backend-group-table">
-      <tr><th>Group</th><th>Description</th><th>Count</th><th>Action</th></tr>`;
+      <tr><th>Group</th>${showDesc ? '<th>Description</th>' : ''}<th>Count</th><th>Action</th></tr>`;
     for (const [name, data] of rows) {
       const disabled = data.count === 0;
       html += `<tr>
         <td><b>${name}</b></td>
-        <td>${data.desc}</td>
+        ${showDesc ? `<td>${data.desc}</td>` : ''}
         <td>${data.count}</td>
         <td>${disabled ? '—' : `<button class="backend-copy-btn" data-action="select-group" data-group="${name}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button>`}</td>
       </tr>`;
     }
     html += `</table>`;
-    html += `<div style="margin-top:6px;font-size:9px;color:#88ccaa">Click HIGHLIGHT to color the nodes of that group on the canvas. Synthesis optimizes each group independently against its own slack target.</div>`;
+    if (showDesc) {
+      html += `<div style="margin-top:6px;font-size:9px;color:#88ccaa">Click HIGHLIGHT to color the nodes of that group on the canvas. Synthesis optimizes each group independently against its own slack target.</div>`;
+    }
     return html;
   }
 
@@ -586,9 +646,14 @@ export class BackendPanel {
     if (this._lastSdc.warnings?.length) {
       warns = `<div class="backend-sdc-warn">${this._lastSdc.warnings.map(w => `⚠ ${w}`).join('<br>')}</div>`;
     }
+    const wireLoadHint = this._collapsedSections.has('sdc-info') ? '' : `<div class="backend-info-chip">
+      <span class="backend-info-chip-icon">i</span>
+      <span><b>Wire Load Model</b> (<code>set_wire_load_model</code>) is a statistical pre-placement estimate of net RC based on fanout. After placement &amp; route, real extracted delays replace it.</span>
+    </div>`;
     return `<button class="backend-copy-btn" data-action="copy-sdc" title="Copy SDC to clipboard">COPY</button>
             ${warns}
-            <pre class="backend-sdc">${esc}</pre>`;
+            <pre class="backend-sdc">${esc}</pre>
+            ${wireLoadHint}`;
   }
 
   _renderSynthOverview(r) {
@@ -605,6 +670,8 @@ export class BackendPanel {
           <tr><td>Logic Levels</td><td>Longest combinational chain between two flip-flops — affects max clock frequency</td></tr>
           <tr><td>Max Fanout</td><td>Number of cells driven by one output — high fanout slows the path</td></tr>
         </table>
+        <div class="backend-info-divider">Inputs &amp; Outputs of the synthesis step</div>
+        ${this._renderFlowDiagramContent()}
       </div>`;
     }
     // Composition bar
@@ -662,7 +729,94 @@ export class BackendPanel {
 
   _renderNetlist(r) {
     const escaped = (r.netlist || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return `<button class="backend-copy-btn" data-action="copy-netlist" title="Copy netlist to clipboard">COPY</button>
+    const hint = this._collapsedSections.has('netlist-info') ? '' : `<div class="backend-info-chip">
+      <span class="backend-info-chip-icon">i</span>
+      <span>GL netlists contain only standard-cell instances and <code>assign</code> statements. No <code>always</code> blocks, no <code>if/case</code> — those exist only in RTL.</span>
+    </div>`;
+    return `${hint}<button class="backend-copy-btn" data-action="copy-netlist" title="Copy netlist to clipboard">COPY</button>
             <pre class="backend-netlist">${escaped}</pre>`;
+  }
+
+  // ── Phase 3: Internal Steps timeline ──
+  _renderInternalSteps() {
+    if (!this._lastSteps) return '';
+    let html = `<div class="backend-steps-timeline">`;
+    this._lastSteps.forEach((step, i) => {
+      const statusCls = step.status === 'warn' ? 'warn' : (step.status === 'error' ? 'error' : 'done');
+      const metrics = Object.entries(step.metrics).map(([k, v]) =>
+        `<div class="backend-step-metric"><span>${k}</span><b>${v}</b></div>`
+      ).join('');
+      html += `<div class="backend-step-box ${statusCls}" title="${step.desc}">
+        <div class="backend-step-name">${i + 1}. ${step.name}</div>
+        <div class="backend-step-desc">${step.desc}</div>
+        <div class="backend-step-metrics">${metrics}</div>
+      </div>`;
+      if (i < this._lastSteps.length - 1) html += `<div class="backend-step-arrow">&#10142;</div>`;
+    });
+    html += `</div>`;
+    html += `<div style="font-size:9px;color:#88ccaa;margin-top:6px">
+      These are the algorithmic phases inside <b>compile_ultra</b> (Synopsys DC) or <b>genus</b> (Cadence). Metrics are estimated from your scene.
+    </div>`;
+    return html;
+  }
+
+  // ── Phase 3: Custom Group Paths form ──
+  _renderCustomGroupForm() {
+    const drafts = this._cgDraft;
+    let html = `<div class="backend-custom-group-section">
+      <div class="backend-custom-group-title">Custom Group Paths
+        <span style="color:#88ccaa;font-weight:normal">— focus optimization with <code>set_group_path -from … -to …</code></span>
+      </div>
+      <div class="backend-custom-group-form">
+        <input type="text" data-cg-field="name" placeholder="group name" value="${this._escapeAttr(drafts.name)}" />
+        <input type="text" data-cg-field="from" placeholder="-from (node id)" value="${this._escapeAttr(drafts.from)}" />
+        <input type="text" data-cg-field="to"   placeholder="-to (node id)"   value="${this._escapeAttr(drafts.to)}" />
+        <button class="backend-copy-btn" data-action="cg-add">+ ADD</button>
+      </div>`;
+    if (this._customGroups.length) {
+      html += `<div class="backend-custom-group-list">`;
+      this._customGroups.forEach((g, i) => {
+        html += `<div class="backend-custom-group-item">
+          <b>${g.name || '(unnamed)'}</b>
+          <span class="backend-cg-tag">-from ${g.from || '?'}</span>
+          <span class="backend-cg-tag">-to ${g.to || '?'}</span>
+          <button class="backend-cg-remove" data-action="cg-remove" data-idx="${i}" title="Remove">×</button>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<div style="font-size:9px;color:#88ccaa;margin-top:4px;font-style:italic">No custom groups defined. Add one above to emit a <code>set_group_path</code> line in the SDC.</div>`;
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  // ── Phase 3: DEF viewer ──
+  _renderDefSection() {
+    if (!this._lastDef) return '';
+    const esc = (this._lastDef.def || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const note = `<div class="backend-info-chip">
+      <span class="backend-info-chip-icon">i</span>
+      <span>DEF written by synthesis lists cells as <code>+ UNPLACED</code>. Real placement coordinates are filled by the next tool (Innovus / ICC). Full DEF visualization will live in the Floorplan / Placement tabs.</span>
+    </div>`;
+    let warns = '';
+    if (this._lastDef.warnings?.length) {
+      warns = `<div class="backend-sdc-warn">${this._lastDef.warnings.map(w => `⚠ ${w}`).join('<br>')}</div>`;
+    }
+    return `${note}<button class="backend-copy-btn" data-action="copy-def" title="Copy DEF to clipboard">COPY</button>
+            ${warns}
+            <pre class="backend-def">${esc}</pre>`;
+  }
+
+  _escapeAttr(s) {
+    return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  _readCgDraftFromDom() {
+    if (!this._bodyEl) return;
+    for (const f of ['name', 'from', 'to']) {
+      const el = this._bodyEl.querySelector(`[data-cg-field="${f}"]`);
+      if (el) this._cgDraft[f] = el.value;
+    }
   }
 }
