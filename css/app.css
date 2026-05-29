@@ -4820,6 +4820,17 @@
   background: #224a2c;
   color: #c8ffea;
 }
+.backend-action-run-all {
+  font-size: 9px;
+  background: #2a1a3a;
+  border-color: #a060d0;
+  color: #e8d0ff;
+  margin-left: 4px;
+}
+.backend-action-run-all:hover {
+  background: #3a224a;
+  color: #f4e8ff;
+}
 .backend-meta-btn {
   font-size: 8.5px;
   padding: 2px 5px;
@@ -5004,6 +5015,12 @@
   opacity: 0.85;
 }
 .backend-hist-bar:hover { opacity: 1; }
+.backend-hist-col.bucket-active .backend-hist-bar {
+  opacity: 1;
+  outline: 2px solid rgba(255,255,255,0.85);
+  outline-offset: 1px;
+}
+.backend-hist-col.bucket-active .backend-hist-count { text-decoration: underline; }
 .backend-hist-range {
   font-size: 8px;
   color: #88ccaa;
@@ -5367,6 +5384,10 @@
   padding: 4px;
   border-radius: 4px;
   border: 1px solid #2a6a3a;
+  /* Cap the heatmap so wide panels don't blow each square up to fill the screen.
+     Stays square via the cells' aspect-ratio; shrinks on narrow panels. */
+  width: 100%;
+  max-width: 280px;
 }
 .backend-congestion-cell {
   aspect-ratio: 1;
@@ -5386,6 +5407,111 @@
   gap: 14px;
   margin-top: 4px;
   font-size: 9px;
+}
+
+/* Floorplan tab */
+.backend-fp-viz {
+  position: relative;
+  background: #0a160f;
+  border: 1px solid #2a6a3a;
+  border-radius: 4px;
+  padding: 6px;
+  margin-top: 6px;
+  max-width: 380px;
+}
+.backend-fp-viz svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.backend-fp-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 8px;
+  color: #a8ffd6;
+  pointer-events: none;
+  white-space: nowrap;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.3px;
+}
+.backend-fp-label.macro {
+  font-weight: bold;
+  color: #ffd0ff;
+  background: rgba(20, 6, 24, 0.6);
+  padding: 0 3px;
+  border-radius: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.backend-fp-label.port {
+  font-weight: bold;
+  background: rgba(6, 16, 10, 0.72);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+.backend-fp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 9px;
+  color: #88ccaa;
+}
+.backend-fp-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.backend-fp-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  color: #88ccaa;
+}
+.backend-fp-slider-row > label {
+  min-width: 72px;
+  color: #88ccaa;
+}
+.backend-fp-slider-row input[type="range"][data-fp-field] {
+  flex: 1;
+  height: 4px;
+  accent-color: #50cc70;
+  background: #142e1c;
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.backend-fp-slider-row input[type="range"][data-fp-field]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #50cc70;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(80, 204, 112, 0.6);
+}
+.backend-fp-slider-row input[type="range"][data-fp-field]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #50cc70;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(80, 204, 112, 0.6);
+}
+#fp-util-readout {
+  min-width: 38px;
+  text-align: right;
+  color: #a8ffd6;
+  font-weight: bold;
+  font-size: 11px;
 }
 
 /* Group paths table */
