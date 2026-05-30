@@ -264,6 +264,7 @@ export function generateSDC(scene, opts = {}) {
     inputDelayNs    = 0.2,
     outputDelayNs   = 0.2,
     customGroups    = [],
+    timingExceptions = [],
   } = opts;
   const nodes = scene.nodes || [];
   const warnings = [];
@@ -331,6 +332,34 @@ export function generateSDC(scene, opts = {}) {
       const fromClause = g.from ? `-from [get_pins ${_sanitize(g.from)}/Q] ` : '';
       const toClause   = g.to   ? `-to [get_pins ${_sanitize(g.to)}/D] `   : '';
       lines.push(`set_group_path -name ${name} ${fromClause}${toClause}-weight 1.0`);
+    }
+  }
+
+  // Timing exceptions (false_path / multicycle / max_delay / case_analysis).
+  // Priority among path exceptions is MCP > max_delay > false_path; the STA
+  // engine enforces that — here we just emit the TCL the lecture shows.
+  const excs = timingExceptions || [];
+  if (excs.length) {
+    lines.push('');
+    lines.push('# --- Timing exceptions ---');
+    const fromC = e => e.from ? `-from [get_pins ${_sanitize(e.from)}/Q] ` : '';
+    const toC   = e => e.to   ? `-to [get_pins ${_sanitize(e.to)}/D] `   : '';
+    for (const e of excs) {
+      const ft = `${fromC(e)}${toC(e)}`.trim();
+      if (e.type === 'false_path') {
+        lines.push(`set_false_path ${ft}`.trim());
+      } else if (e.type === 'multicycle') {
+        const N = Math.max(1, Math.round(Number(e.value) || 1));
+        lines.push(`set_multicycle_path ${N} -setup ${ft}`.trim());
+        lines.push(`set_multicycle_path ${N - 1} -hold ${ft}`.trim());
+      } else if (e.type === 'max_delay') {
+        const d = Number(e.value) || 0;
+        lines.push(`set_max_delay ${d.toFixed(3)} ${ft}`.trim());
+      } else if (e.type === 'case_analysis') {
+        const v = (Number(e.value) ? 1 : 0);
+        const port = _sanitize(e.from || 'mode_pin');
+        lines.push(`set_case_analysis ${v} [get_ports ${port}]`);
+      }
     }
   }
 
@@ -573,4 +602,119 @@ export function generateDEF(scene) {
 function require_synth_cell(node) {
   // cellFor is already imported at the top of this module
   return cellFor(node);
+}
+
+// ── Clock-gating power model (educational; mirrors SignoffEngine style) ──
+const CG_VDD_V            = 0.9;     // supply voltage (matches SignoffEngine)
+const CG_CLK_CAP_PF_PER_FF = 0.004;  // clock-pin + local clock-net cap per FF
+const CG_IDLE_FRACTION   = 0.5;      // assumed fraction of cycles the bank is idle
+const CG_OVERHEAD_PF     = 0.008;    // CKG cell's own always-toggling cap (→ ~4-FF break-even)
+const CG_BREAK_EVEN_FFS  = 4;        // rule-of-thumb minimum FFs per gate to pay off
+
+/**
+ * Detect clock-gating opportunities in the scene.
+ *
+ * Finds flip-flops whose data input is an enable-recirculation MUX
+ * (D = enable ? new_data : Q), groups them by their shared enable net, and
+ * estimates the dynamic-power saving of replacing each recirculation bank with
+ * a clock-gating (CKG/ICG) cell. The break-even is ~4 FFs per gate (lecture 5):
+ * below that the CKG cell's own switching wastes more than it saves.
+ *
+ * @param {{nodes: object[], wires: object[]}} scene
+ * @param {object} [opts]
+ * @param {number} [opts.clockPeriodPs=2000]
+ * @returns {{
+ *   groups: {enableId, enableLabel, ffIds, ffCount, gateable, savedDynamicMw}[],
+ *   totalFFs: number, gateableFFs: number, numGroups: number,
+ *   estTotalSavedMw: number, breakEvenFFs: number, estimated: boolean
+ * }}
+ */
+export function detectClockGating(scene, opts = {}) {
+  const { clockPeriodPs = 2000 } = opts;
+  const nodes = scene.nodes || [];
+  const wires = scene.wires || [];
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  // Incoming wires per node (for D / select / EN pin lookup).
+  const inWires = new Map(nodes.map(n => [n.id, []]));
+  for (const w of wires) {
+    if (inWires.has(w.targetId)) inWires.get(w.targetId).push(w);
+  }
+
+  const byEnable = new Map();   // enable net id → Set<ffId>
+  let totalFFs = 0;
+  const addToEnable = (enId, ffId) => {
+    if (enId == null) return;
+    if (!byEnable.has(enId)) byEnable.set(enId, new Set());
+    byEnable.get(enId).add(ffId);
+  };
+
+  for (const n of nodes) {
+    const isFF  = FF_TYPE_SET.has(n.type);
+    const isReg = n.type === 'REGISTER';   // memory macro with explicit EN pin
+    if (!isFF && !isReg) continue;
+    totalFFs++;
+    const ins = inWires.get(n.id) || [];
+
+    if (isFF) {
+      // Data wire(s) into the D pin (skip clock + reset). If the driver is a
+      // MUX and the FF's own Q feeds one of the MUX data inputs, it's a
+      // recirculation enable bank; the enable = the MUX select net.
+      const dataIns = ins.filter(w => !w.isClockWire && !w.isResetWire);
+      for (const dw of dataIns) {
+        const drv = nodeMap.get(dw.sourceId);
+        if (!drv || drv.type !== 'MUX') continue;
+        const muxIns    = inWires.get(drv.id) || [];
+        const m         = drv.inputCount || 2;       // data inputs 0..m-1, select at m
+        const dataMuxIns = muxIns.filter(w => (w.targetInputIndex ?? 0) < m);
+        const selWire    = muxIns.find(w => (w.targetInputIndex ?? 0) === m);
+        const recirc     = dataMuxIns.some(w => w.sourceId === n.id);
+        if (recirc && selWire) { addToEnable(selWire.sourceId, n.id); break; }
+      }
+    } else if (isReg) {
+      // REGISTER pin order: DATA(0), EN(1), CLR(2), CLK. A wired EN = gateable.
+      const enWire = ins.find(w => (w.targetInputIndex ?? -1) === 1);
+      if (enWire) addToEnable(enWire.sourceId, n.id);
+    }
+  }
+
+  // Power model.
+  const fHz   = 1 / (clockPeriodPs * 1e-12);
+  const v2    = CG_VDD_V * CG_VDD_V;
+  const r3    = v => Math.round(v * 1000) / 1000;
+  const savedFor = (ffCount) => {
+    const savedClockMw = fHz * (ffCount * CG_CLK_CAP_PF_PER_FF * 1e-12) * v2 * CG_IDLE_FRACTION * 1e3;
+    const overheadMw   = fHz * (CG_OVERHEAD_PF * 1e-12) * v2 * 1e3;   // one CKG cell
+    return r3(savedClockMw - overheadMw);
+  };
+
+  const groups = [];
+  for (const [enableId, ffSet] of byEnable) {
+    const ffIds    = [...ffSet];
+    const ffCount  = ffIds.length;
+    const gateable = ffCount >= CG_BREAK_EVEN_FFS;
+    const enNode   = nodeMap.get(enableId);
+    groups.push({
+      enableId,
+      enableLabel: enNode ? (enNode.label || enNode.id) : enableId,
+      ffIds, ffCount, gateable,
+      savedDynamicMw: gateable ? Math.max(0, savedFor(ffCount)) : savedFor(ffCount),
+    });
+  }
+  // Biggest banks first (most worthwhile).
+  groups.sort((a, b) => b.ffCount - a.ffCount);
+
+  const gateableGroups = groups.filter(g => g.gateable);
+  const gateableFFs    = gateableGroups.reduce((s, g) => s + g.ffCount, 0);
+  const estTotalSavedMw = r3(gateableGroups.reduce((s, g) => s + Math.max(0, g.savedDynamicMw), 0));
+
+  return {
+    groups,
+    totalFFs,
+    gateableFFs,
+    numGroups: groups.length,
+    estTotalSavedMw,
+    breakEvenFFs: CG_BREAK_EVEN_FFS,
+    estimated: true,
+  };
 }

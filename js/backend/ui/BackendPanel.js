@@ -5,7 +5,7 @@
  */
 
 import { analyzeTimingPaths, pathDetail } from '../STAEngine.js';
-import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF } from '../SynthesisEngine.js';
+import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF, detectClockGating } from '../SynthesisEngine.js';
 import { computeFloorplan, PORT_COLORS }  from '../FloorplanEngine.js';
 import { computePlacement }               from '../PlacementEngine.js';
 import { runSignoff }                      from '../SignoffEngine.js';
@@ -44,9 +44,13 @@ export class BackendPanel {
     this._lastCongestion = null;
     this._lastSteps      = null;
     this._lastDef        = null;
+    this._lastClockGating = null;   // detectClockGating() result
     this._synthMode      = 'topological';
     this._customGroups   = [];      // [{ name, from, to }]
     this._cgDraft        = { name: '', from: '', to: '' };
+    // STA timing exceptions: [{ type, from, to, value }]
+    this._timingExceptions = [];
+    this._teDraft        = { type: 'false_path', from: '', to: '', value: '' };
     this._selectedPath   = -1;
     this._selectedBucket = null;   // { min, max, color } — STA histogram range highlight
 
@@ -72,7 +76,9 @@ export class BackendPanel {
     this._lastSignoff           = null;
     this._collapsedSections = new Set([
       'hist-info',     // STA: slack distribution explanation
+      'exc-info',      // STA: timing exceptions explanation
       'synth-info',    // Synthesis: overview (now also contains flow diagram)
+      'ckg-info',      // Synthesis: clock gating explanation
       'mode-info',     // Synthesis: topo vs non-topo table
       'group-info',    // Synthesis: group paths descriptions
       'sdc-info',      // Synthesis: wire load model
@@ -253,6 +259,38 @@ export class BackendPanel {
           this._customGroups.splice(idx, 1);
           this._runSynthesis();
         }
+      } else if (action === 'te-add') {
+        this._readTeDraftFromDom();
+        const d = this._teDraft;
+        // false_path needs at least a from/to; MCP/max_delay also need a value.
+        const needsValue = d.type === 'multicycle' || d.type === 'max_delay';
+        const ok = (d.from || d.to || d.type === 'case_analysis')
+                && (!needsValue || (d.value !== '' && !isNaN(Number(d.value))));
+        if (ok) {
+          this._timingExceptions.push({
+            type:  d.type,
+            from:  d.from,
+            to:    d.to,
+            value: needsValue || d.type === 'case_analysis' ? Number(d.value) || 0 : null,
+          });
+          this._teDraft = { type: 'false_path', from: '', to: '', value: '' };
+          this._runSta();        // paths table reflects the exception
+          this._runSynthesis();  // SDC text reflects the exception
+        }
+      } else if (action === 'te-remove') {
+        const idx = parseInt(btn.dataset.idx, 10);
+        if (Number.isInteger(idx)) {
+          this._timingExceptions.splice(idx, 1);
+          this._runSta();
+          this._runSynthesis();
+        }
+      } else if (action === 'ckg-highlight') {
+        const grp = this._lastClockGating?.groups?.[parseInt(btn.dataset.idx, 10)];
+        if (grp?.ffIds?.length) {
+          setStaCriticalPath(grp.ffIds, 'met');
+          btn.textContent = 'HIGHLIGHTED';
+          setTimeout(() => { btn.textContent = 'HIGHLIGHT'; }, 1500);
+        }
       } else if (action === 'fp-aspect') {
         this._fpAspect = parseFloat(btn.dataset.aspect);
         this._recomputeFloorplan();
@@ -315,6 +353,8 @@ export class BackendPanel {
         this._updatePlacementLive();
         return;
       }
+      const teField = e.target?.dataset?.teField;
+      if (teField) { this._teDraft[teField] = e.target.value; return; }
       const field = e.target?.dataset?.cgField;
       if (!field) return;
       this._cgDraft[field] = e.target.value;
@@ -345,6 +385,7 @@ export class BackendPanel {
       tSetupPs:      this._tSetupPs,
       tHoldPs:       this._tHoldPs,
       tClk2QPs:      this._tClk2QPs,
+      exceptions:    this._timingExceptions,
     });
     this._selectedPath = -1;
     this._selectedBucket = null;
@@ -502,6 +543,11 @@ export class BackendPanel {
     // Timing paths table
     html += this._renderSection('paths', `Timing Paths (${r.paths.length})`, this._renderPathsTable(r));
 
+    // Timing exceptions (false_path / multicycle / max_delay / case_analysis)
+    html += this._renderSection('exceptions',
+      `Timing Exceptions (${this._timingExceptions.length}) <button class="backend-info-btn" data-action="toggle-section" data-section="exc-info" title="false_path / multicycle / max_delay / case_analysis">i</button>`,
+      this._renderExcInfo() + this._renderExceptionsForm());
+
     // Path detail (if a path is selected)
     if (this._selectedPath >= 0 && this._selectedPath < r.paths.length) {
       const p = r.paths[this._selectedPath];
@@ -537,21 +583,32 @@ export class BackendPanel {
     const bkt = this._selectedBucket;
     r.paths.forEach((p, i) => {
       const inBucket = bkt && p.slackPs >= bkt.min && p.slackPs < bkt.max;
-      const cls = (i === this._selectedPath ? ' selected' : '') + (inBucket ? ' bucket-hit' : '');
+      const isFalse = p.status === 'FALSE';
+      const cls = (i === this._selectedPath ? ' selected' : '') + (inBucket ? ' bucket-hit' : '') + (isFalse ? ' false-path' : '');
       const rowStyle = inBucket ? ` style="box-shadow: inset 3px 0 0 ${bkt.color}; background:${bkt.color}22"` : '';
       const met = p.status === 'MET';
       const tc = typeColors[p.type] || '#88aa99';
       const pct = Math.round(Math.abs(p.slackPs) / maxAbs * 100);
       const slackBar = `<div class="backend-slack-wrap"><div class="backend-slack-bar ${met ? 'pos' : 'neg'}" style="width:${pct}%"></div></div><span class="backend-slack-v ${met ? '' : 'neg'}">${p.slackPs}</span>`;
+      // Exception badge next to the path type, when one applies.
+      const ex = p.exception;
+      const exBadge = ex
+        ? `<span class="backend-exc-badge" title="timing exception">${
+            ex.type === 'multicycle' ? `MCP&times;${ex.value}` :
+            ex.type === 'max_delay'  ? `max ${ex.value}ns` : 'FALSE'}</span>`
+        : '';
+      const statusBadge = isFalse
+        ? `<span class="backend-signoff-badge" style="background:#3a3a3a;color:#b0b0b0">FALSE</span>`
+        : `<span class="backend-signoff-badge ${met ? 'pass' : 'fail'}">${p.status}</span>`;
       html += `<tr class="${cls}"${rowStyle} data-action="select-path" data-index="${i}">
         <td>${i + 1}</td>
-        <td><span class="backend-port-chip" style="color:${tc}">${p.type}</span></td>
+        <td><span class="backend-port-chip" style="color:${tc}">${p.type}</span>${exBadge}</td>
         <td title="${p.startId}">${this._truncate(p.startLabel, 10)}</td>
         <td title="${p.endId}">${this._truncate(p.endLabel, 10)}</td>
         <td>${p.arrivalPs}</td>
         <td>${p.requiredPs}</td>
         <td class="backend-slack-cell">${slackBar}</td>
-        <td><span class="backend-signoff-badge ${met ? 'pass' : 'fail'}">${p.status}</span></td>
+        <td>${statusBadge}</td>
       </tr>`;
     });
     html += '</table>';
@@ -662,11 +719,15 @@ export class BackendPanel {
     if (!this._scene) return;
     const scene = { nodes: this._scene.nodes, wires: this._scene.wires };
     this._lastSynth      = synthesize(scene);
-    this._lastSdc        = generateSDC(scene, { customGroups: this._customGroups });
+    this._lastSdc        = generateSDC(scene, {
+      customGroups: this._customGroups,
+      timingExceptions: this._timingExceptions,
+    });
     this._lastGroups     = classifyGroupPaths(scene);
     this._lastCongestion = estimateCongestion(scene, 8);
     this._lastSteps      = synthesisSteps(scene);
     this._lastDef        = generateDEF(scene);
+    this._lastClockGating = detectClockGating(scene, { clockPeriodPs: this._clockPeriodPs });
     this._scheduleRender();
   }
 
@@ -701,6 +762,9 @@ export class BackendPanel {
     html += this._renderSection('group-paths',
       `Group Paths (${this._lastGroups?.totalPaths ?? 0} total) <button class="backend-info-btn" data-action="toggle-section" data-section="group-info" title="Show description of each group type">i</button>`,
       this._renderGroupPaths() + this._renderCustomGroupForm());
+    html += this._renderSection('clock-gating',
+      `Clock Gating (${this._lastClockGating?.numGroups ?? 0} candidate${(this._lastClockGating?.numGroups ?? 0) === 1 ? '' : 's'}) <button class="backend-info-btn" data-action="toggle-section" data-section="ckg-info" title="What is clock gating? Power saving from gating idle flops">i</button>`,
+      this._renderClockGating());
     html += this._renderSection('cell-breakdown', `Cell Library Breakdown (${Object.keys(r.cellHistogram).length} types)`, this._renderCellTable(r));
     html += this._renderSection('sdc',
       `SDC — Design Constraints (TCL) <button class="backend-info-btn" data-action="toggle-section" data-section="sdc-info" title="Explain Wire Load Model">i</button>`,
@@ -1022,6 +1086,113 @@ export class BackendPanel {
       const el = this._bodyEl.querySelector(`[data-cg-field="${f}"]`);
       if (el) this._cgDraft[f] = el.value;
     }
+  }
+
+  // ── STA: Timing exceptions ──
+  _renderExcInfo() {
+    if (this._collapsedSections.has('exc-info')) return '';
+    return `<div class="backend-info-box">
+      <div class="backend-info-formula">Exceptions override the default single-cycle setup/hold check</div>
+      <p>By default STA checks every path from one clock edge to the next. <b>Exceptions</b> tell the tool to treat specific paths differently. When several apply to one path, priority is <b>MCP &gt; max_delay &gt; false_path</b>.</p>
+      <table class="backend-info-table">
+        <tr><td>false_path</td><td>Remove the path from analysis — returns "no path". Dangerous: a wrong from/to hides real paths.</td></tr>
+        <tr><td>multicycle N</td><td>Data gets N cycles to propagate — required time &asymp; N&middot;T. By default hold is checked (N&minus;1) cycles behind, which tightens hold.</td></tr>
+        <tr><td>max_delay D</td><td>Constrain the raw path delay to D ns, ignoring the clock relation. Used for synchronizers / relaxing known paths.</td></tr>
+        <tr><td>case_analysis</td><td>Force a port to a constant (mode config). Emitted to the SDC; not applied to the path table here.</td></tr>
+      </table>
+      <div style="font-size:9px;color:#88ccaa;margin-top:4px">from/to are node IDs (blank = wildcard). Adds the matching <code>set_*</code> line to the SDC and re-runs STA.</div>
+    </div>`;
+  }
+
+  _renderExceptionsForm() {
+    const d = this._teDraft;
+    const opt = (v, label) => `<option value="${v}"${d.type === v ? ' selected' : ''}>${label}</option>`;
+    let html = `<div class="backend-custom-group-section">
+      <div class="backend-custom-group-title">Add Timing Exception
+        <span style="color:#88ccaa;font-weight:normal">— <code>set_false_path / set_multicycle_path / set_max_delay / set_case_analysis</code></span>
+      </div>
+      <div class="backend-custom-group-form">
+        <select data-te-field="type" class="backend-te-select">
+          ${opt('false_path', 'false_path')}
+          ${opt('multicycle', 'multicycle')}
+          ${opt('max_delay', 'max_delay')}
+          ${opt('case_analysis', 'case_analysis')}
+        </select>
+        <input type="text" data-te-field="from" placeholder="-from (node id)" value="${this._escapeAttr(d.from)}" />
+        <input type="text" data-te-field="to"   placeholder="-to (node id)"   value="${this._escapeAttr(d.to)}" />
+        <input type="text" data-te-field="value" placeholder="N / ns / 0|1" value="${this._escapeAttr(d.value)}" style="max-width:72px" />
+        <button class="backend-copy-btn" data-action="te-add">+ ADD</button>
+      </div>`;
+    if (this._timingExceptions.length) {
+      const tag = { false_path: 'FALSE', multicycle: 'MCP', max_delay: 'maxΔ', case_analysis: 'CASE' };
+      const unit = { multicycle: ' cyc', max_delay: ' ns' };
+      html += `<div class="backend-custom-group-list">`;
+      this._timingExceptions.forEach((e, i) => {
+        const val = (e.value != null && e.value !== '') ? ` =${e.value}${unit[e.type] || ''}` : '';
+        html += `<div class="backend-custom-group-item">
+          <b>${tag[e.type] || e.type}${val}</b>
+          <span class="backend-cg-tag">-from ${this._escapeAttr(e.from) || '*'}</span>
+          <span class="backend-cg-tag">-to ${this._escapeAttr(e.to) || '*'}</span>
+          <button class="backend-cg-remove" data-action="te-remove" data-idx="${i}" title="Remove">×</button>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<div style="font-size:9px;color:#88ccaa;margin-top:4px;font-style:italic">No exceptions. false_path drops a path; multicycle widens its window; max_delay overrides it. Priority: MCP &gt; max_delay &gt; false_path.</div>`;
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  _readTeDraftFromDom() {
+    if (!this._bodyEl) return;
+    for (const f of ['type', 'from', 'to', 'value']) {
+      const el = this._bodyEl.querySelector(`[data-te-field="${f}"]`);
+      if (el) this._teDraft[f] = el.value;
+    }
+  }
+
+  // ── Synthesis: Clock gating ──
+  _renderCkgInfo() {
+    if (this._collapsedSections.has('ckg-info')) return '';
+    const be = this._lastClockGating?.breakEvenFFs ?? 4;
+    return `<div class="backend-info-box">
+      <div class="backend-info-formula">Clock gating: D = en ? data : Q &rarr; a CKG cell on the clock</div>
+      <p>An enable register recirculates its own Q through a mux when idle — the clock still toggles every cycle, burning power. A <b>clock-gating (CKG/ICG) cell</b> stops the clock when the enable is low, removing that switching. The CKG cell costs a little area + its own switching, so the bank must be big enough to pay off — rule of thumb is <b>~${be} flip-flops</b>.</p>
+      <table class="backend-info-table">
+        <tr><td>Saved</td><td>f &middot; (clock-net + FF.CP cap) &middot; V² over the idle fraction</td></tr>
+        <tr><td>Wasted</td><td>CKG cell internal + leakage power (always on)</td></tr>
+        <tr><td>Break-even</td><td>&asymp; ${be} flip-flops per gate</td></tr>
+      </table>
+    </div>`;
+  }
+
+  _renderClockGating() {
+    const cg = this._lastClockGating;
+    if (!cg) return '';
+    let html = this._renderCkgInfo();
+    if (!cg.numGroups) {
+      html += `<div style="font-size:9px;color:#88ccaa;font-style:italic">No enable-recirculation registers found. Build a register with a feedback mux (D = en ? data : Q) to expose a clock-gating candidate.</div>`;
+      return html;
+    }
+    html += `<div class="backend-info-formula-detail" style="margin-bottom:6px">${cg.totalFFs} sequential cells &middot; ${cg.gateableFFs} gateable (&ge; ${cg.breakEvenFFs}/gate) &middot; est. saved <b>${cg.estTotalSavedMw} mW</b> dynamic</div>`;
+    html += `<table class="backend-group-table backend-sink-table">
+      <tr><th>Enable</th><th>#FFs</th><th>Gateable?</th><th>Saved (mW)</th><th>Action</th></tr>`;
+    cg.groups.forEach((g, i) => {
+      const badge = g.gateable
+        ? `<span class="backend-signoff-badge pass">yes</span>`
+        : `<span class="backend-signoff-badge fail">no</span>`;
+      html += `<tr>
+        <td title="${this._escapeAttr(g.enableId)}"><span class="backend-port-chip" style="color:#90ffc8">${this._escapeAttr(this._truncate(g.enableLabel, 12))}</span></td>
+        <td>${g.ffCount}</td>
+        <td>${badge}</td>
+        <td>${g.savedDynamicMw}</td>
+        <td><button class="backend-copy-btn" data-action="ckg-highlight" data-idx="${i}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button></td>
+      </tr>`;
+    });
+    html += `</table>`;
+    html += `<div style="margin-top:6px;font-size:9px;color:#88ccaa">Estimated saving — &alpha;&middot;C<sub>clk</sub>&middot;V²&middot;f over the idle fraction, minus the CKG cell's own switching. Banks below ${cg.breakEvenFFs} FFs don't pay off.</div>`;
+    return html;
   }
 
   // ── Run all tabs at once ─────────────────────────────────────
@@ -1947,8 +2118,19 @@ export class BackendPanel {
         <div class="seg dyn" style="width:${dynPct}%">${dynPct >= 12 ? `Dynamic ${dynPct}%` : ''}</div>
         <div class="seg leak" style="width:${leakPct}%">${leakPct >= 12 ? `Leakage ${leakPct}%` : ''}</div>
       </div>
+      ${this._clockGatingPowerLine()}
 
       <div style="margin-top:6px;font-size:8px;color:#88ccaa">Estimated — the cell library has no real capacitance/leakage data; α, V<sub>dd</sub> and the cap/leak coefficients are assumed (28nm-class).</div>`;
+  }
+
+  /** Informational saved-power line from clock gating (does not change the verdict). */
+  _clockGatingPowerLine() {
+    const cg = this._lastClockGating;
+    if (!cg || !cg.gateableFFs || cg.estTotalSavedMw <= 0) return '';
+    return `<div class="backend-info-chip" style="margin-top:6px">
+      <span class="backend-info-chip-icon">i</span>
+      <span><b>with clock gating: &minus;${cg.estTotalSavedMw} mW</b> (potential) — ${cg.gateableFFs} flop(s) in ${cg.groups.filter(g => g.gateable).length} gateable bank(s). See <b>Synthesis &rarr; Clock Gating</b>. Informational only — not applied to the estimate above.</span>
+    </div>`;
   }
 
   _buildTapeoutSection(r) {

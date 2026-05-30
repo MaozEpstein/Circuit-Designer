@@ -6147,6 +6147,40 @@
 }
 .backend-cg-remove:hover { background: rgba(220,80,60,0.4); color: #ffffff; }
 
+/* Timing-exception form: type dropdown matches the text inputs */
+.backend-custom-group-form select.backend-te-select {
+  background: #0e2014;
+  border: 1px solid #3a8a4a;
+  color: #eeffee;
+  padding: 6px 9px;
+  font-family: inherit;
+  font-size: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.backend-custom-group-form select.backend-te-select:focus {
+  border-color: #50cc70;
+  box-shadow: 0 0 0 2px rgba(80, 204, 112, 0.18);
+  outline: none;
+}
+/* Exception badge shown next to a path type in the STA paths table */
+.backend-exc-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 7px;
+  background: rgba(120, 90, 200, 0.22);
+  border: 1px solid rgba(150, 120, 230, 0.55);
+  color: #c6b6ff;
+  font-size: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  vertical-align: middle;
+}
+/* FALSE (false_path-excluded) rows read as inactive */
+.backend-paths-table tr.false-path { opacity: 0.5; }
+.backend-paths-table tr.false-path td:nth-child(3),
+.backend-paths-table tr.false-path td:nth-child(4) { text-decoration: line-through; }
+
 /* DEF viewer — orange accent (intermediate physical format) */
 .backend-def {
   background: #0a160f;

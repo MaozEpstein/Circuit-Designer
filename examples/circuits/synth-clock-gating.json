@@ -1,0 +1,441 @@
+{
+  "nodes": [
+    {
+      "type": "INPUT",
+      "x": -360,
+      "y": -40,
+      "fixedValue": 1,
+      "label": "load_en",
+      "id": "in_en"
+    },
+    {
+      "type": "CLOCK",
+      "x": -360,
+      "y": 60,
+      "value": 1,
+      "id": "clk_1"
+    },
+    {
+      "type": "IMM",
+      "x": -160,
+      "y": -260,
+      "value": 42,
+      "bitWidth": 8,
+      "label": "D0=42",
+      "id": "imm_0"
+    },
+    {
+      "type": "REGISTER",
+      "x": 40,
+      "y": -260,
+      "bitWidth": 8,
+      "label": "REG0",
+      "id": "reg_0"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 260,
+      "y": -260,
+      "targetValue": 0,
+      "label": "Q0",
+      "sandbox": true,
+      "id": "out_0"
+    },
+    {
+      "type": "IMM",
+      "x": -160,
+      "y": -160,
+      "value": 7,
+      "bitWidth": 8,
+      "label": "D1=7",
+      "id": "imm_1"
+    },
+    {
+      "type": "REGISTER",
+      "x": 40,
+      "y": -160,
+      "bitWidth": 8,
+      "label": "REG1",
+      "id": "reg_1"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 260,
+      "y": -160,
+      "targetValue": 0,
+      "label": "Q1",
+      "sandbox": true,
+      "id": "out_1"
+    },
+    {
+      "type": "IMM",
+      "x": -160,
+      "y": -60,
+      "value": 200,
+      "bitWidth": 8,
+      "label": "D2=200",
+      "id": "imm_2"
+    },
+    {
+      "type": "REGISTER",
+      "x": 40,
+      "y": -60,
+      "bitWidth": 8,
+      "label": "REG2",
+      "id": "reg_2"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 260,
+      "y": -60,
+      "targetValue": 0,
+      "label": "Q2",
+      "sandbox": true,
+      "id": "out_2"
+    },
+    {
+      "type": "IMM",
+      "x": -160,
+      "y": 40,
+      "value": 13,
+      "bitWidth": 8,
+      "label": "D3=13",
+      "id": "imm_3"
+    },
+    {
+      "type": "REGISTER",
+      "x": 40,
+      "y": 40,
+      "bitWidth": 8,
+      "label": "REG3",
+      "id": "reg_3"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 260,
+      "y": 40,
+      "targetValue": 0,
+      "label": "Q3",
+      "sandbox": true,
+      "id": "out_3"
+    },
+    {
+      "type": "IMM",
+      "x": -160,
+      "y": 140,
+      "value": 99,
+      "bitWidth": 8,
+      "label": "D4=99",
+      "id": "imm_4"
+    },
+    {
+      "type": "REGISTER",
+      "x": 40,
+      "y": 140,
+      "bitWidth": 8,
+      "label": "REG4",
+      "id": "reg_4"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 260,
+      "y": 140,
+      "targetValue": 0,
+      "label": "Q4",
+      "sandbox": true,
+      "id": "out_4"
+    },
+    {
+      "type": "IMM",
+      "x": -160,
+      "y": 240,
+      "value": 255,
+      "bitWidth": 8,
+      "label": "D5=255",
+      "id": "imm_5"
+    },
+    {
+      "type": "REGISTER",
+      "x": 40,
+      "y": 240,
+      "bitWidth": 8,
+      "label": "REG5",
+      "id": "reg_5"
+    },
+    {
+      "type": "OUTPUT",
+      "x": 260,
+      "y": 240,
+      "targetValue": 0,
+      "label": "Q5",
+      "sandbox": true,
+      "id": "out_5"
+    }
+  ],
+  "wires": [
+    {
+      "sourceId": "imm_0",
+      "targetId": "reg_0",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_1"
+    },
+    {
+      "sourceId": "in_en",
+      "targetId": "reg_0",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_2"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "reg_0",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_3"
+    },
+    {
+      "sourceId": "reg_0",
+      "targetId": "out_0",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_4"
+    },
+    {
+      "sourceId": "imm_1",
+      "targetId": "reg_1",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_5"
+    },
+    {
+      "sourceId": "in_en",
+      "targetId": "reg_1",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_6"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "reg_1",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_7"
+    },
+    {
+      "sourceId": "reg_1",
+      "targetId": "out_1",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_8"
+    },
+    {
+      "sourceId": "imm_2",
+      "targetId": "reg_2",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_9"
+    },
+    {
+      "sourceId": "in_en",
+      "targetId": "reg_2",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_10"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "reg_2",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_11"
+    },
+    {
+      "sourceId": "reg_2",
+      "targetId": "out_2",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_12"
+    },
+    {
+      "sourceId": "imm_3",
+      "targetId": "reg_3",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_13"
+    },
+    {
+      "sourceId": "in_en",
+      "targetId": "reg_3",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_14"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "reg_3",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_15"
+    },
+    {
+      "sourceId": "reg_3",
+      "targetId": "out_3",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_16"
+    },
+    {
+      "sourceId": "imm_4",
+      "targetId": "reg_4",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_17"
+    },
+    {
+      "sourceId": "in_en",
+      "targetId": "reg_4",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_18"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "reg_4",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_19"
+    },
+    {
+      "sourceId": "reg_4",
+      "targetId": "out_4",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_20"
+    },
+    {
+      "sourceId": "imm_5",
+      "targetId": "reg_5",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_21"
+    },
+    {
+      "sourceId": "in_en",
+      "targetId": "reg_5",
+      "targetInputIndex": 1,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_22"
+    },
+    {
+      "sourceId": "clk_1",
+      "targetId": "reg_5",
+      "targetInputIndex": 3,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": true,
+      "id": "w_23"
+    },
+    {
+      "sourceId": "reg_5",
+      "targetId": "out_5",
+      "targetInputIndex": 0,
+      "sourceOutputIndex": 0,
+      "waypoints": [],
+      "netName": "",
+      "colorGroup": null,
+      "isClockWire": false,
+      "id": "w_24"
+    }
+  ]
+}

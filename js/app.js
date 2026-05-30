@@ -5626,6 +5626,13 @@ const EXAMPLES = [
     tags: ['backend', 'synthesis', 'complex'],
     file: 'examples/circuits/synth-with-hierarchy.json',
   },
+  {
+    id: 'synth-clock-gating',
+    title: '6. Synthesis — Clock Gating',
+    desc: 'A bank of six 8-bit REGISTERs sharing one load-enable (load_en). Each register only captures when EN is high — otherwise it recirculates its own value, yet the clock still toggles every cycle. Open the Backend panel (B) → Synthesis tab → RUN SYNTH → the new "Clock Gating" section flags the 6-flop bank as gateable (≥4 break-even) and estimates the saved dynamic power; click HIGHLIGHT to color the bank. The Signoff tab\'s Power Estimate then shows the potential "with clock gating: −X mW" line.',
+    tags: ['backend', 'clock-gating', 'power', 'EN'],
+    file: 'examples/circuits/synth-clock-gating.json',
+  },
 ];
 
 const examplesOverlay = document.getElementById('examples-overlay');
