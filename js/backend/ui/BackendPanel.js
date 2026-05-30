@@ -260,6 +260,13 @@ export class BackendPanel {
         this._fpPortEdges[id] = order[(order.indexOf(cur) + 1) % order.length];
         this._recomputeFloorplan();
         this._scheduleRender();
+      } else if (action === 'fp-set-port') {
+        const id = btn.dataset.nodeId, edge = btn.dataset.edge;
+        if (this._currentPortEdge(id) !== edge) {
+          this._fpPortEdges[id] = edge;
+          this._recomputeFloorplan();
+          this._scheduleRender();
+        }
       } else if (action === 'fp-highlight-macro') {
         const id = btn.dataset.nodeId;
         setStaCriticalPath(this._macroHighlightIds(id), 'met');
@@ -465,18 +472,18 @@ export class BackendPanel {
     let html = '';
 
     // Clock settings section
+    const clkField = (label, param, val, step) => `<div class="backend-clk-field">
+      <label>${label}</label>
+      <input type="number" data-param="${param}" value="${val}" min="0" step="${step}" />
+    </div>`;
     html += this._renderSection('clock', 'Clock Settings', `
-      <div class="backend-clock-grid">
-        <label>Clock Period (ps)</label>
-        <input type="number" data-param="clockPeriod" value="${this._clockPeriodPs}" min="10" step="10" />
-        <label>t<sub>Setup</sub> (ps)</label>
-        <input type="number" data-param="tSetup" value="${this._tSetupPs}" min="0" step="5" />
-        <label>t<sub>Hold</sub> (ps)</label>
-        <input type="number" data-param="tHold" value="${this._tHoldPs}" min="0" step="5" />
-        <label>t<sub>Clk2Q</sub> (ps)</label>
-        <input type="number" data-param="tClk2Q" value="${this._tClk2QPs}" min="0" step="10" />
+      <div class="backend-clk-grid">
+        ${clkField('Clock Period (ps)', 'clockPeriod', this._clockPeriodPs, 10)}
+        ${clkField('t<sub>Setup</sub> (ps)', 'tSetup', this._tSetupPs, 5)}
+        ${clkField('t<sub>Hold</sub> (ps)', 'tHold', this._tHoldPs, 5)}
+        ${clkField('t<sub>Clk2Q</sub> (ps)', 'tClk2Q', this._tClk2QPs, 10)}
       </div>
-      <button class="btn-secondary backend-action-run" data-action="apply-clock" style="font-size:8px;padding:2px 8px">APPLY &amp; RE-RUN</button>
+      <button class="btn-secondary backend-action-run" data-action="apply-clock" style="font-size:9px;padding:5px 12px;margin-top:8px">APPLY &amp; RE-RUN</button>
     `);
 
     // Timing paths table
@@ -509,6 +516,9 @@ export class BackendPanel {
 
   _renderPathsTable(r) {
     if (!r.paths.length) return '<div style="color:#4a8a6a;font-size:9px">No timing paths found</div>';
+    // Slack bar scaled to the widest |slack| so the worst paths read at a glance.
+    const maxAbs = Math.max(1, ...r.paths.map(p => Math.abs(p.slackPs)));
+    const typeColors = { reg2reg: '#90ffc8', in2reg: '#6aaadd', reg2out: '#ccaa66', in2out: '#cc88cc', unknown: '#88aa99' };
     let html = `<table class="backend-paths-table">
       <tr><th>#</th><th>Type</th><th>Start</th><th>End</th><th>Delay</th><th>Req'd</th><th>Slack</th><th>Status</th></tr>`;
     const bkt = this._selectedBucket;
@@ -516,16 +526,19 @@ export class BackendPanel {
       const inBucket = bkt && p.slackPs >= bkt.min && p.slackPs < bkt.max;
       const cls = (i === this._selectedPath ? ' selected' : '') + (inBucket ? ' bucket-hit' : '');
       const rowStyle = inBucket ? ` style="box-shadow: inset 3px 0 0 ${bkt.color}; background:${bkt.color}22"` : '';
-      const sCls = p.status === 'MET' ? 'status-met' : 'status-violated';
+      const met = p.status === 'MET';
+      const tc = typeColors[p.type] || '#88aa99';
+      const pct = Math.round(Math.abs(p.slackPs) / maxAbs * 100);
+      const slackBar = `<div class="backend-slack-wrap"><div class="backend-slack-bar ${met ? 'pos' : 'neg'}" style="width:${pct}%"></div></div><span class="backend-slack-v ${met ? '' : 'neg'}">${p.slackPs}</span>`;
       html += `<tr class="${cls}"${rowStyle} data-action="select-path" data-index="${i}">
         <td>${i + 1}</td>
-        <td>${p.type}</td>
+        <td><span class="backend-port-chip" style="color:${tc}">${p.type}</span></td>
         <td title="${p.startId}">${this._truncate(p.startLabel, 10)}</td>
         <td title="${p.endId}">${this._truncate(p.endLabel, 10)}</td>
         <td>${p.arrivalPs}</td>
         <td>${p.requiredPs}</td>
-        <td>${p.slackPs}</td>
-        <td class="${sCls}">${p.status}</td>
+        <td class="backend-slack-cell">${slackBar}</td>
+        <td><span class="backend-signoff-badge ${met ? 'pass' : 'fail'}">${p.status}</span></td>
       </tr>`;
     });
     html += '</table>';
@@ -533,21 +546,35 @@ export class BackendPanel {
   }
 
   _renderDetailTable(rows, path) {
-    let html = `<div style="font-size:8px;color:#4a8a6a;margin-bottom:4px">
-      Startpoint: ${path.startLabel} (${path.type})<br>
-      Endpoint: ${path.endLabel}<br>
-      Clock Period: ${this._clockPeriodPs} ps &nbsp; Slack: <span style="color:${path.slackPs >= 0 ? '#44ff88' : '#ff4444'}">${path.slackPs} ps</span>
+    const met = path.slackPs >= 0;
+    // Summary header card
+    let html = `<div class="backend-detail-head">
+      <div class="backend-detail-route">
+        <span class="backend-port-chip" style="color:#6aaadd">${this._escapeAttr(path.startLabel)}</span>
+        <span class="backend-detail-arrow">→</span>
+        <span class="backend-port-chip" style="color:#ccaa66">${this._escapeAttr(path.endLabel)}</span>
+        <span class="backend-port-chip" style="color:#90ffc8;margin-left:4px">${path.type}</span>
+      </div>
+      <div class="backend-detail-stats">
+        <span>Clock <b>${this._clockPeriodPs} ps</b></span>
+        <span>Arrival <b>${path.arrivalPs} ps</b></span>
+        <span>Slack <b class="${met ? 'status-met' : 'status-violated'}">${path.slackPs} ps</b></span>
+      </div>
     </div>`;
-    html += `<table class="backend-detail-table">
-      <tr><th>Node</th><th>Type</th><th>Delay (ps)</th><th>Arrival (ps)</th></tr>`;
-    for (const row of rows) {
+    // Per-node table with a cumulative-arrival bar (shows where delay accrues)
+    const maxArr = Math.max(1, ...rows.map(r => r.arrivalPs));
+    html += `<table class="backend-detail-table backend-sink-table">
+      <tr><th>#</th><th>Node</th><th>Type</th><th>Delay (ps)</th><th>Arrival (ps)</th></tr>`;
+    rows.forEach((row, i) => {
+      const pct = Math.round(row.arrivalPs / maxArr * 100);
       html += `<tr>
-        <td>${row.label}</td>
-        <td>${row.type}</td>
-        <td>${row.delayPs}</td>
-        <td>${row.arrivalPs}</td>
+        <td style="color:#6a9a7a">${i + 1}</td>
+        <td><b>${this._escapeAttr(row.label)}</b></td>
+        <td><span class="backend-cell-chip">${this._escapeAttr(String(row.type))}</span></td>
+        <td>${row.delayPs ? '+' + row.delayPs : '0'}</td>
+        <td><div class="backend-sink-bar"><div class="backend-sink-bar-fill" style="width:${pct}%"></div></div><span class="backend-sink-ps">${row.arrivalPs}</span></td>
       </tr>`;
-    }
+    });
     html += '</table>';
     return html;
   }
@@ -780,14 +807,16 @@ export class BackendPanel {
         <div class="info-caption">Synthesis optimizes each group independently against its own slack target</div>
       </div>`;
     }
-    html += `<table class="backend-group-table">
+    const maxC = Math.max(1, ...rows.map(([, d]) => d.count));
+    html += `<table class="backend-group-table backend-sink-table">
       <tr><th>Group</th>${showDesc ? '<th>Description</th>' : ''}<th>Count</th><th>Action</th></tr>`;
     for (const [name, data] of rows) {
       const disabled = data.count === 0;
+      const pct = Math.round(data.count / maxC * 100);
       html += `<tr>
-        <td><b>${name}</b></td>
+        <td><span class="backend-port-chip" style="color:#90ffc8">${name}</span></td>
         ${showDesc ? `<td>${data.desc}</td>` : ''}
-        <td>${data.count}</td>
+        <td><div class="backend-sink-bar"><div class="backend-sink-bar-fill" style="width:${pct}%"></div></div><span class="backend-sink-ps">${data.count}</span></td>
         <td>${disabled ? '—' : `<button class="backend-copy-btn" data-action="select-group" data-group="${name}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button>`}</td>
       </tr>`;
     }
@@ -877,11 +906,13 @@ export class BackendPanel {
     for (const ci of r.cellInstances) {
       if (!fnByCell[ci.cellName]) fnByCell[ci.cellName] = ci.fn;
     }
-    let html = '<table class="backend-cell-table"><tr><th>Cell</th><th>Function</th><th>Count</th><th>Unit (µm²)</th><th>Total (µm²)</th></tr>';
+    const maxA = Math.max(1, ...entries.map(([c]) => areaByCell[c] || 0));
+    let html = '<table class="backend-cell-table backend-sink-table"><tr><th>Cell</th><th>Function</th><th>Count</th><th>Unit (µm²)</th><th>Total (µm²)</th></tr>';
     for (const [cell, count] of entries) {
       const a = areaByCell[cell] || 0;
       const unit = (count > 0 ? a / count : 0);
-      html += `<tr><td><b>${cell}</b></td><td style="color:#88ccaa">${fnByCell[cell] || ''}</td><td>${count}</td><td>${unit.toFixed(2)}</td><td><b>${a.toFixed(2)}</b></td></tr>`;
+      const pct = Math.round(a / maxA * 100);
+      html += `<tr><td><span class="backend-cell-chip">${cell}</span></td><td style="color:#88ccaa">${fnByCell[cell] || ''}</td><td>${count}</td><td>${unit.toFixed(2)}</td><td><div class="backend-sink-bar"><div class="backend-sink-bar-fill" style="width:${pct}%"></div></div><span class="backend-sink-ps">${a.toFixed(2)}</span></td></tr>`;
     }
     html += '</table>';
     return html;
@@ -1291,50 +1322,80 @@ export class BackendPanel {
   }
 
   _buildMetricsTable(m) {
+    const card = (label, value, unit = '') =>
+      `<div class="backend-cts-card">
+        <div class="backend-cts-k">${label}</div>
+        <div class="backend-cts-v">${value}${unit ? ` <small>${unit}</small>` : ''}</div>
+      </div>`;
+    // Headline cards for the numbers people scan first.
+    let html = `<div class="backend-cts-grid">
+      ${card('Die Area', m.dieAreaUm2, 'µm²')}
+      ${card('Die W × H', `${m.dieW}×${m.dieH}`, 'µm')}
+      ${card('Utilization', Math.round(m.actualUtilization * 100), '%')}
+      ${card('Aspect', m.aspectRatio)}
+    </div>`;
+    // utilization fill bar (cell area inside the core)
+    const u = Math.min(100, Math.round(m.actualUtilization * 100));
+    html += `<div class="backend-power-bar" style="margin-top:10px" title="Cell area fills ${u}% of the core">
+      <div class="seg dyn" style="width:${u}%">${u >= 12 ? `Cells ${u}%` : ''}</div>
+      <div class="seg leak" style="width:${100 - u}%;background:#2a4a36;color:#88ccaa">${100 - u >= 12 ? 'Free' : ''}</div>
+    </div>`;
+    // remaining detail in a compact table
     const row = (k, v) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`;
-    return `<table class="backend-cell-table">
-      <tr><th>Metric</th><th>Value</th></tr>
-      ${row('Die Area', `${m.dieAreaUm2} µm²`)}
-      ${row('Die W × H', `${m.dieW} × ${m.dieH} µm`)}
+    html += `<table class="backend-cell-table" style="margin-top:10px">
       ${row('Core Area', `${m.coreAreaUm2} µm²`)}
-      ${row('Cell Area', `${m.totalCellAreaUm2} µm² (macro ${m.macroAreaUm2} / std ${m.stdAreaUm2})`)}
+      ${row('Cell Area', `${m.totalCellAreaUm2} µm² <span style="color:#88ccaa">(macro ${m.macroAreaUm2} / std ${m.stdAreaUm2})</span>`)}
       ${row('Target Utilization', `${Math.round(m.utilization * 100)}%`)}
-      ${row('Actual Utilization', `${Math.round(m.actualUtilization * 100)}%`)}
-      ${row('Aspect Ratio', m.aspectRatio)}
       ${row('Std-Cell Rows', `${m.rows.count} × ${m.rows.height} µm`)}
       ${row('Std Cells / Macros', `${m.stdCellCount} / ${m.macroCount}`)}
       ${row('Ports', m.portCount)}
     </table>`;
+    return html;
   }
 
   _buildPortList(m) {
     if (!m.ports.length) return '<div style="color:#88ccaa;font-size:9px">No primary ports (INPUT/OUTPUT/CLOCK) in this design</div>';
     const edgeName = { N: 'North', E: 'East', S: 'South', W: 'West' };
-    let html = `<table class="backend-group-table">
+    let html = `<table class="backend-group-table backend-port-table">
       <tr><th>Port</th><th>Type</th><th>Edge</th><th>Action</th></tr>`;
     for (const p of m.ports) {
+      const col = PORT_COLORS[p.type] || '#88ccaa';
       html += `<tr>
         <td><b>${this._escapeAttr(this._truncate(p.label, 12))}</b></td>
-        <td style="color:${PORT_COLORS[p.type] || '#88ccaa'}">${p.type}</td>
-        <td>${edgeName[p.edge]}</td>
-        <td><button class="backend-copy-btn" data-action="fp-cycle-port" data-node-id="${this._escapeAttr(p.nodeId)}" style="padding:1px 6px;font-size:8px">${p.edge} ▸</button></td>
+        <td><span class="backend-port-chip" style="color:${col}">${p.type}</span></td>
+        <td><span class="backend-edge-pin">${p.edge}</span> ${edgeName[p.edge]}</td>
+        <td>${this._edgePicker(p.nodeId, p.edge)}</td>
       </tr>`;
     }
     html += `</table>
-      <div style="margin-top:6px;font-size:9px;color:#88ccaa">Click the edge button to cycle a port around the die (N→E→S→W).</div>`;
+      <div style="margin-top:6px;font-size:9px;color:#88ccaa">Click an edge (N/E/S/W) to move a port directly around the die.</div>`;
     return html;
+  }
+
+  /** 4-button N/E/S/W picker with the active edge highlighted (one click to move). */
+  _edgePicker(nodeId, active) {
+    const id = this._escapeAttr(nodeId);
+    return `<div class="backend-edge-picker">${['N', 'E', 'S', 'W'].map(e =>
+      `<button class="backend-edge-btn${e === active ? ' active' : ''}" data-action="fp-set-port" data-node-id="${id}" data-edge="${e}" title="Move to ${e}">${e}</button>`
+    ).join('')}</div>`;
   }
 
   _buildMacroList(m) {
     if (!m.macros.length) return '<div style="color:#88ccaa;font-size:9px">No macros (memories / register files) in this design</div>';
-    let html = `<table class="backend-group-table">
-      <tr><th>Macro</th><th>Cell</th><th>Area (µm²)</th><th>Side (µm)</th><th>Action</th></tr>`;
-    for (const mac of m.macros) {
+    const sorted = [...m.macros].sort((a, b) => b.areaUm2 - a.areaUm2);
+    const maxA = Math.max(1, ...sorted.map(x => x.areaUm2));
+    let html = `<table class="backend-group-table backend-sink-table">
+      <tr><th>Macro</th><th>Cell</th><th>Area (µm²)</th><th>Side</th><th>Action</th></tr>`;
+    for (const mac of sorted) {
+      const pct = Math.round(mac.areaUm2 / maxA * 100);
       html += `<tr>
         <td><b>${this._escapeAttr(this._truncate(mac.label, 12))}</b></td>
-        <td style="color:#88ccaa">${mac.cellName}</td>
-        <td>${mac.areaUm2}</td>
-        <td>${mac.side}</td>
+        <td><span class="backend-cell-chip">${mac.cellName}</span></td>
+        <td>
+          <div class="backend-sink-bar"><div class="backend-sink-bar-fill macro" style="width:${pct}%"></div></div>
+          <span class="backend-sink-ps">${mac.areaUm2}</span>
+        </td>
+        <td style="color:#88ccaa">${mac.side} µm</td>
         <td><button class="backend-copy-btn" data-action="fp-highlight-macro" data-node-id="${this._escapeAttr(mac.nodeId)}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button></td>
       </tr>`;
     }
@@ -1583,30 +1644,54 @@ export class BackendPanel {
 
   _buildCtsTable(p) {
     const t = p.cts;
-    const row = (k, v) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`;
-    const skewCls = t.skewPs > this._clockPeriodPs * 0.1 ? 'status-violated' : 'status-met';
-    return `<table class="backend-cell-table">
-      <tr><th>CTS Metric</th><th>Value</th></tr>
-      ${row('Clock Sinks', t.numSinks)}
-      ${row('Clock Buffers', t.numBuffers)}
-      ${row('Tree Levels', t.treeLevels)}
-      ${row('Source Insertion', `${t.sourceInsertionPs} ps`)}
-      ${row('Insertion (min / avg / max)', `${t.minInsertionPs} / ${t.avgInsertionPs} / ${t.maxInsertionPs} ps`)}
-      <tr><td>Clock Skew</td><td class="${skewCls}"><b>${t.skewPs} ps</b></td></tr>
-      ${row('Buffer Delay / Wire', `${t.clockBufferDelayPs} ps / ${t.wireDelayPsPerUm} ps·µm⁻¹`)}
-    </table>`;
+    const skewBad = t.skewPs > this._clockPeriodPs * 0.1;
+    const card = (label, value, unit = '', cls = '') =>
+      `<div class="backend-cts-card ${cls}">
+        <div class="backend-cts-k">${label}</div>
+        <div class="backend-cts-v">${value}${unit ? ` <small>${unit}</small>` : ''}</div>
+      </div>`;
+    // headline stat cards
+    let html = `<div class="backend-cts-grid">
+      ${card('Clock Sinks', t.numSinks)}
+      ${card('CTS Buffers', t.numBuffers)}
+      ${card('Tree Levels', t.treeLevels)}
+      ${card('Clock Skew', t.skewPs, 'ps', skewBad ? 'bad' : 'good')}
+    </div>`;
+    // insertion-delay span (min → avg → max), visualized
+    const lo = t.minInsertionPs, hi = t.maxInsertionPs, span = Math.max(1, hi - lo);
+    const avgPct = Math.round((t.avgInsertionPs - lo) / span * 100);
+    html += `<div class="backend-cts-insert">
+      <div class="backend-cts-insert-head">
+        <span>Insertion delay (source → sink)</span>
+        <span class="backend-cts-insert-src">source ${t.sourceInsertionPs} ps</span>
+      </div>
+      <div class="backend-cts-range">
+        <div class="backend-cts-range-fill"></div>
+        <div class="backend-cts-range-avg" style="left:${avgPct}%" title="avg ${t.avgInsertionPs} ps"></div>
+      </div>
+      <div class="backend-cts-range-labels">
+        <span>min ${lo} ps</span><span>avg ${t.avgInsertionPs} ps</span><span>max ${hi} ps</span>
+      </div>
+    </div>`;
+    html += `<div class="backend-cts-foot">Buffer delay ${t.clockBufferDelayPs} ps &middot; wire ${t.wireDelayPsPerUm} ps·µm⁻¹</div>`;
+    return html;
   }
 
   _buildSinkTable(p) {
     if (!p.sinks.length) return '<div style="color:#88ccaa;font-size:9px;margin-top:6px">No clock sinks</div>';
     const sorted = [...p.sinks].sort((a, b) => b.insertionDelayPs - a.insertionDelayPs);
-    let html = `<table class="backend-group-table" style="margin-top:8px">
-      <tr><th>Sink</th><th>Kind</th><th>Insertion</th><th>Depth</th><th>Action</th></tr>`;
+    const maxIns = Math.max(1, ...sorted.map(s => s.insertionDelayPs));
+    let html = `<table class="backend-group-table backend-sink-table" style="margin-top:8px">
+      <tr><th>Sink</th><th>Kind</th><th>Insertion delay</th><th>Depth</th><th>Action</th></tr>`;
     for (const s of sorted.slice(0, 20)) {
+      const pct = Math.round(s.insertionDelayPs / maxIns * 100);
       html += `<tr>
         <td><b>${this._escapeAttr(this._truncate(s.label, 12))}</b></td>
-        <td style="color:#88ccaa">${s.isMacro ? 'macro' : 'FF'}</td>
-        <td>${s.insertionDelayPs} ps</td>
+        <td><span class="backend-sink-kind ${s.isMacro ? 'macro' : 'ff'}">${s.isMacro ? 'macro' : 'FF'}</span></td>
+        <td>
+          <div class="backend-sink-bar"><div class="backend-sink-bar-fill" style="width:${pct}%"></div></div>
+          <span class="backend-sink-ps">${s.insertionDelayPs} ps</span>
+        </td>
         <td>${s.bufferDepth}</td>
         <td><button class="backend-copy-btn" data-action="pl-highlight-sink" data-node-id="${this._escapeAttr(s.nodeId)}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button></td>
       </tr>`;
@@ -1622,20 +1707,39 @@ export class BackendPanel {
     const skew = this._lastPlacement?.cts.skewPs ?? 0;
     const ins = this._lastPlacement?.cts.sourceInsertionPs ?? 0;
     const emph = this._plIdealVsCts;
-    const col = (val, on, cls = '') => `<td class="${cls}" style="${on ? 'font-weight:bold' : 'opacity:0.75'}">${val}</td>`;
-    const r = (label, iv, cv, icls = '', ccls = '') => `<tr><td>${label}</td>${col(iv, emph === 'ideal', icls)}${col(cv, emph === 'cts', ccls)}</tr>`;
+
+    // Δ cell: shows the post-CTS change vs ideal, arrow + good/bad coloring.
+    // `betterUp` = is an increase good? (fMax yes; violations / WNS-toward-negative no)
+    const delta = (iv, cv, betterUp) => {
+      const d = Math.round((cv - iv) * 100) / 100;
+      if (d === 0) return `<span class="backend-ti-delta flat">—</span>`;
+      const up = d > 0, good = betterUp ? up : !up;
+      return `<span class="backend-ti-delta ${good ? 'good' : 'bad'}">${up ? '▲ +' : '▼ '}${d}</span>`;
+    };
+    const onI = emph === 'ideal' ? ' col-on' : '';
+    const onC = emph === 'cts' ? ' col-on' : '';
     const wcls = v => v < 0 ? 'status-violated' : 'status-met';
+    const row = (label, iv, cv, betterUp, icls = '', ccls = '') => `<tr>
+        <td>${label}</td>
+        <td class="ti-col${onI} ${icls}">${iv}</td>
+        <td class="ti-col${onC} ${ccls}">${cv}</td>
+        <td class="ti-delta-cell">${delta(iv, cv, betterUp)}</td>
+      </tr>`;
+    const vc = (a, b) => [a ? 'status-violated' : 'status-met', b ? 'status-violated' : 'status-met'];
+    const [si, sc] = vc(ideal.numViolations, cts.numViolations);
+    const [hi, hc] = vc(ideal.numHoldViolations, cts.numHoldViolations);
+
     return `<div class="backend-info-formula" style="margin-bottom:4px">T<sub>cq</sub> + T<sub>comb</sub> + T<sub>setup</sub> &lt; T<sub>ck</sub> &plusmn; T<sub>skew</sub></div>
-      <div class="backend-info-formula-detail">Before CTS: clock network delay = ideal (0). After CTS: insertion = ${ins} ps, skew = ${skew} ps.</div>
-      <table class="backend-cell-table" style="margin-top:6px">
-        <tr><th>Metric</th><th>Ideal clock</th><th>Post-CTS</th></tr>
-        ${r('WNS (ps)', ideal.wns, cts.wns, wcls(ideal.wns), wcls(cts.wns))}
-        ${r('TNS (ps)', ideal.tns, cts.tns)}
-        ${r('Setup Violations', ideal.numViolations, cts.numViolations, ideal.numViolations ? 'status-violated' : 'status-met', cts.numViolations ? 'status-violated' : 'status-met')}
-        ${r('Hold Violations', ideal.numHoldViolations, cts.numHoldViolations, ideal.numHoldViolations ? 'status-violated' : 'status-met', cts.numHoldViolations ? 'status-violated' : 'status-met')}
-        ${r('fMax (MHz)', ideal.fMaxMHz, cts.fMaxMHz)}
+      <div class="backend-info-formula-detail">Before CTS the clock is <b>ideal</b> (network delay 0). After CTS: insertion ${ins} ps, skew <b>${skew} ps</b> — the &plusmn;T<sub>skew</sub> term.</div>
+      <table class="backend-cell-table backend-ti-table" style="margin-top:8px">
+        <tr><th>Metric</th><th class="ti-col${onI}">Ideal clock</th><th class="ti-col${onC}">Post-CTS</th><th class="ti-delta-cell">Δ (skew effect)</th></tr>
+        ${row('WNS (ps)', ideal.wns, cts.wns, true, wcls(ideal.wns), wcls(cts.wns))}
+        ${row('TNS (ps)', ideal.tns, cts.tns, true)}
+        ${row('Setup Violations', ideal.numViolations, cts.numViolations, false, si, sc)}
+        ${row('Hold Violations', ideal.numHoldViolations, cts.numHoldViolations, false, hi, hc)}
+        ${row('fMax (MHz)', ideal.fMaxMHz, cts.fMaxMHz, true)}
       </table>
-      <div style="font-size:8px;color:#88ccaa;margin-top:4px">Positive skew relaxes setup (capture edge later) but tightens hold — the ± T<sub>skew</sub> term.</div>`;
+      <div style="font-size:8px;color:#88ccaa;margin-top:6px">Positive skew relaxes setup (capture edge arrives later) but tightens hold — the &plusmn;T<sub>skew</sub> term.</div>`;
   }
 
   // ── Placement info boxes (grounded in lessons 1/4/5/6) ──
@@ -1765,7 +1869,7 @@ export class BackendPanel {
     let lastCat = null;
     for (const c of r.checks) {
       if (c.category !== lastCat) {
-        html += `<tr><td colspan="5" style="color:#88ccaa;font-size:8px;letter-spacing:0.5px;padding-top:5px">${c.category}</td></tr>`;
+        html += `<tr class="backend-signoff-cat"><td colspan="5">${c.category}</td></tr>`;
         lastCat = c.category;
       }
       html += `<tr>
@@ -1786,16 +1890,38 @@ export class BackendPanel {
 
   _buildPowerReport(r) {
     const p = r.power;
-    const row = (k, v) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`;
+    const tot = p.totalMw || 1;
+    const dynPct = Math.round(p.dynamicMw / tot * 100);
+    const leakPct = 100 - dynPct;
     return `<div class="backend-info-formula">P<sub>total</sub> = &alpha;&middot;C&middot;V<sub>dd</sub>²&middot;f + P<sub>leak</sub></div>
       <div class="backend-info-formula-detail">&alpha;=${p.activity}, V<sub>dd</sub>=${p.vddV} V, f=${p.fGHz} GHz, C=${p.switchCapPf} pF (= area &times; ${p.capPfPerUm2} pF/µm²), leak=${p.leakUwPerUm2} µW/µm²</div>
-      <table class="backend-cell-table" style="margin-top:6px">
-        <tr><th>Component</th><th>Power</th></tr>
-        ${row('Dynamic', `${p.dynamicMw} mW`)}
-        ${row('Leakage', `${p.leakageMw} mW`)}
-        <tr><td><b>Total</b></td><td><b>${p.totalMw} mW</b></td></tr>
-      </table>
-      <div style="margin-top:4px;font-size:8px;color:#88ccaa">Estimated — the cell library has no real capacitance/leakage data; α, V<sub>dd</sub> and the cap/leak coefficients are assumed (28nm-class).</div>`;
+
+      <div class="backend-power-grid">
+        <div class="backend-power-card">
+          <span class="backend-power-dot dyn"></span>
+          <div class="backend-power-k">Dynamic</div>
+          <div class="backend-power-v">${p.dynamicMw} <small>mW</small></div>
+          <div class="backend-power-pct">${dynPct}%</div>
+        </div>
+        <div class="backend-power-card">
+          <span class="backend-power-dot leak"></span>
+          <div class="backend-power-k">Leakage</div>
+          <div class="backend-power-v">${p.leakageMw} <small>mW</small></div>
+          <div class="backend-power-pct">${leakPct}%</div>
+        </div>
+        <div class="backend-power-card total">
+          <div class="backend-power-k">Total</div>
+          <div class="backend-power-v">${p.totalMw} <small>mW</small></div>
+          <div class="backend-power-pct">est.</div>
+        </div>
+      </div>
+
+      <div class="backend-power-bar" title="Dynamic ${dynPct}% / Leakage ${leakPct}%">
+        <div class="seg dyn" style="width:${dynPct}%">${dynPct >= 12 ? `Dynamic ${dynPct}%` : ''}</div>
+        <div class="seg leak" style="width:${leakPct}%">${leakPct >= 12 ? `Leakage ${leakPct}%` : ''}</div>
+      </div>
+
+      <div style="margin-top:6px;font-size:8px;color:#88ccaa">Estimated — the cell library has no real capacitance/leakage data; α, V<sub>dd</sub> and the cap/leak coefficients are assumed (28nm-class).</div>`;
   }
 
   _buildTapeoutSection(r) {

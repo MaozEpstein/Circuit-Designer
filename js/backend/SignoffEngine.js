@@ -111,7 +111,7 @@ export function runSignoff(caches, opts = {}) {
       let st = 'PASS', note = 'Clock tree well balanced.';
       if (frac >= skewFailPct) { st = 'FAIL'; note = 'Skew eats too much of the period.'; }
       else if (frac >= skewWarnPct) { st = 'WARN'; note = 'Skew noticeable — consider rebalancing.'; }
-      add({ id: 'cts-skew', label: 'Clock Skew (% of period)', category: 'TIMING',
+      add({ id: 'cts-skew', label: 'Clock Skew (% of period)', category: 'CLOCK',
             status: st, kind: 'real', blocking: st === 'FAIL',
             value: `${cts.skewPs} ps (${Math.round(frac * 100)}%)`,
             limit: `< ${Math.round(skewWarnPct * 100)}%`, note });
