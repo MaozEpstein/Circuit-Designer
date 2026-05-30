@@ -4,7 +4,7 @@
  * Unlike the other backend engines, this computes no geometry. It reads the
  * cached results of every prior stage (STA, Synthesis, Floorplan, Placement)
  * and produces a signoff checklist + tapeout verdict, plus an estimated power
- * report. Maps to lesson 1's Signoff bullet: Power; Power Integrity + EM;
+ * report. Covers the Signoff stage: Power; Power Integrity + EM;
  * DRC; LVS; FM; STA + SI → Tapeout (GDS/OASIS).
  *
  * Honesty model — every check carries a `kind`:
@@ -40,6 +40,9 @@ export function runSignoff(caches, opts = {}) {
 
   const checks = [];
   const add = (c) => checks.push(c);
+  // Fix suggestion: always a text recommendation; action+value only when the
+  // tool genuinely owns the knob and a value will clear the check.
+  const fix = (text, action = null, value = null, from = null) => ({ text, action, value, from });
 
   // Empty-design guard
   if (!synth || synth.totalCells === 0) {
@@ -54,11 +57,16 @@ export function runSignoff(caches, opts = {}) {
     add({ id: 'timing-setup', label: 'Timing — Setup (WNS ≥ 0)', category: 'TIMING',
           status: t.wns >= 0 ? 'PASS' : 'FAIL', kind: 'real', blocking: true,
           value: `${t.wns} ps`, limit: '≥ 0 ps',
-          note: t.wns >= 0 ? 'All captured paths meet setup.' : 'Worst path misses the setup deadline.' });
+          note: t.wns >= 0 ? 'All captured paths meet setup.' : 'Worst path misses the setup deadline.',
+          fix: t.wns >= 0 ? null : fix(
+            'Raise the clock period so the data path fits in one cycle. (Alternatively shorten the path: pipeline it, size up gates, or reduce logic depth.)',
+            'raise-clock', clockPeriodPs + Math.ceil(-t.wns) + 50, clockPeriodPs) });
     add({ id: 'timing-hold', label: 'Timing — Hold', category: 'TIMING',
           status: t.numHoldViolations === 0 ? 'PASS' : 'FAIL', kind: 'real', blocking: true,
           value: `${t.numHoldViolations} viol`, limit: '0',
-          note: t.numHoldViolations === 0 ? 'No hold violations.' : 'Data races the clock at the capture FF.' });
+          note: t.numHoldViolations === 0 ? 'No hold violations.' : 'Data races the clock at the capture FF.',
+          fix: t.numHoldViolations === 0 ? null : fix(
+            'Add delay buffers on the short (fast) paths so data no longer races the clock. Hold is fixed by adding delay, not by changing the clock period.') });
     const meetsClock = isFinite(t.fMaxMHz) && t.fMaxMHz >= 1e6 / clockPeriodPs;
     add({ id: 'timing-fmax', label: 'Max Frequency', category: 'TIMING',
           status: meetsClock ? 'PASS' : 'WARN', kind: 'real', blocking: false,
@@ -75,28 +83,46 @@ export function runSignoff(caches, opts = {}) {
     let st = 'PASS', note = 'Utilization in the healthy band.';
     if (u > utilBand.hi) { st = 'FAIL'; note = 'Over-utilized — routing congestion risk.'; }
     else if (u < utilBand.lo) { st = 'WARN'; note = 'Under-utilized — wasted silicon area.'; }
+    const uPct = Math.round(u * 100);
+    const utilFix = st === 'FAIL'
+      ? fix('Lower target utilization — a bigger core leaves more routing room.',
+            'set-util', Math.max(0.3, Math.round((utilBand.hi - 0.10) * 100) / 100), uPct)
+      : (st === 'WARN'
+        ? fix('Raise target utilization — the die is mostly empty; a denser core saves silicon area.',
+              'set-util', 0.70, uPct)
+        : null);
     add({ id: 'area-util', label: 'Area / Utilization band', category: 'PHYSICAL',
           status: st, kind: 'real', blocking: st === 'FAIL',
-          value: `${Math.round(u * 100)}%`, limit: `${Math.round(utilBand.lo * 100)}–${Math.round(utilBand.hi * 100)}%`, note });
+          value: `${Math.round(u * 100)}%`, limit: `${Math.round(utilBand.lo * 100)}–${Math.round(utilBand.hi * 100)}%`, note,
+          fix: utilFix });
   }
 
   // ── DRC (real) ──
   add({ id: 'drc-fanout', label: 'DRC — Max Fanout', category: 'DRC',
         status: synth.maxFanout <= maxFanout ? 'PASS' : 'FAIL', kind: 'real', blocking: true,
         value: `${synth.maxFanout}`, limit: `≤ ${maxFanout}`,
-        note: synth.maxFanout <= maxFanout ? 'Within set_max_fanout.' : `Net exceeds set_max_fanout ${maxFanout} — needs buffering.` });
+        note: synth.maxFanout <= maxFanout ? 'Within set_max_fanout.' : `Net exceeds set_max_fanout ${maxFanout} — needs buffering.`,
+        fix: synth.maxFanout <= maxFanout ? null : fix(
+          `Split the high-fanout net into a buffer tree so each driver feeds at most ${maxFanout} loads.`) });
 
   const nUnmapped = synth.unmappedTypes?.length || 0;
   add({ id: 'drc-unmapped', label: 'DRC — Unmapped Cells', category: 'DRC',
         status: nUnmapped === 0 ? 'PASS' : 'FAIL', kind: 'real', blocking: true,
         value: `${nUnmapped}`, limit: '0',
-        note: nUnmapped === 0 ? 'Every node mapped to a library cell.' : `No library cell for: ${synth.unmappedTypes.join(', ')}` });
+        note: nUnmapped === 0 ? 'Every node mapped to a library cell.' : `No library cell for: ${synth.unmappedTypes.join(', ')}`,
+        fix: nUnmapped === 0 ? null : fix(
+          `Add a standard-cell mapping for ${synth.unmappedTypes.join(', ')} to the cell library so synthesis can place them.`,
+          'map-generic', synth.unmappedTypes.join(',')) });
 
   if (placement) {
     add({ id: 'drc-legalize', label: 'Placement Legalization', category: 'DRC',
           status: placement.overflow ? 'FAIL' : 'PASS', kind: 'real', blocking: true,
           value: `${placement.placedCount} placed`, limit: 'fits rows',
-          note: placement.overflow ? 'Cells overflow the core rows — die too small / utilization too high.' : 'All standard cells fit the rows.' });
+          note: placement.overflow ? 'Cells overflow the core rows — die too small / utilization too high.' : 'All standard cells fit the rows.',
+          fix: placement.overflow ? fix(
+            'Increase die area — lower target utilization so the standard cells fit the rows.',
+            'set-util', Math.max(0.3, Math.round(((floorplan?.utilization ?? 0.7) - 0.15) * 100) / 100),
+            Math.round((floorplan?.utilization ?? 0.7) * 100)) : null });
 
     const dens = placement.density;
     const hot = dens && dens.maxDensity ? _congested(dens) : false;
@@ -111,10 +137,13 @@ export function runSignoff(caches, opts = {}) {
       let st = 'PASS', note = 'Clock tree well balanced.';
       if (frac >= skewFailPct) { st = 'FAIL'; note = 'Skew eats too much of the period.'; }
       else if (frac >= skewWarnPct) { st = 'WARN'; note = 'Skew noticeable — consider rebalancing.'; }
+      const skewFix = (st === 'FAIL' || st === 'WARN') ? fix(
+        'Raise the clock period so the fixed skew becomes a smaller fraction of it (or rebalance the clock tree).',
+        'raise-clock', Math.ceil(cts.skewPs / skewWarnPct), clockPeriodPs) : null;
       add({ id: 'cts-skew', label: 'Clock Skew (% of period)', category: 'CLOCK',
             status: st, kind: 'real', blocking: st === 'FAIL',
             value: `${cts.skewPs} ps (${Math.round(frac * 100)}%)`,
-            limit: `< ${Math.round(skewWarnPct * 100)}%`, note });
+            limit: `< ${Math.round(skewWarnPct * 100)}%`, note, fix: skewFix });
     }
   }
 

@@ -76,6 +76,23 @@ const UNMAPPED = {
   cellName: 'UNMAPPED', fn: '?', areaUm2: 5.0, pinCount: 2, category: 'combinational',
 };
 
+// Runtime overlay: user-added generic mappings for types not in CELL_TABLE.
+// Lets the Signoff "Fix" button resolve DRC-unmapped without editing the
+// static library (mirrors a real flow: add a cell to the library).
+const _overlay = {};
+
+/** Register a generic standard cell for each given node-type (idempotent). */
+export function registerGenericCells(types) {
+  for (const t of types || []) {
+    if (!t || CELL_TABLE[t] || _overlay[t]) continue;
+    _overlay[t] = {
+      cellName: ('GEN_' + String(t).replace(/[^A-Za-z0-9]/g, '')).slice(0, 12),
+      fn: 'generic mapped cell', areaUm2: 5.0, pinCount: 4,
+      category: 'combinational', generic: true,
+    };
+  }
+}
+
 /**
  * Return the standard-cell mapping for a circuit node.
  * For GATE_SLOT nodes, dispatches by node.gate (AND/OR/NOT/etc).
@@ -85,7 +102,7 @@ export function cellFor(node) {
   if (node.type === 'GATE_SLOT' && node.gate && CELL_TABLE[node.gate]) {
     return CELL_TABLE[node.gate];
   }
-  return CELL_TABLE[node.type] || UNMAPPED;
+  return CELL_TABLE[node.type] || _overlay[node.type] || UNMAPPED;
 }
 
 /** True when this node represents real silicon (not an I/O boundary or const). */

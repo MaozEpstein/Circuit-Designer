@@ -9,6 +9,7 @@ import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthe
 import { computeFloorplan, PORT_COLORS }  from '../FloorplanEngine.js';
 import { computePlacement }               from '../PlacementEngine.js';
 import { runSignoff }                      from '../SignoffEngine.js';
+import { registerGenericCells }            from '../CellLibrary.js';
 import { setStaCriticalPath }             from '../../rendering/CanvasRenderer.js';
 
 const TABS = [
@@ -187,6 +188,18 @@ export class BackendPanel {
       } else if (action === 'apply-clock') {
         this._readClockInputs();
         this._runSta();
+      } else if (action === 'so-fix-clock') {
+        this._clockPeriodPs = parseInt(btn.dataset.value, 10);
+        this._recomputeSignoff();
+        this._scheduleRender();
+      } else if (action === 'so-fix-util') {
+        this._fpUtilization = parseFloat(btn.dataset.value);
+        this._recomputeSignoff();
+        this._scheduleRender();
+      } else if (action === 'so-fix-map') {
+        registerGenericCells((btn.dataset.value || '').split(',').filter(Boolean));
+        this._recomputeSignoff();
+        this._scheduleRender();
       } else if (action === 'copy-netlist') {
         if (this._lastSynth?.netlist && navigator.clipboard) {
           navigator.clipboard.writeText(this._lastSynth.netlist);
@@ -1879,6 +1892,20 @@ export class BackendPanel {
         <td style="color:#88ccaa">${this._escapeAttr(String(c.limit))}</td>
         <td style="color:#a8c8b8">${kindTag(c.kind)}${this._escapeAttr(c.note)}</td>
       </tr>`;
+      // Fix-suggestion sub-row under any failing/warning check that carries one.
+      if (c.fix && (c.status === 'FAIL' || c.status === 'WARN')) {
+        const act = { 'raise-clock': 'so-fix-clock', 'set-util': 'so-fix-util', 'map-generic': 'so-fix-map' }[c.fix.action];
+        let btn = '';
+        if (act && c.fix.value != null) {
+          const lbl = c.fix.action === 'set-util'  ? `Fix: Util ${c.fix.from}→${Math.round(c.fix.value * 100)}%`
+                    : c.fix.action === 'map-generic' ? 'Fix: add generic cells'
+                    : `Fix: Clock ${c.fix.from}→${c.fix.value} ps`;
+          btn = `<button class="backend-fix-btn" data-action="${act}" data-value="${this._escapeAttr(String(c.fix.value))}">${lbl}</button>`;
+        }
+        html += `<tr class="backend-fix-row"><td></td><td colspan="4">
+          <span class="backend-fix-icon">➜</span> ${this._escapeAttr(c.fix.text)} ${btn}
+        </td></tr>`;
+      }
     }
     html += `</table>
       <div style="margin-top:6px;font-size:8px;color:#88ccaa">
