@@ -7,13 +7,14 @@
 import { analyzeTimingPaths, pathDetail } from '../STAEngine.js';
 import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF } from '../SynthesisEngine.js';
 import { computeFloorplan, PORT_COLORS }  from '../FloorplanEngine.js';
+import { computePlacement }               from '../PlacementEngine.js';
 import { setStaCriticalPath }             from '../../rendering/CanvasRenderer.js';
 
 const TABS = [
   { id: 'sta',       label: 'STA',       enabled: true  },
   { id: 'synthesis',  label: 'Synthesis',  enabled: true  },
   { id: 'floorplan',  label: 'Floorplan',  enabled: true  },
-  { id: 'placement',  label: 'Placement',  enabled: false },
+  { id: 'placement',  label: 'Placement',  enabled: true  },
   { id: 'signoff',    label: 'Signoff',    enabled: false },
 ];
 
@@ -55,6 +56,15 @@ export class BackendPanel {
     this._fpShowPower      = true;  // power rings + strap mesh overlay
     this._fpShowTracks     = true;  // routing-track grid over the core
     this._fpPortEdges      = {};    // nodeId → 'N'|'E'|'S'|'W'
+
+    // Placement & CTS tab state
+    this._lastPlacement         = null;
+    this._lastPlacementSta      = null;   // STA re-run with CTS skew
+    this._lastPlacementStaIdeal = null;   // STA with ideal clock (skew 0)
+    this._plShowDensity         = false;
+    this._plShowClockTree       = true;
+    this._plIdealVsCts          = 'cts';  // which timing column is emphasized
+    this._plClockBufferPs       = 35;
     this._collapsedSections = new Set([
       'hist-info',     // STA: slack distribution explanation
       'synth-info',    // Synthesis: overview (now also contains flow diagram)
@@ -67,6 +77,10 @@ export class BackendPanel {
       'fp-metrics-info',  // Floorplan: metrics explanation
       'fp-ports-info',    // Floorplan: port assignment explanation
       'fp-macros-info',   // Floorplan: macros explanation
+      'pl-controls-info', // Placement: controls
+      'pl-place-info',    // Placement: standard-cell placement
+      'pl-cts-info',      // Placement: clock tree synthesis
+      'pl-timing-info',   // Placement: timing impact
     ]);
 
     // STA parameters
@@ -108,6 +122,7 @@ export class BackendPanel {
     document.getElementById('btn-backend-run')?.addEventListener('click', () => {
       if (this._activeTab === 'synthesis') this._runSynthesis();
       else if (this._activeTab === 'floorplan') this._runFloorplan();
+      else if (this._activeTab === 'placement') this._runPlacement();
       else this._runSta();
     });
     document.getElementById('btn-backend-run-all')?.addEventListener('click', () => this._runAll());
@@ -236,6 +251,19 @@ export class BackendPanel {
         setStaCriticalPath(this._macroHighlightIds(id), 'met');
         btn.textContent = 'HIGHLIGHTED';
         setTimeout(() => { btn.textContent = 'HIGHLIGHT'; }, 1500);
+      } else if (action === 'pl-toggle-density') {
+        this._plShowDensity = !this._plShowDensity;
+        this._scheduleRender();
+      } else if (action === 'pl-toggle-tree') {
+        this._plShowClockTree = !this._plShowClockTree;
+        this._scheduleRender();
+      } else if (action === 'pl-set-timing') {
+        this._plIdealVsCts = btn.dataset.mode;
+        this._scheduleRender();
+      } else if (action === 'pl-highlight-sink') {
+        setStaCriticalPath(this._macroHighlightIds(btn.dataset.nodeId), 'met');
+        btn.textContent = 'HIGHLIGHTED';
+        setTimeout(() => { btn.textContent = 'HIGHLIGHT'; }, 1500);
       }
     });
 
@@ -246,6 +274,11 @@ export class BackendPanel {
       if (e.target?.dataset?.fpField === 'utilization') {
         this._fpUtilization = parseInt(e.target.value, 10) / 100;
         this._updateFloorplanLive();
+        return;
+      }
+      if (e.target?.dataset?.plField === 'clockBuffer') {
+        this._plClockBufferPs = parseInt(e.target.value, 10);
+        this._updatePlacementLive();
         return;
       }
       const field = e.target?.dataset?.cgField;
@@ -340,6 +373,9 @@ export class BackendPanel {
     } else if (this._activeTab === 'floorplan') {
       this._renderFloorplanSummary(this._lastFloorplan);
       this._renderFloorplanBody(this._lastFloorplan);
+    } else if (this._activeTab === 'placement') {
+      this._renderPlacementSummary(this._lastPlacement);
+      this._renderPlacementBody(this._lastPlacement);
     } else {
       this._renderSummary(null);
       this._renderPlaceholder(this._activeTab);
@@ -358,6 +394,9 @@ export class BackendPanel {
     } else if (this._activeTab === 'floorplan') {
       btn.textContent = 'RUN FLOORPLAN';
       btn.title = 'Plan the die: core/die area from utilization, place macros, assign ports';
+    } else if (this._activeTab === 'placement') {
+      btn.textContent = 'RUN PLACE+CTS';
+      btn.title = 'Legalize standard cells into rows and synthesize a balanced clock tree (CTS)';
     } else {
       btn.textContent = '—';
       btn.title = 'Not available on this tab';
@@ -928,6 +967,7 @@ export class BackendPanel {
     this._runSta();
     this._runSynthesis();
     this._recomputeFloorplan();
+    this._recomputePlacement();   // consumes the fresh floorplan
     // _runSta highlights the worst path on the canvas — only keep it on the STA tab.
     if (this._activeTab !== 'sta') setStaCriticalPath(null);
     this._scheduleRender();
@@ -1063,83 +1103,103 @@ export class BackendPanel {
     return `${info}<div class="backend-fp-viz" id="fp-viz">${this._buildDieSvg(m)}</div>${legend}`;
   }
 
+  /**
+   * Shared responsive die-base SVG used by both the Floorplan and Placement tabs:
+   * geometry, defs (prefixed ids), die body, core, and the clipped substrate
+   * (zebra rows + optional tracks + optional heatmap + caller-supplied content).
+   * Stops at the clip close — callers append their own overlays then `</svg>`.
+   * Returns the partial SVG plus geometry, label-position helpers, and a `macros()` builder.
+   */
+  _dieBaseSvg(m, opts = {}) {
+    const {
+      prefix       = 'fp',
+      glow         = false,
+      zebraOpacity = 0.05,
+      tracks       = null,   // { color, widthMul, opacity } or null
+      heatmap      = null,   // { grid, n, max, opacity } or null
+      extraClipped = '',     // string injected inside the clip after the heatmap
+    } = opts;
+    const W = m.dieW, H = m.dieH, c = m.core, max = Math.max(W, H);
+    const pad = max * 0.06, vbW = W + 2 * pad, vbH = H + 2 * pad;
+    const sw = max * 0.0035, rDie = max * 0.02, rCore = max * 0.012, hs = max * 0.03;
+    const id = s => prefix + s;
+
+    let svg = `<svg viewBox="${_n(-pad)} ${_n(-pad)} ${_n(vbW)} ${_n(vbH)}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`;
+    svg += `<defs>
+      <linearGradient id="${id('Die')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e2016"/><stop offset="1" stop-color="#060d09"/></linearGradient>
+      <linearGradient id="${id('Core')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173620"/><stop offset="1" stop-color="#0d2215"/></linearGradient>
+      <linearGradient id="${id('Macro')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(190,90,190,0.45)"/><stop offset="1" stop-color="rgba(120,40,120,0.4)"/></linearGradient>
+      <pattern id="${id('Hatch')}" width="${_n(hs)}" height="${_n(hs)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${_n(hs)}" stroke="#d870d8" stroke-width="${_n(sw * 0.7)}" stroke-opacity="0.45"/></pattern>
+      <filter id="${id('Shadow')}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${_n(sw * 1.2)}" stdDeviation="${_n(sw * 1.6)}" flood-color="#000" flood-opacity="0.55"/></filter>
+      ${glow ? `<filter id="${id('Glow')}" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="${_n(sw * 1.4)}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` : ''}
+      <clipPath id="${id('CoreClip')}"><rect x="${_n(c.x)}" y="${_n(c.y)}" width="${_n(c.w)}" height="${_n(c.h)}" rx="${_n(rCore)}"/></clipPath>
+    </defs>`;
+
+    // die body + inner frame line
+    svg += `<rect x="0" y="0" width="${_n(W)}" height="${_n(H)}" rx="${_n(rDie)}" fill="url(#${id('Die')})" stroke="#50cc70" stroke-width="${_n(sw * 1.6)}" filter="url(#${id('Shadow')})"/>`;
+    svg += `<rect x="${_n(sw * 1.5)}" y="${_n(sw * 1.5)}" width="${_n(W - sw * 3)}" height="${_n(H - sw * 3)}" rx="${_n(rDie)}" fill="none" stroke="#2a6a3a" stroke-width="${_n(sw * 0.6)}" stroke-opacity="0.6"/>`;
+    // core
+    svg += `<rect x="${_n(c.x)}" y="${_n(c.y)}" width="${_n(c.w)}" height="${_n(c.h)}" rx="${_n(rCore)}" fill="url(#${id('Core')})" stroke="#3a8a4a" stroke-width="${_n(sw)}" stroke-dasharray="${_n(sw * 3)} ${_n(sw * 2)}"/>`;
+
+    // clipped substrate: zebra rows → tracks → heatmap → caller extras
+    svg += `<g clip-path="url(#${id('CoreClip')})">`;
+    const shown = Math.min(m.rows.count, 60), bandH = c.h / shown;
+    for (let i = 0; i < shown; i += 2) {
+      svg += `<rect x="${_n(c.x)}" y="${_n(c.y + i * bandH)}" width="${_n(c.w)}" height="${_n(bandH)}" fill="#50cc70" fill-opacity="${zebraOpacity}"/>`;
+    }
+    if (tracks) {
+      const pitch = Math.max(m.rows.height, max / 100);
+      const nV = Math.min(100, Math.floor(c.w / pitch)), nH = Math.min(100, Math.floor(c.h / pitch));
+      const tw = sw * tracks.widthMul;
+      for (let i = 1; i < nV; i++) { const tx = c.x + i / nV * c.w; svg += `<line x1="${_n(tx)}" y1="${_n(c.y)}" x2="${_n(tx)}" y2="${_n(c.y + c.h)}" stroke="${tracks.color}" stroke-width="${_n(tw)}" stroke-opacity="${tracks.opacity}"/>`; }
+      for (let j = 1; j < nH; j++) { const ty = c.y + j / nH * c.h; svg += `<line x1="${_n(c.x)}" y1="${_n(ty)}" x2="${_n(c.x + c.w)}" y2="${_n(ty)}" stroke="${tracks.color}" stroke-width="${_n(tw)}" stroke-opacity="${tracks.opacity}"/>`; }
+    }
+    if (heatmap && heatmap.max) {
+      const n = heatmap.n, cw = c.w / n, ch = c.h / n;
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        const v = heatmap.grid[y][x]; if (!v) continue;
+        const t = v / heatmap.max, hue = Math.round(120 - t * 120), lum = 30 + t * 25;
+        svg += `<rect x="${_n(c.x + x * cw)}" y="${_n(c.y + y * ch)}" width="${_n(cw)}" height="${_n(ch)}" fill="hsl(${hue}, 60%, ${lum}%)" fill-opacity="${heatmap.opacity}"/>`;
+      }
+    }
+    svg += extraClipped;
+    svg += `</g>`;
+
+    const geom = { W, H, c, max, pad, vbW, vbH, sw, rDie, rCore, hs };
+    const fx = x => ((x + pad) / vbW * 100).toFixed(2);
+    const fy = y => ((y + pad) / vbH * 100).toFixed(2);
+    // Macro boxes (gradient + hatch + shadow, optional top highlight line).
+    const macros = ({ strokeMul = 1.2, highlight = true } = {}) => {
+      let s = '';
+      for (const mac of m.macros) {
+        const ms = mac.side, mx = mac.x - ms / 2, my = mac.y - ms / 2;
+        s += `<g filter="url(#${id('Shadow')})"><rect x="${_n(mx)}" y="${_n(my)}" width="${_n(ms)}" height="${_n(ms)}" rx="${_n(sw)}" fill="url(#${id('Macro')})" stroke="#d870d8" stroke-width="${_n(sw * strokeMul)}"/><rect x="${_n(mx)}" y="${_n(my)}" width="${_n(ms)}" height="${_n(ms)}" rx="${_n(sw)}" fill="url(#${id('Hatch')})"/>${highlight ? `<line x1="${_n(mx + sw)}" y1="${_n(my + sw * 1.5)}" x2="${_n(mx + ms - sw)}" y2="${_n(my + sw * 1.5)}" stroke="#ffb0ff" stroke-width="${_n(sw * 0.6)}" stroke-opacity="0.5"/>` : ''}</g>`;
+      }
+      return s;
+    };
+    const macroLabels = () => {
+      let s = '';
+      for (const mac of m.macros) {
+        const fit = Math.max(2, Math.round(mac.side / (max * 0.028)));
+        s += `<div class="backend-fp-label macro" style="left:${fx(mac.x)}%;top:${fy(mac.y)}%;max-width:${(mac.side / vbW * 100).toFixed(2)}%">${this._escapeAttr(this._truncate(mac.label, fit))}</div>`;
+      }
+      return s;
+    };
+    return { svg, geom, fx, fy, id, macros, macroLabels };
+  }
+
   /** Build the responsive SVG die plan + absolutely-positioned HTML labels. */
   _buildDieSvg(m) {
     if (!m.dieW || !m.dieH) return '<div style="color:#88ccaa;font-size:9px">No die to draw</div>';
-    const W = m.dieW, H = m.dieH, c = m.core;
-    const max = Math.max(W, H);
-    const pad = max * 0.06;
-    const vbW = W + 2 * pad, vbH = H + 2 * pad;
-    const sw  = max * 0.0035;            // generic stroke width (µm)
-    const rDie  = max * 0.02;            // die corner radius
-    const rCore = max * 0.012;           // core corner radius
-    const hs    = max * 0.03;            // hatch pitch
-
-    // ── defs: gradients, macro hatch, drop shadow, core clip ──
-    let svg = `<svg viewBox="${_n(-pad)} ${_n(-pad)} ${_n(vbW)} ${_n(vbH)}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`;
-    svg += `<defs>
-      <linearGradient id="fpDie" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#0e2016"/><stop offset="1" stop-color="#060d09"/>
-      </linearGradient>
-      <linearGradient id="fpCore" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#173620"/><stop offset="1" stop-color="#0d2215"/>
-      </linearGradient>
-      <linearGradient id="fpMacro" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="rgba(190,90,190,0.45)"/><stop offset="1" stop-color="rgba(120,40,120,0.4)"/>
-      </linearGradient>
-      <pattern id="fpHatch" width="${_n(hs)}" height="${_n(hs)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <line x1="0" y1="0" x2="0" y2="${_n(hs)}" stroke="#d870d8" stroke-width="${_n(sw * 0.7)}" stroke-opacity="0.45"/>
-      </pattern>
-      <filter id="fpShadow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="${_n(sw * 1.2)}" stdDeviation="${_n(sw * 1.6)}" flood-color="#000" flood-opacity="0.55"/>
-      </filter>
-      <clipPath id="fpCoreClip"><rect x="${_n(c.x)}" y="${_n(c.y)}" width="${_n(c.w)}" height="${_n(c.h)}" rx="${_n(rCore)}"/></clipPath>
-    </defs>`;
-
-    // ── die body (with shadow + glow) ──
-    svg += `<rect x="0" y="0" width="${_n(W)}" height="${_n(H)}" rx="${_n(rDie)}" fill="url(#fpDie)" stroke="#50cc70" stroke-width="${_n(sw * 1.6)}" filter="url(#fpShadow)"/>`;
-    svg += `<rect x="${_n(sw * 1.5)}" y="${_n(sw * 1.5)}" width="${_n(W - sw * 3)}" height="${_n(H - sw * 3)}" rx="${_n(rDie)}" fill="none" stroke="#2a6a3a" stroke-width="${_n(sw * 0.6)}" stroke-opacity="0.6"/>`;
-
-    // ── core ──
-    svg += `<rect x="${_n(c.x)}" y="${_n(c.y)}" width="${_n(c.w)}" height="${_n(c.h)}" rx="${_n(rCore)}" fill="url(#fpCore)" stroke="#3a8a4a" stroke-width="${_n(sw)}" stroke-dasharray="${_n(sw * 3)} ${_n(sw * 2)}"/>`;
-
-    // ── clipped content: zebra rows + congestion ──
-    svg += `<g clip-path="url(#fpCoreClip)">`;
-    const shown = Math.min(m.rows.count, 60);
-    const bandH = c.h / shown;
-    for (let i = 0; i < shown; i += 2) {
-      svg += `<rect x="${_n(c.x)}" y="${_n(c.y + i * bandH)}" width="${_n(c.w)}" height="${_n(bandH)}" fill="#50cc70" fill-opacity="0.05"/>`;
-    }
-    // Routing tracks: fixed grid (metal layers) on which wires & power straps run.
-    if (this._fpShowTracks) {
-      const pitch = Math.max(m.rows.height, Math.max(W, H) / 100);
-      const nV = Math.min(100, Math.floor(c.w / pitch));
-      const nH = Math.min(100, Math.floor(c.h / pitch));
-      const tw = sw * 0.5;
-      for (let i = 1; i < nV; i++) {
-        const tx = c.x + (i / nV) * c.w;
-        svg += `<line x1="${_n(tx)}" y1="${_n(c.y)}" x2="${_n(tx)}" y2="${_n(c.y + c.h)}" stroke="#7ac0e0" stroke-width="${_n(tw)}" stroke-opacity="0.38"/>`;
-      }
-      for (let j = 1; j < nH; j++) {
-        const ty = c.y + (j / nH) * c.h;
-        svg += `<line x1="${_n(c.x)}" y1="${_n(ty)}" x2="${_n(c.x + c.w)}" y2="${_n(ty)}" stroke="#7ac0e0" stroke-width="${_n(tw)}" stroke-opacity="0.38"/>`;
-      }
-    }
-    if (this._fpShowCongestion && m.congestion?.maxDensity) {
-      const g = m.congestion, n = g.gridSize;
-      const cw = c.w / n, ch = c.h / n;
-      for (let y = 0; y < n; y++) {
-        for (let x = 0; x < n; x++) {
-          const v = g.grid[y][x];
-          if (!v) continue;
-          const t = v / g.maxDensity;
-          const hue = Math.round(120 - t * 120);
-          const lum = 30 + t * 25;
-          svg += `<rect x="${_n(c.x + x * cw)}" y="${_n(c.y + y * ch)}" width="${_n(cw)}" height="${_n(ch)}" fill="hsl(${hue}, 60%, ${lum}%)" fill-opacity="0.5"/>`;
-        }
-      }
-    }
-    svg += `</g>`;
+    const base = this._dieBaseSvg(m, {
+      prefix: 'fp',
+      tracks: this._fpShowTracks ? { color: '#7ac0e0', widthMul: 0.5, opacity: 0.38 } : null,
+      heatmap: (this._fpShowCongestion && m.congestion?.maxDensity)
+        ? { grid: m.congestion.grid, n: m.congestion.gridSize, max: m.congestion.maxDensity, opacity: 0.5 } : null,
+    });
+    const { W, H, c, max, sw, rDie } = base.geom;
+    const rCore = base.geom.rCore;
+    let svg = base.svg;
 
     // ── power planning: rings around the core + strap mesh across it ──
     if (this._fpShowPower) {
@@ -1174,15 +1234,8 @@ export class BackendPanel {
     // pin-1 marker (top-left, in the I/O ring)
     svg += `<circle cx="${_n(c.x * 0.5)}" cy="${_n(c.y * 0.5)}" r="${_n(max * 0.012)}" fill="#90ffc8" fill-opacity="0.9"/>`;
 
-    // ── macros (hatch + gradient + shadow + top highlight) ──
-    for (const mac of m.macros) {
-      const s = mac.side, mx = mac.x - s / 2, my = mac.y - s / 2;
-      svg += `<g filter="url(#fpShadow)">
-        <rect x="${_n(mx)}" y="${_n(my)}" width="${_n(s)}" height="${_n(s)}" rx="${_n(sw)}" fill="url(#fpMacro)" stroke="#d870d8" stroke-width="${_n(sw * 1.2)}"/>
-        <rect x="${_n(mx)}" y="${_n(my)}" width="${_n(s)}" height="${_n(s)}" rx="${_n(sw)}" fill="url(#fpHatch)"/>
-        <line x1="${_n(mx + sw)}" y1="${_n(my + sw * 1.5)}" x2="${_n(mx + s - sw)}" y2="${_n(my + sw * 1.5)}" stroke="#ffb0ff" stroke-width="${_n(sw * 0.6)}" stroke-opacity="0.5"/>
-      </g>`;
-    }
+    // ── macros (shared builder: hatch + gradient + shadow + top highlight) ──
+    svg += base.macros({ strokeMul: 1.2, highlight: true });
 
     // ── ports: edge pads + inward pin stubs ──
     const padDepth = max * 0.028, padLen = max * 0.05, stub = max * 0.03;
@@ -1201,14 +1254,8 @@ export class BackendPanel {
 
     // HTML labels (avoid SVG <text> / the {16..32} font-size standard).
     // Positions are % of the full viewBox (incl. padding) so they track the SVG.
-    const fx = x => ((x + pad) / vbW * 100).toFixed(2);
-    const fy = y => ((y + pad) / vbH * 100).toFixed(2);
-    let labels = '';
-    for (const mac of m.macros) {
-      // Fit the label to the macro box so it doesn't overflow small macros.
-      const fit = Math.max(2, Math.round(mac.side / (max * 0.028)));
-      labels += `<div class="backend-fp-label macro" style="left:${fx(mac.x)}%;top:${fy(mac.y)}%;max-width:${(mac.side / vbW * 100).toFixed(2)}%">${this._escapeAttr(this._truncate(mac.label, fit))}</div>`;
-    }
+    const fx = base.fx, fy = base.fy;
+    let labels = base.macroLabels();
     for (const p of m.ports) {
       // nudge the label inward from the edge so it sits inside the die
       const inset = padDepth + stub + max * 0.02;
@@ -1342,6 +1389,272 @@ export class BackendPanel {
     const w = (this._scene?.wires || []).find(wr => wr.sourceId === id || wr.targetId === id);
     if (w) return [id, w.sourceId === id ? w.targetId : w.sourceId];
     return [id, id];
+  }
+
+  // ── Placement & CTS tab ──────────────────────────────────────
+
+  _runPlacement() {
+    this._recomputePlacement();
+    this._scheduleRender();
+  }
+
+  _recomputePlacement() {
+    if (!this._scene) return;
+    const scene = { nodes: this._scene.nodes, wires: this._scene.wires };
+    if (!this._lastFloorplan) this._recomputeFloorplan();
+    this._lastPlacement = computePlacement(scene, {
+      floorplan: this._lastFloorplan,
+      clockBufferDelayPs: this._plClockBufferPs,
+    });
+    const clk = {
+      clockPeriodPs: this._clockPeriodPs, tSetupPs: this._tSetupPs,
+      tHoldPs: this._tHoldPs, tClk2QPs: this._tClk2QPs,
+    };
+    this._lastPlacementStaIdeal = analyzeTimingPaths(scene, { ...clk, skewPs: 0 });
+    this._lastPlacementSta      = analyzeTimingPaths(scene, { ...clk, skewPs: this._lastPlacement.cts.skewPs });
+  }
+
+  /** Live clock-buffer slider — surgical update so the slider keeps focus. */
+  _updatePlacementLive() {
+    this._recomputePlacement();
+    const p = this._lastPlacement;
+    if (!p) return;
+    const viz = this._bodyEl?.querySelector('#pl-viz');
+    if (viz) viz.innerHTML = this._buildPlacementSvg(p);
+    const cts = this._bodyEl?.querySelector('#pl-cts-metrics');
+    if (cts) cts.innerHTML = this._buildCtsTable(p);
+    const tim = this._bodyEl?.querySelector('#pl-timing');
+    if (tim) tim.innerHTML = this._buildTimingImpact();
+    const ro = this._bodyEl?.querySelector('#pl-buf-readout');
+    if (ro) ro.textContent = `${this._plClockBufferPs} ps`;
+    this._renderPlacementSummary(p);
+  }
+
+  _renderPlacementSummary(p) {
+    if (!this._summaryEl) return;
+    if (!p) { this._summaryEl.innerHTML = ''; return; }
+    const sv = (label, value, cls = '') =>
+      `<div><span class="backend-summary-label">${label}</span><br><span class="backend-summary-value ${cls}">${value}</span></div>`;
+    const skewCls = p.cts.skewPs > this._clockPeriodPs * 0.1 ? 'violated' : 'met';
+    this._summaryEl.innerHTML = [
+      sv('Std Cells', p.placedCount),
+      sv('Clock Sinks', p.cts.numSinks),
+      sv('CTS Buffers', p.cts.numBuffers),
+      sv('Skew', `${p.cts.skewPs} ps`, skewCls),
+      sv('Max Insertion', `${p.cts.maxInsertionPs} ps`),
+    ].join('');
+  }
+
+  _renderPlacementBody(p) {
+    if (!this._bodyEl) return;
+    if (!p) {
+      this._bodyEl.innerHTML = '<div class="backend-coming-soon"><p>Click <b>RUN PLACE+CTS</b> to place cells and synthesize the clock tree</p></div>';
+      return;
+    }
+    if (p.warnings?.includes('Empty design — nothing to place')) {
+      this._bodyEl.innerHTML = '<div class="backend-coming-soon"><p>No physical cells to place.</p><p style="font-size:9px;color:#88ccaa;margin-top:8px">Add gates, flip-flops, or memories, then run.</p></div>';
+      return;
+    }
+    const legend = `<div class="backend-fp-legend">
+      <span><i style="background:#50cc70"></i> Std cell</span>
+      <span><i style="background:#aa44aa"></i> Macro</span>
+      <span><i style="background:#90ffc8"></i> Clock source</span>
+      <span><i style="background:#a8ffd6"></i> CTS buffer</span>
+      <span><i style="background:#88ccaa"></i> Clock sink</span>
+      ${this._plShowDensity ? '<span><i style="background:#ffd054"></i> Density</span>' : ''}
+    </div>`;
+    let html = '';
+    html += this._renderSection('pl-controls', `Placement Controls ${this._fpInfoBtn('pl-controls-info')}`, this._buildPlacementControls(p));
+    html += this._renderSection('pl-die', `Placement & Clock Tree ${this._fpInfoBtn('pl-place-info')}`,
+      this._fpInfoBox('pl-place-info', this._plPlaceInfo()) + `<div class="backend-fp-viz" id="pl-viz">${this._buildPlacementSvg(p)}</div>${legend}`);
+    html += this._renderSection('pl-cts', `Clock Tree Synthesis ${this._fpInfoBtn('pl-cts-info')}`,
+      this._fpInfoBox('pl-cts-info', this._plCtsInfo()) + `<div id="pl-cts-metrics">${this._buildCtsTable(p)}</div>` + this._buildSinkTable(p));
+    html += this._renderSection('pl-timing-sec', `Timing Impact (ideal vs CTS) ${this._fpInfoBtn('pl-timing-info')}`,
+      this._fpInfoBox('pl-timing-info', this._plTimingInfo()) + this._buildTimingControls() + `<div id="pl-timing">${this._buildTimingImpact()}</div>`);
+    this._bodyEl.innerHTML = html;
+  }
+
+  _buildPlacementControls(p) {
+    return `
+      <div class="backend-fp-slider-row">
+        <label>Clock Buffer Delay</label>
+        <input type="range" min="10" max="120" step="5" data-pl-field="clockBuffer" value="${this._plClockBufferPs}" />
+        <span id="pl-buf-readout">${this._plClockBufferPs} ps</span>
+      </div>
+      <div class="backend-fp-slider-row" style="margin-top:6px">
+        <label>Overlays</label>
+        <div class="backend-mode-pills" style="margin:0">
+          <button class="backend-mode-pill ${this._plShowDensity ? 'active' : ''}" data-action="pl-toggle-density">${this._plShowDensity ? 'Density: ON' : 'Density: OFF'}</button>
+          <button class="backend-mode-pill ${this._plShowClockTree ? 'active' : ''}" data-action="pl-toggle-tree">${this._plShowClockTree ? 'Clock Tree: ON' : 'Clock Tree: OFF'}</button>
+        </div>
+      </div>`;
+  }
+
+  _buildTimingControls() {
+    const isCts = this._plIdealVsCts === 'cts';
+    return `<div class="backend-mode-pills" style="margin-bottom:6px">
+      <button class="backend-mode-pill ${!isCts ? 'active' : ''}" data-action="pl-set-timing" data-mode="ideal">Ideal clock</button>
+      <button class="backend-mode-pill ${isCts ? 'active' : ''}" data-action="pl-set-timing" data-mode="cts">Post-CTS</button>
+    </div>`;
+  }
+
+  /** Die + placement substrate + clock-tree SVG, built on the shared die base. */
+  _buildPlacementSvg(p) {
+    if (!p.dieW || !p.dieH) return '<div style="color:#88ccaa;font-size:9px">No die to draw</div>';
+    const max = Math.max(p.dieW, p.dieH), sw = max * 0.0035;
+
+    // Placed standard cells live inside the core clip (after the heatmap).
+    let cellsStr = '';
+    const cellCap = Math.min(p.cells.length, 2000);
+    for (let i = 0; i < cellCap; i++) {
+      const cell = p.cells[i];
+      cellsStr += `<rect x="${_n(cell.x - cell.w / 2)}" y="${_n(cell.y - cell.h / 2)}" width="${_n(cell.w)}" height="${_n(cell.h * 0.8)}" fill="#50cc70" fill-opacity="0.5" rx="${_n(sw * 0.3)}"/>`;
+    }
+
+    const base = this._dieBaseSvg(p, {
+      prefix: 'pl', glow: true, zebraOpacity: 0.04,
+      tracks: { color: '#5aa0c0', widthMul: 0.3, opacity: 0.14 },
+      heatmap: (this._plShowDensity && p.density.maxDensity)
+        ? { grid: p.density.grid, n: p.density.bins, max: p.density.maxDensity, opacity: 0.5 } : null,
+      extraClipped: cellsStr,
+    });
+    let svg = base.svg;
+
+    // macros (thinner stroke, no top-highlight — keeps the clock tree readable)
+    svg += base.macros({ strokeMul: 1, highlight: false });
+
+    // clock tree — orthogonal (Manhattan) routing, like a real clock spine
+    if (this._plShowClockTree) {
+      // L-shaped path: vertical from parent then horizontal to child (with a rounded knee).
+      const elbow = (e) => {
+        const r = Math.min(max * 0.01, Math.abs(e.x2 - e.x1) / 2, Math.abs(e.y2 - e.y1) / 2);
+        if (r < sw) return `M ${_n(e.x1)} ${_n(e.y1)} V ${_n(e.y2)} H ${_n(e.x2)}`;
+        const sy = e.y2 > e.y1 ? 1 : -1, sx = e.x2 > e.x1 ? 1 : -1;
+        return `M ${_n(e.x1)} ${_n(e.y1)} V ${_n(e.y2 - sy * r)} Q ${_n(e.x1)} ${_n(e.y2)} ${_n(e.x1 + sx * r)} ${_n(e.y2)} H ${_n(e.x2)}`;
+      };
+      const ekStyle = { src: `stroke="#a8ffe0" stroke-width="${_n(sw * 1.6)}" stroke-opacity="0.95"`,
+                        buf: `stroke="#7ad0a8" stroke-width="${_n(sw * 1.1)}" stroke-opacity="0.8"`,
+                        sink:`stroke="#5fae88" stroke-width="${_n(sw * 0.7)}" stroke-opacity="0.7"` };
+      svg += `<g fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#plGlow)">`;
+      for (const e of p.treeEdges) svg += `<path d="${elbow(e)}" ${ekStyle[e.kind] || ekStyle.buf}/>`;
+      svg += `</g>`;
+      // sinks (drawn under buffers): soft dots
+      const sr = max * 0.0085;
+      for (const s of p.sinks) svg += `<circle cx="${_n(s.x)}" cy="${_n(s.y)}" r="${_n(sr)}" fill="#a8ffd6" fill-opacity="0.9" stroke="#0d2215" stroke-width="${_n(sw * 0.4)}"/>`;
+      // buffers: glowing rounded squares
+      const bs = max * 0.014;
+      svg += `<g filter="url(#plGlow)">`;
+      for (const b of p.buffers) svg += `<rect x="${_n(b.x - bs / 2)}" y="${_n(b.y - bs / 2)}" width="${_n(bs)}" height="${_n(bs)}" rx="${_n(bs * 0.28)}" fill="#caffe8" stroke="#3a8a4a" stroke-width="${_n(sw * 0.5)}"/>`;
+      svg += `</g>`;
+      // clock source: glowing concentric pulse
+      const src = p.clockSource, R = max * 0.022;
+      svg += `<g filter="url(#plGlow)">
+        <circle cx="${_n(src.x)}" cy="${_n(src.y)}" r="${_n(R)}" fill="none" stroke="#90ffc8" stroke-width="${_n(sw * 0.6)}" stroke-opacity="0.5"/>
+        <circle cx="${_n(src.x)}" cy="${_n(src.y)}" r="${_n(R * 0.6)}" fill="#90ffc8" stroke="#0d2215" stroke-width="${_n(sw * 0.6)}"/>
+      </g>`;
+    }
+    svg += `</svg>`;
+
+    // HTML labels — clock source + (shared) macro labels
+    const labels = `<div class="backend-fp-label" style="left:${base.fx(p.clockSource.x)}%;top:${base.fy(p.clockSource.y)}%;color:#90ffc8">${this._escapeAttr(this._truncate(p.clockSource.label, 6))}</div>` + base.macroLabels();
+    return svg + labels;
+  }
+
+  _buildCtsTable(p) {
+    const t = p.cts;
+    const row = (k, v) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`;
+    const skewCls = t.skewPs > this._clockPeriodPs * 0.1 ? 'status-violated' : 'status-met';
+    return `<table class="backend-cell-table">
+      <tr><th>CTS Metric</th><th>Value</th></tr>
+      ${row('Clock Sinks', t.numSinks)}
+      ${row('Clock Buffers', t.numBuffers)}
+      ${row('Tree Levels', t.treeLevels)}
+      ${row('Source Insertion', `${t.sourceInsertionPs} ps`)}
+      ${row('Insertion (min / avg / max)', `${t.minInsertionPs} / ${t.avgInsertionPs} / ${t.maxInsertionPs} ps`)}
+      <tr><td>Clock Skew</td><td class="${skewCls}"><b>${t.skewPs} ps</b></td></tr>
+      ${row('Buffer Delay / Wire', `${t.clockBufferDelayPs} ps / ${t.wireDelayPsPerUm} ps·µm⁻¹`)}
+    </table>`;
+  }
+
+  _buildSinkTable(p) {
+    if (!p.sinks.length) return '<div style="color:#88ccaa;font-size:9px;margin-top:6px">No clock sinks</div>';
+    const sorted = [...p.sinks].sort((a, b) => b.insertionDelayPs - a.insertionDelayPs);
+    let html = `<table class="backend-group-table" style="margin-top:8px">
+      <tr><th>Sink</th><th>Kind</th><th>Insertion</th><th>Depth</th><th>Action</th></tr>`;
+    for (const s of sorted.slice(0, 20)) {
+      html += `<tr>
+        <td><b>${this._escapeAttr(this._truncate(s.label, 12))}</b></td>
+        <td style="color:#88ccaa">${s.isMacro ? 'macro' : 'FF'}</td>
+        <td>${s.insertionDelayPs} ps</td>
+        <td>${s.bufferDepth}</td>
+        <td><button class="backend-copy-btn" data-action="pl-highlight-sink" data-node-id="${this._escapeAttr(s.nodeId)}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button></td>
+      </tr>`;
+    }
+    html += `</table>`;
+    if (sorted.length > 20) html += `<div style="font-size:8px;color:#88ccaa;margin-top:3px">Showing 20 of ${sorted.length} sinks (worst insertion first)</div>`;
+    return html;
+  }
+
+  _buildTimingImpact() {
+    const ideal = this._lastPlacementStaIdeal, cts = this._lastPlacementSta;
+    if (!ideal || !cts) return '<div style="color:#88ccaa;font-size:9px">Run placement to compute timing impact</div>';
+    const skew = this._lastPlacement?.cts.skewPs ?? 0;
+    const ins = this._lastPlacement?.cts.sourceInsertionPs ?? 0;
+    const emph = this._plIdealVsCts;
+    const col = (val, on, cls = '') => `<td class="${cls}" style="${on ? 'font-weight:bold' : 'opacity:0.75'}">${val}</td>`;
+    const r = (label, iv, cv, icls = '', ccls = '') => `<tr><td>${label}</td>${col(iv, emph === 'ideal', icls)}${col(cv, emph === 'cts', ccls)}</tr>`;
+    const wcls = v => v < 0 ? 'status-violated' : 'status-met';
+    return `<div class="backend-info-formula" style="margin-bottom:4px">T<sub>cq</sub> + T<sub>comb</sub> + T<sub>setup</sub> &lt; T<sub>ck</sub> &plusmn; T<sub>skew</sub></div>
+      <div class="backend-info-formula-detail">Before CTS: clock network delay = ideal (0). After CTS: insertion = ${ins} ps, skew = ${skew} ps.</div>
+      <table class="backend-cell-table" style="margin-top:6px">
+        <tr><th>Metric</th><th>Ideal clock</th><th>Post-CTS</th></tr>
+        ${r('WNS (ps)', ideal.wns, cts.wns, wcls(ideal.wns), wcls(cts.wns))}
+        ${r('TNS (ps)', ideal.tns, cts.tns)}
+        ${r('Setup Violations', ideal.numViolations, cts.numViolations, ideal.numViolations ? 'status-violated' : 'status-met', cts.numViolations ? 'status-violated' : 'status-met')}
+        ${r('Hold Violations', ideal.numHoldViolations, cts.numHoldViolations, ideal.numHoldViolations ? 'status-violated' : 'status-met', cts.numHoldViolations ? 'status-violated' : 'status-met')}
+        ${r('fMax (MHz)', ideal.fMaxMHz, cts.fMaxMHz)}
+      </table>
+      <div style="font-size:8px;color:#88ccaa;margin-top:4px">Positive skew relaxes setup (capture edge later) but tightens hold — the ± T<sub>skew</sub> term.</div>`;
+  }
+
+  // ── Placement info boxes (grounded in lessons 1/4/5/6) ──
+  _plControlsInfo() {
+    return `<div class="backend-info-formula">Placement &rarr; legalize cells into rows; CTS &rarr; balanced clock tree</div>
+      <p>After floorplanning, <b>placement</b> drops the synthesized standard cells into the core rows, and <b>CTS</b> builds the clock distribution. These controls tune the clock-buffer delay and what the die view overlays.</p>
+      <table class="backend-info-table">
+        <tr><td>Clock Buffer Delay</td><td>Per-buffer delay in the clock tree — drives insertion delay &amp; skew</td></tr>
+        <tr><td>Density</td><td>Placement-density heatmap (cells per core bin) — the "placement congestion" of synthesis</td></tr>
+        <tr><td>Clock Tree</td><td>Show/hide the CTS tree from clock source through buffers to sinks</td></tr>
+      </table>`;
+  }
+  _plPlaceInfo() {
+    return `<div class="backend-info-formula">Std cells fill the rows; macros stay fixed</div>
+      <div class="backend-info-formula-detail">"Logic gates placed inside unit area" — and a DEF view holds rows, tracks, cells &amp; the clock net</div>
+      <p>Each synthesized standard cell is legalized into a core row (skipping macro keep-outs). The clock tree is drawn over the placement: source &rarr; buffers (squares) &rarr; sinks (dots).</p>
+      <table class="backend-info-table">
+        <tr><td>Std cell</td><td>A placed gate/flip-flop sitting in a row</td></tr>
+        <tr><td>Macro</td><td>Hard block (memory / reg file) fixed during floorplan</td></tr>
+        <tr><td>Density</td><td>How tightly a region is packed — hot spots risk routing congestion</td></tr>
+      </table>`;
+  }
+  _plCtsInfo() {
+    return `<div class="backend-info-formula">Skew = max &minus; min sink insertion delay</div>
+      <div class="backend-info-formula-detail">insertion = &Sigma;(buffer delay + wire delay) on source&rarr;sink path</div>
+      <p><b>Clock Tree Synthesis</b> distributes one clock to every sequential element with balanced delay. A <b>balanced</b> tree gives near-equal insertion delays &rarr; low <b>skew</b>; uneven sink placement raises skew.</p>
+      <table class="backend-info-table">
+        <tr><td>Insertion delay</td><td>Source &rarr; sink clock latency (a.k.a. clock network / source insertion delay)</td></tr>
+        <tr><td>Skew</td><td>Spread of insertion delays across sinks — directly hits setup/hold</td></tr>
+        <tr><td>Clock buffers</td><td>Repeaters inserted to balance & drive the clock net (CTS_* cells)</td></tr>
+      </table>`;
+  }
+  _plTimingInfo() {
+    return `<div class="backend-info-formula">T<sub>cq</sub> + T<sub>comb</sub> + T<sub>setup</sub> &lt; T<sub>ck</sub> &plusmn; T<sub>skew</sub></div>
+      <p>Before CTS, STA assumes an <b>ideal</b> clock (network delay 0). After CTS the clock is <b>propagated</b> — real insertion delay and skew. This table re-runs STA with the CTS skew to show the impact.</p>
+      <table class="backend-info-table">
+        <tr><td>Ideal clock</td><td>Pre-CTS assumption (skew 0) — matches the STA tab</td></tr>
+        <tr><td>Post-CTS</td><td>STA re-run with the computed skew</td></tr>
+        <tr><td>+skew</td><td>Relaxes setup (more margin) but tightens hold</td></tr>
+      </table>`;
   }
 }
 

@@ -5476,18 +5476,20 @@
   min-width: 72px;
   color: #88ccaa;
 }
-.backend-fp-slider-row input[type="range"][data-fp-field] {
+.backend-fp-slider-row input[type="range"] {
   flex: 1;
-  height: 4px;
+  min-width: 60px;
+  height: 6px;
   accent-color: #50cc70;
-  background: #142e1c;
-  border-radius: 2px;
+  background: linear-gradient(#1e4a2e, #163a22);
+  border: 1px solid #3a8a4a;
+  border-radius: 4px;
   outline: none;
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
 }
-.backend-fp-slider-row input[type="range"][data-fp-field]::-webkit-slider-thumb {
+.backend-fp-slider-row input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 14px;
@@ -5497,7 +5499,7 @@
   cursor: pointer;
   box-shadow: 0 0 6px rgba(80, 204, 112, 0.6);
 }
-.backend-fp-slider-row input[type="range"][data-fp-field]::-moz-range-thumb {
+.backend-fp-slider-row input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   background: #50cc70;
@@ -5506,13 +5508,16 @@
   cursor: pointer;
   box-shadow: 0 0 6px rgba(80, 204, 112, 0.6);
 }
-#fp-util-readout {
+#fp-util-readout, #pl-buf-readout {
   min-width: 38px;
   text-align: right;
   color: #a8ffd6;
   font-weight: bold;
   font-size: 11px;
 }
+/* Placement & CTS — status coloring inside metric tables */
+.backend-cell-table .status-met { color: #44ff88; font-weight: bold; }
+.backend-cell-table .status-violated { color: #ff4444; font-weight: bold; }
 
 /* Group paths table */
 .backend-group-table {

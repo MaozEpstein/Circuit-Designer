@@ -54,6 +54,7 @@ export function analyzeTimingPaths(scene, opts = {}) {
     tSetupPs      = 50,
     tHoldPs       = 20,
     tClk2QPs      = 100,
+    skewPs        = 0,   // clock skew (capture − launch); 0 = ideal clock (pre-CTS)
   } = opts;
 
   const nodes   = scene.nodes;
@@ -147,13 +148,14 @@ export function analyzeTimingPaths(scene, opts = {}) {
     }
     if (lastPred === null) continue;
 
-    // Required time
+    // Required time. Positive clock skew at the capture FF relaxes setup
+    // (the capture edge arrives later) and tightens hold — i.e. Tck ± Tskew.
     const requiredTime = SEQUENTIAL_SET.has(ep.type)
-      ? clockPeriodPs - tSetupPs
+      ? clockPeriodPs - tSetupPs + skewPs
       : clockPeriodPs;
 
     const slackPs     = requiredTime - arrivalAtEndpoint;
-    const holdSlackPs = arrivalAtEndpoint - tClk2QPs - tHoldPs;
+    const holdSlackPs = arrivalAtEndpoint - tClk2QPs - tHoldPs - skewPs;
 
     // Walk critPred chain to recover full path
     const chain = [ep.id];
@@ -212,6 +214,7 @@ export function analyzeTimingPaths(scene, opts = {}) {
     tSetupPs,
     tHoldPs,
     tClk2QPs,
+    skewPs,
   };
 }
 
