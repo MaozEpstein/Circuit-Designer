@@ -5519,6 +5519,52 @@
 .backend-cell-table .status-met { color: #44ff88; font-weight: bold; }
 .backend-cell-table .status-violated { color: #ff4444; font-weight: bold; }
 
+/* Signoff tab */
+.backend-signoff-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 7px;
+  border-radius: 10px;
+  letter-spacing: 0.4px;
+  border: 1px solid currentColor;
+}
+.backend-signoff-badge.pass { color: #44ff88; background: rgba(60, 200, 120, 0.12); }
+.backend-signoff-badge.fail { color: #ff4444; background: rgba(200, 50, 50, 0.14); }
+.backend-signoff-badge.warn { color: #ffd054; background: rgba(220, 180, 60, 0.12); }
+.backend-signoff-badge.na   { color: #88ccaa; background: rgba(80, 140, 100, 0.10); }
+.backend-signoff-tag {
+  font-size: 8px;
+  color: #88ccaa;
+  border: 1px solid rgba(58, 138, 74, 0.5);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-right: 5px;
+  text-transform: uppercase;
+}
+.backend-verdict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 13px;
+  border: 1px solid;
+  margin-top: 4px;
+}
+.backend-verdict.ready   { color: #90ffc8; border-color: #50cc70; background: rgba(60, 200, 120, 0.10); }
+.backend-verdict.blocked { color: #ffaa88; border-color: #cc6633; background: rgba(170, 60, 40, 0.14); }
+.backend-tapeout-block { margin-bottom: 8px; }
+.backend-tapeout-title {
+  font-size: 9px;
+  color: #88ccaa;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Group paths table */
 .backend-group-table {
   width: 100%;

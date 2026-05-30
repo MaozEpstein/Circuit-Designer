@@ -8,6 +8,7 @@ import { analyzeTimingPaths, pathDetail } from '../STAEngine.js';
 import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF } from '../SynthesisEngine.js';
 import { computeFloorplan, PORT_COLORS }  from '../FloorplanEngine.js';
 import { computePlacement }               from '../PlacementEngine.js';
+import { runSignoff }                      from '../SignoffEngine.js';
 import { setStaCriticalPath }             from '../../rendering/CanvasRenderer.js';
 
 const TABS = [
@@ -15,7 +16,7 @@ const TABS = [
   { id: 'synthesis',  label: 'Synthesis',  enabled: true  },
   { id: 'floorplan',  label: 'Floorplan',  enabled: true  },
   { id: 'placement',  label: 'Placement',  enabled: true  },
-  { id: 'signoff',    label: 'Signoff',    enabled: false },
+  { id: 'signoff',    label: 'Signoff',    enabled: true  },
 ];
 
 const TAB_PLACEHOLDERS = {
@@ -65,6 +66,9 @@ export class BackendPanel {
     this._plShowClockTree       = true;
     this._plIdealVsCts          = 'cts';  // which timing column is emphasized
     this._plClockBufferPs       = 35;
+
+    // Signoff tab state
+    this._lastSignoff           = null;
     this._collapsedSections = new Set([
       'hist-info',     // STA: slack distribution explanation
       'synth-info',    // Synthesis: overview (now also contains flow diagram)
@@ -81,6 +85,9 @@ export class BackendPanel {
       'pl-place-info',    // Placement: standard-cell placement
       'pl-cts-info',      // Placement: clock tree synthesis
       'pl-timing-info',   // Placement: timing impact
+      'so-checklist-info',// Signoff: checklist explanation
+      'so-power-info',    // Signoff: power estimate
+      'so-tapeout-info',  // Signoff: tapeout export
     ]);
 
     // STA parameters
@@ -123,6 +130,7 @@ export class BackendPanel {
       if (this._activeTab === 'synthesis') this._runSynthesis();
       else if (this._activeTab === 'floorplan') this._runFloorplan();
       else if (this._activeTab === 'placement') this._runPlacement();
+      else if (this._activeTab === 'signoff') this._runSignoff();
       else this._runSta();
     });
     document.getElementById('btn-backend-run-all')?.addEventListener('click', () => this._runAll());
@@ -204,6 +212,12 @@ export class BackendPanel {
       } else if (action === 'copy-def') {
         if (this._lastDef?.def && navigator.clipboard) {
           navigator.clipboard.writeText(this._lastDef.def);
+          btn.textContent = 'COPIED';
+          setTimeout(() => { btn.textContent = 'COPY'; }, 1200);
+        }
+      } else if (action === 'copy-oasis') {
+        if (this._lastSignoff?.oasisStub && navigator.clipboard) {
+          navigator.clipboard.writeText(this._lastSignoff.oasisStub);
           btn.textContent = 'COPIED';
           setTimeout(() => { btn.textContent = 'COPY'; }, 1200);
         }
@@ -376,6 +390,9 @@ export class BackendPanel {
     } else if (this._activeTab === 'placement') {
       this._renderPlacementSummary(this._lastPlacement);
       this._renderPlacementBody(this._lastPlacement);
+    } else if (this._activeTab === 'signoff') {
+      this._renderSignoffSummary(this._lastSignoff);
+      this._renderSignoffBody(this._lastSignoff);
     } else {
       this._renderSummary(null);
       this._renderPlaceholder(this._activeTab);
@@ -397,6 +414,9 @@ export class BackendPanel {
     } else if (this._activeTab === 'placement') {
       btn.textContent = 'RUN PLACE+CTS';
       btn.title = 'Legalize standard cells into rows and synthesize a balanced clock tree (CTS)';
+    } else if (this._activeTab === 'signoff') {
+      btn.textContent = 'RUN SIGNOFF';
+      btn.title = 'Aggregate all stages: timing, DRC, power, LVS/FM proxies, tapeout export';
     } else {
       btn.textContent = '—';
       btn.title = 'Not available on this tab';
@@ -962,12 +982,13 @@ export class BackendPanel {
 
   // ── Run all tabs at once ─────────────────────────────────────
 
-  /** Compute STA + Synthesis + Floorplan in one shot, then render the active tab. */
+  /** Compute every backend stage in one shot, then render the active tab. */
   _runAll() {
     this._runSta();
     this._runSynthesis();
     this._recomputeFloorplan();
     this._recomputePlacement();   // consumes the fresh floorplan
+    this._lastSignoff = this._aggregateSignoff();   // consumes all of the above
     // _runSta highlights the worst path on the canvas — only keep it on the STA tab.
     if (this._activeTab !== 'sta') setStaCriticalPath(null);
     this._scheduleRender();
@@ -1654,6 +1675,180 @@ export class BackendPanel {
         <tr><td>Ideal clock</td><td>Pre-CTS assumption (skew 0) — matches the STA tab</td></tr>
         <tr><td>Post-CTS</td><td>STA re-run with the computed skew</td></tr>
         <tr><td>+skew</td><td>Relaxes setup (more margin) but tightens hold</td></tr>
+      </table>`;
+  }
+
+  // ── Signoff tab ──────────────────────────────────────────────
+
+  _runSignoff() {
+    this._recomputeSignoff();
+    if (this._activeTab !== 'sta') setStaCriticalPath(null);
+    this._scheduleRender();
+  }
+
+  /** Re-run the full upstream chain so the signoff always reflects the current scene. */
+  _recomputeSignoff() {
+    if (!this._scene) return;
+    this._runSta();
+    this._runSynthesis();
+    this._recomputeFloorplan();
+    this._recomputePlacement();   // also fills _lastPlacementSta / Ideal
+    this._lastSignoff = this._aggregateSignoff();
+  }
+
+  /** Assemble caches + run the signoff aggregator. Shared by _recomputeSignoff and _runAll. */
+  _aggregateSignoff() {
+    return runSignoff({
+      sta:               this._lastResult,
+      synth:             this._lastSynth,
+      sdc:               this._lastSdc,
+      def:               this._lastDef,
+      floorplan:         this._lastFloorplan,
+      placement:         this._lastPlacement,
+      placementSta:      this._lastPlacementSta,
+      placementStaIdeal: this._lastPlacementStaIdeal,
+    }, {
+      clockPeriodPs: this._clockPeriodPs,
+      tSetupPs:      this._tSetupPs,
+    });
+  }
+
+  _renderSignoffSummary(r) {
+    if (!this._summaryEl) return;
+    if (!r) { this._summaryEl.innerHTML = ''; return; }
+    const sv = (label, value, cls = '') =>
+      `<div><span class="backend-summary-label">${label}</span><br><span class="backend-summary-value ${cls}">${value}</span></div>`;
+    const dieArea = this._lastFloorplan?.dieAreaUm2 ?? '—';
+    this._summaryEl.innerHTML = [
+      sv('Verdict', r.verdict === 'READY' ? 'READY' : 'BLOCKED', r.verdict === 'READY' ? 'met' : 'violated'),
+      sv('Blockers', r.blockers, r.blockers > 0 ? 'violated' : 'met'),
+      sv('Warnings', r.warnings),
+      sv('Die Area', `${dieArea} µm²`),
+      sv('Power est', `${r.power.totalMw} mW`),
+    ].join('');
+  }
+
+  _renderSignoffBody(r) {
+    if (!this._bodyEl) return;
+    if (!r) {
+      this._bodyEl.innerHTML = '<div class="backend-coming-soon"><p>Click <b>RUN SIGNOFF</b> to aggregate all stages and check tapeout readiness</p></div>';
+      return;
+    }
+    const ready = r.verdict === 'READY';
+    const banner = `<div class="backend-verdict ${ready ? 'ready' : 'blocked'}">
+      <span>${ready ? '✓ READY FOR TAPEOUT' : '✗ BLOCKED'}</span>
+      <span style="font-weight:normal;font-size:10px;color:#88ccaa">${ready
+        ? 'all blocking checks pass'
+        : `${r.blockers} blocking check${r.blockers === 1 ? '' : 's'} failing`}</span>
+    </div>`;
+
+    let html = '';
+    html += this._renderSection('so-verdict', 'Tapeout Verdict', banner);
+    html += this._renderSection('so-checklist', `Signoff Checklist ${this._fpInfoBtn('so-checklist-info')}`,
+      this._fpInfoBox('so-checklist-info', this._signoffChecklistInfo()) + this._buildChecklistTable(r));
+    html += this._renderSection('so-power', `Power Estimate ${this._fpInfoBtn('so-power-info')}`,
+      this._fpInfoBox('so-power-info', this._signoffPowerInfo()) + this._buildPowerReport(r));
+    html += this._renderSection('so-tapeout', `Tapeout Export ${this._fpInfoBtn('so-tapeout-info')}`,
+      this._fpInfoBox('so-tapeout-info', this._signoffTapeoutInfo()) + this._buildTapeoutSection(r));
+    this._bodyEl.innerHTML = html;
+  }
+
+  _buildChecklistTable(r) {
+    const badge = (s) => {
+      const cls = { PASS: 'pass', FAIL: 'fail', WARN: 'warn', NA: 'na' }[s] || 'na';
+      const txt = s === 'NA' ? 'N/A' : s;
+      return `<span class="backend-signoff-badge ${cls}">${txt}</span>`;
+    };
+    const kindTag = (k) => k === 'real' ? '' : `<span class="backend-signoff-tag">${k}</span>`;
+    let html = `<table class="backend-cell-table">
+      <tr><th>Check</th><th>Status</th><th>Measured</th><th>Limit</th><th>Note</th></tr>`;
+    let lastCat = null;
+    for (const c of r.checks) {
+      if (c.category !== lastCat) {
+        html += `<tr><td colspan="5" style="color:#88ccaa;font-size:8px;letter-spacing:0.5px;padding-top:5px">${c.category}</td></tr>`;
+        lastCat = c.category;
+      }
+      html += `<tr>
+        <td><b>${c.label}</b></td>
+        <td>${badge(c.status)}</td>
+        <td>${this._escapeAttr(String(c.value))}</td>
+        <td style="color:#88ccaa">${this._escapeAttr(String(c.limit))}</td>
+        <td style="color:#a8c8b8">${kindTag(c.kind)}${this._escapeAttr(c.note)}</td>
+      </tr>`;
+    }
+    html += `</table>
+      <div style="margin-top:6px;font-size:8px;color:#88ccaa">
+        <b>${r.realCount}</b> real checks &middot; <b>${r.checks.filter(c => c.kind === 'proxy').length}</b> proxy &middot; <b>${r.naCount}</b> N/A.
+        Only real blocking checks set the verdict — <span class="backend-signoff-tag">proxy</span> and <span class="backend-signoff-badge na">N/A</span> do not guarantee silicon signoff.
+      </div>`;
+    return html;
+  }
+
+  _buildPowerReport(r) {
+    const p = r.power;
+    const row = (k, v) => `<tr><td>${k}</td><td><b>${v}</b></td></tr>`;
+    return `<div class="backend-info-formula">P<sub>total</sub> = &alpha;&middot;C&middot;V<sub>dd</sub>²&middot;f + P<sub>leak</sub></div>
+      <div class="backend-info-formula-detail">&alpha;=${p.activity}, V<sub>dd</sub>=${p.vddV} V, f=${p.fGHz} GHz, C=${p.switchCapPf} pF (= area &times; ${p.capPfPerUm2} pF/µm²), leak=${p.leakUwPerUm2} µW/µm²</div>
+      <table class="backend-cell-table" style="margin-top:6px">
+        <tr><th>Component</th><th>Power</th></tr>
+        ${row('Dynamic', `${p.dynamicMw} mW`)}
+        ${row('Leakage', `${p.leakageMw} mW`)}
+        <tr><td><b>Total</b></td><td><b>${p.totalMw} mW</b></td></tr>
+      </table>
+      <div style="margin-top:4px;font-size:8px;color:#88ccaa">Estimated — the cell library has no real capacitance/leakage data; α, V<sub>dd</sub> and the cap/leak coefficients are assumed (28nm-class).</div>`;
+  }
+
+  _buildTapeoutSection(r) {
+    const esc = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const defStr = this._lastDef?.def || '';
+    const sdcStr = this._lastSdc?.sdc || '';
+    let html = '';
+    html += `<div class="backend-tapeout-block">
+      <div class="backend-tapeout-title">DEF — Design Exchange Format <button class="backend-copy-btn" data-action="copy-def">COPY</button></div>
+      <pre class="backend-def">${esc(defStr) || '(run signoff to generate)'}</pre>
+    </div>`;
+    html += `<div class="backend-tapeout-block">
+      <div class="backend-tapeout-title">SDC — Design Constraints <button class="backend-copy-btn" data-action="copy-sdc">COPY</button></div>
+      <pre class="backend-sdc">${esc(sdcStr) || '(run signoff to generate)'}</pre>
+    </div>`;
+    html += `<div class="backend-info-chip">
+      <span class="backend-info-chip-icon">i</span>
+      <span><b>GDS / OASIS</b> (the real tapeout masks) are written <b>after route</b> — this pre-route flow has no routed geometry. Below is a labeled ASCII placeholder only.</span>
+    </div>`;
+    html += `<div class="backend-tapeout-block">
+      <div class="backend-tapeout-title">OASIS (placeholder) <button class="backend-copy-btn" data-action="copy-oasis">COPY</button></div>
+      <pre class="backend-def">${esc(r.oasisStub)}</pre>
+    </div>`;
+    return html;
+  }
+
+  _signoffChecklistInfo() {
+    return `<div class="backend-info-formula">Signoff: Power; PI + EM; DRC; LVS; FM; STA + SI &rarr; Tapeout</div>
+      <p><b>Signoff</b> is the final gate before tapeout: every backend stage is checked against its limit. This panel aggregates the results already computed by the STA, Synthesis, Floorplan and Placement tabs.</p>
+      <table class="backend-info-table">
+        <tr><td>DRC</td><td>Design-Rule Check — e.g. max fanout, legalization (real here)</td></tr>
+        <tr><td>LVS</td><td>Layout-vs-Schematic — netlist matches layout (proxy here; needs extracted layout)</td></tr>
+        <tr><td>FM</td><td>Formal — proves RTL ≡ gate netlist (proxy here; needs a formal tool)</td></tr>
+        <tr><td>STA + SI</td><td>Timing with signal-integrity (crosstalk) derate — SI needs routed parasitics</td></tr>
+        <tr><td>Honesty</td><td>real = from data; proxy = structural approximation; N/A = needs routed layout</td></tr>
+      </table>`;
+  }
+  _signoffPowerInfo() {
+    return `<div class="backend-info-formula">Dynamic = &alpha;&middot;C&middot;V²&middot;f &nbsp;|&nbsp; Leakage &prop; area</div>
+      <p>Power has two parts: <b>dynamic</b> (charging net capacitance as signals switch) and <b>leakage</b> (static transistor current). This is an <b>estimate</b> — real signoff uses per-cell power from the timing library.</p>
+      <table class="backend-info-table">
+        <tr><td>Power Integrity (PI)</td><td>IR-drop & EM on the power grid — needs the routed PG mesh (N/A here)</td></tr>
+        <tr><td>EM</td><td>Electromigration — metal wears out under high current density (N/A; needs route)</td></tr>
+        <tr><td>Clock gating</td><td>The main dynamic-power lever — gates the clock to idle flops</td></tr>
+      </table>`;
+  }
+  _signoffTapeoutInfo() {
+    return `<div class="backend-info-formula">Tapeout = GDS / OASIS delivery to the FAB</div>
+      <p>The deliverables. <b>GDS(II)</b> is binary mask data; <b>OASIS</b> is a compact ASCII alternative. Both describe the routed layout and are produced only after Route. Pre-route, the closest artifacts are the <b>DEF</b> (placement) and <b>SDC</b> (constraints).</p>
+      <table class="backend-info-table">
+        <tr><td>DEF</td><td>Design Exchange Format — cells + placement (available now)</td></tr>
+        <tr><td>SDC</td><td>Synopsys Design Constraints — clocks, I/O delays, DRC limits (available now)</td></tr>
+        <tr><td>GDS / OASIS</td><td>Final masks — post-route only</td></tr>
       </table>`;
   }
 }
