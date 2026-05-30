@@ -22,7 +22,7 @@ const CAP_PF_PER_UM2  = 0.0012;   // effective switched capacitance per µm²
 const LEAK_UW_PER_UM2 = 0.04;     // leakage power per µm² of cell area
 
 /**
- * @param {object} caches  { sta, synth, sdc, def, floorplan, placement, placementSta, placementStaIdeal }
+ * @param {object} caches  { sta, synth, sdc, def, netDRC, floorplan, placement, placementSta, placementStaIdeal }
  * @param {object} [opts]  { clockPeriodPs, tSetupPs, maxFanout, utilBand, skewPct }
  * @returns {SignoffReport}
  */
@@ -35,7 +35,7 @@ export function runSignoff(caches, opts = {}) {
     skewFailPct   = 0.25,
   } = opts;
 
-  const { synth, floorplan, placement, def } = caches;
+  const { synth, floorplan, placement, def, netDRC } = caches;
   const t = caches.placementSta || caches.sta;   // prefer post-CTS timing
 
   const checks = [];
@@ -104,6 +104,26 @@ export function runSignoff(caches, opts = {}) {
         note: synth.maxFanout <= maxFanout ? 'Within set_max_fanout.' : `Net exceeds set_max_fanout ${maxFanout} — needs buffering.`,
         fix: synth.maxFanout <= maxFanout ? null : fix(
           `Split the high-fanout net into a buffer tree so each driver feeds at most ${maxFanout} loads.`) });
+
+  // Max transition / max capacitance — estimated from fanout (proxy, non-blocking).
+  if (netDRC) {
+    const transOk = netDRC.transViolators === 0;
+    add({ id: 'drc-transition', label: 'DRC — Max Transition', category: 'DRC',
+          status: transOk ? 'PASS' : 'WARN', kind: 'proxy', blocking: false,
+          value: `${netDRC.maxTransNs} ns`, limit: `≤ ${netDRC.transLimitNs} ns`,
+          note: transOk
+            ? 'Estimated slew within set_max_transition (proxy from fanout).'
+            : `${netDRC.transViolators} net(s) exceed set_max_transition — worst at ${netDRC.worstTransLabel} (proxy from fanout).`,
+          fix: transOk ? null : fix('Buffer / split the high-fanout net or upsize its driver to cut slew.') });
+    const capOk = netDRC.capViolators === 0;
+    add({ id: 'drc-capacitance', label: 'DRC — Max Capacitance', category: 'DRC',
+          status: capOk ? 'PASS' : 'WARN', kind: 'proxy', blocking: false,
+          value: `${netDRC.maxNetCapPf} pF`, limit: `≤ ${netDRC.capLimitPf} pF`,
+          note: capOk
+            ? 'Estimated net cap within set_max_capacitance (proxy from fanout).'
+            : `${netDRC.capViolators} net(s) exceed set_max_capacitance — worst at ${netDRC.worstCapLabel} (proxy from fanout).`,
+          fix: capOk ? null : fix('Split the net or add buffers so each branch drives less load.') });
+  }
 
   const nUnmapped = synth.unmappedTypes?.length || 0;
   add({ id: 'drc-unmapped', label: 'DRC — Unmapped Cells', category: 'DRC',

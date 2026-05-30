@@ -5,7 +5,7 @@
  */
 
 import { analyzeTimingPaths, pathDetail } from '../STAEngine.js';
-import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF, detectClockGating } from '../SynthesisEngine.js';
+import { synthesize, generateSDC, classifyGroupPaths, estimateCongestion, synthesisSteps, generateDEF, detectClockGating, estimateNetDRC, analyzeVT } from '../SynthesisEngine.js';
 import { computeFloorplan, PORT_COLORS }  from '../FloorplanEngine.js';
 import { computePlacement }               from '../PlacementEngine.js';
 import { runSignoff }                      from '../SignoffEngine.js';
@@ -45,6 +45,8 @@ export class BackendPanel {
     this._lastSteps      = null;
     this._lastDef        = null;
     this._lastClockGating = null;   // detectClockGating() result
+    this._lastNetDRC     = null;    // estimateNetDRC() result (transition/cap)
+    this._lastVT         = null;    // analyzeVT() result (multi-Vt mix)
     this._synthMode      = 'topological';
     this._customGroups   = [];      // [{ name, from, to }]
     this._cgDraft        = { name: '', from: '', to: '' };
@@ -79,6 +81,7 @@ export class BackendPanel {
       'exc-info',      // STA: timing exceptions explanation
       'synth-info',    // Synthesis: overview (now also contains flow diagram)
       'ckg-info',      // Synthesis: clock gating explanation
+      'vt-info',       // Synthesis: multi-Vt explanation
       'mode-info',     // Synthesis: topo vs non-topo table
       'group-info',    // Synthesis: group paths descriptions
       'sdc-info',      // Synthesis: wire load model
@@ -102,6 +105,7 @@ export class BackendPanel {
     this._tSetupPs       = 50;
     this._tHoldPs        = 20;
     this._tClk2QPs       = 100;
+    this._setupMarginPct = 0;      // global setup margin (clock uncertainty), fraction of Tck
 
     this._bindEvents();
   }
@@ -194,6 +198,9 @@ export class BackendPanel {
       } else if (action === 'apply-clock') {
         this._readClockInputs();
         this._runSta();
+      } else if (action === 'apply-opt-period') {
+        const rec = this._lastResult?.recommendedPeriodPs;
+        if (rec > 0) { this._clockPeriodPs = rec; this._runSta(); }
       } else if (action === 'so-fix-clock') {
         this._clockPeriodPs = parseInt(btn.dataset.value, 10);
         this._recomputeSignoff();
@@ -291,6 +298,13 @@ export class BackendPanel {
           btn.textContent = 'HIGHLIGHTED';
           setTimeout(() => { btn.textContent = 'HIGHLIGHT'; }, 1500);
         }
+      } else if (action === 'vt-highlight') {
+        const grp = this._lastVT?.byVt?.[btn.dataset.vt];
+        if (grp?.nodeIds?.length) {
+          setStaCriticalPath(grp.nodeIds, 'met');
+          btn.textContent = 'HIGHLIGHTED';
+          setTimeout(() => { btn.textContent = 'HIGHLIGHT'; }, 1500);
+        }
       } else if (action === 'fp-aspect') {
         this._fpAspect = parseFloat(btn.dataset.aspect);
         this._recomputeFloorplan();
@@ -381,11 +395,12 @@ export class BackendPanel {
       wires: this._scene.wires,
     };
     this._lastResult = analyzeTimingPaths(scene, {
-      clockPeriodPs: this._clockPeriodPs,
-      tSetupPs:      this._tSetupPs,
-      tHoldPs:       this._tHoldPs,
-      tClk2QPs:      this._tClk2QPs,
-      exceptions:    this._timingExceptions,
+      clockPeriodPs:  this._clockPeriodPs,
+      tSetupPs:       this._tSetupPs,
+      tHoldPs:        this._tHoldPs,
+      tClk2QPs:       this._tClk2QPs,
+      exceptions:     this._timingExceptions,
+      setupMarginPct: this._setupMarginPct,
     });
     this._selectedPath = -1;
     this._selectedBucket = null;
@@ -419,6 +434,8 @@ export class BackendPanel {
     this._tSetupPs      = get('tSetup')      ?? this._tSetupPs;
     this._tHoldPs       = get('tHold')       ?? this._tHoldPs;
     this._tClk2QPs      = get('tClk2Q')      ?? this._tClk2QPs;
+    const marginPct = get('setupMargin');
+    if (marginPct != null) this._setupMarginPct = Math.max(0, marginPct) / 100;
   }
 
   _toggleFullscreen() {
@@ -536,8 +553,10 @@ export class BackendPanel {
         ${clkField('t<sub>Setup</sub> (ps)', 'tSetup', this._tSetupPs, 5)}
         ${clkField('t<sub>Hold</sub> (ps)', 'tHold', this._tHoldPs, 5)}
         ${clkField('t<sub>Clk2Q</sub> (ps)', 'tClk2Q', this._tClk2QPs, 10)}
+        ${clkField('Setup margin (%)', 'setupMargin', Math.round(this._setupMarginPct * 100), 5)}
       </div>
       <button class="btn-secondary backend-action-run" data-action="apply-clock" style="font-size:9px;padding:5px 12px;margin-top:8px">APPLY &amp; RE-RUN</button>
+      ${this._renderOptimalPeriod(r)}
     `);
 
     // Timing paths table
@@ -570,6 +589,22 @@ export class BackendPanel {
         <span class="backend-section-arrow">${arrow}</span> ${title}
       </div>
       <div class="backend-section-body">${bodyHtml}</div>
+    </div>`;
+  }
+
+  // ── 3e: recommended optimal clock period readout ──
+  _renderOptimalPeriod(r) {
+    const rec = r?.recommendedPeriodPs || 0;
+    if (!rec) return '';
+    const mhz = Math.round(1e6 / rec * 100) / 100;
+    const cur = this._clockPeriodPs;
+    const rel = cur > rec  ? `current ${cur} ps leaves ${cur - rec} ps of slack`
+              : cur === rec ? 'current period is exactly optimal'
+              :               `current ${cur} ps is <b>below</b> optimal — setup will fail`;
+    return `<div class="backend-info-chip" style="margin-top:8px">
+      <span class="backend-info-chip-icon">i</span>
+      <span><b>Recommended optimal period: ${rec} ps</b> (&asymp; ${mhz} MHz) — the smallest period where every clock-derived path still meets setup (accounts for the setup margin and multicycle paths; below it WNS goes negative). ${rel}.
+      <button class="backend-fix-btn" data-action="apply-opt-period" style="margin-left:6px">APPLY OPTIMAL</button></span>
     </div>`;
   }
 
@@ -722,12 +757,15 @@ export class BackendPanel {
     this._lastSdc        = generateSDC(scene, {
       customGroups: this._customGroups,
       timingExceptions: this._timingExceptions,
+      setupUncertaintyNs: this._clockPeriodPs * this._setupMarginPct / 1000,
     });
     this._lastGroups     = classifyGroupPaths(scene);
     this._lastCongestion = estimateCongestion(scene, 8);
     this._lastSteps      = synthesisSteps(scene);
     this._lastDef        = generateDEF(scene);
     this._lastClockGating = detectClockGating(scene, { clockPeriodPs: this._clockPeriodPs });
+    this._lastNetDRC     = estimateNetDRC(scene);
+    this._lastVT         = analyzeVT(scene, { sta: this._lastResult, synth: this._lastSynth });
     this._scheduleRender();
   }
 
@@ -765,6 +803,9 @@ export class BackendPanel {
     html += this._renderSection('clock-gating',
       `Clock Gating (${this._lastClockGating?.numGroups ?? 0} candidate${(this._lastClockGating?.numGroups ?? 0) === 1 ? '' : 's'}) <button class="backend-info-btn" data-action="toggle-section" data-section="ckg-info" title="What is clock gating? Power saving from gating idle flops">i</button>`,
       this._renderClockGating());
+    html += this._renderSection('vt-mix',
+      `VT Mix — Multi-Vt (${this._lastVT?.totalCells ?? 0} cells) <button class="backend-info-btn" data-action="toggle-section" data-section="vt-info" title="Threshold-voltage flavours: HVT / SVT / LVT speed vs leakage">i</button>`,
+      this._renderVtMix());
     html += this._renderSection('cell-breakdown', `Cell Library Breakdown (${Object.keys(r.cellHistogram).length} types)`, this._renderCellTable(r));
     html += this._renderSection('sdc',
       `SDC — Design Constraints (TCL) <button class="backend-info-btn" data-action="toggle-section" data-section="sdc-info" title="Explain Wire Load Model">i</button>`,
@@ -1192,6 +1233,83 @@ export class BackendPanel {
     });
     html += `</table>`;
     html += `<div style="margin-top:6px;font-size:9px;color:#88ccaa">Estimated saving — &alpha;&middot;C<sub>clk</sub>&middot;V²&middot;f over the idle fraction, minus the CKG cell's own switching. Banks below ${cg.breakEvenFFs} FFs don't pay off.</div>`;
+    return html;
+  }
+
+  // ── Synthesis: VT mix (multi-Vt) ──
+  _renderVtInfo() {
+    if (this._collapsedSections.has('vt-info')) return '';
+    const colors = { LVT: '#ff7a7a', SVT: '#90ffc8', HVT: '#6aaadd' };
+    const chars = this._lastVT?.characteristics || [];
+    let charTable = '';
+    if (chars.length) {
+      charTable = `<div style="margin-top:8px;font-size:9px;color:#a8c8b8;font-weight:bold">Characteristics (relative to SVT — library model, fixed)</div>
+        <table class="backend-group-table backend-sink-table">
+          <tr><th>VT</th><th>Speed</th><th>Leakage</th><th>Typical use</th></tr>`;
+      for (const c of chars) {
+        charTable += `<tr>
+          <td><span class="backend-port-chip" style="color:${colors[c.vt]}">${c.vt}</span></td>
+          <td>${c.relSpeed}</td>
+          <td>${c.relLeakage}</td>
+          <td style="color:#88ccaa">${c.use}</td>
+        </tr>`;
+      }
+      charTable += `</table>`;
+    }
+    return `<div class="backend-info-box">
+      <div class="backend-info-formula">Multi-V<sub>t</sub>: trade leakage for speed, cell by cell</div>
+      <p>A foundry ships each standard cell in several <b>threshold-voltage</b> flavours. A lower V<sub>t</sub> switches faster but leaks much more; a higher V<sub>t</sub> is slow but barely leaks. Synthesis picks per cell: <b>LVT</b> on the cells that need speed (tight slack), <b>HVT</b> where there is slack to spare, <b>SVT</b> for the rest.</p>
+      ${charTable}
+      <div style="font-size:9px;color:#88ccaa;margin-top:4px">Assignment uses each cell's worst path slack from STA. Standalone analysis — does not change the STA timing or the Signoff verdict.</div>
+    </div>`;
+  }
+
+  _renderVtMix() {
+    const vt = this._lastVT;
+    if (!vt) return '';
+    let html = this._renderVtInfo();
+    if (vt.note) {
+      html += `<div style="font-size:9px;color:#ddbb66;margin-bottom:6px">⚠ ${vt.note}</div>`;
+    }
+    const colors = { LVT: '#ff7a7a', SVT: '#90ffc8', HVT: '#6aaadd' };
+    const order = ['LVT', 'SVT', 'HVT'];
+    const total = Math.max(1, vt.totalCells);
+    const totalArea = Math.max(0, order.reduce((s, k) => s + vt.byVt[k].areaUm2, 0));
+    const pctTxt = (n, d) => d > 0 ? `${Math.round(n / d * 100)}%` : '0%';
+
+    // Stacked mix bar (by area) — at-a-glance VT distribution.
+    let bar = `<div class="backend-vt-bar" title="VT mix by area">`;
+    for (const k of order) {
+      const g = vt.byVt[k];
+      if (!g.areaUm2) continue;
+      const pct = totalArea > 0 ? g.areaUm2 / totalArea * 100 : 0;
+      bar += `<div class="seg" style="width:${pct}%;background:${colors[k]}" title="${k}: ${g.areaUm2} µm² (${Math.round(pct)}%)">${pct >= 14 ? `${k} ${Math.round(pct)}%` : ''}</div>`;
+    }
+    html += bar + `</div>`;
+
+    // Distribution table: plain cell counts; the relative-share bar lives in
+    // the % area column. Empty classes dimmed.
+    html += `<table class="backend-group-table backend-sink-table" style="margin-top:8px">
+      <tr><th>VT</th><th>#cells</th><th>% cells</th><th>Area µm²</th><th>% area</th><th>Est leakage mW</th><th>Action</th></tr>`;
+    for (const k of order) {
+      const g = vt.byVt[k];
+      const dim = g.count === 0 ? ' style="opacity:0.4"' : '';
+      const areaPct = totalArea > 0 ? Math.round(g.areaUm2 / totalArea * 100) : 0;
+      const act = g.count > 0
+        ? `<button class="backend-copy-btn" data-action="vt-highlight" data-vt="${k}" style="padding:1px 6px;font-size:8px">HIGHLIGHT</button>`
+        : '—';
+      html += `<tr${dim}>
+        <td><span class="backend-port-chip" style="color:${colors[k]}">${k}</span></td>
+        <td>${g.count}</td>
+        <td style="color:#cfe6d8">${pctTxt(g.count, total)}</td>
+        <td>${g.areaUm2}</td>
+        <td><div class="backend-sink-bar"><div class="backend-sink-bar-fill" style="width:${areaPct}%;background:${colors[k]}"></div></div><span class="backend-sink-ps">${areaPct}%</span></td>
+        <td>${g.estLeakageMw}</td>
+        <td>${act}</td>
+      </tr>`;
+    }
+    html += `<tr><td style="color:#88ccaa">Total</td><td style="color:#cfe6d8;font-weight:bold">${vt.totalCells}</td><td style="color:#88ccaa">100%</td><td>${Math.round(totalArea * 100) / 100}</td><td style="color:#88ccaa">100%</td><td>${vt.totalLeakageMw}</td><td></td></tr>`;
+    html += `</table>`;
     return html;
   }
 
@@ -1675,6 +1793,7 @@ export class BackendPanel {
     const clk = {
       clockPeriodPs: this._clockPeriodPs, tSetupPs: this._tSetupPs,
       tHoldPs: this._tHoldPs, tClk2QPs: this._tClk2QPs,
+      exceptions: this._timingExceptions, setupMarginPct: this._setupMarginPct,
     };
     this._lastPlacementStaIdeal = analyzeTimingPaths(scene, { ...clk, skewPs: 0 });
     this._lastPlacementSta      = analyzeTimingPaths(scene, { ...clk, skewPs: this._lastPlacement.cts.skewPs });
@@ -1991,6 +2110,7 @@ export class BackendPanel {
       synth:             this._lastSynth,
       sdc:               this._lastSdc,
       def:               this._lastDef,
+      netDRC:            this._lastNetDRC,
       floorplan:         this._lastFloorplan,
       placement:         this._lastPlacement,
       placementSta:      this._lastPlacementSta,

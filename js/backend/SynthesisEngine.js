@@ -261,8 +261,10 @@ export function generateSDC(scene, opts = {}) {
     clockPeriodNs   = 2,
     maxFanout       = 6,
     maxTransitionNs = 0.5,
+    maxCapacitancePf = 0.20,
     inputDelayNs    = 0.2,
     outputDelayNs   = 0.2,
+    setupUncertaintyNs = 0,
     customGroups    = [],
     timingExceptions = [],
   } = opts;
@@ -300,6 +302,10 @@ export function generateSDC(scene, opts = {}) {
     }
   }
   const primaryClock = clockNames[0];
+  // Global setup margin → clock uncertainty (the real-flow equivalent).
+  if (setupUncertaintyNs > 0) {
+    lines.push(`set_clock_uncertainty -setup ${setupUncertaintyNs.toFixed(3)} [all_clocks]`);
+  }
   lines.push('');
   lines.push('# --- I/O delays (relative to primary clock) ---');
   if (dataInputs.length) {
@@ -314,6 +320,7 @@ export function generateSDC(scene, opts = {}) {
   lines.push('# --- Design rule constraints (DRC) ---');
   lines.push(`set_max_fanout      ${maxFanout} [current_design]`);
   lines.push(`set_max_transition  ${maxTransitionNs.toFixed(3)} [current_design]`);
+  lines.push(`set_max_capacitance ${maxCapacitancePf.toFixed(3)} [current_design]`);
   lines.push('set_load 0.050 [all_outputs]');
   lines.push('');
   lines.push('# --- Wire load model (synthesis default) ---');
@@ -715,6 +722,140 @@ export function detectClockGating(scene, opts = {}) {
     numGroups: groups.length,
     estTotalSavedMw,
     breakEvenFFs: CG_BREAK_EVEN_FFS,
+    estimated: true,
+  };
+}
+
+// ── Net DRC model (educational; slew/cap scale with fanout — no library RC) ──
+const DRC_BASE_NET_CAP_PF   = 0.02;   // a net's own wire + driver self cap
+const DRC_LOAD_PER_FANOUT_PF = 0.03;  // sink input cap + branch wire, per load
+const DRC_TRANS_NS_PER_PF   = 1.6;    // slew ≈ cap × this (tuned to limits below)
+const DRC_CAP_LIMIT_PF      = 0.20;   // set_max_capacitance
+const DRC_TRANS_LIMIT_NS    = 0.50;   // set_max_transition
+
+/**
+ * Estimate post-synthesis design-rule violations for max_transition and
+ * max_capacitance. Real DRCs use extracted RC; we proxy net cap (and the slew
+ * it produces) from fanout, so a high-fanout net flags both checks. Honest
+ * heuristic — clearly labeled `estimated`.
+ *
+ * @param {{nodes: object[], wires: object[]}} scene
+ * @param {object} [opts] {capLimitPf, transLimitNs}
+ */
+export function estimateNetDRC(scene, opts = {}) {
+  const {
+    capLimitPf   = DRC_CAP_LIMIT_PF,
+    transLimitNs = DRC_TRANS_LIMIT_NS,
+  } = opts;
+  const nodes = scene.nodes || [];
+  const wires = scene.wires || [];
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+  // Fanout per driver over data nets (skip clock wires).
+  const fanout = new Map();
+  for (const w of wires) {
+    if (w.isClockWire) continue;
+    fanout.set(w.sourceId, (fanout.get(w.sourceId) || 0) + 1);
+  }
+
+  let maxNetCapPf = 0, worstCapNodeId = null;
+  let maxTransNs  = 0, worstTransNodeId = null;
+  let capViolators = 0, transViolators = 0;
+  for (const [id, f] of fanout) {
+    const cap   = DRC_BASE_NET_CAP_PF + f * DRC_LOAD_PER_FANOUT_PF;
+    const trans = DRC_TRANS_NS_PER_PF * cap;
+    if (cap   > maxNetCapPf) { maxNetCapPf = cap; worstCapNodeId = id; }
+    if (trans > maxTransNs)  { maxTransNs  = trans; worstTransNodeId = id; }
+    if (cap   > capLimitPf)   capViolators++;
+    if (trans > transLimitNs) transViolators++;
+  }
+  const lbl = id => { const n = nodeMap.get(id); return n ? (n.label || n.id) : (id || '—'); };
+  const r3 = v => Math.round(v * 1000) / 1000;
+  return {
+    maxNetCapPf: r3(maxNetCapPf), worstCapNodeId, worstCapLabel: lbl(worstCapNodeId),
+    capLimitPf, capViolators,
+    maxTransNs: r3(maxTransNs), worstTransNodeId, worstTransLabel: lbl(worstTransNodeId),
+    transLimitNs, transViolators,
+    estimated: true,
+  };
+}
+
+// ── Multi-Vt model (educational; relative to SVT) ──
+const VT_MODEL = {
+  LVT: { delayK: 0.85, leakK: 8.0,  label: 'LVT', use: 'critical / tight-slack paths' },
+  SVT: { delayK: 1.00, leakK: 1.0,  label: 'SVT', use: 'general logic (balance)' },
+  HVT: { delayK: 1.25, leakK: 0.15, label: 'HVT', use: 'slack-rich / leakage-sensitive' },
+};
+const VT_BASE_LEAK_UW_PER_UM2 = 0.04;   // SVT-equivalent leakage density (mirrors SignoffEngine)
+
+/**
+ * Assign a threshold-voltage flavour (HVT / SVT / LVT) to every standard cell
+ * and report the mix + speed/power characteristics. Standalone analysis — does
+ * NOT change STA timing or the Signoff verdict.
+ *
+ * Heuristic (needs STA): a cell's tightness = the min slack over the paths it
+ * lies on. Tight/critical → LVT (speed), slack-rich → HVT (low leakage), else
+ * SVT. With no STA result everything defaults to SVT.
+ *
+ * @param {{nodes: object[], wires: object[]}} scene
+ * @param {object} [opts] {sta, synth}  precomputed STA + synthesize() results
+ */
+export function analyzeVT(scene, opts = {}) {
+  const synth = opts.synth || synthesize(scene, { includeNetlist: false });
+  const sta   = opts.sta || null;
+  const hasSta = !!(sta && sta.paths && sta.paths.length);
+
+  // min slack per node over the (non-FALSE) paths it appears on
+  const minSlack = new Map();
+  if (hasSta) {
+    for (const p of sta.paths) {
+      if (p.status === 'FALSE') continue;
+      for (const id of p.nodeIds) {
+        const cur = minSlack.get(id);
+        if (cur === undefined || p.slackPs < cur) minSlack.set(id, p.slackPs);
+      }
+    }
+  }
+  const period = (sta && sta.clockPeriodPs) || 2000;
+  const tight  = 0.10 * period;   // < this slack ⇒ LVT
+  const loose  = 0.40 * period;   // > this slack ⇒ HVT
+
+  const byVt = {
+    LVT: { count: 0, areaUm2: 0, nodeIds: [] },
+    SVT: { count: 0, areaUm2: 0, nodeIds: [] },
+    HVT: { count: 0, areaUm2: 0, nodeIds: [] },
+  };
+  for (const ci of synth.cellInstances) {
+    const s = minSlack.get(ci.nodeId);
+    let vt = 'SVT';
+    if (hasSta && s !== undefined) {
+      if (s < tight) vt = 'LVT';
+      else if (s > loose) vt = 'HVT';
+    }
+    byVt[vt].count++;
+    byVt[vt].areaUm2 += ci.areaUm2;
+    if (byVt[vt].nodeIds.length < 200) byVt[vt].nodeIds.push(ci.nodeId);
+  }
+
+  const r3 = v => Math.round(v * 1000) / 1000;
+  for (const k of ['LVT', 'SVT', 'HVT']) {
+    byVt[k].areaUm2 = r3(byVt[k].areaUm2);
+    byVt[k].estLeakageMw = r3(byVt[k].areaUm2 * VT_BASE_LEAK_UW_PER_UM2 * VT_MODEL[k].leakK / 1000);
+  }
+  const characteristics = ['LVT', 'SVT', 'HVT'].map(k => ({
+    vt: k,
+    relSpeed:   `×${VT_MODEL[k].delayK} delay`,
+    relLeakage: `×${VT_MODEL[k].leakK} leakage`,
+    use:        VT_MODEL[k].use,
+  }));
+  const totalLeakageMw = r3(['LVT', 'SVT', 'HVT'].reduce((s, k) => s + byVt[k].estLeakageMw, 0));
+
+  return {
+    byVt, characteristics,
+    totalCells: synth.cellInstances.length,
+    totalLeakageMw,
+    hasSta,
+    note: hasSta ? null : 'All cells default to SVT — run STA (or RUN ALL) to enable Vt assignment by slack.',
     estimated: true,
   };
 }

@@ -57,7 +57,9 @@ export function analyzeTimingPaths(scene, opts = {}) {
     tClk2QPs      = 100,
     skewPs        = 0,   // clock skew (capture − launch); 0 = ideal clock (pre-CTS)
     exceptions    = [],  // false_path / multicycle / max_delay applied per matching path
+    setupMarginPct = 0,  // global setup margin (clock uncertainty) as a fraction of Tck
   } = opts;
+  const setupMarginPs = clockPeriodPs * (setupMarginPct || 0);
 
   const nodes   = scene.nodes;
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
@@ -198,6 +200,10 @@ export function analyzeTimingPaths(scene, opts = {}) {
       }
     }
 
+    // Global setup margin (clock uncertainty) applies to clock-derived required
+    // times only — not to max_delay (which ignores the clock relation).
+    if (excTag?.type !== 'max_delay') requiredTime -= setupMarginPs;
+
     const slackPs   = requiredTime - arrivalAtEndpoint;
     const isFalse   = excTag?.type === 'false_path';
     const status    = isFalse ? 'FALSE' : (slackPs >= 0 ? 'MET' : 'VIOLATED');
@@ -235,6 +241,22 @@ export function analyzeTimingPaths(scene, opts = {}) {
   const criticalPath = analyzed.length ? analyzed[0].nodeIds : [];
   const maxArrival   = analyzed.length ? Math.max(...analyzed.map(p => p.arrivalPs)) : 0;
   const fMaxMHz      = maxArrival > 0 ? 1e6 / (maxArrival + tSetupPs) : Infinity;
+  // Minimal period at which every clock-derived path still meets setup. Honors
+  // each path's multicycle multiplier N and the global setup margin, and skips
+  // max_delay (period-independent) and FALSE paths. Derived from the per-path
+  // setup equation  N·P − tSetup + skew − margin·P ≥ arrival
+  //   ⇒ P ≥ (arrival + tSetup − skew) / (N − setupMarginPct).
+  // Math.ceil ⇒ re-running at this period lands at WNS ≥ 0 (never harms setup).
+  let _recPs = 0;
+  for (const p of analyzed) {
+    if (p.exception?.type === 'max_delay') continue;        // not clock-governed
+    const N = p.exception?.type === 'multicycle' ? Math.max(1, p.exception.value) : 1;
+    const denom = N - setupMarginPct;                        // > 0 for margin < 1 ≤ N
+    if (denom <= 0) continue;                                // pathological margin guard
+    const cand = (p.arrivalPs + tSetupPs - skewPs) / denom;
+    if (cand > _recPs) _recPs = cand;
+  }
+  const recommendedPeriodPs = _recPs > 0 ? Math.ceil(_recPs) : 0;
 
   // --- 6. Per-node detail for the selected path ---
   // (caller can request detail for any path index)
@@ -248,11 +270,14 @@ export function analyzeTimingPaths(scene, opts = {}) {
     numViolations: negSlacks.length,
     numHoldViolations: analyzed.filter(p => p.holdViolation).length,
     numFalsePaths: paths.length - analyzed.length,
+    maxArrivalPs:  Math.round(maxArrival),
+    recommendedPeriodPs,
     clockPeriodPs,
     tSetupPs,
     tHoldPs,
     tClk2QPs,
     skewPs,
+    setupMarginPct,
   };
 }
 
