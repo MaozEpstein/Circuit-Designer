@@ -1,7 +1,7 @@
 /**
  * BackendPanel — VLSI Backend Design panel.
- * Tab-based UI: STA (active) | Synthesis | Floorplan | Placement | Signoff.
- * Only STA is functional; other tabs show placeholders.
+ * Tab-based UI: Synthesis | Floorplan | Placement | STA | Signoff
+ * (left-to-right = RTL→GDSII backend flow order).
  */
 
 import { analyzeTimingPaths, pathDetail } from '../STAEngine.js';
@@ -13,10 +13,10 @@ import { registerGenericCells }            from '../CellLibrary.js';
 import { setStaCriticalPath }             from '../../rendering/CanvasRenderer.js';
 
 const TABS = [
-  { id: 'sta',       label: 'STA',       enabled: true  },
   { id: 'synthesis',  label: 'Synthesis',  enabled: true  },
   { id: 'floorplan',  label: 'Floorplan',  enabled: true  },
   { id: 'placement',  label: 'Placement',  enabled: true  },
+  { id: 'sta',       label: 'STA',       enabled: true  },
   { id: 'signoff',    label: 'Signoff',    enabled: true  },
 ];
 
@@ -36,7 +36,7 @@ export class BackendPanel {
     this._bodyEl         = document.getElementById('backend-panel-body');
     this._visible        = false;
     this._renderScheduled = false;
-    this._activeTab      = 'sta';
+    this._activeTab      = 'synthesis';
     this._lastResult     = null;
     this._lastSynth      = null;
     this._lastSdc        = null;
